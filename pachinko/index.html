@@ -1036,13 +1036,14 @@ function renderHall() {
       if (m.setting === v) o.selected = true;
       sel.appendChild(o);
     }
-    sel.addEventListener("change", () => { m.setting = Number(sel.value); save(); renderHall(); });
+    sel.addEventListener("change", () => { if (isDead()) return; m.setting = Number(sel.value); save(); renderHall(); });
     const trialBtn = document.createElement("button");
     trialBtn.className = "trial"; trialBtn.textContent = "🕹️試打";
     trialBtn.addEventListener("click", () => openTrial(c, m.setting));
     const sellBtn = document.createElement("button");
     sellBtn.className = "danger"; sellBtn.textContent = "売却";
     sellBtn.addEventListener("click", () => {
+      if (isDead()) return;
       if (!confirm(`${c.name} を ${yen(machineValue(m))} で売却しますか?`)) return;
       state.money += machineValue(m);
       state.machines.splice(idx, 1);
@@ -1088,6 +1089,7 @@ function renderShop() {
     if (full) btn.textContent = "設置枠なし";
     else if (poor) btn.textContent = "資金不足";
     btn.addEventListener("click", () => {
+      if (isDead()) return;
       if (state.money < c.price || state.machines.length >= state.cap) return;
       state.money -= c.price;
       const m = makeMachine(c.id);
@@ -1125,7 +1127,7 @@ function renderMgmt() {
     const b = document.createElement("button");
     b.textContent = a.name + (a.cost ? ` (${yen(a.cost)})` : "");
     if (state.ad === a.id) { b.className = "primary"; }
-    b.addEventListener("click", () => { state.ad = a.id; save(); renderMgmt(); });
+    b.addEventListener("click", () => { if (isDead()) return; state.ad = a.id; save(); renderMgmt(); });
     adWrap.appendChild(b);
   }
   const cur = ADS.find(a => a.id === state.ad);
@@ -1156,7 +1158,7 @@ function renderMgmt() {
     const b = document.createElement("button");
     b.textContent = label;
     if (state.rate === id) b.className = "primary";
-    b.addEventListener("click", () => { state.rate = id; save(); renderMgmt(); });
+    b.addEventListener("click", () => { if (isDead()) return; state.rate = id; save(); renderMgmt(); });
     rateWrap.appendChild(b);
   });
   $("rateNote").textContent = state.rate === "normal"
@@ -1270,6 +1272,14 @@ function renderAll() {
   renderStatus(); renderHall(); renderShop(); renderMgmt(); renderLedger();
 }
 
+// ---- 倒産判定: 倒産後はリセット以外の操作を受け付けない ----
+function isDead() { return state && state.money < 0; }
+function showBankruptModal() {
+  showModal(`<h2>💀 倒産</h2>
+    <p style="font-size:.88rem">資金が尽き、融資枠も限界です。${state.day - 1}日間の経営、お疲れさまでした。</p>
+    <div class="rowbtns"><button class="danger" onclick="doReset()">最初からやり直す</button></div>`);
+}
+
 // ---- モーダル ----
 let trialCleanup = null;
 function showModal(html) {
@@ -1279,6 +1289,8 @@ function showModal(html) {
 }
 function closeModal() {
   if (trialCleanup) { trialCleanup(); trialCleanup = null; }
+  // 倒産後はモーダルを閉じられない(リセットのみ)。doResetはstateを先に差し替えるので通る
+  if (isDead()) { showBankruptModal(); return; }
   $("modalBg").classList.remove("show");
   renderAll();
 }
@@ -1641,20 +1653,90 @@ function save(silent) {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
   if (!silent) renderStatus();
 }
+// セーブデータの無害化: 型崩れ・範囲外・不正ID・HTML注入をすべて補正/除去する。
+// (手動編集・旧バージョン・破損への防御。ここを通った値だけがゲームに入る)
+function sanitizeState(s) {
+  const num = (v, def, min, max) => {
+    v = Number(v);
+    if (!Number.isFinite(v)) v = def;
+    return Math.min(max, Math.max(min, v));
+  };
+  s.day = Math.floor(num(s.day, 1, 1, 1000000));
+  s.money = Math.round(num(s.money, 0, -1e13, 1e13));
+  s.rep = num(s.rep, 50, 1, 100);
+  s.regulars = num(s.regulars, 0, 0, 100000);
+  s.heat = num(s.heat, 0, 0, 200);
+  s.debt = Math.round(num(s.debt, 0, 0, 1e12));
+  s.maxDebt = Math.round(num(s.maxDebt, 0, 0, 1e12));
+  s.cap = Math.floor(num(s.cap, 10, 10, MAX_CAP));
+  s.staff = Math.floor(num(s.staff, 2, 1, 200));
+  s.uid = Math.floor(num(s.uid, 1000, 0, 1e9));
+  s.lastGrand = Math.floor(num(s.lastGrand, -99, -99, 1000000));
+  s.diff = DIFFS[s.diff] ? s.diff : "normal";
+  s.rate = s.rate === "low" ? "low" : "normal";
+  s.ad = ADS.some(a => a.id === s.ad) ? s.ad : "none";
+  s.grandOpen = s.grandOpen === true;
+  s.cleared = s.cleared === true;
+  s.clearDay = Number.isFinite(Number(s.clearDay)) && s.clearDay !== null
+    ? Math.floor(Number(s.clearDay)) : null;
+  // 台: 実在機種のみ・値をクランプ・上限台数まで
+  s.machines = (Array.isArray(s.machines) ? s.machines : [])
+    .filter(m => m && typeof m === "object" && CATALOG.some(c => c.id === m.cid))
+    .slice(0, MAX_CAP)
+    .map(m => {
+      const c = CATALOG.find(x => x.id === m.cid);
+      return {
+        uid: Math.floor(num(m.uid, 0, 0, 1e9)),
+        cid: c.id,
+        pop: num(m.pop, c.pop, 15, 300),
+        setting: Math.floor(num(m.setting, 3, 1, 6)),
+        boughtDay: Number.isFinite(Number(m.boughtDay)) && m.boughtDay !== null
+          ? Math.floor(Number(m.boughtDay)) : null,
+        lastNet: Number.isFinite(Number(m.lastNet)) && m.lastNet !== null ? Math.round(Number(m.lastNet)) : null,
+        lastCust: Number.isFinite(Number(m.lastCust)) && m.lastCust !== null ? Math.round(Number(m.lastCust)) : null,
+      };
+    });
+  // トレンド: 既知の名前だけ許可(表示はinnerHTML経由のため必須)
+  if (s.trend && typeof s.trend === "object") {
+    const t = TRENDS.find(x => x.name === s.trend.name);
+    s.trend = t ? { name: t.name, ids: t.ids.slice() } : null;
+  } else s.trend = null;
+  // 実績/イベントCD: 既知IDのみ
+  s.ach = (Array.isArray(s.ach) ? s.ach : []).filter(id => ACHIEVEMENTS.some(a => a.id === id));
+  const cd = {};
+  if (s.evCd && typeof s.evCd === "object" && !Array.isArray(s.evCd)) {
+    for (const e of COND_EVENTS) {
+      if (Number.isFinite(Number(s.evCd[e.id]))) cd[e.id] = Math.floor(Number(s.evCd[e.id]));
+    }
+  }
+  s.evCd = cd;
+  // 帳簿: 数値フィールドを再構築、noteは既知の値だけ(innerHTML表示のため)
+  s.history = (Array.isArray(s.history) ? s.history : [])
+    .filter(r => r && typeof r === "object")
+    .slice(0, 60)
+    .map(r => ({
+      day: Math.floor(num(r.day, 0, 0, 1000000)),
+      cust: Math.round(num(r.cust, 0, 0, 1e6)),
+      cas: Math.round(num(r.cas, 0, 0, 1e6)),
+      reg: Math.round(num(r.reg, 0, 0, 1e6)),
+      pro: Math.round(num(r.pro, 0, 0, 1e6)),
+      sales: Math.round(num(r.sales, 0, -1e13, 1e13)),
+      payout: Math.round(num(r.payout, 0, -1e13, 1e13)),
+      exp: Math.round(num(r.exp, 0, 0, 1e13)),
+      net: Math.round(num(r.net, 0, -1e13, 1e13)),
+      interest: Math.round(num(r.interest, 0, 0, 1e12)),
+      note: (r.note === "特日" || r.note === "週末") ? r.note : "",
+    }));
+  return s;
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      // 旧バージョンのセーブからの移行
-      const defaults = {
-        diff: "normal", regulars: 8, heat: 0, debt: 0, maxDebt: 0,
-        rate: "normal", trend: null, grandOpen: false, lastGrand: -99, clearDay: null,
-        evCd: {},
-      };
-      for (const k of Object.keys(defaults)) if (s[k] === undefined) s[k] = defaults[k];
-      if (!Array.isArray(s.ach)) s.ach = [];
-      return s;
+      if (!s || typeof s !== "object" || !Array.isArray(s.machines)) return null;
+      return sanitizeState(s);
     }
   } catch (e) {}
   return null;
@@ -1704,7 +1786,9 @@ document.querySelectorAll(".tab").forEach(t => {
 });
 
 $("btnOpen").addEventListener("click", () => {
-  if (state.money < 0) return;
+  if (isDead()) { showBankruptModal(); return; }
+  // 結果モーダル表示中の再クリック(Enter連打等)で日が進むのを防ぐ
+  if ($("modalBg").classList.contains("show")) return;
   if (state.machines.length === 0) {
     showModal(`<h2>⚠️ 台がありません</h2><p style="font-size:.88rem">台が1台もないと営業できません。「新台購入」タブから台を導入してください。</p>
       <div class="rowbtns"><button class="primary" onclick="closeModal()">わかった</button></div>`);
@@ -1715,9 +1799,10 @@ $("btnOpen").addEventListener("click", () => {
   showDayResult(result);
 });
 
-$("btnHire").addEventListener("click", () => { state.staff++; save(); renderMgmt(); });
-$("btnFire").addEventListener("click", () => { if (state.staff > 1) { state.staff--; save(); renderMgmt(); } });
+$("btnHire").addEventListener("click", () => { if (isDead()) return; state.staff++; save(); renderMgmt(); });
+$("btnFire").addEventListener("click", () => { if (isDead()) return; if (state.staff > 1) { state.staff--; save(); renderMgmt(); } });
 $("btnExpand").addEventListener("click", () => {
+  if (isDead()) return;
   const cost = expandCost();
   if (state.money < cost || state.cap >= MAX_CAP) return;
   state.money -= cost;
@@ -1725,6 +1810,7 @@ $("btnExpand").addEventListener("click", () => {
   save(); renderAll();
 });
 $("btnGrand").addEventListener("click", () => {
+  if (isDead()) return;
   const recentBuy = state.machines.some(m => m.boughtDay !== null && state.day - m.boughtDay <= 1);
   if (state.grandOpen || !recentBuy || state.day - state.lastGrand < 7 || state.money < 300000) return;
   state.money -= 300000;
@@ -1734,6 +1820,7 @@ $("btnGrand").addEventListener("click", () => {
   toast("🎊 新装開店フェアを予約!次の営業日に開催");
 });
 $("btnBorrow").addEventListener("click", () => {
+  if (isDead()) return;
   if (state.debt + 1000000 > creditLimit()) return;
   state.debt += 1000000;
   state.maxDebt = Math.max(state.maxDebt, state.debt);
@@ -1741,6 +1828,7 @@ $("btnBorrow").addEventListener("click", () => {
   save(); renderAll();
 });
 $("btnRepay").addEventListener("click", () => {
+  if (isDead()) return;
   const amount = Math.min(1000000, state.debt, state.money);
   if (amount <= 0) return;
   state.debt -= amount;
@@ -1763,6 +1851,7 @@ const loaded = load();
 if (loaded && Array.isArray(loaded.machines)) {
   state = loaded;
   renderAll();
+  if (isDead()) showBankruptModal();
 } else {
   state = newGame("normal");
   renderAll();
