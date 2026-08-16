@@ -1,40 +1,41 @@
 // 共有リンク:セットリストを URL ハッシュに載せられるサイズへ圧縮エンコードする。
 // サーバー不要 — データはリンクそのものに入る。
 // 形式: "1." + base64url(deflate-raw(JSON))  /  フォールバック "0." + base64url(JSON)
+// 曲データは配列 [title,bpm,key,tuning,sec,energy,mc,memo,gear] で運ぶ
+// (v1リンクは gear なしの8要素 — 後方互換で読める)。
 
-import { newSetlist, newSong, clampNum } from "./store.js";
+import { sanitizeSong, clampNum } from "./store.js";
 
-function toCompact(sl) {
+export function toShareBundle(sl, entries) {
   return {
     n: sl.name,
     t: sl.targetMin,
     g: sl.gapSec,
     m: sl.mcSec,
-    s: sl.songs.map((x) => [
-      x.title, x.bpm ?? "", x.key, x.tuning, x.sec, x.energy, x.mc ? 1 : 0, x.memo,
+    s: entries.map(({ item, song }) => [
+      song.title, song.bpm ?? "", song.key, song.tuning, song.sec, song.energy,
+      item.mc ? 1 : 0, song.memo, song.gear.join("\n"),
     ]),
   };
 }
 
+// 戻り値: {name, targetMin, gapSec, mcSec, rows:[{song(未登録), mc}]}
 function fromCompact(c) {
   if (!c || typeof c !== "object" || !Array.isArray(c.s)) throw new Error("bad payload");
-  const sl = newSetlist(String(c.n || "共有されたセトリ").slice(0, 60));
-  sl.targetMin = clampNum(c.t, 0, 600, 30);
-  sl.gapSec = clampNum(c.g, 0, 600, 15);
-  sl.mcSec = clampNum(c.m, 0, 1800, 90);
-  sl.songs = c.s.slice(0, 200).map((a) =>
-    newSong({
-      title: String(a[0] || "").slice(0, 80),
-      bpm: a[1] === "" || a[1] == null ? null : clampNum(a[1], 20, 400, null),
-      key: String(a[2] || "").slice(0, 10),
-      tuning: String(a[3] || "").slice(0, 20),
-      sec: clampNum(a[4], 0, 6000, 0),
-      energy: clampNum(a[5], 1, 5, 3),
+  return {
+    name: String(c.n || "共有されたセトリ").slice(0, 60),
+    targetMin: clampNum(c.t, 0, 600, 30),
+    gapSec: clampNum(c.g, 0, 600, 15),
+    mcSec: clampNum(c.m, 0, 1800, 90),
+    rows: c.s.slice(0, 200).map((a) => ({
+      song: sanitizeSong({
+        title: a[0], bpm: a[1] === "" ? null : a[1], key: a[2], tuning: a[3],
+        sec: a[4], energy: a[5], memo: a[7],
+        gear: typeof a[8] === "string" && a[8] ? a[8].split("\n") : [],
+      }),
       mc: a[6] === 1,
-      memo: String(a[7] || "").slice(0, 500),
-    })
-  );
-  return sl;
+    })),
+  };
 }
 
 function b64urlEncode(bytes) {
@@ -67,8 +68,8 @@ async function inflate(bytes) {
   return new Uint8Array(buf);
 }
 
-export async function encodeShare(setlist) {
-  const json = JSON.stringify(toCompact(setlist));
+export async function encodeShare(sl, entries) {
+  const json = JSON.stringify(toShareBundle(sl, entries));
   const bytes = new TextEncoder().encode(json);
   if (typeof CompressionStream !== "undefined") {
     try {
@@ -80,7 +81,7 @@ export async function encodeShare(setlist) {
   return "0." + b64urlEncode(bytes);
 }
 
-// 戻り値: セットリスト。壊れたリンクは例外を投げる
+// 戻り値: 共有バンドル(fromCompact 参照)。壊れたリンクは例外を投げる
 export async function decodeShare(payload) {
   const dot = payload.indexOf(".");
   if (dot !== 1) throw new Error("bad format");

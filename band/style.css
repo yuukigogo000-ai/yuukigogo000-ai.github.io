@@ -63,21 +63,25 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 4px;
   background: var(--surface);
   border: 1px solid var(--card-border);
   border-radius: 12px;
   padding: 4px;
 }
+@media (max-width: 620px) {
+  .tabs { grid-template-columns: repeat(3, 1fr); }
+}
 
 .tab {
   border: 0;
   background: transparent;
   color: var(--ink-2);
-  padding: 10px 6px;
+  padding: 10px 4px;
   border-radius: 9px;
   font-weight: 700;
+  font-size: .88rem;
   cursor: pointer;
   min-height: 44px;
   transition: background .15s, color .15s;
@@ -439,4 +443,214 @@ dialog form label { margin: 10px 0 0; }
 
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
+}
+
+/* ============================================================
+   v2 追加コンポーネント
+   ============================================================ */
+
+/* ---------- エナジーチャート:コントロール・凡例 ---------- */
+
+.chart-controls {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px;
+}
+.chart-controls select { flex: 1 1 160px; width: auto; font-size: .85rem; min-height: 38px; }
+.template-fit { font-size: .85rem; font-weight: 800; color: var(--accent); white-space: nowrap; }
+
+.chart-legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 6px; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: .76rem; color: var(--ink-2); }
+.legend-swatch { width: 16px; height: 0; border-top-width: 3px; border-top-style: solid; border-radius: 2px; }
+.sw-main { border-top-color: var(--accent); }
+.sw-cmp { border-top-color: #7ab8ff; }
+.sw-tpl { border-top-color: #8a93a6; border-top-style: dashed; }
+
+/* ---------- セトリ診断 ---------- */
+
+.diag-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.diag-item {
+  display: flex; gap: 10px; align-items: flex-start;
+  font-size: .85rem; line-height: 1.55;
+  background: var(--surface); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 9px 12px;
+}
+.diag-item.diag-warn { border-left: 3px solid var(--danger); }
+.diag-item.diag-info { border-left: 3px solid #7ab8ff; }
+.diag-icon { flex: none; }
+.diag-ok { color: var(--ok); font-size: .9rem; margin: 8px 0 0; font-weight: 700; }
+
+/* ---------- 持ち替えプランナー ---------- */
+
+.planner-card summary {
+  cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px;
+}
+.planner-card summary::before { content: "▸"; color: var(--muted); transition: transform .15s; }
+.planner-card[open] summary::before { transform: rotate(90deg); }
+.planner-card summary h2 { margin: 0; font-size: 1.02rem; display: inline; }
+.planner-body { margin-top: 10px; }
+.planner-head { font-size: .85rem; font-weight: 800; color: var(--accent); margin: 10px 0 4px; }
+.planner-row {
+  font-size: .85rem; color: var(--ink-2); padding: 5px 10px;
+  background: var(--surface); border: 1px solid var(--card-border);
+  border-radius: 8px; margin-top: 5px;
+}
+.planner-row.planner-warn { border-left: 3px solid var(--danger); color: var(--ink); }
+
+/* ---------- ライブラリ ---------- */
+
+.lib-bar { display: flex; gap: 8px; margin-top: 10px; }
+.lib-bar input { flex: 1; }
+.lib-bar button { flex: none; }
+
+/* ---------- チップ追加種 ---------- */
+
+.chip-mc {
+  cursor: pointer; min-height: 26px; font-weight: 800; letter-spacing: .05em;
+  color: var(--muted); border-style: dashed;
+}
+.chip-mc.on { color: var(--accent); border-color: var(--accent); border-style: solid; background: #ffb45418; }
+.chip-gear { color: var(--ok); border-color: #6fd89944; }
+
+/* ---------- 曲ピッカー ---------- */
+
+.picker-list {
+  display: flex; flex-direction: column; gap: 6px;
+  max-height: 46vh; overflow-y: auto; margin-top: 12px;
+}
+.picker-row {
+  display: grid; grid-template-columns: 1fr auto; grid-template-areas: "t b" "m b";
+  gap: 0 10px; align-items: center; text-align: left;
+  background: var(--surface); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 9px 12px; cursor: pointer; color: var(--ink);
+}
+.picker-row:hover { border-color: var(--accent); }
+.picker-title { grid-area: t; font-weight: 700; }
+.picker-meta { grid-area: m; font-size: .75rem; color: var(--muted); }
+.picker-badge {
+  grid-area: b; font-size: .74rem; font-weight: 700; color: var(--accent);
+  border: 1px solid #ffb45455; border-radius: 999px; padding: 3px 10px; white-space: nowrap;
+}
+
+/* ---------- 共有メニュー・QR ---------- */
+
+.share-menu { display: flex; flex-direction: column; gap: 10px; margin-top: 6px; }
+.share-menu .big { text-align: left; }
+.qr-box {
+  background: #fff; border-radius: 12px; padding: 14px;
+  display: grid; place-items: center; margin: 8px auto; max-width: 320px;
+}
+.qr-box svg { width: 100%; height: auto; display: block; }
+
+/* ---------- 通し練習・本番モード共通 ---------- */
+
+.run-step-type { font-size: .82rem; color: var(--muted); font-weight: 700; margin: 8px 0 2px; text-align: center; }
+.run-title {
+  font-size: 1.9rem; font-weight: 800; margin: 0 0 8px; text-align: center;
+  line-height: 1.25; overflow-wrap: anywhere;
+}
+.live-title { font-size: 2.4rem; }
+.run-meta { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 10px; }
+.run-time {
+  text-align: center; font-variant-numeric: tabular-nums;
+  font-size: 1.15rem; font-weight: 700; margin: 8px 0;
+}
+.run-checklist { margin: 8px auto; max-width: 400px; }
+.gear-check { min-height: 38px; font-size: .95rem; }
+.gear-check input:checked + * { text-decoration: line-through; }
+.run-buttons { display: flex; gap: 8px; }
+.run-buttons button { flex: 1; min-height: 48px; }
+#runView.is-gap .run-title { color: var(--accent); }
+
+.live-delta {
+  text-align: center; font-size: 2rem; font-weight: 800; letter-spacing: .02em;
+  font-variant-numeric: tabular-nums; border-radius: 12px; padding: 10px;
+  margin: 6px 0 4px; background: var(--surface); border: 1px solid var(--card-border);
+}
+.live-delta.ontime { color: var(--ok); }
+.live-delta.over { color: var(--danger); border-color: #ff7b7255; }
+.live-delta.under { color: #7ab8ff; }
+
+.summary-body { max-height: 50vh; overflow-y: auto; }
+.summary-row {
+  display: flex; justify-content: space-between; gap: 10px; align-items: baseline;
+  padding: 7px 0; border-bottom: 1px solid var(--card-border); font-size: .9rem;
+}
+.summary-nums { font-size: .78rem; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.summary-nums.over { color: var(--danger); }
+.summary-total { font-weight: 800; border-bottom: 0; }
+.summary-total .summary-nums { color: var(--ink); }
+
+/* ---------- 耳コピループ ---------- */
+
+.file-label {
+  display: inline-block; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 10px 16px; font-weight: 700; color: var(--ink);
+  margin-top: 8px;
+}
+.file-label:hover { border-color: var(--accent); }
+.file-label input { display: none; }
+.loop-wave {
+  width: 100%; height: 90px; display: block; margin-top: 12px;
+  background: var(--surface); border: 1px solid var(--card-border);
+  border-radius: 10px; touch-action: none; cursor: crosshair;
+}
+.loop-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; flex-wrap: wrap; gap: 6px; }
+.loop-time { font-variant-numeric: tabular-nums; font-weight: 700; }
+.loop-buttons { display: flex; gap: 8px; margin: 10px 0; flex-wrap: wrap; }
+.loop-buttons button { flex: 1; min-width: 64px; }
+#loopSpeed { width: 100%; accent-color: var(--accent); margin-top: 8px; }
+
+/* ---------- リハ録音 ---------- */
+
+.rec-controls { display: flex; align-items: center; gap: 12px; margin: 10px 0; flex-wrap: wrap; }
+.rec-time { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 1.2rem; }
+#recToggleBtn.running { background: var(--surface); color: var(--danger); border: 1px solid var(--danger); }
+.rec-list { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.rec-row {
+  display: flex; gap: 10px; align-items: center;
+  background: var(--surface); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 9px 12px;
+}
+.rec-main { flex: 1; min-width: 0; }
+.rec-name { font-weight: 700; overflow-wrap: anywhere; }
+.rec-song { margin-top: 6px; font-size: .8rem; min-height: 34px; padding: 4px 8px; width: auto; max-width: 100%; }
+.rec-actions { display: flex; gap: 4px; flex: none; flex-wrap: wrap; max-width: 84px; justify-content: flex-end; }
+
+/* ---------- イベントタイムテーブル ---------- */
+
+.act-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.act-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: "time main actions" "stamp stamp actions";
+  gap: 6px 12px; align-items: center;
+  background: var(--surface); border: 1px solid var(--card-border);
+  border-radius: 10px; padding: 10px 12px;
+}
+.act-row.is-us { border-color: #ffb45466; }
+.act-time { grid-area: time; font-variant-numeric: tabular-nums; font-weight: 800; white-space: nowrap; }
+.act-stamped { display: block; font-size: .7rem; color: var(--ok); font-weight: 700; }
+.act-main { grid-area: main; min-width: 0; }
+.act-name { font-weight: 700; overflow-wrap: anywhere; }
+.act-actions { grid-area: actions; display: flex; flex-direction: column; gap: 4px; }
+.stamp-btn { grid-area: stamp; justify-self: start; }
+
+/* ---------- メトロノーム練習ツール ---------- */
+
+.trainer-fields {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 8px 0;
+}
+.trainer-fields.disabled-block { opacity: .45; pointer-events: none; }
+.rule { border: 0; border-top: 1px solid var(--card-border); margin: 14px 0; }
+
+/* ---------- 印刷:持ち替えプラン ---------- */
+
+@media print {
+  .ss-plan { margin-top: 14pt; border-top: 1.5pt solid #000; padding-top: 6pt; font-size: 10.5pt; }
+  .ss-plan-head { font-weight: 800; margin-bottom: 3pt; }
+}
+
+@media (max-width: 460px) {
+  .trainer-fields { grid-template-columns: 1fr 1fr; }
+  .live-title { font-size: 1.9rem; }
 }

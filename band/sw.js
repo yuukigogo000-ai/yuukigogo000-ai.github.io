@@ -1,7 +1,7 @@
 // オフライン対応:stale-while-revalidate 方式のService Worker。
 // キャッシュから即応答しつつ、裏で最新版を取りに行って次回に備える。
 
-const CACHE = "setlism-v1";
+const CACHE = "setlism-v2";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,8 +9,13 @@ const ASSETS = [
   "./app.js",
   "./store.js",
   "./share.js",
+  "./diagnose.js",
   "./metronome.js",
   "./tuner.js",
+  "./practice.js",
+  "./live.js",
+  "./rec-db.js",
+  "./vendor/qrcode.mjs",
   "./manifest.webmanifest",
   "./icon.svg",
 ];
