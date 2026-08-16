@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Video Studio — 動画制作統括ハブ</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #181b24;
+    --panel2: #1f2330;
+    --border: #2c3140;
+    --text: #e8eaf0;
+    --muted: #9aa1b2;
+    --accent: #6c8cff;
+    --accent2: #8f6cff;
+    --ok: #3ecf8e;
+    --warn: #ffb454;
+    --bad: #ff6b6b;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    line-height: 1.6;
+  }
+  header {
+    position: sticky; top: 0; z-index: 10;
+    background: linear-gradient(135deg, #151827ee, #1a1430ee);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  }
+  header h1 { font-size: 1.1rem; margin: 0; letter-spacing: .02em; }
+  header h1 .logo { background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; }
+  nav { display: flex; gap: 6px; flex-wrap: wrap; }
+  nav button {
+    background: transparent; color: var(--muted); border: 1px solid transparent;
+    padding: 7px 14px; border-radius: 8px; font-size: .92rem; cursor: pointer;
+  }
+  nav button:hover { color: var(--text); background: #ffffff10; }
+  nav button.active { color: var(--text); background: #6c8cff22; border-color: #6c8cff55; }
+  .spacer { flex: 1; }
+  main { max-width: 1100px; margin: 0 auto; padding: 20px; }
+  .view { display: none; }
+  .view.active { display: block; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 18px; margin: 14px 0;
+  }
+  .card h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  .card h3 { font-size: .95rem; margin: 14px 0 6px; color: var(--muted); }
+
+  button.primary, button.ghost, button.danger, button.mini {
+    border: 0; border-radius: 8px; cursor: pointer; font-size: .92rem; font-family: inherit;
+  }
+  button.primary { background: linear-gradient(90deg, var(--accent), var(--accent2)); color: #fff; padding: 9px 18px; font-weight: 600; }
+  button.primary:hover { filter: brightness(1.1); }
+  button.ghost { background: #ffffff12; color: var(--text); padding: 9px 16px; }
+  button.ghost:hover { background: #ffffff20; }
+  button.danger { background: #ff6b6b22; color: var(--bad); padding: 8px 14px; }
+  button.danger:hover { background: #ff6b6b33; }
+  button.mini { background: #ffffff12; color: var(--text); padding: 3px 9px; font-size: .8rem; }
+  button.mini:hover { background: #ffffff22; }
+  button:disabled { opacity: .4; cursor: default; }
+
+  label { display: block; font-size: .82rem; color: var(--muted); margin: 10px 0 4px; }
+  input[type=text], input[type=number], input[type=url], textarea, select {
+    width: 100%; background: var(--panel2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;
+    font-size: .95rem; font-family: inherit;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  textarea { resize: vertical; min-height: 70px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .row > div { flex: 1; min-width: 160px; }
+  .note { font-size: .8rem; color: var(--muted); }
+
+  /* プロジェクト一覧 */
+  .proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .proj-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; cursor: pointer; transition: border-color .15s, transform .15s;
+  }
+  .proj-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+  .proj-card h3 { margin: 0 0 6px; font-size: 1rem; color: var(--text); }
+  .proj-card .meta { font-size: .8rem; color: var(--muted); }
+  .progress { height: 8px; background: #ffffff14; border-radius: 4px; overflow: hidden; margin-top: 10px; }
+  .progress > div { height: 100%; background: linear-gradient(90deg, var(--accent), var(--ok)); transition: width .3s; }
+
+  /* 統計 */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .stat .num { font-size: 1.6rem; font-weight: 700; }
+  .stat .lbl { font-size: .78rem; color: var(--muted); }
+
+  /* カット表 */
+  .cut {
+    background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 12px 14px; margin: 10px 0;
+  }
+  .cut-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .cut-no {
+    background: #6c8cff22; color: var(--accent); font-weight: 700; font-size: .85rem;
+    border-radius: 6px; padding: 2px 10px; white-space: nowrap;
+  }
+  .cut-title { font-weight: 600; flex: 1; min-width: 120px; }
+  .badge { font-size: .75rem; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+  .st-todo    { background: #9aa1b222; color: var(--muted); }
+  .st-prompt  { background: #6c8cff22; color: var(--accent); }
+  .st-gen     { background: #ffb45422; color: var(--warn); }
+  .st-retake  { background: #ff6b6b22; color: var(--bad); }
+  .st-done    { background: #3ecf8e22; color: var(--ok); }
+  .cut-body { margin-top: 10px; display: none; }
+  .cut.open .cut-body { display: block; }
+  .cut-prompt {
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-family: ui-monospace, Consolas, monospace; font-size: .84rem;
+    white-space: pre-wrap; word-break: break-word; position: relative; margin-top: 4px;
+  }
+  .toolchip { font-size: .75rem; background: #8f6cff22; color: #b9a4ff; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+
+  /* ツール一覧 */
+  .tool-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+  .tool-card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
+  .tool-card h3 { margin: 0 0 4px; font-size: .98rem; color: var(--text); }
+  .tool-card a { color: var(--accent); font-size: .85rem; text-decoration: none; }
+  .tool-card a:hover { text-decoration: underline; }
+  .tool-cat { font-size: .72rem; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+
+  dialog {
+    background: var(--panel); color: var(--text); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px 22px; max-width: 640px; width: calc(100vw - 40px);
+  }
+  dialog::backdrop { background: #000a; backdrop-filter: blur(3px); }
+  dialog h2 { margin-top: 0; font-size: 1.05rem; }
+  .dialog-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+
+  .toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #2a2f40; border: 1px solid var(--border); color: var(--text);
+    padding: 10px 22px; border-radius: 999px; font-size: .9rem; z-index: 100;
+    opacity: 0; transition: opacity .25s; pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+  .empty { text-align: center; color: var(--muted); padding: 40px 0; }
+  .backlink { color: var(--accent); cursor: pointer; font-size: .88rem; background: none; border: 0; padding: 0; }
+  .backlink:hover { text-decoration: underline; }
+  .timeline { display: flex; gap: 4px; margin: 12px 0; height: 34px; border-radius: 8px; overflow: hidden; }
+  .timeline > div {
+    display: flex; align-items: center; justify-content: center;
+    font-size: .7rem; color: #fff; min-width: 26px; cursor: pointer; opacity: .9;
+  }
+  .timeline > div:hover { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="logo">▶ AI Video Studio</span> <span class="note">動画制作統括ハブ</span></h1>
+  <nav>
+    <button data-view="dashboard" class="active">📋 プロジェクト</button>
+    <button data-view="prompt">✍️ プロンプト作成</button>
+    <button data-view="tools">🧰 AIツール</button>
+    <button data-view="settings">⚙️ データ管理</button>
+  </nav>
+  <div class="spacer"></div>
+</header>
+
+<main>
+
+<!-- ========== プロジェクト一覧 / ダッシュボード ========== -->
+<section id="view-dashboard" class="view active">
+  <div class="stats" id="globalStats"></div>
+  <div class="card">
+    <div class="row" style="align-items:center">
+      <h2 style="margin:0; flex:1">プロジェクト一覧</h2>
+      <div style="flex:0"><button class="primary" id="btnNewProject">＋ 新規プロジェクト</button></div>
+    </div>
+    <div class="proj-grid" id="projGrid" style="margin-top:14px"></div>
+    <div class="empty" id="projEmpty" style="display:none">
+      まだプロジェクトがありません。<br>「＋ 新規プロジェクト」から最初の動画企画を作りましょう。
+    </div>
+  </div>
+</section>
+
+<!-- ========== プロジェクト詳細（カット表） ========== -->
+<section id="view-project" class="view">
+  <button class="backlink" id="btnBackToList">← プロジェクト一覧へ戻る</button>
+  <div class="card">
+    <div class="row" style="align-items:center">
+      <h2 style="margin:0; flex:1" id="projTitle"></h2>
+      <div style="flex:0; display:flex; gap:8px">
+        <button class="ghost" id="btnEditProject">編集</button>
+        <button class="danger" id="btnDeleteProject">削除</button>
+      </div>
+    </div>
+    <p class="note" id="projDesc"></p>
+    <div class="stats" id="projStats" style="margin-top:10px"></div>
+    <h3>タイムライン（クリックでカットへ）</h3>
+    <div class="timeline" id="timeline"></div>
+  </div>
+
+  <div class="card">
+    <div class="row" style="align-items:center">
+      <h2 style="margin:0; flex:1">カット表（シーン一覧）</h2>
+      <div style="flex:0"><button class="primary" id="btnNewCut">＋ カットを追加</button></div>
+    </div>
+    <div id="cutList"></div>
+    <div class="empty" id="cutEmpty" style="display:none">
+      カットがまだありません。動画をシーンごとに分割して登録しましょう。
+    </div>
+  </div>
+</section>
+
+<!-- ========== プロンプト作成支援 ========== -->
+<section id="view-prompt" class="view">
+  <div class="card">
+    <h2>✍️ プロンプトビルダー</h2>
+    <p class="note">項目を埋めると、Seedance などの動画生成AIに貼り付けられるプロンプトを組み立てます。生成先ツールに合わせて英語で出力します。</p>
+    <div class="row">
+      <div>
+        <label>被写体・主役（例：白い子猫、宇宙飛行士）</label>
+        <input type="text" id="pbSubject" placeholder="a white kitten">
+      </div>
+      <div>
+        <label>アクション・動き（例：雨の街を走る）</label>
+        <input type="text" id="pbAction" placeholder="running through a rainy neon city street">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>場所・背景</label>
+        <input type="text" id="pbScene" placeholder="Tokyo back alley at night">
+      </div>
+      <div>
+        <label>スタイル・画風</label>
+        <select id="pbStyle">
+          <option value="">指定なし</option>
+          <option value="cinematic, photorealistic">シネマティック実写</option>
+          <option value="anime style, cel shading">アニメ調</option>
+          <option value="3D render, Pixar style">3DCG（Pixar風）</option>
+          <option value="watercolor illustration">水彩イラスト</option>
+          <option value="cyberpunk, neon lighting">サイバーパンク</option>
+          <option value="documentary footage, handheld">ドキュメンタリー風</option>
+          <option value="vintage film, 35mm, film grain">フィルム風（35mm）</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>カメラワーク</label>
+        <select id="pbCamera">
+          <option value="">指定なし</option>
+          <option value="slow dolly in">ゆっくり寄る（ドリーイン）</option>
+          <option value="dolly out">引き（ドリーアウト）</option>
+          <option value="tracking shot, following the subject">追従（トラッキング）</option>
+          <option value="aerial drone shot">ドローン空撮</option>
+          <option value="low angle shot">ローアングル</option>
+          <option value="top-down overhead shot">真俯瞰</option>
+          <option value="handheld camera, slight shake">手持ち風</option>
+          <option value="360 degree orbit around the subject">被写体の周りを一周</option>
+          <option value="static camera, fixed shot">固定カメラ</option>
+        </select>
+      </div>
+      <div>
+        <label>ライティング・時間帯</label>
+        <select id="pbLight">
+          <option value="">指定なし</option>
+          <option value="golden hour sunlight">夕方の光（ゴールデンアワー）</option>
+          <option value="soft morning light">朝のやわらかい光</option>
+          <option value="dramatic rim lighting">ドラマチックな逆光</option>
+          <option value="neon lights, night">ネオン・夜</option>
+          <option value="overcast, diffused light">曇天のフラットな光</option>
+          <option value="candlelight, warm tones">キャンドル・暖色</option>
+        </select>
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label>雰囲気・ムード（例：切ない、迫力がある）</label>
+        <input type="text" id="pbMood" placeholder="melancholic, emotional">
+      </div>
+      <div>
+        <label>アスペクト比・その他指定</label>
+        <select id="pbExtra">
+          <option value="">指定なし</option>
+          <option value="16:9 aspect ratio">横型 16:9（YouTube）</option>
+          <option value="9:16 aspect ratio, vertical video">縦型 9:16（Shorts/TikTok）</option>
+          <option value="1:1 aspect ratio">正方形 1:1</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap">
+      <button class="primary" id="pbBuild">プロンプトを組み立てる</button>
+      <button class="ghost" id="pbCopy" disabled>📋 コピー</button>
+      <button class="ghost" id="pbSaveToCut" disabled>カットに保存…</button>
+    </div>
+    <label>生成されたプロンプト（編集可）</label>
+    <textarea id="pbResult" placeholder="ここに組み立て結果が表示されます" style="min-height:100px"></textarea>
+  </div>
+
+  <div class="card">
+    <h2>💡 プロンプトのコツ（動画生成AI共通）</h2>
+    <ul class="note" style="margin:6px 0; padding-left:20px">
+      <li>「被写体 + 動き + 場所 + カメラ + スタイル + 光」の順で書くと安定しやすい</li>
+      <li>1カット1アクション。動きを詰め込みすぎると破綻しやすい</li>
+      <li>Seedance はカメラワークの指示（dolly / tracking / orbit など）に強い</li>
+      <li>キャラクターの一貫性が必要な場合は、参照画像機能（image-to-video）を使う</li>
+      <li>ネガティブ指定が使えるツールでは「blurry, distorted, extra limbs」等を除外指定</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ========== AIツール管理 ========== -->
+<section id="view-tools" class="view">
+  <div class="card">
+    <div class="row" style="align-items:center">
+      <h2 style="margin:0; flex:1">🧰 使用するAIツール</h2>
+      <div style="flex:0"><button class="primary" id="btnNewTool">＋ ツールを追加</button></div>
+    </div>
+    <p class="note">制作に使うAIサービスをここに登録しておくと、カット表の「使用ツール」で選べるようになります。</p>
+    <div class="tool-grid" id="toolGrid" style="margin-top:12px"></div>
+  </div>
+</section>
+
+<!-- ========== データ管理 ========== -->
+<section id="view-settings" class="view">
+  <div class="card">
+    <h2>⚙️ データ管理</h2>
+    <p class="note">データはこのブラウザ（localStorage）にのみ保存されます。別の端末で使う場合や、バックアップにはJSONエクスポートを使ってください。</p>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px">
+      <button class="primary" id="btnExport">⬇ JSONエクスポート</button>
+      <button class="ghost" id="btnImport">⬆ JSONインポート</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+      <button class="danger" id="btnWipe">全データ削除</button>
+    </div>
+  </div>
+  <div class="card">
+    <h2>このアプリについて</h2>
+    <p class="note">
+      AI Video Studio は、Seedance をはじめとする複数の生成AIツールを使った動画制作を統括するためのハブです。
+      企画をプロジェクトとして登録し、動画をカット（シーン）に分割、各カットのプロンプト・使用ツール・生成状況・完成物URLを一元管理します。
+      各AIツールでの生成自体は、それぞれの公式サイト上で行ってください（プロンプトはここからコピーできます）。
+    </p>
+  </div>
+</section>
+
+</main>
+
+<!-- ========== ダイアログ：プロジェクト ========== -->
+<dialog id="dlgProject">
+  <h2 id="dlgProjectTitle">新規プロジェクト</h2>
+  <label>プロジェクト名 *</label>
+  <input type="text" id="fProjName" placeholder="例：商品PR動画 30秒">
+  <label>概要・目的</label>
+  <textarea id="fProjDesc" placeholder="どんな動画？ 誰向け？ 完成イメージなど"></textarea>
+  <div class="row">
+    <div>
+      <label>目標尺（秒）</label>
+      <input type="number" id="fProjLen" min="0" placeholder="30">
+    </div>
+    <div>
+      <label>納期・目標日</label>
+      <input type="text" id="fProjDue" placeholder="2026-09-01">
+    </div>
+  </div>
+  <div class="dialog-actions">
+    <button class="ghost" id="dlgProjectCancel">キャンセル</button>
+    <button class="primary" id="dlgProjectSave">保存</button>
+  </div>
+</dialog>
+
+<!-- ========== ダイアログ：カット ========== -->
+<dialog id="dlgCut">
+  <h2 id="dlgCutTitle">カットを追加</h2>
+  <div class="row">
+    <div style="flex:2">
+      <label>シーン名 *</label>
+      <input type="text" id="fCutName" placeholder="例：オープニング／商品アップ">
+    </div>
+    <div>
+      <label>長さ（秒）</label>
+      <input type="number" id="fCutLen" min="0" step="0.5" placeholder="5">
+    </div>
+  </div>
+  <label>内容メモ（何が起こるカット？）</label>
+  <textarea id="fCutDesc" placeholder="例：商品が回転しながらアップになる"></textarea>
+  <div class="row">
+    <div>
+      <label>使用ツール</label>
+      <select id="fCutTool"></select>
+    </div>
+    <div>
+      <label>ステータス</label>
+      <select id="fCutStatus"></select>
+    </div>
+  </div>
+  <label>生成プロンプト</label>
+  <textarea id="fCutPrompt" placeholder="AIツールに入力するプロンプト"></textarea>
+  <label>完成物のURL・保存場所メモ</label>
+  <input type="text" id="fCutOutput" placeholder="例：https://... / Googleドライブ / ローカル保存先など">
+  <div class="dialog-actions">
+    <button class="ghost" id="dlgCutCancel">キャンセル</button>
+    <button class="primary" id="dlgCutSave">保存</button>
+  </div>
+</dialog>
+
+<!-- ========== ダイアログ：ツール ========== -->
+<dialog id="dlgTool">
+  <h2 id="dlgToolTitle">ツールを追加</h2>
+  <label>ツール名 *</label>
+  <input type="text" id="fToolName" placeholder="例：Seedance">
+  <div class="row">
+    <div>
+      <label>カテゴリ</label>
+      <select id="fToolCat">
+        <option>動画生成</option>
+        <option>画像生成</option>
+        <option>音楽生成</option>
+        <option>音声・ナレーション</option>
+        <option>編集・仕上げ</option>
+        <option>その他</option>
+      </select>
+    </div>
+    <div>
+      <label>URL</label>
+      <input type="url" id="fToolUrl" placeholder="https://">
+    </div>
+  </div>
+  <label>メモ（得意なこと・プラン等）</label>
+  <textarea id="fToolNote" placeholder="例：カメラワーク指示に強い。1080p対応。"></textarea>
+  <div class="dialog-actions">
+    <button class="danger" id="dlgToolDelete" style="margin-right:auto; display:none">削除</button>
+    <button class="ghost" id="dlgToolCancel">キャンセル</button>
+    <button class="primary" id="dlgToolSave">保存</button>
+  </div>
+</dialog>
+
+<!-- ========== ダイアログ：カット選択（プロンプト保存先） ========== -->
+<dialog id="dlgPickCut">
+  <h2>プロンプトの保存先</h2>
+  <label>プロジェクト</label>
+  <select id="pickProj"></select>
+  <label>カット（既存に上書き／新規作成）</label>
+  <select id="pickCut"></select>
+  <div class="dialog-actions">
+    <button class="ghost" id="pickCancel">キャンセル</button>
+    <button class="primary" id="pickSave">保存</button>
+  </div>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+// ====================== データ層 ======================
+const STORAGE_KEY = "aivs_data_v1";
+
+const STATUSES = [
+  { id: "todo",   label: "未着手",         cls: "st-todo" },
+  { id: "prompt", label: "プロンプト済",   cls: "st-prompt" },
+  { id: "gen",    label: "生成中",         cls: "st-gen" },
+  { id: "retake", label: "リテイク",       cls: "st-retake" },
+  { id: "done",   label: "完成",           cls: "st-done" },
+];
+const STATUS_COLORS = { todo:"#4a5065", prompt:"#6c8cff", gen:"#ffb454", retake:"#ff6b6b", done:"#3ecf8e" };
+
+const DEFAULT_TOOLS = [
+  { id: "t_seedance", name: "Seedance", cat: "動画生成", url: "https://seed.bytedance.com/seedance", note: "ByteDanceの動画生成AI。カメラワークやマルチショットに強い。" },
+  { id: "t_sora",     name: "Sora",     cat: "動画生成", url: "https://sora.com", note: "OpenAIの動画生成AI。" },
+  { id: "t_veo",      name: "Veo",      cat: "動画生成", url: "https://deepmind.google/models/veo/", note: "Googleの動画生成AI。音声付き生成に対応。" },
+  { id: "t_kling",    name: "Kling",    cat: "動画生成", url: "https://klingai.com", note: "Kuaishouの動画生成AI。" },
+  { id: "t_runway",   name: "Runway",   cat: "動画生成", url: "https://runwayml.com", note: "Gen系モデル。編集機能も豊富。" },
+  { id: "t_pika",     name: "Pika",     cat: "動画生成", url: "https://pika.art", note: "手軽なショート動画生成。" },
+  { id: "t_mj",       name: "Midjourney", cat: "画像生成", url: "https://www.midjourney.com", note: "参照画像・キービジュアル作りに。" },
+  { id: "t_suno",     name: "Suno",     cat: "音楽生成", url: "https://suno.com", note: "BGM・主題歌の生成に。" },
+  { id: "t_eleven",   name: "ElevenLabs", cat: "音声・ナレーション", url: "https://elevenlabs.io", note: "ナレーション・セリフの音声合成。" },
+  { id: "t_capcut",   name: "CapCut",   cat: "編集・仕上げ", url: "https://www.capcut.com", note: "カット編集・テロップ・書き出し。" },
+];
+
+let db = load();
+
+function load() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      if (d && Array.isArray(d.projects) && Array.isArray(d.tools)) return d;
+    }
+  } catch (e) { /* 壊れたデータは初期化 */ }
+  return { projects: [], tools: DEFAULT_TOOLS.slice() };
+}
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+function uid(prefix) { return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// ====================== 共通UI ======================
+const $ = id => document.getElementById(id);
+let currentProjectId = null;
+
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._tm);
+  toast._tm = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function switchView(name) {
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  $("view-" + name).classList.add("active");
+  document.querySelectorAll("nav button").forEach(b =>
+    b.classList.toggle("active", b.dataset.view === name ||
+      (name === "project" && b.dataset.view === "dashboard")));
+}
+document.querySelectorAll("nav button").forEach(b => {
+  b.addEventListener("click", () => {
+    switchView(b.dataset.view);
+    if (b.dataset.view === "dashboard") renderDashboard();
+    if (b.dataset.view === "tools") renderTools();
+  });
+});
+
+function statusOf(id) { return STATUSES.find(s => s.id === id) || STATUSES[0]; }
+function toolName(id) { const t = db.tools.find(t => t.id === id); return t ? t.name : "未定"; }
+
+// ====================== ダッシュボード ======================
+function projectProgress(p) {
+  if (!p.cuts.length) return 0;
+  return Math.round(p.cuts.filter(c => c.status === "done").length / p.cuts.length * 100);
+}
+
+function renderDashboard() {
+  const totalCuts = db.projects.reduce((n, p) => n + p.cuts.length, 0);
+  const doneCuts = db.projects.reduce((n, p) => n + p.cuts.filter(c => c.status === "done").length, 0);
+  const genCuts = db.projects.reduce((n, p) => n + p.cuts.filter(c => c.status === "gen").length, 0);
+  $("globalStats").innerHTML = `
+    <div class="stat"><div class="num">${db.projects.length}</div><div class="lbl">プロジェクト</div></div>
+    <div class="stat"><div class="num">${totalCuts}</div><div class="lbl">総カット数</div></div>
+    <div class="stat"><div class="num" style="color:var(--warn)">${genCuts}</div><div class="lbl">生成中</div></div>
+    <div class="stat"><div class="num" style="color:var(--ok)">${doneCuts}</div><div class="lbl">完成カット</div></div>`;
+
+  const grid = $("projGrid");
+  grid.innerHTML = "";
+  $("projEmpty").style.display = db.projects.length ? "none" : "block";
+  for (const p of db.projects) {
+    const prog = projectProgress(p);
+    const total = p.cuts.reduce((n, c) => n + (Number(c.len) || 0), 0);
+    const el = document.createElement("div");
+    el.className = "proj-card";
+    el.innerHTML = `
+      <h3>${esc(p.name)}</h3>
+      <div class="meta">${p.cuts.length} カット ・ 合計 ${total}秒${p.due ? " ・ 期限 " + esc(p.due) : ""}</div>
+      <div class="progress"><div style="width:${prog}%"></div></div>
+      <div class="meta" style="margin-top:4px">${prog}% 完成</div>`;
+    el.addEventListener("click", () => openProject(p.id));
+    grid.appendChild(el);
+  }
+}
+
+// ====================== プロジェクト詳細 ======================
+function currentProject() { return db.projects.find(p => p.id === currentProjectId) || null; }
+
+function openProject(id) {
+  currentProjectId = id;
+  renderProject();
+  switchView("project");
+}
+$("btnBackToList").addEventListener("click", () => { switchView("dashboard"); renderDashboard(); });
+
+function renderProject() {
+  const p = currentProject();
+  if (!p) { switchView("dashboard"); renderDashboard(); return; }
+  $("projTitle").textContent = p.name;
+  $("projDesc").textContent = p.desc || "";
+
+  const total = p.cuts.reduce((n, c) => n + (Number(c.len) || 0), 0);
+  const byStatus = {};
+  for (const s of STATUSES) byStatus[s.id] = p.cuts.filter(c => c.status === s.id).length;
+  $("projStats").innerHTML = `
+    <div class="stat"><div class="num">${p.cuts.length}</div><div class="lbl">カット数</div></div>
+    <div class="stat"><div class="num">${total}<span style="font-size:.8rem">秒</span>${p.targetLen ? `<span style="font-size:.8rem;color:var(--muted)"> / ${p.targetLen}秒</span>` : ""}</div><div class="lbl">合計尺</div></div>
+    <div class="stat"><div class="num" style="color:var(--warn)">${byStatus.gen + byStatus.retake}</div><div class="lbl">作業中・リテイク</div></div>
+    <div class="stat"><div class="num" style="color:var(--ok)">${projectProgress(p)}%</div><div class="lbl">完成率</div></div>`;
+
+  // タイムライン
+  const tl = $("timeline");
+  tl.innerHTML = "";
+  const totalLen = p.cuts.reduce((n, c) => n + (Number(c.len) || 3), 0) || 1;
+  p.cuts.forEach((c, i) => {
+    const seg = document.createElement("div");
+    const len = Number(c.len) || 3;
+    seg.style.flex = String(len / totalLen);
+    seg.style.background = STATUS_COLORS[c.status] || STATUS_COLORS.todo;
+    seg.textContent = i + 1;
+    seg.title = `#${i + 1} ${c.name}（${c.len || "?"}秒）`;
+    seg.addEventListener("click", () => {
+      const el = document.querySelector(`[data-cut="${c.id}"]`);
+      if (el) { el.classList.add("open"); el.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    });
+    tl.appendChild(seg);
+  });
+
+  // カット一覧
+  const list = $("cutList");
+  list.innerHTML = "";
+  $("cutEmpty").style.display = p.cuts.length ? "none" : "block";
+  p.cuts.forEach((c, i) => {
+    const st = statusOf(c.status);
+    const el = document.createElement("div");
+    el.className = "cut";
+    el.dataset.cut = c.id;
+    el.innerHTML = `
+      <div class="cut-head">
+        <span class="cut-no">#${i + 1}</span>
+        <span class="cut-title">${esc(c.name)}</span>
+        <span class="toolchip">${esc(toolName(c.tool))}</span>
+        <span class="note">${c.len ? esc(c.len) + "秒" : ""}</span>
+        <span class="badge ${st.cls}">${st.label}</span>
+        <button class="mini" data-act="toggle">詳細</button>
+      </div>
+      <div class="cut-body">
+        ${c.desc ? `<p class="note" style="margin:6px 0">${esc(c.desc)}</p>` : ""}
+        ${c.prompt ? `<label style="margin-top:6px">プロンプト</label><div class="cut-prompt">${esc(c.prompt)}</div>` : `<p class="note">プロンプト未設定</p>`}
+        ${c.output ? `<label style="margin-top:8px">完成物</label><div class="note">${linkify(c.output)}</div>` : ""}
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center">
+          ${c.prompt ? `<button class="mini" data-act="copy">📋 プロンプトをコピー</button>` : ""}
+          <select data-act="status" style="width:auto; font-size:.82rem; padding:4px 8px">
+            ${STATUSES.map(s => `<option value="${s.id}" ${s.id === c.status ? "selected" : ""}>${s.label}</option>`).join("")}
+          </select>
+          <button class="mini" data-act="edit">✏️ 編集</button>
+          <button class="mini" data-act="up" ${i === 0 ? "disabled" : ""}>↑</button>
+          <button class="mini" data-act="down" ${i === p.cuts.length - 1 ? "disabled" : ""}>↓</button>
+          <button class="mini" data-act="del" style="color:var(--bad)">削除</button>
+        </div>
+      </div>`;
+
+    el.querySelector('[data-act="toggle"]').addEventListener("click", () => el.classList.toggle("open"));
+    el.querySelector('.cut-head .cut-title').addEventListener("click", () => el.classList.toggle("open"));
+    const copyBtn = el.querySelector('[data-act="copy"]');
+    if (copyBtn) copyBtn.addEventListener("click", () => copyText(c.prompt));
+    el.querySelector('[data-act="status"]').addEventListener("change", ev => {
+      c.status = ev.target.value; save(); renderProject();
+    });
+    el.querySelector('[data-act="edit"]').addEventListener("click", () => openCutDialog(c.id));
+    el.querySelector('[data-act="up"]').addEventListener("click", () => moveCut(i, -1));
+    el.querySelector('[data-act="down"]').addEventListener("click", () => moveCut(i, 1));
+    el.querySelector('[data-act="del"]').addEventListener("click", () => {
+      if (confirm(`カット「${c.name}」を削除しますか？`)) {
+        p.cuts = p.cuts.filter(x => x.id !== c.id); save(); renderProject();
+      }
+    });
+    list.appendChild(el);
+  });
+}
+
+function linkify(s) {
+  const e = esc(s);
+  return e.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:var(--accent)">$1</a>');
+}
+
+function moveCut(i, dir) {
+  const p = currentProject();
+  const j = i + dir;
+  if (j < 0 || j >= p.cuts.length) return;
+  [p.cuts[i], p.cuts[j]] = [p.cuts[j], p.cuts[i]];
+  save(); renderProject();
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast("コピーしました");
+  } catch (e) {
+    // クリップボードAPI不可時のフォールバック
+    const ta = document.createElement("textarea");
+    ta.value = text; document.body.appendChild(ta);
+    ta.select(); document.execCommand("copy"); ta.remove();
+    toast("コピーしました");
+  }
+}
+
+// ====================== プロジェクト作成・編集 ======================
+let editingProjectId = null;
+
+$("btnNewProject").addEventListener("click", () => {
+  editingProjectId = null;
+  $("dlgProjectTitle").textContent = "新規プロジェクト";
+  $("fProjName").value = ""; $("fProjDesc").value = "";
+  $("fProjLen").value = ""; $("fProjDue").value = "";
+  $("dlgProject").showModal();
+});
+$("btnEditProject").addEventListener("click", () => {
+  const p = currentProject(); if (!p) return;
+  editingProjectId = p.id;
+  $("dlgProjectTitle").textContent = "プロジェクトを編集";
+  $("fProjName").value = p.name; $("fProjDesc").value = p.desc || "";
+  $("fProjLen").value = p.targetLen || ""; $("fProjDue").value = p.due || "";
+  $("dlgProject").showModal();
+});
+$("dlgProjectCancel").addEventListener("click", () => $("dlgProject").close());
+$("dlgProjectSave").addEventListener("click", () => {
+  const name = $("fProjName").value.trim();
+  if (!name) { alert("プロジェクト名を入れてください"); return; }
+  if (editingProjectId) {
+    const p = db.projects.find(x => x.id === editingProjectId);
+    p.name = name; p.desc = $("fProjDesc").value.trim();
+    p.targetLen = $("fProjLen").value; p.due = $("fProjDue").value.trim();
+    save(); $("dlgProject").close(); renderProject();
+  } else {
+    const p = { id: uid("p"), name, desc: $("fProjDesc").value.trim(),
+      targetLen: $("fProjLen").value, due: $("fProjDue").value.trim(), cuts: [] };
+    db.projects.push(p); save(); $("dlgProject").close();
+    openProject(p.id);
+  }
+  toast("保存しました");
+});
+$("btnDeleteProject").addEventListener("click", () => {
+  const p = currentProject(); if (!p) return;
+  if (confirm(`プロジェクト「${p.name}」を完全に削除しますか？（カットも消えます）`)) {
+    db.projects = db.projects.filter(x => x.id !== p.id);
+    save(); switchView("dashboard"); renderDashboard();
+  }
+});
+
+// ====================== カット作成・編集 ======================
+let editingCutId = null;
+
+function fillToolSelect(sel, selectedId) {
+  sel.innerHTML = `<option value="">未定</option>` +
+    db.tools.map(t => `<option value="${t.id}" ${t.id === selectedId ? "selected" : ""}>${esc(t.name)}（${esc(t.cat)}）</option>`).join("");
+}
+function fillStatusSelect(sel, selectedId) {
+  sel.innerHTML = STATUSES.map(s => `<option value="${s.id}" ${s.id === selectedId ? "selected" : ""}>${s.label}</option>`).join("");
+}
+
+$("btnNewCut").addEventListener("click", () => openCutDialog(null));
+
+function openCutDialog(cutId) {
+  const p = currentProject(); if (!p) return;
+  editingCutId = cutId;
+  const c = cutId ? p.cuts.find(x => x.id === cutId) : null;
+  $("dlgCutTitle").textContent = c ? "カットを編集" : "カットを追加";
+  $("fCutName").value = c ? c.name : "";
+  $("fCutLen").value = c ? (c.len || "") : "";
+  $("fCutDesc").value = c ? (c.desc || "") : "";
+  $("fCutPrompt").value = c ? (c.prompt || "") : "";
+  $("fCutOutput").value = c ? (c.output || "") : "";
+  fillToolSelect($("fCutTool"), c ? c.tool : "t_seedance");
+  fillStatusSelect($("fCutStatus"), c ? c.status : "todo");
+  $("dlgCut").showModal();
+}
+$("dlgCutCancel").addEventListener("click", () => $("dlgCut").close());
+$("dlgCutSave").addEventListener("click", () => {
+  const p = currentProject(); if (!p) return;
+  const name = $("fCutName").value.trim();
+  if (!name) { alert("シーン名を入れてください"); return; }
+  const data = {
+    name, len: $("fCutLen").value, desc: $("fCutDesc").value.trim(),
+    tool: $("fCutTool").value, status: $("fCutStatus").value,
+    prompt: $("fCutPrompt").value.trim(), output: $("fCutOutput").value.trim(),
+  };
+  if (editingCutId) {
+    Object.assign(p.cuts.find(x => x.id === editingCutId), data);
+  } else {
+    p.cuts.push(Object.assign({ id: uid("c") }, data));
+  }
+  save(); $("dlgCut").close(); renderProject(); toast("保存しました");
+});
+
+// ====================== プロンプトビルダー ======================
+$("pbBuild").addEventListener("click", () => {
+  const parts = [];
+  const subject = $("pbSubject").value.trim();
+  const action = $("pbAction").value.trim();
+  const scene = $("pbScene").value.trim();
+  if (subject && action) parts.push(`${subject} ${action}`);
+  else if (subject) parts.push(subject);
+  else if (action) parts.push(action);
+  if (scene) parts.push(`in ${scene}`);
+  const camera = $("pbCamera").value; if (camera) parts.push(camera);
+  const style = $("pbStyle").value; if (style) parts.push(style);
+  const light = $("pbLight").value; if (light) parts.push(light);
+  const mood = $("pbMood").value.trim(); if (mood) parts.push(`${mood} mood`);
+  const extra = $("pbExtra").value; if (extra) parts.push(extra);
+  if (!parts.length) { alert("最低1つは項目を入れてください"); return; }
+  const prompt = parts.join(", ") + ", high quality, smooth motion";
+  $("pbResult").value = prompt;
+  $("pbCopy").disabled = false;
+  $("pbSaveToCut").disabled = false;
+});
+$("pbResult").addEventListener("input", () => {
+  const has = $("pbResult").value.trim().length > 0;
+  $("pbCopy").disabled = !has;
+  $("pbSaveToCut").disabled = !has;
+});
+$("pbCopy").addEventListener("click", () => copyText($("pbResult").value));
+
+// プロンプトをカットへ保存
+$("pbSaveToCut").addEventListener("click", () => {
+  if (!db.projects.length) { alert("先にプロジェクトを作成してください"); return; }
+  const projSel = $("pickProj");
+  projSel.innerHTML = db.projects.map(p => `<option value="${p.id}" ${p.id === currentProjectId ? "selected" : ""}>${esc(p.name)}</option>`).join("");
+  refreshPickCuts();
+  $("dlgPickCut").showModal();
+});
+$("pickProj").addEventListener("change", refreshPickCuts);
+function refreshPickCuts() {
+  const p = db.projects.find(x => x.id === $("pickProj").value);
+  $("pickCut").innerHTML = `<option value="">＋ 新しいカットとして追加</option>` +
+    (p ? p.cuts.map((c, i) => `<option value="${c.id}">#${i + 1} ${esc(c.name)}</option>`).join("") : "");
+}
+$("pickCancel").addEventListener("click", () => $("dlgPickCut").close());
+$("pickSave").addEventListener("click", () => {
+  const p = db.projects.find(x => x.id === $("pickProj").value);
+  if (!p) return;
+  const prompt = $("pbResult").value.trim();
+  const cutId = $("pickCut").value;
+  if (cutId) {
+    const c = p.cuts.find(x => x.id === cutId);
+    c.prompt = prompt;
+    if (c.status === "todo") c.status = "prompt";
+  } else {
+    p.cuts.push({ id: uid("c"), name: "新規カット", len: "", desc: "",
+      tool: "t_seedance", status: "prompt", prompt, output: "" });
+  }
+  save(); $("dlgPickCut").close(); toast("カットに保存しました");
+  if (p.id === currentProjectId) renderProject();
+});
+
+// ====================== ツール管理 ======================
+let editingToolId = null;
+
+function renderTools() {
+  const grid = $("toolGrid");
+  grid.innerHTML = "";
+  const cats = [...new Set(db.tools.map(t => t.cat))];
+  for (const cat of cats) {
+    for (const t of db.tools.filter(t => t.cat === cat)) {
+      const el = document.createElement("div");
+      el.className = "tool-card";
+      el.innerHTML = `
+        <div class="tool-cat">${esc(t.cat)}</div>
+        <h3>${esc(t.name)}</h3>
+        ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">サイトを開く ↗</a>` : ""}
+        ${t.note ? `<p class="note" style="margin:6px 0 0">${esc(t.note)}</p>` : ""}
+        <div style="margin-top:10px"><button class="mini">✏️ 編集</button></div>`;
+      el.querySelector("button").addEventListener("click", () => openToolDialog(t.id));
+      grid.appendChild(el);
+    }
+  }
+}
+$("btnNewTool").addEventListener("click", () => openToolDialog(null));
+
+function openToolDialog(toolId) {
+  editingToolId = toolId;
+  const t = toolId ? db.tools.find(x => x.id === toolId) : null;
+  $("dlgToolTitle").textContent = t ? "ツールを編集" : "ツールを追加";
+  $("fToolName").value = t ? t.name : "";
+  $("fToolCat").value = t ? t.cat : "動画生成";
+  $("fToolUrl").value = t ? (t.url || "") : "";
+  $("fToolNote").value = t ? (t.note || "") : "";
+  $("dlgToolDelete").style.display = t ? "" : "none";
+  $("dlgTool").showModal();
+}
+$("dlgToolCancel").addEventListener("click", () => $("dlgTool").close());
+$("dlgToolSave").addEventListener("click", () => {
+  const name = $("fToolName").value.trim();
+  if (!name) { alert("ツール名を入れてください"); return; }
+  const data = { name, cat: $("fToolCat").value, url: $("fToolUrl").value.trim(), note: $("fToolNote").value.trim() };
+  if (editingToolId) Object.assign(db.tools.find(x => x.id === editingToolId), data);
+  else db.tools.push(Object.assign({ id: uid("t") }, data));
+  save(); $("dlgTool").close(); renderTools(); toast("保存しました");
+});
+$("dlgToolDelete").addEventListener("click", () => {
+  const t = db.tools.find(x => x.id === editingToolId);
+  if (t && confirm(`ツール「${t.name}」を削除しますか？（カット側の指定は「未定」になります）`)) {
+    db.tools = db.tools.filter(x => x.id !== editingToolId);
+    save(); $("dlgTool").close(); renderTools();
+  }
+});
+
+// ====================== データ管理 ======================
+$("btnExport").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  const d = new Date();
+  const stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+  a.download = `ai-video-studio_backup_${stamp}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+  toast("エクスポートしました");
+});
+$("btnImport").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", async ev => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  try {
+    const d = JSON.parse(await file.text());
+    if (!d || !Array.isArray(d.projects) || !Array.isArray(d.tools)) throw new Error("形式が違います");
+    if (!confirm("現在のデータを読み込んだ内容で置き換えます。よろしいですか？")) return;
+    db = d; save();
+    renderDashboard(); renderTools();
+    switchView("dashboard");
+    toast("インポートしました");
+  } catch (e) {
+    alert("インポートに失敗しました: " + e.message);
+  } finally {
+    ev.target.value = "";
+  }
+});
+$("btnWipe").addEventListener("click", () => {
+  if (confirm("全プロジェクト・カット・ツール設定を削除して初期状態に戻します。よろしいですか？") &&
+      confirm("本当に削除しますか？（この操作は取り消せません）")) {
+    localStorage.removeItem(STORAGE_KEY);
+    db = load();
+    renderDashboard(); renderTools();
+    switchView("dashboard");
+    toast("初期化しました");
+  }
+});
+
+// ====================== 起動 ======================
+renderDashboard();
+renderTools();
+</script>
+</body>
+</html>
