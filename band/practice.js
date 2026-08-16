@@ -243,6 +243,9 @@ async function loopLoadFile(file) {
   const audio = new Audio();
   audio.src = URL.createObjectURL(file);
   audio.preload = "auto";
+  audio.addEventListener("error", () => {
+    loopSetStatus("このファイルは再生できませんでした。対応している音声形式か確認してください。");
+  });
   if ("preservesPitch" in audio) audio.preservesPitch = true;
   if ("webkitPreservesPitch" in audio) audio.webkitPreservesPitch = true;
   audio.playbackRate = Number($("loopSpeed").value);
@@ -373,10 +376,15 @@ function initLooper() {
     const a = loop.audio;
     if (!a) return;
     if (a.paused) {
-      a.play();
-      $("loopPlayBtn").textContent = "一時停止";
-      cancelAnimationFrame(loop.raf);
-      loop.raf = requestAnimationFrame(loopTick);
+      a.play()
+        .then(() => {
+          $("loopPlayBtn").textContent = "一時停止";
+          cancelAnimationFrame(loop.raf);
+          loop.raf = requestAnimationFrame(loopTick);
+        })
+        .catch(() => {
+          loopSetStatus("このファイルは再生できませんでした。対応している音声形式か確認してください。");
+        });
     } else {
       a.pause();
       $("loopPlayBtn").textContent = "再生";

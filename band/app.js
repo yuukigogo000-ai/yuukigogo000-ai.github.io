@@ -477,9 +477,15 @@ function renderEnergy() {
     }
   }
 
+  // 曲数が多いときはラベルを間引いて重なりを防ぐ
+  const labelStep = Math.max(1, Math.ceil(n / 24));
   const labels = entries
-    .map((e, i) => `<text x="${xOf(i).toFixed(1)}" y="${H - 8}" fill="#7d8699" font-size="11"
-      text-anchor="middle">${i + 1}</text>`)
+    .map((e, i) =>
+      i % labelStep === 0 || i === n - 1
+        ? `<text x="${xOf(i).toFixed(1)}" y="${H - 8}" fill="#7d8699" font-size="11"
+      text-anchor="middle">${i + 1}</text>`
+        : ""
+    )
     .join("");
 
   wrap.innerHTML = `
@@ -1134,8 +1140,13 @@ function bindBackup() {
 
 function bindKeyboard() {
   document.addEventListener("keydown", (e) => {
-    const typing = e.target !== document.body;
-    if (e.code === "Space" && !$("tab-metronome").hidden && !typing) {
+    const t = e.target;
+    const tag = t?.tagName;
+    // 入力中は打鍵をアプリのショートカットに横取りしない
+    const typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || t?.isContentEditable;
+    // ボタン上のスペースはボタンのクリックに任せる
+    const interactive = typing || tag === "BUTTON" || tag === "A";
+    if (e.code === "Space" && !$("tab-metronome").hidden && !interactive) {
       e.preventDefault();
       isMetronomeRunning() ? metronomeStop() : metronomeStart();
       return;

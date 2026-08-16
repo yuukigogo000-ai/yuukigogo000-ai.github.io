@@ -193,10 +193,44 @@ function sanitize(raw) {
       })),
     }));
 
-  // live 状態:参照が生きている場合のみ復元
+  // live 状態:形が正しく参照が生きている場合のみ復元(壊れていたら破棄)
   let live = null;
-  if (raw.live && typeof raw.live === "object" && setlists.some((s) => s.id === raw.live.setlistId)) {
-    live = raw.live;
+  const rl = raw.live;
+  if (
+    rl && typeof rl === "object" &&
+    Array.isArray(rl.steps) && rl.steps.length &&
+    setlists.some((s) => s.id === rl.setlistId)
+  ) {
+    const steps = rl.steps
+      .filter((st) => st && (st.type === "song" || st.type === "mc"))
+      .map((st) => ({
+        type: st.type,
+        songId: typeof st.songId === "string" ? st.songId : null,
+        label: String(st.label || "").slice(0, 80),
+        planStart: clampNum(st.planStart, 0, 86400, 0),
+        planSec: clampNum(st.planSec, 0, 6000, 0),
+        index: clampNum(st.index, 1, 999, 1),
+        total: clampNum(st.total, 1, 999, 1),
+      }));
+    if (steps.length) {
+      const now = Date.now();
+      live = {
+        setlistId: rl.setlistId,
+        setlistName: String(rl.setlistName || "").slice(0, 60),
+        steps,
+        idx: clampNum(rl.idx, 0, steps.length - 1, 0),
+        startedAt: Number.isFinite(rl.startedAt) ? rl.startedAt : now,
+        stepStartedAt: Number.isFinite(rl.stepStartedAt) ? rl.stepStartedAt : now,
+        log: (Array.isArray(rl.log) ? rl.log : [])
+          .filter((x) => x && typeof x === "object")
+          .map((x) => ({
+            label: String(x.label || "").slice(0, 80),
+            type: x.type === "mc" ? "mc" : "song",
+            planSec: clampNum(x.planSec, 0, 6000, 0),
+            actualSec: clampNum(x.actualSec, 0, 86400, 0),
+          })),
+      };
+    }
   }
 
   return {

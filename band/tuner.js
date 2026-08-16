@@ -13,6 +13,7 @@ const CLARITY_GATE = 0.3;
 
 let els = null;
 let running = false;
+let starting = false;   // getUserMedia 待ちの二度押しガード
 let stream = null;
 let audioCtx = null;
 let analyser = null;
@@ -162,11 +163,14 @@ function update() {
 }
 
 async function tunerStart() {
+  if (running || starting) return;
+  starting = true;
   try {
     stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false },
     });
   } catch (e) {
+    starting = false;
     els.status.classList.add("error");
     els.status.textContent =
       e && (e.name === "NotAllowedError" || e.name === "SecurityError")
@@ -174,6 +178,7 @@ async function tunerStart() {
         : "マイクを開けませんでした。他のアプリが使用中でないか確認してください。";
     return;
   }
+  starting = false;
   els.status.classList.remove("error");
   audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   await audioCtx.resume();
