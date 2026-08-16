@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>アポ取りAI — マッチングアプリ返信コーチ(MVP)</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+         max-width: 640px; margin: 0 auto; padding: 16px; line-height: 1.65; }
+  h1 { font-size: 1.35rem; margin: 8px 0 2px; }
+  .tagline { color: #888; font-size: .85rem; margin: 0 0 16px; }
+  fieldset { border: 1px solid #8886; border-radius: 10px; margin: 12px 0; padding: 12px 14px; }
+  legend { font-weight: 600; padding: 0 6px; font-size: .92rem; }
+  label { display: block; margin: 8px 0 4px; font-size: .85rem; color: #666; }
+  textarea, input[type=password], input[type=text] {
+    width: 100%; padding: 10px; border: 1px solid #8886; border-radius: 8px;
+    font-size: 1rem; font-family: inherit; }
+  textarea { min-height: 130px; resize: vertical; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .chips input { display: none; }
+  .chips label { display: inline-block; margin: 0; padding: 8px 14px; border: 1px solid #8886;
+    border-radius: 999px; cursor: pointer; font-size: .88rem; color: inherit; user-select: none; }
+  .chips input:checked + label { background: #e8506b; border-color: #e8506b; color: #fff; font-weight: 600; }
+  button.primary { width: 100%; font-size: 1.05rem; font-weight: 700; padding: 14px; border: 0;
+    border-radius: 10px; background: #e8506b; color: #fff; cursor: pointer; margin-top: 14px; }
+  button.primary:disabled { background: #999; cursor: default; }
+  .card { border: 1px solid #8885; border-radius: 10px; padding: 12px 14px; margin: 10px 0; }
+  .card .num { font-size: .75rem; font-weight: 700; color: #e8506b; }
+  .card .reply { font-size: 1rem; white-space: pre-wrap; margin: 4px 0 8px; }
+  .card .why { font-size: .8rem; color: #888; }
+  .card button { font-size: .8rem; padding: 6px 12px; border: 1px solid #8886; background: none;
+    color: inherit; border-radius: 6px; cursor: pointer; }
+  #advice { background: #e8506b14; border-left: 4px solid #e8506b; border-radius: 6px;
+    padding: 10px 14px; font-size: .9rem; margin: 12px 0; }
+  #error { color: #d33; font-size: .9rem; white-space: pre-wrap; margin: 10px 0; }
+  .note { font-size: .78rem; color: #888; }
+  details { margin: 12px 0; }
+  summary { cursor: pointer; font-size: .88rem; font-weight: 600; }
+  .spinner { text-align: center; padding: 18px; color: #888; display: none; }
+</style>
+</head>
+<body>
+
+<h1>💬 アポ取りAI <span style="font-size:.7rem;color:#888;">MVP</span></h1>
+<p class="tagline">マッチングアプリの会話を貼るだけ。デートに繋がる返信をAIが3案提案。送るかどうかはあなたが決める。</p>
+
+<details>
+  <summary>🔑 APIキー設定(初回のみ)</summary>
+  <fieldset style="margin-top:8px;">
+    <label for="apiKey">Anthropic APIキー(sk-ant- で始まる)</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-...">
+    <label style="margin-top:8px;"><input type="checkbox" id="rememberKey"> このブラウザに記憶する</label>
+    <p class="note">※ MVP版のため自分のAPIキーを使用します(キーはあなたのブラウザからAnthropicへ直接送信され、他のサーバーには保存されません)。製品版ではキー不要のサブスク方式にします。キーは <a href="https://console.anthropic.com/" target="_blank" rel="noopener">console.anthropic.com</a> で取得。</p>
+  </fieldset>
+</details>
+
+<fieldset>
+  <legend>1. 相手とのやり取りを貼り付け</legend>
+  <textarea id="conversation" placeholder="例:
+自分: はじめまして!プロフィール見て、カフェ巡り好きって書いてあって気になりました
+相手: ありがとうございます!週末によく行ってます☕
+自分: いいですね!最近どこか行きました?
+相手: 代官山の新しいお店行きましたよ〜"></textarea>
+  <label for="profile">相手のプロフィール情報(任意・あると精度UP)</label>
+  <input type="text" id="profile" placeholder="例: 26歳 看護師 カフェ巡り・韓国ドラマ好き">
+</fieldset>
+
+<fieldset>
+  <legend>2. 今回のゴール</legend>
+  <div class="chips" id="goalChips">
+    <input type="radio" name="goal" id="g1" value="会話を自然に盛り上げて距離を縮める" checked><label for="g1">会話を盛り上げる</label>
+    <input type="radio" name="goal" id="g2" value="自然な流れでデート(食事やカフェ)に誘う"><label for="g2">🎯 デートに誘う</label>
+    <input type="radio" name="goal" id="g3" value="返信が来なくなりかけているので、重くならずに会話を復活させる"><label for="g3">既読スルー対策</label>
+    <input type="radio" name="goal" id="g4" value="マッチ直後の初回メッセージで返信率を最大化する"><label for="g4">初回メッセージ</label>
+  </div>
+  <div class="chips" id="toneChips">
+    <input type="radio" name="tone" id="t1" value="丁寧で誠実" checked><label for="t1">丁寧・誠実</label>
+    <input type="radio" name="tone" id="t2" value="フレンドリーで軽快"><label for="t2">フレンドリー</label>
+    <input type="radio" name="tone" id="t3" value="ユーモアがあって遊び心のある"><label for="t3">ユーモア</label>
+  </div>
+</fieldset>
+
+<button class="primary" id="generate">返信案を3つ提案してもらう</button>
+<div class="spinner" id="spinner">AIが会話を分析中…(数秒〜十数秒)</div>
+
+<div id="error"></div>
+<div id="advice" style="display:none;"></div>
+<div id="results"></div>
+
+<p class="note" style="margin-top:20px;">
+  ⚠️ 提案はあくまで参考です。嘘の自己紹介や相手を騙す内容は提案しません。相手に脈がなさそうな場合は「引き際」もアドバイスします。<br>
+  各マッチングアプリの利用規約を守ってご利用ください。
+</p>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+// APIキーの保存・復元
+const savedKey = localStorage.getItem('reply_ai_key');
+if (savedKey) { $('apiKey').value = savedKey; $('rememberKey').checked = true; }
+
+const SCHEMA = {
+  type: "object",
+  properties: {
+    replies: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          text: { type: "string", description: "そのまま送れる返信文" },
+          why:  { type: "string", description: "この返信が効果的な理由(1文)" }
+        },
+        required: ["text", "why"],
+        additionalProperties: false
+      }
+    },
+    advice: { type: "string", description: "会話全体の状況分析と戦略アドバイス(2〜3文)" }
+  },
+  required: ["replies", "advice"],
+  additionalProperties: false
+};
+
+const SYSTEM_PROMPT = `あなたは日本のマッチングアプリでのコミュニケーションを支援する一流の会話コーチです。男性ユーザーが相手の女性と良い関係を築き、自然にデートに繋げられるよう、返信文を提案します。
+
+ルール:
+- 返信案は必ず3つ。それぞれ異なるアプローチ(例: 共感重視/質問で広げる/軽い提案)にする
+- 相手の直前のメッセージの内容に必ず具体的に反応する(テンプレ感を出さない)
+- 日本のマッチングアプリで自然な、話し言葉のメッセージにする(長すぎない。1〜3文程度)
+- 絵文字は文脈に合えば控えめに使ってよい
+- デートに誘うゴールの場合、会話に出た話題(店・趣味など)に紐づけて自然に誘う
+- 嘘の自己紹介、相手を操作・欺く手法、しつこいプッシュは絶対に提案しない
+- 相手の返信が素っ気ない・脈が薄いと判断される場合は、adviceで正直にそう伝え、深追いしない選択肢も示す`;
+
+$('generate').addEventListener('click', async () => {
+  const key = $('apiKey').value.trim();
+  const conversation = $('conversation').value.trim();
+  $('error').textContent = '';
+  $('results').innerHTML = '';
+  $('advice').style.display = 'none';
+
+  if (!key) { $('error').textContent = '上の「APIキー設定」を開いてAPIキーを入力してください。'; return; }
+  if (!conversation) { $('error').textContent = '相手とのやり取りを貼り付けてください。'; return; }
+
+  if ($('rememberKey').checked) localStorage.setItem('reply_ai_key', key);
+  else localStorage.removeItem('reply_ai_key');
+
+  const goal = document.querySelector('input[name=goal]:checked').value;
+  const tone = document.querySelector('input[name=tone]:checked').value;
+  const profile = $('profile').value.trim();
+
+  const userPrompt =
+    `## 相手のプロフィール\n${profile || '(情報なし)'}\n\n` +
+    `## これまでのやり取り\n${conversation}\n\n` +
+    `## 今回のゴール\n${goal}\n\n` +
+    `## トーン\n${tone}\n\n` +
+    `この状況に最適な返信を3案提案してください。`;
+
+  $('generate').disabled = true;
+  $('spinner').style.display = 'block';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-5',
+        max_tokens: 8000,
+        output_config: {
+          effort: 'low',
+          format: { type: 'json_schema', schema: SCHEMA }
+        },
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: userPrompt }]
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data?.error?.message || `APIエラー (${res.status})`);
+    }
+    if (data.stop_reason === 'refusal') {
+      throw new Error('この内容にはAIが回答できませんでした。入力内容を変えてお試しください。');
+    }
+
+    const textBlock = data.content.find(b => b.type === 'text');
+    if (!textBlock) throw new Error('AIから返信案を取得できませんでした。もう一度お試しください。');
+    const result = JSON.parse(textBlock.text);
+
+    $('advice').textContent = '📊 ' + result.advice;
+    $('advice').style.display = 'block';
+
+    result.replies.forEach((r, i) => {
+      const card = document.createElement('div');
+      card.className = 'card';
+      const num = document.createElement('div'); num.className = 'num'; num.textContent = `案 ${i + 1}`;
+      const reply = document.createElement('div'); reply.className = 'reply'; reply.textContent = r.text;
+      const why = document.createElement('div'); why.className = 'why'; why.textContent = '💡 ' + r.why;
+      const btn = document.createElement('button');
+      btn.textContent = '📋 コピー';
+      btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(r.text);
+        btn.textContent = '✅ コピーしました';
+        setTimeout(() => { btn.textContent = '📋 コピー'; }, 1500);
+      });
+      card.append(num, reply, why, btn);
+      $('results').appendChild(card);
+    });
+  } catch (err) {
+    $('error').textContent = 'エラー: ' + err.message;
+  } finally {
+    $('generate').disabled = false;
+    $('spinner').style.display = 'none';
+  }
+});
+</script>
+</body>
+</html>
