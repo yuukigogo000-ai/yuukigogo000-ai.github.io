@@ -35,7 +35,7 @@
 
   /* ステータスバー */
   .statusbar {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
     gap: 8px; margin-bottom: 12px;
   }
   .stat {
@@ -43,10 +43,11 @@
     padding: 8px 10px;
   }
   .stat .label { font-size: .7rem; color: var(--sub); }
-  .stat .value { font-size: 1.05rem; font-weight: 700; }
+  .stat .value { font-size: 1.0rem; font-weight: 700; }
   .stat .value.money { color: var(--gold); }
   .stat .value.rep { color: var(--cyan); }
   .stat .value.special { color: var(--neon); }
+  .stat .value.debt { color: var(--loss); }
 
   /* タブ */
   .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
@@ -82,6 +83,7 @@
   }
   .machine .msub { font-size: .72rem; color: var(--sub); }
   .machine .mspec { font-size: .68rem; color: var(--cyan); }
+  .machine .mbadge { font-size: .68rem; color: var(--gold); }
   .machine .mstats { font-size: .75rem; min-width: 130px; }
   .popbar { height: 6px; background: #0006; border-radius: 3px; overflow: hidden; margin-top: 3px; width: 120px; }
   .popbar > div { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--neon)); }
@@ -131,6 +133,10 @@
   .chart-legend { font-size: .72rem; color: var(--sub); margin-top: 2px; }
   .chart-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin: 0 3px 0 8px; }
 
+  /* ヒートバー */
+  .heatbar { height: 10px; background: #0006; border-radius: 5px; overflow: hidden; margin: 6px 0; }
+  .heatbar > div { height: 100%; background: linear-gradient(90deg, var(--gold), var(--red)); transition: width .3s; }
+
   /* モーダル */
   .modal-bg {
     display: none; position: fixed; inset: 0; background: #000a; z-index: 100;
@@ -144,6 +150,7 @@
   .modal h2 { margin: 0 0 8px; font-size: 1.1rem; color: var(--gold); }
   .result-row { display: flex; justify-content: space-between; font-size: .88rem; padding: 3px 0; }
   .result-row.total { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; font-weight: 700; }
+  .result-row .dim { color: var(--sub); font-size: .78rem; }
   .eventmsg {
     background: #2b1a3d; border-left: 3px solid var(--neon); border-radius: 6px;
     padding: 8px 10px; font-size: .82rem; margin: 8px 0;
@@ -231,14 +238,16 @@
 <body>
 <div class="wrap">
   <h1>🎰 パチスロ帝国</h1>
-  <p class="tagline">〜 ホール経営シミュレーション 〜 目指せ総資産1億円!</p>
+  <p class="tagline">〜 ホール経営シミュレーション 〜 目指せ純資産1億円!</p>
 
   <div class="statusbar">
     <div class="stat"><div class="label">📅 営業日</div><div class="value" id="stDay">1日目</div></div>
     <div class="stat"><div class="label">💰 資金</div><div class="value money" id="stMoney">¥0</div></div>
     <div class="stat"><div class="label">⭐ 評判</div><div class="value rep" id="stRep">50</div></div>
-    <div class="stat"><div class="label">🎰 設置台数</div><div class="value" id="stMachines">0 / 10</div></div>
-    <div class="stat"><div class="label">🏆 総資産</div><div class="value special" id="stAssets">¥0</div></div>
+    <div class="stat"><div class="label">🫂 常連</div><div class="value" id="stRegs">0人</div></div>
+    <div class="stat"><div class="label">🎰 台数</div><div class="value" id="stMachines">0 / 10</div></div>
+    <div class="stat"><div class="label">🏦 借入</div><div class="value debt" id="stDebt">なし</div></div>
+    <div class="stat"><div class="label">🏆 純資産</div><div class="value special" id="stAssets">¥0</div></div>
   </div>
 
   <div class="tabs">
@@ -252,7 +261,7 @@
   <div class="panel active" id="panel-hall">
     <div class="card">
       <h3>設置中の台</h3>
-      <p class="note">出玉設定を調整しよう。<b>設定1〜2</b>は荒稼ぎできるが評判ダウン、<b>設定5〜6</b>は客が喜ぶが赤字リスクあり。7のつく日(特日)は客が高設定を期待して大勢来店する。「🕹️試打」で閉店後に実際に打って出方を確かめられる(収支に影響なし)。</p>
+      <p class="note">出玉設定を調整しよう。<b>設定1〜2</b>は荒稼ぎできるが評判が下がり、続けると<b>行政指導</b>のリスクも。<b>設定5〜6</b>は常連が育つが<b>プロ(ハイエナ)</b>に狙われる。全台一律より「出す台・回収する台」のメリハリが勝負。同じ機種を並べると<b>シマ効果</b>で人気アップ、週替わりの<b>ブーム</b>機種は集客1.4倍。</p>
       <div id="hallList"></div>
     </div>
   </div>
@@ -261,7 +270,7 @@
   <div class="panel" id="panel-shop">
     <div class="card">
       <h3>メーカーカタログ</h3>
-      <p class="note">新台は導入から5日間「新台効果」で人気1.4倍。人気は日々少しずつ落ちるので、定期的な入替が繁盛のコツ。売却額は購入価格の40%。導入前に「🕹️試打」でスペックを体感できる。</p>
+      <p class="note">新台は導入から5日間「新台効果」で人気1.4倍。同一機種を複数並べるとシマ効果(+6%/台、最大+30%)。売却額は購入価格の40%。導入直後は「新装開店フェア」(経営タブ)で告知すると効果大。</p>
       <div id="shopList"></div>
     </div>
   </div>
@@ -270,7 +279,7 @@
   <div class="panel" id="panel-mgmt">
     <div class="card">
       <h3>👥 スタッフ</h3>
-      <p class="note">台8台につきスタッフ1人が必要。不足すると接客が回らず評判が下がる。日給 ¥13,000/人。</p>
+      <p class="note">台8台につきスタッフ1人が必要。不足すると接客が回らず評判が下がり、常連も育たない。日給 ¥13,000/人。</p>
       <div class="result-row"><span>現在のスタッフ</span><b id="staffCount">2人</b></div>
       <div class="result-row"><span>必要人数</span><b id="staffNeed">1人</b></div>
       <div class="rowbtns">
@@ -284,12 +293,38 @@
       <p class="note" id="adCurrent"></p>
     </div>
     <div class="card">
+      <h3>🎊 新装開店フェア</h3>
+      <p class="note">新台導入から2日以内に開催可能(費用¥300,000・7日に1回まで)。翌営業日の客数1.5倍+評判UP。新台入替とセットで使うのが定石。</p>
+      <div class="rowbtns"><button id="btnGrand" class="buy"></button></div>
+    </div>
+    <div class="card">
       <h3>🏗️ 店舗拡張</h3>
       <div class="result-row"><span>現在の最大設置数</span><b id="capNow">10台</b></div>
       <div class="rowbtns">
         <button id="btnExpand" class="buy"></button>
       </div>
       <p class="note">拡張すると家賃・光熱費も増える。台数を活かせる資金力があるうちに。</p>
+    </div>
+    <div class="card">
+      <h3>🏦 銀行融資</h3>
+      <div class="result-row"><span>借入残高</span><b id="debtNow">¥0</b></div>
+      <div class="result-row"><span>借入可能枠 (台資産×70%+200万)</span><b id="creditNow">¥0</b></div>
+      <div class="result-row"><span>金利</span><b>0.25% / 日 (経費に計上)</b></div>
+      <div class="rowbtns">
+        <button id="btnBorrow" class="buy">借りる (+100万)</button>
+        <button id="btnRepay">返済する (−100万)</button>
+      </div>
+      <p class="note">攻めの拡大に使えるが、利息は毎日重くのしかかる。純資産(資金+台資産−借金)1億円がクリア条件なので借りっぱなしでは勝てない。資金ショート時は枠が残っていれば自動で緊急融資される。</p>
+    </div>
+    <div class="card">
+      <h3>💱 交換率ポリシー</h3>
+      <div class="rowbtns" id="rateButtons"></div>
+      <p class="note" id="rateNote"></p>
+    </div>
+    <div class="card">
+      <h3>🚨 行政・組合の目</h3>
+      <div class="heatbar"><div id="heatFill" style="width:0%"></div></div>
+      <p class="note" id="heatNote"></p>
     </div>
     <div class="card">
       <h3>🏅 実績</h3>
@@ -316,7 +351,7 @@
       <h3>営業成績</h3>
       <div class="tablewrap">
         <table>
-          <thead><tr><th>日</th><th>客数</th><th>売上</th><th>出玉(払出)</th><th>経費</th><th>純利益</th><th>備考</th></tr></thead>
+          <thead><tr><th>日</th><th>客数</th><th>一般/常連/プロ</th><th>売上</th><th>出玉(払出)</th><th>経費</th><th>純利益</th><th>備考</th></tr></thead>
           <tbody id="ledgerBody"></tbody>
         </table>
       </div>
@@ -340,17 +375,22 @@
 <script>
 "use strict";
 // ============================================================
-//  パチスロ帝国 - ホール経営シミュレーション v2
+//  パチスロ帝国 - ホール経営シミュレーション v3 (深化版)
 //  設計: DESIGN.md 参照
 // ============================================================
 
 const SAVE_KEY = "pachi-teikoku-save-v1";
-const GOAL_ASSETS = 100000000; // 1億円でクリア
+const GOAL_ASSETS = 100000000; // 純資産1億円でクリア
 const MAX_CAP = 60;            // 店舗拡張の上限台数
 
+// ---- 難易度 ----
+const DIFFS = {
+  easy:   { label:"のんびり", money:13000000, rentMul:0.8,  proMul:0.6, heatMul:0.7 },
+  normal: { label:"標準",     money:10000000, rentMul:1.0,  proMul:1.0, heatMul:1.0 },
+  hard:   { label:"修羅",     money:7000000,  rentMul:1.35, proMul:1.6, heatMul:1.5 },
+};
+
 // ---- 台カタログ(架空機種) ----
-// P機 spec: denom=大当り確率分母, rushPct=RUSH継続率, firstBalls=初当り出玉, rushBalls=RUSH中出玉
-// S機 spec: big1/big6=BIG確率分母(設定1/6), reg1/reg6=REG, bigPay/regPay=獲得枚数
 const CATALOG = [
   { id:"p1", type:"P", name:"P海のメルヘン 甘デジ",   price: 400000, pop: 50, decay: 0.8, desc:"癒し系の定番。年配客に強い",
     spec:{ denom:99,  rushPct:0.50, firstBalls:300, rushBalls:600,  label:"甘デジ 1/99・RUSH継続50%" } },
@@ -385,6 +425,17 @@ const ADS = [
   { id:"tv",    name:"ローカルTV CM",  cost: 250000, boost: 150 },
 ];
 
+// 週替わりトレンド
+const TRENDS = [
+  { name:"レトロ海物語ブーム", ids:["p1","p2"] },
+  { name:"キャラ機ブーム",     ids:["p3"] },
+  { name:"アニメ版権ブーム",   ids:["p4","p5"] },
+  { name:"ジャグ連フィーバー", ids:["s1"] },
+  { name:"6号機AT再評価",     ids:["s2","s3"] },
+  { name:"スマスロブーム",     ids:["s4","s5"] },
+  { name:"ブームなし",         ids:[] },
+];
+
 // ランダムイベント
 const EVENTS = [
   { p: 0.10, msg:"☔ 大雨。客足が遠のいた…",                custMult: 0.75 },
@@ -401,12 +452,15 @@ const ACHIEVEMENTS = [
   { id:"first-day",  icon:"🔔", name:"開店初日",       desc:"初めて営業した" },
   { id:"million",    icon:"💴", name:"日給100万",      desc:"1日の純利益が100万円を超えた" },
   { id:"rep90",      icon:"🌟", name:"地域の優良店",   desc:"評判が90を超えた" },
+  { id:"reg50",      icon:"🫂", name:"常連の店",       desc:"常連客が50人を超えた" },
   { id:"m20",        icon:"🏬", name:"中堅ホール",     desc:"設置台数20台に到達" },
   { id:"m60",        icon:"🏯", name:"巨艦店",         desc:"設置台数60台(最大)に到達" },
   { id:"d30",        icon:"📆", name:"1ヶ月経営",      desc:"30日間営業を続けた" },
   { id:"tokubi-god", icon:"🔥", name:"特日の神",       desc:"特日を平均設定5以上で営業した" },
-  { id:"asset30m",   icon:"📈", name:"軌道に乗る",     desc:"総資産3,000万円を達成" },
-  { id:"asset100m",  icon:"👑", name:"パチスロ帝国",   desc:"総資産1億円を達成(クリア!)" },
+  { id:"shidou",     icon:"🚨", name:"お上の世話",     desc:"行政指導を受けてしまった…" },
+  { id:"loan-clear", icon:"🏦", name:"信用第一",       desc:"1,000万円以上の借金を完済した" },
+  { id:"asset30m",   icon:"📈", name:"軌道に乗る",     desc:"純資産3,000万円を達成" },
+  { id:"asset100m",  icon:"👑", name:"パチスロ帝国",   desc:"純資産1億円を達成(クリア!)" },
   { id:"trial-hit",  icon:"🎯", name:"初当たり体験",   desc:"試打で大当り/ボーナスを引いた" },
   { id:"trial-10",   icon:"💥", name:"事故連発生",     desc:"試打で10連チャン or BIG10回を達成" },
   { id:"trial-5k",   icon:"🗼", name:"ドル箱タワー",   desc:"試打で差玉+5,000 or 差枚+2,000を達成" },
@@ -419,11 +473,21 @@ const rand = (a, b) => a + Math.random() * (b - a);
 // ---- ゲーム状態 ----
 let state = null;
 
-function newGame() {
+function newGame(diff) {
+  diff = DIFFS[diff] ? diff : "normal";
   return {
     day: 1,
-    money: 10000000,
+    diff: diff,
+    money: DIFFS[diff].money,
     rep: 50,
+    regulars: 8,
+    heat: 0,
+    debt: 0,
+    maxDebt: 0,
+    rate: "normal",     // 交換率: normal=等価 / low=低換金
+    trend: null,
+    grandOpen: false,
+    lastGrand: -99,
     cap: 10,
     staff: 2,
     ad: "none",
@@ -431,9 +495,10 @@ function newGame() {
       makeMachine("p1"),
       makeMachine("s1"),
     ],
-    history: [],   // {day, cust, sales, payout, exp, net, note}
+    history: [],
     ach: [],
     cleared: false,
+    clearDay: null,
     uid: 1000,
   };
 }
@@ -453,16 +518,23 @@ function makeMachine(catalogId) {
 
 function catalogOf(m) { return CATALOG.find(c => c.id === m.cid); }
 function machineValue(m) { return Math.round(catalogOf(m).price * 0.4); }
-function totalAssets() {
-  return state.money + state.machines.reduce((s, m) => s + machineValue(m), 0);
-}
+function machineAssets() { return state.machines.reduce((s, m) => s + machineValue(m), 0); }
+function totalAssets() { return state.money + machineAssets() - state.debt; }
+function creditLimit() { return Math.round(machineAssets() * 0.7) + 2000000; }
 function isTokubi(day) { return String(day).includes("7"); }
 function isWeekend(day) { const w = day % 7; return w === 6 || w === 0; }
 function staffNeeded() { return Math.max(1, Math.ceil(state.machines.length / 8)); }
 
+function islandBonus(cid) {
+  const n = state.machines.filter(x => x.cid === cid).length;
+  return 1 + Math.min(0.06 * (n - 1), 0.3);
+}
+function trendMult(cid) {
+  return state.trend && state.trend.ids.includes(cid) ? 1.4 : 1;
+}
 function effectivePop(m) {
   const isNew = state.day - (m.boughtDay ?? -99) < 5;
-  return m.pop * (isNew ? 1.4 : 1) * (1 + (m.setting - 3) * 0.05);
+  return m.pop * (isNew ? 1.4 : 1) * (1 + (m.setting - 3) * 0.05) * islandBonus(m.cid) * trendMult(m.cid);
 }
 
 // ============================================================
@@ -491,7 +563,17 @@ function toast(msg) {
 // ============================================================
 function simulateDay() {
   const s = state;
+  const D = DIFFS[s.diff] || DIFFS.normal;
   const notes = [];
+
+  // --- トレンド更新(7日ごと) ---
+  if (!s.trend || s.day % 7 === 1) {
+    const t = TRENDS[Math.floor(Math.random() * TRENDS.length)];
+    s.trend = { name: t.name, ids: t.ids.slice() };
+    notes.push(t.ids.length
+      ? `📈 今週の街は「${t.name}」!該当機種の人気1.4倍`
+      : "📉 今週は特にブームなし。地力の勝負。");
+  }
 
   // --- イベント抽選 ---
   let custMult = 1, repDelta = 0, extraCost = 0, marginDelta = 0;
@@ -514,58 +596,100 @@ function simulateDay() {
   if (tokubi) { custMult *= 1.7; notes.push("🔥 本日は特日(7のつく日)!開店前から行列が!"); }
   else if (weekend) { custMult *= 1.3; notes.push("📅 週末で客足は上々。"); }
 
+  // --- 新装開店フェア ---
+  if (s.grandOpen) {
+    s.grandOpen = false;
+    custMult *= 1.5; repDelta += 2;
+    notes.push("🎊 新装開店フェア開催!普段来ない客まで大挙来店!");
+  }
+
+  // --- 設定集計 ---
+  const n = s.machines.length;
+  const avgSet = n ? s.machines.reduce((a, m) => a + m.setting, 0) / n : 3;
+  const highList = s.machines.filter(m => m.setting >= 5);
+
+  // --- 行政・組合ヒート(回収営業の監視) ---
+  if (n && avgSet < 2.6) s.heat += (2.6 - avgSet) * 2.2 * D.heatMul;
+  else s.heat = Math.max(0, s.heat * 0.65 - 0.2);
+  if (s.heat > 8 && Math.random() < 0.25) {
+    extraCost += 500000; repDelta -= 8; s.heat = 2;
+    notes.push("🚨 行政指導が入った!罰金¥500,000、悪評が広がり評判ダウン…");
+    grantAch("shidou");
+  } else if (s.heat > 5) {
+    notes.push("⚠️ 渋い営業が続き、組合・行政の目が厳しくなっている…(指導リスク上昇中)");
+  }
+
   // --- 広告効果 ---
   const ad = ADS.find(a => a.id === s.ad);
   const adBoost = ad.boost;
 
-  // --- 客数(店の規模×評判で決まる) ---
-  const capacity = s.machines.length * 20;
+  // --- 客層別の来店数 ---
+  const capacity = n * 20;
   const fillRate = 0.12 + (s.rep / 100) * 0.78;
-  let customers = Math.floor(Math.min(capacity,
-    (capacity * fillRate * custMult + adBoost) * rand(0.9, 1.1)));
-  if (s.machines.length === 0) customers = 0;
+  const rateMod = s.rate === "low" ? 0.88 : 1;
+  let casual = (capacity * fillRate * custMult + adBoost) * rand(0.9, 1.1);
 
-  // スタッフ不足ペナルティ
   const need = staffNeeded();
-  if (s.staff < need) {
-    customers = Math.floor(customers * 0.85);
-    repDelta -= 2;
+  const staffOK = s.staff >= need;
+  if (!staffOK) {
+    casual *= 0.85; repDelta -= 2;
     notes.push("⚠️ スタッフ不足で店内が回らず、客が苛立っている…");
   }
 
+  let regs = Math.round(s.regulars * (tokubi ? 0.9 : 0.65) * (s.rate === "low" ? 0.95 : 1) * rand(0.9, 1.05));
+  let pros = highList.length
+    ? Math.round(Math.min(highList.length * 3 * D.proMul * (tokubi ? 1.5 : 1), capacity * 0.15) * rand(0.8, 1.2))
+    : 0;
+  if (pros > 0) notes.push(`🕶️ 高設定の匂いを嗅ぎつけたプロが${pros}人来店。彼らは勝ちにだけ来る…`);
+  regs = Math.min(regs, capacity);
+  casual = Math.floor(Math.max(0, Math.min(casual, capacity - regs - pros)) * rateMod);
+  const customers = n ? casual + regs + pros : 0;
+
   // --- 台ごとの売上・粗利 ---
   const totalW = s.machines.reduce((sum, m) => sum + effectivePop(m), 0) || 1;
+  const highW = highList.reduce((sum, m) => sum + effectivePop(m), 0) || 1;
+  const rateBonus = s.rate === "low" ? 0.025 : 0;
   let sales = 0, gross = 0;
   for (const m of s.machines) {
     const c = catalogOf(m);
-    const mCust = customers * (effectivePop(m) / totalW);
-    const spend = (c.type === "P" ? 32000 : 38000) * rand(0.8, 1.2); // 1人あたり投資額
-    const mSales = mCust * spend;
-    const margin = MARGIN[m.setting] + marginDelta + rand(-0.09, 0.09);
-    const mGross = mSales * margin;
+    const w = effectivePop(m) / totalW;
+    const nCas = casual * w;
+    const nReg = regs * w;
+    const nPro = m.setting >= 5 ? pros * (effectivePop(m) / highW) : 0;
+    const spend = (c.type === "P" ? 30000 : 36000) * rand(0.8, 1.2);
+    const margin = MARGIN[m.setting] + rateBonus + marginDelta + rand(-0.09, 0.09);
+    const mSales = nCas * spend + nReg * spend * 1.35 + nPro * 45000;
+    const mGross = (nCas * spend + nReg * spend * 1.35) * margin + nPro * 45000 * (margin - 0.16);
     sales += mSales;
     gross += mGross;
     m.lastNet = Math.round(mGross);
-    m.lastCust = Math.round(mCust);
+    m.lastCust = Math.round(nCas + nReg + nPro);
     m.pop = Math.max(15, m.pop - c.decay * rand(0.7, 1.3));
   }
   const payout = sales - gross;
 
   // --- 経費 ---
-  const rent = 30000 + s.cap * 2500;
+  const rent = Math.round((30000 + s.cap * 2500) * D.rentMul);
   const wages = s.staff * 13000;
-  const utility = s.machines.length * 2500;
-  const adCost = ad.cost;
-  const expenses = rent + wages + utility + adCost + extraCost;
+  const utility = n * 2500;
+  const interest = Math.round(s.debt * 0.0025);
+  const expenses = rent + wages + utility + ad.cost + extraCost + interest;
   if (extraCost > 0) notes.push(`💸 臨時支出 ${yen(extraCost)}`);
 
   const net = gross - expenses;
   s.money += Math.round(net);
 
+  // --- 常連プールの増減 ---
+  if (n) {
+    if (avgSet >= 3.4 && staffOK) s.regulars += casual * 0.025 + 0.5;
+    else if (avgSet < 2.5) s.regulars *= 0.94;
+    if (tokubi && avgSet < 3) { s.regulars *= 0.85; }
+    if (s.rep < 35) s.regulars *= 0.97;
+    s.regulars = Math.max(0, Math.min(capacity * 0.5, s.regulars));
+  }
+
   // --- 評判の増減 ---
-  let avgSet = 3;
-  if (s.machines.length > 0) {
-    avgSet = s.machines.reduce((a, m) => a + m.setting, 0) / s.machines.length;
+  if (n) {
     let d = (avgSet - 3) * 1.4;
     if (tokubi) {
       if (avgSet >= 4) { d += 4; notes.push("😊 特日にしっかり出した!客は大満足、評判が上がった!"); }
@@ -577,11 +701,22 @@ function simulateDay() {
 
   s.ad = "none";
 
+  // --- 資金ショート時の緊急融資 ---
+  if (s.money < 0) {
+    const need2 = -s.money + 200000;
+    if (s.debt + need2 <= creditLimit()) {
+      s.debt += need2;
+      s.maxDebt = Math.max(s.maxDebt, s.debt);
+      s.money += need2;
+      notes.push(`🏦 資金ショート!銀行から緊急融資 ${yen(need2)} を受けた(金利0.25%/日)。借金地獄に注意…`);
+    }
+  }
+
   // --- 記録 ---
   const rec = {
-    day: s.day, cust: customers,
+    day: s.day, cust: customers, cas: casual, reg: regs, pro: pros,
     sales: Math.round(sales), payout: Math.round(payout),
-    exp: Math.round(expenses), net: Math.round(net),
+    exp: Math.round(expenses), net: Math.round(net), interest,
     note: tokubi ? "特日" : (weekend ? "週末" : ""),
   };
   s.history.unshift(rec);
@@ -593,16 +728,21 @@ function simulateDay() {
   grantAch("first-day");
   if (rec.net >= 1000000) grantAch("million");
   if (s.rep >= 90) grantAch("rep90");
+  if (s.regulars >= 50) grantAch("reg50");
   if (s.machines.length >= 20) grantAch("m20");
   if (s.machines.length >= 60) grantAch("m60");
   if (rec.day >= 30) grantAch("d30");
   if (tokubi && avgSet >= 5) grantAch("tokubi-god");
+  if (s.debt === 0 && s.maxDebt >= 10000000) grantAch("loan-clear");
   if (totalAssets() >= 30000000) grantAch("asset30m");
   if (totalAssets() >= GOAL_ASSETS) grantAch("asset100m");
+  if (!s.cleared && totalAssets() >= GOAL_ASSETS) { s.cleared = true; s.clearDay = rec.day; }
 
   save(true);
   return { rec, notes };
 }
+
+function clearRank(d) { return d <= 80 ? "S" : d <= 100 ? "A" : d <= 130 ? "B" : "C"; }
 
 // ---- 週次レポート ----
 function weeklyReport(rec) {
@@ -617,7 +757,11 @@ function weeklyReport(rec) {
     ? state.machines.reduce((a, m) => a + m.pop, 0) / state.machines.length : 0;
   if (state.rep < 40) advice.push("評判が危険水域。設定を上げて信頼回復を。");
   else if (state.rep > 85 && avgSet > 4) advice.push("評判は十分高い。設定を少し落として回収しても客はすぐには離れない。");
-  if (avgPop < 40 && state.machines.length) advice.push("台の人気が枯れてきている。新台入替を検討しよう。");
+  if (state.heat > 5) advice.push("行政の目が厳しい。数日は設定を開けてほとぼりを冷まそう。");
+  if (state.debt > 0 && state.debt > totalAssets() * 0.5) advice.push("借金が資産に対して重い。利息が経営を蝕む前に返済を。");
+  if (avgPop < 40 && state.machines.length) advice.push("台の人気が枯れてきている。新台入替+新装開店フェアで話題を作ろう。");
+  if (state.regulars < state.machines.length * 3 && avgSet < 3.4)
+    advice.push("常連が育っていない。平均設定3.4以上を保つ日を作ると固定客が増える。");
   if (state.cap < MAX_CAP && state.machines.length >= state.cap && state.money > expandCost() + 2000000)
     advice.push("満台状態で資金にも余裕あり。店舗拡張のチャンス。");
   if (!advice.length) advice.push("経営は順調。この調子で!");
@@ -625,6 +769,7 @@ function weeklyReport(rec) {
     <h4>📋 週次レポート (${rec.day - 6}〜${rec.day}日目)</h4>
     <div class="result-row"><span>週間純利益</span><b class="${total >= 0 ? "pos" : "neg"}">${total >= 0 ? "+" : ""}${yen(total)}</b></div>
     <div class="result-row"><span>平均客数</span><b>${avgCust}人/日</b></div>
+    <div class="result-row"><span>常連客</span><b>${Math.round(state.regulars)}人</b></div>
     <div class="eventmsg">💡 ${advice.join("<br>💡 ")}</div>
   </div>`;
 }
@@ -636,12 +781,15 @@ function renderStatus() {
   $("stDay").textContent = state.day + "日目" + (isTokubi(state.day) ? " 🔥特日" : isWeekend(state.day) ? " 📅週末" : "");
   $("stMoney").textContent = yen(state.money);
   $("stRep").textContent = Math.round(state.rep) + " / 100";
+  $("stRegs").textContent = Math.round(state.regulars) + "人";
   $("stMachines").textContent = state.machines.length + " / " + state.cap;
+  $("stDebt").textContent = state.debt > 0 ? yen(state.debt) : "なし";
   $("stAssets").textContent = yen(totalAssets());
   const tk = isTokubi(state.day);
-  $("dayNote").innerHTML = tk
-    ? "本日は<b>特日</b>!高設定にすれば評判急上昇、渋くすると大炎上…"
-    : "設定と経営を整えたら営業開始!(7のつく日は特日)";
+  const trendTxt = state.trend && state.trend.ids.length ? `今週:「${state.trend.name}」` : "";
+  $("dayNote").innerHTML = (tk
+    ? "本日は<b>特日</b>!高設定にすれば評判急上昇、渋くすると大炎上… "
+    : "設定と経営を整えたら営業開始!(7のつく日は特日) ") + trendTxt;
 }
 
 function renderHall() {
@@ -658,12 +806,19 @@ function renderHall() {
     div.className = "machine";
     const lastTxt = m.lastNet === null ? "―" :
       `<span class="${m.lastNet >= 0 ? "pos" : "neg"}">${m.lastNet >= 0 ? "+" : ""}${yen(m.lastNet)}</span> (客${m.lastCust}人)`;
+    const isl = islandBonus(c.id);
+    const badges = [
+      trendMult(c.id) > 1 ? "📈ブーム中" : "",
+      isl > 1 ? `🏝️シマ+${Math.round((isl - 1) * 100)}%` : "",
+      m.setting >= 5 ? "🕶️プロ警戒" : "",
+    ].filter(Boolean).join(" ");
     div.innerHTML = `
       <div class="icon">${c.type === "P" ? "🎯" : "🎰"}</div>
       <div class="minfo">
         <div class="mname">${c.name}${isNew ? '<span class="newtag">NEW</span>' : ""}</div>
         <div class="msub">${c.desc}</div>
         <div class="mspec">${c.spec.label}</div>
+        ${badges ? `<div class="mbadge">${badges}</div>` : ""}
         <div class="msub">人気 ${Math.round(m.pop)}<div class="popbar"><div style="width:${Math.min(100, m.pop / 1.2)}%"></div></div></div>
       </div>
       <div class="mstats">前日収支: ${lastTxt}<br>売却額: ${yen(machineValue(m))}</div>
@@ -675,7 +830,7 @@ function renderHall() {
       if (m.setting === v) o.selected = true;
       sel.appendChild(o);
     }
-    sel.addEventListener("change", () => { m.setting = Number(sel.value); save(); });
+    sel.addEventListener("change", () => { m.setting = Number(sel.value); save(); renderHall(); });
     const trialBtn = document.createElement("button");
     trialBtn.className = "trial"; trialBtn.textContent = "🕹️試打";
     trialBtn.addEventListener("click", () => openTrial(c, m.setting));
@@ -698,14 +853,20 @@ function renderShop() {
   const wrap = $("shopList");
   wrap.innerHTML = "";
   for (const c of CATALOG) {
+    const owned = state.machines.filter(m => m.cid === c.id).length;
     const div = document.createElement("div");
     div.className = "machine";
+    const badges = [
+      trendMult(c.id) > 1 ? "📈ブーム中" : "",
+      owned ? `設置中×${owned}` : "",
+    ].filter(Boolean).join(" ");
     div.innerHTML = `
       <div class="icon">${c.type === "P" ? "🎯" : "🎰"}</div>
       <div class="minfo">
         <div class="mname">${c.name}</div>
         <div class="msub">${c.desc}</div>
         <div class="mspec">${c.spec.label}</div>
+        ${badges ? `<div class="mbadge">${badges}</div>` : ""}
         <div class="msub">集客力 ${c.pop} ・ 人気低下 ${c.decay <= 0.8 ? "遅い" : c.decay <= 1.4 ? "普通" : "速い"}</div>
       </div>
       <div class="mstats">${yen(c.price)}</div>
@@ -751,6 +912,7 @@ function renderMgmt() {
     $("btnExpand").disabled = state.money < expandCost();
   }
 
+  // 広告
   const adWrap = $("adButtons");
   adWrap.innerHTML = "";
   for (const a of ADS) {
@@ -764,6 +926,46 @@ function renderMgmt() {
   $("adCurrent").textContent = cur.id === "none"
     ? "広告は未設定。設定すると次の営業日の客数が増える(費用はその日の経費に計上)。"
     : `本日の広告: ${cur.name} → 客数 +${cur.boost}人前後`;
+
+  // 新装開店
+  const recentBuy = state.machines.some(m => m.boughtDay !== null && state.day - m.boughtDay <= 1);
+  const cooldownOK = state.day - state.lastGrand >= 7;
+  const grandBtn = $("btnGrand");
+  if (state.grandOpen) { grandBtn.textContent = "開催予約済み(次の営業日)"; grandBtn.disabled = true; }
+  else if (!recentBuy) { grandBtn.textContent = "新台導入直後のみ開催可"; grandBtn.disabled = true; }
+  else if (!cooldownOK) { grandBtn.textContent = `あと${7 - (state.day - state.lastGrand)}日で開催可能`; grandBtn.disabled = true; }
+  else if (state.money < 300000) { grandBtn.textContent = "資金不足 (¥300,000)"; grandBtn.disabled = true; }
+  else { grandBtn.textContent = "フェアを開催する (¥300,000)"; grandBtn.disabled = false; }
+
+  // 融資
+  $("debtNow").textContent = yen(state.debt);
+  $("creditNow").textContent = yen(creditLimit());
+  $("btnBorrow").disabled = state.debt + 1000000 > creditLimit();
+  $("btnRepay").disabled = state.debt <= 0 || state.money < Math.min(1000000, state.debt);
+
+  // 交換率
+  const rateWrap = $("rateButtons");
+  rateWrap.innerHTML = "";
+  [["normal", "等価交換"], ["low", "低換金 (5.6枚)"]].forEach(([id, label]) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    if (state.rate === id) b.className = "primary";
+    b.addEventListener("click", () => { state.rate = id; save(); renderMgmt(); });
+    rateWrap.appendChild(b);
+  });
+  $("rateNote").textContent = state.rate === "normal"
+    ? "等価交換: 客ウケが良く集客に有利。ただし店の取り分は薄い。"
+    : "低換金: 全設定の粗利+2.5pt。ただしフリの客が約12%減り、常連の足もわずかに遠のく。";
+
+  // ヒート
+  const heatPct = Math.min(100, state.heat / 12 * 100);
+  $("heatFill").style.width = heatPct + "%";
+  $("heatNote").textContent = state.heat > 8
+    ? "🚨 危険!いつ行政指導(罰金50万+評判-8)が入ってもおかしくない。数日設定を開けて沈静化を。"
+    : state.heat > 5
+    ? "⚠️ 警戒レベル。渋い営業(平均設定2.6未満)を続けるとゲージが上がっていく。"
+    : "平常。平均設定2.6未満の営業を続けるとゲージが上昇し、指導リスクが高まる。";
+
   renderAch();
 }
 
@@ -783,7 +985,7 @@ function renderAch() {
 // ---- 損益グラフ (単一系列・正負を基線の上下+色で表現) ----
 function renderChart() {
   const wrap = $("chartWrap");
-  const data = state.history.slice(0, 30).reverse(); // 古い→新しい
+  const data = state.history.slice(0, 30).reverse();
   if (!data.length) {
     wrap.innerHTML = "<p class='note'>営業を始めるとここに損益グラフが表示されます。</p>";
     return;
@@ -843,13 +1045,14 @@ function renderLedger() {
   const tb = $("ledgerBody");
   tb.innerHTML = "";
   if (!state.history.length) {
-    tb.innerHTML = "<tr><td colspan='7' style='text-align:center;color:var(--sub)'>まだ営業記録がありません</td></tr>";
+    tb.innerHTML = "<tr><td colspan='8' style='text-align:center;color:var(--sub)'>まだ営業記録がありません</td></tr>";
     return;
   }
   for (const r of state.history) {
     const tr = document.createElement("tr");
     tr.innerHTML = `
       <td>${r.day}日目</td><td>${r.cust}人</td>
+      <td>${r.cas ?? "-"} / ${r.reg ?? "-"} / ${r.pro ?? "-"}</td>
       <td>${yen(r.sales)}</td><td>${yen(r.payout)}</td><td>${yen(r.exp)}</td>
       <td class="${r.net >= 0 ? "pos" : "neg"}">${r.net >= 0 ? "+" : ""}${yen(r.net)}</td>
       <td>${r.note || ""}</td>`;
@@ -889,20 +1092,22 @@ function showDayResult(result) {
 
   let endHtml = "";
   if (state.money < 0) {
-    endHtml = `<div class="eventmsg" style="border-color:var(--red)">💀 <b>倒産…</b> 資金がマイナスになりました。${rec.day}日間の経営、お疲れさまでした。</div>
+    endHtml = `<div class="eventmsg" style="border-color:var(--red)">💀 <b>倒産…</b> 資金が尽き、融資枠も限界。${rec.day}日間の経営、お疲れさまでした。</div>
       <button class="danger" onclick="doReset()">最初からやり直す</button>`;
-  } else if (!state.cleared && totalAssets() >= GOAL_ASSETS) {
-    state.cleared = true; save(true);
-    endHtml = `<div class="eventmsg" style="border-color:var(--gold)">👑 <b>祝・総資産1億円達成!!</b> ${rec.day}日目にしてあなたの店は地域No.1ホールとなった!このまま帝国を広げ続けてもOK!</div>`;
+  } else if (state.cleared && state.clearDay === rec.day) {
+    const rank = clearRank(rec.day);
+    endHtml = `<div class="eventmsg" style="border-color:var(--gold)">👑 <b>祝・純資産1億円達成!!</b> ${rec.day}日目にしてあなたの店は地域No.1ホールとなった!<br>
+      <b style="font-size:1.3rem;color:var(--gold)">クリア評価: ${rank}ランク</b> (S:80日以内 / A:100日 / B:130日)<br>このまま帝国を広げ続けてもOK!</div>`;
   }
 
   showModal(`
     <h2>📊 ${rec.day}日目 営業結果 ${rec.note ? "〈" + rec.note + "〉" : ""}</h2>
     ${evHtml}
     <div class="result-row"><span>🧑‍🤝‍🧑 来店客数</span><b>${rec.cust}人</b></div>
+    <div class="result-row"><span class="dim">└ 一般 / 常連 / プロ</span><span class="dim">${rec.cas} / ${rec.reg} / ${rec.pro}人</span></div>
     <div class="result-row"><span>💵 総売上(打ち込み)</span><b>${yen(rec.sales)}</b></div>
     <div class="result-row"><span>🎁 出玉払出</span><b>−${yen(rec.payout)}</b></div>
-    <div class="result-row"><span>🏢 経費(家賃/人件費/広告等)</span><b>−${yen(rec.exp)}</b></div>
+    <div class="result-row"><span>🏢 経費${rec.interest ? " (利息" + yen(rec.interest) + "含む)" : ""}</span><b>−${yen(rec.exp)}</b></div>
     <div class="result-row total"><span>本日の純利益</span><b class="${rec.net >= 0 ? "pos" : "neg"}">${rec.net >= 0 ? "+" : ""}${yen(rec.net)}</b></div>
     <div class="machine-result"><b>台別収支(店側):</b>${perMachine}</div>
     ${weeklyReport(rec)}
@@ -1235,7 +1440,12 @@ function load() {
     const raw = localStorage.getItem(SAVE_KEY);
     if (raw) {
       const s = JSON.parse(raw);
-      // v1セーブからの移行
+      // 旧バージョンのセーブからの移行
+      const defaults = {
+        diff: "normal", regulars: 8, heat: 0, debt: 0, maxDebt: 0,
+        rate: "normal", trend: null, grandOpen: false, lastGrand: -99, clearDay: null,
+      };
+      for (const k of Object.keys(defaults)) if (s[k] === undefined) s[k] = defaults[k];
       if (!Array.isArray(s.ach)) s.ach = [];
       return s;
     }
@@ -1244,22 +1454,35 @@ function load() {
 }
 function doReset() {
   localStorage.removeItem(SAVE_KEY);
-  state = newGame();
+  state = newGame("normal");
   closeModal();
   renderAll();
   showTutorial();
 }
 window.doReset = doReset;
+function startGame(diff) {
+  state = newGame(diff);
+  save(true);
+  closeModal();
+  renderAll();
+  toast(`難易度「${DIFFS[diff].label}」で開店!`);
+}
+window.startGame = startGame;
 
 function showTutorial() {
   showModal(`
     <h2>🎰 パチスロ帝国へようこそ!</h2>
-    <p style="font-size:.88rem">あなたは小さなパチンコホールの新米オーナー。資金 <b style="color:var(--gold)">1,000万円</b> から始めて、<b style="color:var(--neon)">総資産1億円</b> の地域No.1ホールを目指そう!</p>
-    <div class="eventmsg">🎯 <b>出玉設定がすべて</b><br>設定1〜2で回収すると儲かるが評判が下がり客が減る。設定5〜6は客が集まるが赤字リスク。メリハリが勝負!</div>
-    <div class="eventmsg">🔥 <b>7のつく日は特日</b><br>客が「出る」と期待して殺到する。ここで高設定にすれば評判爆上げ。裏切ると…</div>
-    <div class="eventmsg">🛒 <b>新台入替で集客</b><br>台の人気は日々落ちる。新台は5日間ブーストつき。古い台は売却して回転させよう。</div>
-    <div class="eventmsg">🕹️ <b>実機を試打できる!</b><br>どの台も「試打」ボタンで実際に打てる。スロットはレバー&ストップ、パチンコはRUSH搭載。設定ごとの出方を体感して経営に活かそう。</div>
-    <div class="rowbtns"><button class="primary" onclick="closeModal()">経営スタート!</button></div>
+    <p style="font-size:.88rem">あなたは小さなパチンコホールの新米オーナー。<b style="color:var(--neon)">純資産1億円</b> の地域No.1ホールを目指そう!</p>
+    <div class="eventmsg">🎯 <b>設定のメリハリがすべて</b><br>渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出す台」と「回収する台」を作り分けろ!</div>
+    <div class="eventmsg">🔥 <b>7のつく日は特日</b>/📈 <b>週替わりブーム</b>/🏝️ <b>シマ効果</b><br>特日は高設定で評判爆上げ。ブーム機種は集客1.4倍。同一機種を並べればシマ効果。</div>
+    <div class="eventmsg">🏦 <b>銀行融資で攻めるか、堅実に行くか</b><br>借金で一気に拡大もできるが利息は毎日重くのしかかる。クリア条件は「純資産」(借金は差し引き)。</div>
+    <div class="eventmsg">🕹️ <b>実機を試打できる!</b><br>どの台も「試打」で実際に打てる。設定ごとの出方を体感して経営に活かそう。</div>
+    <p style="font-size:.85rem"><b>難易度を選んで開店:</b></p>
+    <div class="rowbtns">
+      <button class="buy" onclick="startGame('easy')">のんびり (資金1,300万)</button>
+      <button class="primary" onclick="startGame('normal')">標準 (資金1,000万)</button>
+      <button class="danger" onclick="startGame('hard')">修羅 (資金700万・家賃増・プロ多)</button>
+    </div>
   `);
 }
 
@@ -1294,6 +1517,30 @@ $("btnExpand").addEventListener("click", () => {
   state.cap += 5;
   save(); renderAll();
 });
+$("btnGrand").addEventListener("click", () => {
+  const recentBuy = state.machines.some(m => m.boughtDay !== null && state.day - m.boughtDay <= 1);
+  if (state.grandOpen || !recentBuy || state.day - state.lastGrand < 7 || state.money < 300000) return;
+  state.money -= 300000;
+  state.grandOpen = true;
+  state.lastGrand = state.day;
+  save(); renderAll();
+  toast("🎊 新装開店フェアを予約!次の営業日に開催");
+});
+$("btnBorrow").addEventListener("click", () => {
+  if (state.debt + 1000000 > creditLimit()) return;
+  state.debt += 1000000;
+  state.maxDebt = Math.max(state.maxDebt, state.debt);
+  state.money += 1000000;
+  save(); renderAll();
+});
+$("btnRepay").addEventListener("click", () => {
+  const amount = Math.min(1000000, state.debt, state.money);
+  if (amount <= 0) return;
+  state.debt -= amount;
+  state.money -= amount;
+  if (state.debt === 0 && state.maxDebt >= 10000000) grantAch("loan-clear");
+  save(); renderAll();
+});
 $("btnSave").addEventListener("click", () => { save(); alert("セーブしました!"); });
 $("btnReset").addEventListener("click", () => {
   if (confirm("本当に最初からやり直しますか?セーブデータは消えます。")) doReset();
@@ -1305,7 +1552,7 @@ if (loaded && Array.isArray(loaded.machines)) {
   state = loaded;
   renderAll();
 } else {
-  state = newGame();
+  state = newGame("normal");
   renderAll();
   showTutorial();
 }
