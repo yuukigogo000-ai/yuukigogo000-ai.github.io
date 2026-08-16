@@ -436,15 +436,164 @@ const TRENDS = [
   { name:"ブームなし",         ids:[] },
 ];
 
-// ランダムイベント
-const EVENTS = [
-  { p: 0.10, msg:"☔ 大雨。客足が遠のいた…",                custMult: 0.75 },
-  { p: 0.07, msg:"📰 パチンコ攻略誌に優良店として掲載された!", repDelta: +4 },
-  { p: 0.07, msg:"🏪 近隣にライバル店がオープン。客を取られた…", custMult: 0.85, repDelta: -2 },
-  { p: 0.06, msg:"🔧 台が1台故障!修理費 ¥80,000 が発生…",     cost: 80000 },
-  { p: 0.06, msg:"🎉 常連客が万枚達成!SNSで話題に!",          repDelta: +3, custMult: 1.1 },
-  { p: 0.05, msg:"💥 ハイエナ軍団来襲!甘い台だけ狙われた…",    marginDelta: -0.04 },
-  { p: 0.05, msg:"🌞 快晴の行楽日和。ふらっと立ち寄る客が増えた", custMult: 1.15 },
+// ============================================================
+//  イベント130種
+//  運イベント80種: 毎日50%でどれか1つ(重みw抽選)
+//  数値依存イベント50種: 状態条件を満たすと確率pで発生(cd=クールダウン日数)
+//  効果キー: cust=客数倍率, rep=評判, cost=臨時支出, gain=臨時収入,
+//            margin=粗利率補正, regs=常連増減, heat=ヒート増減
+// ============================================================
+const LUCK_EVENTS = [
+  // --- 天気・季節 (12) ---
+  { w:9, msg:"☔ 大雨。客足が遠のいた…", cust:0.75 },
+  { w:3, msg:"🌀 台風接近。街から人が消えた…", cust:0.6 },
+  { w:8, msg:"🌞 快晴の行楽日和。ふらっと立ち寄る客が増えた", cust:1.15 },
+  { w:6, msg:"🥵 猛暑日。涼みがてらの客で賑わう", cust:1.12 },
+  { w:3, msg:"❄️ 大雪。開店前の雪かきから一日が始まった…", cust:0.65, cost:20000 },
+  { w:5, msg:"🤧 花粉が大量飛散。マスク姿の客もまばら", cust:0.92 },
+  { w:6, msg:"🍃 心地よい涼風。散歩ついでの客がふらり", cust:1.08 },
+  { w:6, msg:"🌸 春の陽気に誘われて人通りが多い", cust:1.1 },
+  { w:5, msg:"🌫️ どんよりした曇り空。なんとなく客足も重い", cust:0.95 },
+  { w:4, msg:"🌈 店の真上に虹が!なんとなく縁起がいい", rep:1 },
+  { w:6, msg:"🌦️ 小雨のパチ屋日和。雨宿り客が打ち始める", cust:1.06 },
+  { w:5, msg:"🍂 木枯らし吹く寒い日。暖かい店内に客が吸い込まれる", cust:1.05 },
+  // --- メディア・世間 (10) ---
+  { w:5, msg:"📰 パチンコ攻略誌に優良店として掲載された!", rep:4 },
+  { w:5, msg:"📱 パチンコ系配信者が来店、動画がプチバズり", rep:2, cust:1.05 },
+  { w:4, msg:"📺 地元テレビの街ブラ番組に店が映り込んだ", rep:3 },
+  { w:4, msg:"🗯️ 根も葉もないデマがSNSで拡散…", rep:-3 },
+  { w:4, msg:"🗞️ 業界紙の「地域の注目店」特集に載った", rep:2 },
+  { w:3, msg:"🕶️ 芸能人がお忍びで来店したという噂が流れる", cust:1.15 },
+  { w:4, msg:"📉 新聞に業界縮小の記事。なんとなく世間の風が冷たい", cust:0.93 },
+  { w:4, msg:"📺 ワイドショーでパチンコ特集(悪い方)。逆風だ…", cust:0.88, rep:-1 },
+  { w:4, msg:"🤳 客の出玉写真が拡散して軽くバズった", cust:1.1 },
+  { w:4, msg:"⭐ 口コミサイトに星1レビューを書かれた…", rep:-2 },
+  // --- 客ドラマ (16) ---
+  { w:5, msg:"🎉 常連客が万枚達成!SNSで話題に!", rep:3, cust:1.1 },
+  { w:4, msg:"🔰 ビギナーズラックの大学生が友達を連れて再来店", regs:2 },
+  { w:3, msg:"💍 初デートがウチだったという夫婦が記念来店", rep:1 },
+  { w:4, msg:"🍺 泥酔客が暴れて警察沙汰に…", rep:-2, cost:50000 },
+  { w:4, msg:"👊 台パンで液晶が破損!修理送りに", cost:120000 },
+  { w:4, msg:"🚌 遠方からの遠征打ちの団体さんが来店", cust:1.12 },
+  { w:3, msg:"👴 「昔ここでデートした」と老夫婦がしみじみ来店", rep:1 },
+  { w:4, msg:"😤 クレーマーがカウンターで長時間ゴネた…", rep:-1 },
+  { w:3, msg:"📦 常連さんが引っ越しの挨拶に。もう来られないらしい", regs:-3 },
+  { w:5, msg:"🍻 会社帰りのサラリーマン集団がドッと来店", cust:1.08 },
+  { w:4, msg:"🎓 大学サークルの打ち上げ帰り組が流れてきた", cust:1.07 },
+  { w:3, msg:"🔮 地元の占い師が「今日はギャンブル吉日」と発信", cust:1.1 },
+  { w:3, msg:"👛 落とし物の財布を警察に届けたら持ち主が感激", rep:2 },
+  { w:4, msg:"🚗 迷惑駐車で近隣からクレーム…", cost:30000, rep:-1 },
+  { w:4, msg:"💢 大負けした客が「二度と来るか!」と捨て台詞", regs:-1 },
+  { w:4, msg:"👶 子連れ客を丁寧に案内したら感謝の口コミが", rep:2 },
+  // --- 機械・設備 (12) ---
+  { w:6, msg:"🔧 台が1台故障!修理費が発生…", cost:80000 },
+  { w:3, msg:"🌡️ エアコンが故障!緊急修理を呼んだ", cost:150000, cust:0.95 },
+  { w:4, msg:"🚽 トイレ詰まり発生。業者を呼んだ", cost:40000 },
+  { w:4, msg:"💡 駐車場の照明が切れていた", cost:20000 },
+  { w:4, msg:"🏧 両替機トラブルでカウンターに行列が…", rep:-1 },
+  { w:4, msg:"🧮 計数機が故障、手作業で対応した", cost:60000 },
+  { w:4, msg:"🌃 看板のネオンが一部消えて「パ◯スロ帝国」に", cost:50000 },
+  { w:3, msg:"✨ メダル研磨が絶好調。ピカピカのメダルが好評", rep:1 },
+  { w:3, msg:"🧹 清掃業者が神仕事。店内がピカピカに", rep:1, cost:30000 },
+  { w:3, msg:"🎵 音響の調子が良く、店内BGMがノリノリ", cust:1.03 },
+  { w:3, msg:"💡 データランプの誤表示で「出てる風」の島が誕生", cust:1.08 },
+  { w:3, msg:"🌧️ 天井から雨漏り!バケツで応急処置", cost:100000, rep:-1 },
+  // --- ライバル・業界 (10) ---
+  { w:4, msg:"🏪 近隣にライバル店がオープン。客を取られた…", cust:0.85, rep:-2 },
+  { w:4, msg:"😈 ライバル店が回収営業でやらかしたらしい。こっちに客が流れる", cust:1.15, rep:1 },
+  { w:3, msg:"🔩 ライバル店の看板機種が故障続きとの噂", cust:1.08 },
+  { w:4, msg:"🎊 ライバル店が新装開店。今日は分が悪い", cust:0.88 },
+  { w:3, msg:"📮 組合費の値上げ通知が届いた", cost:50000 },
+  { w:3, msg:"🎁 メーカー営業が粗品と販促グッズを置いていった", gain:20000 },
+  { w:3, msg:"🕵️ ライバル店の店長らしき人物が偵察に来ていた" },
+  { w:3, msg:"🚚 中古台業者の高価買取キャンペーンで倉庫を整理", gain:100000 },
+  { w:3, msg:"🏛️ 業界団体の視察。緊張したが好評価だった", rep:1 },
+  { w:3, msg:"❓ 客に換金所の場所を聞かれた(答えられないやつ)" },
+  // --- 街・イベント (10) ---
+  { w:4, msg:"🏮 駅前で祭り開催!人通りが段違い", cust:1.2 },
+  { w:3, msg:"🎤 近くのホールでコンサート。帰り客が流れてきた", cust:1.12 },
+  { w:3, msg:"🎫 商店街のスタンプラリーに参加してみた", cost:30000, cust:1.05 },
+  { w:6, msg:"💰 給料日直後。財布の紐がゆるい客だらけ", cust:1.15 },
+  { w:5, msg:"📅 年金支給日。朝から常連世代の姿が多い", cust:1.12 },
+  { w:6, msg:"🪫 月末。世間の財布が寒い…", cust:0.88 },
+  { w:4, msg:"🚧 近隣の工事の騒音がうるさい", cust:0.92 },
+  { w:4, msg:"🚜 道路工事で駐車場に入りづらい", cust:0.9 },
+  { w:3, msg:"🎰 宝くじ売場に行列。街のギャンブル気運が高い", cust:1.06 },
+  { w:3, msg:"🎆 花火大会の帰り客がドッと流れ込んできた", cust:1.1 },
+  // --- 従業員 (8) ---
+  { w:4, msg:"😱 バイトが無断欠勤!現場は大混乱", cust:0.97, rep:-1 },
+  { w:4, msg:"💁 スタッフの神対応が口コミで話題に", rep:2 },
+  { w:3, msg:"🫢 新人がドル箱をぶちまけた。拾うのが大変だった", cost:10000 },
+  { w:3, msg:"🎂 スタッフの誕生日。店の空気がほんわか良い", cust:1.03 },
+  { w:3, msg:"🤝 ベテランスタッフに引き抜きの話が…慰留ボーナスを支給", cost:80000 },
+  { w:3, msg:"🏅 スタッフが接客コンテストで入賞!士気UP", rep:1 },
+  { w:3, msg:"🤧 店長(あなた)が風邪気味。今日はなんとか乗り切ろう" },
+  { w:3, msg:"🧹 清掃のおばちゃんが常連客の人気者になっている", regs:1 },
+  // --- 珍事件 (2) ---
+  { w:2, msg:"🐈 猫が店に迷い込んだ。「看板猫」としてSNSで人気に", rep:3, cust:1.05 },
+  { w:2, msg:"🛸 UFO目撃の噂で街がざわつく(営業には関係ない)" },
+];
+const LUCK_DAILY_P = 0.5;
+
+const COND_EVENTS = [
+  // --- 評判トリガー (8) ---
+  { id:"r1", cd:30, p:0.5,  when:(s,x)=>s.rep>=90, msg:"🏆 「地域一番店」として商工会から表彰された!", rep:2, gain:100000 },
+  { id:"r2", cd:10, p:0.35, when:(s,x)=>s.rep>=80, msg:"🚗 評判を聞きつけて他県ナンバーの車がちらほら", cust:1.1 },
+  { id:"r3", cd:7,  p:0.4,  when:(s,x)=>s.rep<=25, msg:"🙅 「あの店はやめとけ」が駅前の合言葉になっている…", cust:0.85 },
+  { id:"r4", cd:12, p:0.4,  when:(s,x)=>s.rep<=15, msg:"🏚️ 「あそこ潰れるらしい」と廃業の噂まで…", regs:-4, rep:-1 },
+  { id:"r5", cd:14, p:0.35, when:(s,x)=>s.rep>=70&&x.weekend, msg:"👨‍👩‍👧 週末の憩いの場として家族連れにも認知されてきた", rep:1, regs:2 },
+  { id:"r6", cd:14, p:0.5,  when:(s,x)=>s.rep<=40&&x.tokubi, msg:"🦗 特日なのに店内は静か。信頼を失った代償…", cust:0.9 },
+  { id:"r7", cd:8,  p:0.35, when:(s,x)=>s.rep>=85, msg:"🤝 常連が「いい店だから」と友人を連れてきてくれた", regs:4 },
+  { id:"r8", cd:14, p:0.4,  when:(s,x)=>s.rep<45&&s.regulars>20, msg:"😢 常連が「最近評判悪いけど頑張れよ」と差し入れをくれた", rep:1 },
+  // --- 資金トリガー (6) ---
+  { id:"m1", cd:30, p:0.4,  when:(s,x)=>s.money>=30000000, msg:"🏦 銀行の支店長がわざわざ挨拶に来た。信用は金なり", rep:1 },
+  { id:"m2", cd:45, p:0.5,  when:(s,x)=>s.money>=50000000, msg:"🧾 税務調査が入った。帳簿は無事だったが対応費用が…", cost:300000 },
+  { id:"m3", cd:7,  p:0.5,  when:(s,x)=>s.money<=500000&&s.debt===0, msg:"😰 資金繰りが苦しい。今夜も眠れそうにない…" },
+  { id:"m4", cd:30, p:0.4,  when:(s,x)=>s.money>=20000000, msg:"🎗️ 商店会から寄付のお願い。地域の顔として快諾した", cost:100000, rep:2 },
+  { id:"m5", cd:10, p:0.4,  when:(s,x)=>s.money<=1000000&&s.debt>0, msg:"📞 取引業者から支払いを心配する電話が…", rep:-1 },
+  { id:"m6", cd:60, p:0.5,  when:(s,x)=>s.money>=80000000, msg:"👑 「億り人オーナー」として業界で噂になっている", rep:2 },
+  // --- 借金トリガー (6) ---
+  { id:"d1", cd:14, p:0.4,  when:(s,x)=>s.debt>=10000000, msg:"🏦 銀行から経営状況のヒアリング。誠実に対応した" },
+  { id:"d2", cd:14, p:0.4,  when:(s,x)=>s.debt>=20000000, msg:"☎️ 銀行からの電話が増えてきた。視線が痛い", rep:-1 },
+  { id:"d3", cd:20, p:0.4,  when:(s,x)=>s.debt>=30000000, msg:"📑 借入管理手数料の請求が届いた", cost:50000 },
+  { id:"d4", cd:20, p:0.4,  when:(s,x)=>s.debt>0&&s.money>=s.debt*2, msg:"💡 銀行員が「今が完済の好機ですよ」とアドバイス" },
+  { id:"d5", cd:10, p:0.5,  when:(s,x)=>s.debt>=creditLimit()*0.9, msg:"🥶 融資枠が限界間近。綱渡りの経営だ…", rep:-1 },
+  { id:"d6", cd:30, p:0.4,  when:(s,x)=>s.debt>=40000000, msg:"🗞️ 「借金頼みの拡大路線」と業界紙に書かれた", rep:-2 },
+  // --- ヒートトリガー (4) ---
+  { id:"h1", cd:7,  p:0.5,  when:(s,x)=>s.heat>=6, msg:"🕵️ 覆面調査員らしき人物が店内をメモしながら回っていた…" },
+  { id:"h2", cd:10, p:0.5,  when:(s,x)=>s.heat>=9, msg:"📣 組合から呼び出され厳重注意。反省の意を示した", cost:100000, heat:-2 },
+  { id:"h3", cd:20, p:0.35, when:(s,x)=>s.heat<=1&&x.avgSet>=3.5, msg:"🎖️ 組合の会合で「模範的な営業」と褒められた", rep:1 },
+  { id:"h4", cd:14, p:0.5,  when:(s,x)=>s.heat>=4&&x.tokubi, msg:"👁️ 特日の店内に監視の目が光っている気がする…" },
+  // --- 常連トリガー (6) ---
+  { id:"g1", cd:20, p:0.4,  when:(s,x)=>s.regulars>=30, msg:"🍵 常連会が自然発生。開店前の挨拶が名物になってきた", rep:2 },
+  { id:"g2", cd:10, p:0.35, when:(s,x)=>s.regulars>=60, msg:"📢 常連の口コミが新規客を呼んでいる", cust:1.1, regs:3 },
+  { id:"g3", cd:30, p:0.5,  when:(s,x)=>s.regulars>=100, msg:"🎊 常連たちが勝手に「創業祭」を企画してくれた!", rep:3, cust:1.15 },
+  { id:"g4", cd:14, p:0.4,  when:(s,x)=>s.regulars<=3&&s.day>=15, msg:"🌵 顔なじみのいない店内はどこか寂しい…", rep:-1 },
+  { id:"g5", cd:7,  p:0.45, when:(s,x)=>s.regulars>=40&&x.avgSet<2.8, msg:"🤨 常連たちが「最近渋くない?」とザワつき始めた", regs:-3 },
+  { id:"g6", cd:14, p:0.4,  when:(s,x)=>s.regulars>=50&&x.tokubi, msg:"🌅 特日は常連総出。開店前から行列ができた", cust:1.1 },
+  // --- 台・設備トリガー (8) ---
+  { id:"k1", cd:30, p:0.4,  when:(s,x)=>x.n>=30, msg:"🗺️ 「大型店」として地図アプリの表示が格上げされた", cust:1.05, rep:1 },
+  { id:"k2", cd:45, p:0.5,  when:(s,x)=>x.n>=60, msg:"📰 地域最大級ホールとして新聞の経済面に載った!", cust:1.1, rep:2 },
+  { id:"k3", cd:20, p:0.4,  when:(s,x)=>x.maxIsland>=5, msg:"🏝️ 名物シマが完成。「あの機種といえばウチ」と言われ始めた", rep:2 },
+  { id:"k4", cd:10, p:0.4,  when:(s,x)=>x.n>0&&x.avgPop<30, msg:"🦕 「台が古いんだよなあ」という口コミを見てしまった", rep:-2 },
+  { id:"k5", cd:14, p:0.5,  when:(s,x)=>x.newCount>=3, msg:"🆕 新台ラッシュに客がざわめいている", cust:1.12 },
+  { id:"k6", cd:30, p:0.4,  when:(s,x)=>s.cap>=60&&x.n>=60, msg:"💯 満台フル稼働。壮観な眺めだ", rep:1 },
+  { id:"k7", cd:7,  p:0.3,  when:(s,x)=>x.n>0&&(!x.hasP||!x.hasS), msg:"🤷 「パチンコもスロットも両方欲しい」と帰る客が…", cust:0.95 },
+  { id:"k8", cd:10, p:0.35, when:(s,x)=>x.maxPop>=110, msg:"🌟 看板機種目当ての客が開店前から並んでいる", cust:1.08 },
+  // --- 設定トリガー (6) ---
+  { id:"t1", cd:14, p:0.4,  when:(s,x)=>x.avgSet>=5, msg:"🫨 「あの店出しすぎだろ」と同業者に心配されている" },
+  { id:"t2", cd:10, p:0.4,  when:(s,x)=>x.avgSet>=4.5&&!x.tokubi, msg:"😲 平日から全力放出。客がどよめいている", cust:1.1 },
+  { id:"t3", cd:7,  p:0.5,  when:(s,x)=>x.highCount>=10, msg:"📱 プロ集団のグループチャットで高設定情報が共有されたらしい", margin:-0.01 },
+  { id:"t4", cd:7,  p:0.45, when:(s,x)=>x.avgSet<=1.5, msg:"🧊 ベタピン営業に気づいた客から冷たい視線が…", rep:-2 },
+  { id:"t5", cd:20, p:0.35, when:(s,x)=>x.allSame&&x.n>=10, msg:"🎲 「全台同一設定」の狂気の営業が逆に話題に", cust:1.05 },
+  { id:"t6", cd:14, p:0.4,  when:(s,x)=>x.avgSet>=4&&s.rate==="low", msg:"🍶 低換金なのに大盤振る舞い。「通好みの店」と評判に", regs:3 },
+  // --- 節目トリガー (6) ---
+  { id:"n1", cd:99999, p:1,   when:(s,x)=>s.day===10,  msg:"🌸 開店10日目。取引先から祝いの花輪が届いた", rep:1 },
+  { id:"n2", cd:99999, p:1,   when:(s,x)=>s.day===50,  msg:"📖 50日目。地元誌が「新店のその後」を取材に来た", rep:2 },
+  { id:"n3", cd:99999, p:1,   when:(s,x)=>s.day===100, msg:"🎉 営業100日目!記念セレモニーを開催した", rep:2, cust:1.1 },
+  { id:"n4", cd:25, p:0.5,  when:(s,x)=>s.day>0&&s.day%30===0, msg:"📦 月次棚卸しで備品のロスが発覚…", cost:50000 },
+  { id:"n5", cd:45, p:0.4,  when:(s,x)=>s.cleared, msg:"🎓 成功事例として業界セミナーに登壇。講演料を頂いた", gain:200000 },
+  { id:"n6", cd:30, p:0.4,  when:(s,x)=>s.day>=150&&!s.cleared, msg:"📈 銀行員に「そろそろ大台を狙いましょう」と発破をかけられた" },
 ];
 
 // 実績
@@ -497,6 +646,7 @@ function newGame(diff) {
     ],
     history: [],
     ach: [],
+    evCd: {},
     cleared: false,
     clearDay: null,
     uid: 1000,
@@ -575,24 +725,55 @@ function simulateDay() {
       : "📉 今週は特にブームなし。地力の勝負。");
   }
 
-  // --- イベント抽選 ---
-  let custMult = 1, repDelta = 0, extraCost = 0, marginDelta = 0;
-  const roll = Math.random();
-  let acc = 0;
-  for (const ev of EVENTS) {
-    acc += ev.p;
-    if (roll < acc) {
-      notes.push(ev.msg);
-      custMult *= ev.custMult ?? 1;
-      repDelta += ev.repDelta ?? 0;
-      extraCost += ev.cost ?? 0;
-      marginDelta += ev.marginDelta ?? 0;
-      break;
+  const tokubi = isTokubi(s.day);
+  const weekend = isWeekend(s.day);
+
+  // --- 設定集計 ---
+  const n = s.machines.length;
+  const avgSet = n ? s.machines.reduce((a, m) => a + m.setting, 0) / n : 3;
+  const highList = s.machines.filter(m => m.setting >= 5);
+
+  // --- イベント(運80種+数値依存50種) ---
+  let custMult = 1, repDelta = 0, extraCost = 0, marginDelta = 0, eventGain = 0;
+  const applyEv = e => {
+    notes.push(e.msg);
+    if (e.cust) custMult *= e.cust;
+    repDelta += e.rep ?? 0;
+    extraCost += e.cost ?? 0;
+    eventGain += e.gain ?? 0;
+    marginDelta += e.margin ?? 0;
+    if (e.regs) s.regulars = Math.max(0, s.regulars + e.regs);
+    if (e.heat) s.heat = Math.max(0, s.heat + e.heat);
+  };
+  // 運イベント: 1日1回、50%で重み抽選
+  if (Math.random() < LUCK_DAILY_P) {
+    const totalW = LUCK_EVENTS.reduce((a, e) => a + e.w, 0);
+    let r = Math.random() * totalW;
+    for (const e of LUCK_EVENTS) { r -= e.w; if (r < 0) { applyEv(e); break; } }
+  }
+  // 数値依存イベント: 条件を満たすものから1日最大1つ
+  {
+    if (!s.evCd) s.evCd = {};
+    const x = {
+      n, avgSet, tokubi, weekend,
+      highCount: highList.length,
+      avgPop: n ? s.machines.reduce((a, m) => a + m.pop, 0) / n : 0,
+      maxPop: s.machines.reduce((a, m) => Math.max(a, m.pop), 0),
+      maxIsland: (() => { const c = {}; let mx = 0; for (const m of s.machines) { c[m.cid] = (c[m.cid] || 0) + 1; mx = Math.max(mx, c[m.cid]); } return mx; })(),
+      newCount: s.machines.filter(m => m.boughtDay !== null && s.day - m.boughtDay < 5).length,
+      hasP: s.machines.some(m => catalogOf(m).type === "P"),
+      hasS: s.machines.some(m => catalogOf(m).type === "S"),
+      allSame: n > 0 && s.machines.every(m => m.setting === s.machines[0].setting),
+    };
+    const elig = COND_EVENTS.filter(e => s.day - (s.evCd[e.id] ?? -1e9) >= (e.cd ?? 7) && e.when(s, x));
+    const fired = elig.filter(e => Math.random() < (e.p ?? 0.4));
+    if (fired.length) {
+      const e = fired[Math.floor(Math.random() * fired.length)];
+      s.evCd[e.id] = s.day;
+      applyEv(e);
     }
   }
 
-  const tokubi = isTokubi(s.day);
-  const weekend = isWeekend(s.day);
   if (tokubi) { custMult *= 1.7; notes.push("🔥 本日は特日(7のつく日)!開店前から行列が!"); }
   else if (weekend) { custMult *= 1.3; notes.push("📅 週末で客足は上々。"); }
 
@@ -602,11 +783,6 @@ function simulateDay() {
     custMult *= 1.5; repDelta += 2;
     notes.push("🎊 新装開店フェア開催!普段来ない客まで大挙来店!");
   }
-
-  // --- 設定集計 ---
-  const n = s.machines.length;
-  const avgSet = n ? s.machines.reduce((a, m) => a + m.setting, 0) / n : 3;
-  const highList = s.machines.filter(m => m.setting >= 5);
 
   // --- 行政・組合ヒート(回収営業の監視) ---
   if (n && avgSet < 2.6) s.heat += (2.6 - avgSet) * 2.2 * D.heatMul;
@@ -676,7 +852,7 @@ function simulateDay() {
   const expenses = rent + wages + utility + ad.cost + extraCost + interest;
   if (extraCost > 0) notes.push(`💸 臨時支出 ${yen(extraCost)}`);
 
-  const net = gross - expenses;
+  const net = gross - expenses + eventGain;
   s.money += Math.round(net);
 
   // --- 常連プールの増減 ---
@@ -1444,6 +1620,7 @@ function load() {
       const defaults = {
         diff: "normal", regulars: 8, heat: 0, debt: 0, maxDebt: 0,
         rate: "normal", trend: null, grandOpen: false, lastGrand: -99, clearDay: null,
+        evCd: {},
       };
       for (const k of Object.keys(defaults)) if (s[k] === undefined) s[k] = defaults[k];
       if (!Array.isArray(s.ach)) s.ach = [];
