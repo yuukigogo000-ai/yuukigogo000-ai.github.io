@@ -270,7 +270,7 @@
   <div class="panel" id="panel-shop">
     <div class="card">
       <h3>メーカーカタログ</h3>
-      <p class="note">新台は導入から5日間「新台効果」で人気1.4倍。同一機種を複数並べるとシマ効果(+6%/台、最大+30%)。売却額は購入価格の40%。導入直後は「新装開店フェア」(経営タブ)で告知すると効果大。</p>
+      <p class="note">新台は導入から5日間「新台効果」で人気1.4倍。同一機種を複数並べるとシマ効果(+6%/台、最大+30%)。売却額は購入価格の45%。導入直後は「新装開店フェア」(経営タブ)で告知すると効果大。</p>
       <div id="shopList"></div>
     </div>
   </div>
@@ -385,9 +385,9 @@ const MAX_CAP = 60;            // 店舗拡張の上限台数
 
 // ---- 難易度 ----
 const DIFFS = {
-  easy:   { label:"のんびり", money:13000000, rentMul:0.8,  proMul:0.6, heatMul:0.7 },
-  normal: { label:"標準",     money:10000000, rentMul:1.0,  proMul:1.0, heatMul:1.0 },
-  hard:   { label:"修羅",     money:7000000,  rentMul:1.35, proMul:1.6, heatMul:1.5 },
+  easy:   { label:"のんびり", money:13000000, rentMul:0.75, proMul:0.5, heatMul:0.7, fillMul:1.05 },
+  normal: { label:"標準",     money:10000000, rentMul:1.0,  proMul:1.0, heatMul:1.0, fillMul:1.0 },
+  hard:   { label:"修羅",     money:6500000,  rentMul:1.35, proMul:1.6, heatMul:1.5, fillMul:0.97 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -417,12 +417,12 @@ const CATALOG = [
 // 設定ごとの店側粗利率(売上に対する取り分の期待値)
 const MARGIN = { 1: 0.25, 2: 0.21, 3: 0.16, 4: 0.11, 5: 0.05, 6: -0.02 };
 
-// 広告プラン
+// 広告プラン (flat=固定集客, pct=規模比例の集客率ブースト)
 const ADS = [
-  { id:"none",  name:"広告なし",       cost: 0,      boost: 0   },
-  { id:"flyer", name:"チラシ配布",     cost: 30000,  boost: 25  },
-  { id:"sns",   name:"SNSキャンペーン", cost: 80000,  boost: 60  },
-  { id:"tv",    name:"ローカルTV CM",  cost: 250000, boost: 150 },
+  { id:"none",  name:"広告なし",       cost: 0,      flat: 0,  pct: 0    },
+  { id:"flyer", name:"チラシ配布",     cost: 30000,  flat: 12, pct: 0.04 },
+  { id:"sns",   name:"SNSキャンペーン", cost: 80000,  flat: 30, pct: 0.08 },
+  { id:"tv",    name:"ローカルTV CM",  cost: 250000, flat: 75, pct: 0.15 },
 ];
 
 // 週替わりトレンド
@@ -667,7 +667,7 @@ function makeMachine(catalogId) {
 }
 
 function catalogOf(m) { return CATALOG.find(c => c.id === m.cid); }
-function machineValue(m) { return Math.round(catalogOf(m).price * 0.4); }
+function machineValue(m) { return Math.round(catalogOf(m).price * 0.45); }
 function machineAssets() { return state.machines.reduce((s, m) => s + machineValue(m), 0); }
 function totalAssets() { return state.money + machineAssets() - state.debt; }
 function creditLimit() { return Math.round(machineAssets() * 0.7) + 2000000; }
@@ -778,7 +778,8 @@ function simulateDay() {
   else if (weekend) { custMult *= 1.3; notes.push("📅 週末で客足は上々。"); }
 
   // --- 新装開店フェア ---
-  if (s.grandOpen) {
+  const grandToday = s.grandOpen;
+  if (grandToday) {
     s.grandOpen = false;
     custMult *= 1.5; repDelta += 2;
     notes.push("🎊 新装開店フェア開催!普段来ない客まで大挙来店!");
@@ -795,14 +796,23 @@ function simulateDay() {
     notes.push("⚠️ 渋い営業が続き、組合・行政の目が厳しくなっている…(指導リスク上昇中)");
   }
 
-  // --- 広告効果 ---
-  const ad = ADS.find(a => a.id === s.ad);
-  const adBoost = ad.boost;
-
   // --- 客層別の来店数 ---
+  // 集客力: 台の実効人気(新台効果・トレンド・シマ・設定込み)の平均が
+  // 来店客数の絶対値を動かす。古い台を放置した店には客は来ない。
   const capacity = n * 20;
-  const fillRate = 0.12 + (s.rep / 100) * 0.78;
+  const totalW = s.machines.reduce((sum, m) => sum + effectivePop(m), 0) || 1;
+  // 集客力 = 素の台人気の平均(ボロ台を並べた店に客は来ない)+ 新台の話題性
+  const avgPopRaw = n ? s.machines.reduce((a, m) => a + m.pop, 0) / n : 0;
+  const newCountA = s.machines.filter(m => m.boughtDay !== null && s.day - m.boughtDay < 5).length;
+  const attract = Math.min(1.25, Math.max(0.65,
+    0.55 + (avgPopRaw / 65) * 0.45 + Math.min(0.12, newCountA * 0.03)));
+  const fillRate = (0.10 + (s.rep / 100) * 0.66) * attract * (D.fillMul || 1);
   const rateMod = s.rate === "low" ? 0.88 : 1;
+
+  // 広告: 固定分+店舗規模に比例する分
+  const ad = ADS.find(a => a.id === s.ad);
+  const adBoost = ad.flat + capacity * fillRate * ad.pct;
+
   let casual = (capacity * fillRate * custMult + adBoost) * rand(0.9, 1.1);
 
   const need = staffNeeded();
@@ -817,22 +827,27 @@ function simulateDay() {
     ? Math.round(Math.min(highList.length * 3 * D.proMul * (tokubi ? 1.5 : 1), capacity * 0.15) * rand(0.8, 1.2))
     : 0;
   if (pros > 0) notes.push(`🕶️ 高設定の匂いを嗅ぎつけたプロが${pros}人来店。彼らは勝ちにだけ来る…`);
-  regs = Math.min(regs, capacity);
-  casual = Math.floor(Math.max(0, Math.min(casual, capacity - regs - pros)) * rateMod);
+  // 特日・新装開店は立ち回り客で収容+15%まで詰め込める
+  const capMax = Math.round(capacity * ((tokubi || grandToday) ? 1.15 : 1));
+  regs = Math.min(regs, capMax);
+  casual = Math.floor(Math.max(0, Math.min(casual, capMax - regs - pros)) * rateMod);
   const customers = n ? casual + regs + pros : 0;
 
   // --- 台ごとの売上・粗利 ---
-  const totalW = s.machines.reduce((sum, m) => sum + effectivePop(m), 0) || 1;
   const highW = highList.reduce((sum, m) => sum + effectivePop(m), 0) || 1;
   const rateBonus = s.rate === "low" ? 0.025 : 0;
   let sales = 0, gross = 0;
+  // 特日に渋い店では客が期待外れと悟って早帰り→打ち込みが浅くなる
+  const tokubiGap = (tokubi && avgSet < 3.5) ? 0.7 : 1;
   for (const m of s.machines) {
     const c = catalogOf(m);
     const w = effectivePop(m) / totalW;
     const nCas = casual * w;
     const nReg = regs * w;
     const nPro = m.setting >= 5 ? pros * (effectivePop(m) / highW) : 0;
-    const spend = (c.type === "P" ? 30000 : 36000) * rand(0.8, 1.2);
+    // 台の鮮度: 人気が枯れた台は座られても打ち込まれない
+    const qual = 0.75 + 0.25 * Math.min(1, m.pop / 80);
+    const spend = (c.type === "P" ? 30000 : 36000) * qual * tokubiGap * rand(0.8, 1.2);
     const margin = MARGIN[m.setting] + rateBonus + marginDelta + rand(-0.09, 0.09);
     const mSales = nCas * spend + nReg * spend * 1.35 + nPro * 45000;
     const mGross = (nCas * spend + nReg * spend * 1.35) * margin + nPro * 45000 * (margin - 0.16);
@@ -857,9 +872,16 @@ function simulateDay() {
 
   // --- 常連プールの増減 ---
   if (n) {
-    if (avgSet >= 3.4 && staffOK) s.regulars += casual * 0.025 + 0.5;
+    // 特日に応えた日・新装開店の日は新規客が固定客になりやすい
+    let convMult = 1;
+    if (tokubi && avgSet >= 4.5) convMult = 2;
+    else if (tokubi && avgSet >= 4) convMult = 1.5;
+    if (grandToday) convMult *= 2;
+    convMult *= 1 + ad.pct * 3; // 広告で来た新規客が気に入れば固定客に
+    if (avgSet >= 3.4 && staffOK) s.regulars += (casual * 0.025 + 0.5) * convMult;
     else if (avgSet < 2.5) s.regulars *= 0.94;
     if (tokubi && avgSet < 3) { s.regulars *= 0.85; }
+    else if (tokubi && avgSet < 3.5) { s.regulars *= 0.95; }
     if (s.rep < 35) s.regulars *= 0.97;
     s.regulars = Math.max(0, Math.min(capacity * 0.5, s.regulars));
   }
@@ -868,8 +890,12 @@ function simulateDay() {
   if (n) {
     let d = (avgSet - 3) * 1.4;
     if (tokubi) {
-      if (avgSet >= 4) { d += 4; notes.push("😊 特日にしっかり出した!客は大満足、評判が上がった!"); }
-      else if (avgSet < 3) { d -= 6; notes.push("😡 特日なのに回収営業…客が激怒、評判ガタ落ち!"); }
+      // 特日は客の期待値が高い: 「普段通り」ですら減点される
+      if (avgSet >= 4.5) { d += 5; notes.push("🤩 特日に全力放出!伝説の一日として語り草に!"); }
+      else if (avgSet >= 4) { d += 4; notes.push("😊 特日にしっかり出した!客は大満足、評判が上がった!"); }
+      else if (avgSet >= 3.5) { /* 及第点: 加点も減点もなし */ }
+      else if (avgSet >= 3) { d -= 1; notes.push("😕 特日なのに普段通りの営業…期待して来た客はしらけ気味。"); }
+      else { d -= 6; notes.push("😡 特日なのに回収営業…客が激怒、評判ガタ落ち!"); }
     }
     repDelta += d;
   }
@@ -918,7 +944,7 @@ function simulateDay() {
   return { rec, notes };
 }
 
-function clearRank(d) { return d <= 80 ? "S" : d <= 100 ? "A" : d <= 130 ? "B" : "C"; }
+function clearRank(d) { return d <= 65 ? "S" : d <= 85 ? "A" : d <= 120 ? "B" : "C"; }
 
 // ---- 週次レポート ----
 function weeklyReport(rec) {
@@ -1100,8 +1126,8 @@ function renderMgmt() {
   }
   const cur = ADS.find(a => a.id === state.ad);
   $("adCurrent").textContent = cur.id === "none"
-    ? "広告は未設定。設定すると次の営業日の客数が増える(費用はその日の経費に計上)。"
-    : `本日の広告: ${cur.name} → 客数 +${cur.boost}人前後`;
+    ? "広告は未設定。設定すると次の営業日の客数が増える(固定分+店舗規模に比例する分。費用はその日の経費に計上)。"
+    : `本日の広告: ${cur.name} → 客数 +${cur.flat}人 + 集客率${Math.round(cur.pct * 100)}%ブースト`;
 
   // 新装開店
   const recentBuy = state.machines.some(m => m.boughtDay !== null && state.day - m.boughtDay <= 1);
@@ -1273,7 +1299,7 @@ function showDayResult(result) {
   } else if (state.cleared && state.clearDay === rec.day) {
     const rank = clearRank(rec.day);
     endHtml = `<div class="eventmsg" style="border-color:var(--gold)">👑 <b>祝・純資産1億円達成!!</b> ${rec.day}日目にしてあなたの店は地域No.1ホールとなった!<br>
-      <b style="font-size:1.3rem;color:var(--gold)">クリア評価: ${rank}ランク</b> (S:80日以内 / A:100日 / B:130日)<br>このまま帝国を広げ続けてもOK!</div>`;
+      <b style="font-size:1.3rem;color:var(--gold)">クリア評価: ${rank}ランク</b> (S:65日以内 / A:85日 / B:120日)<br>このまま帝国を広げ続けてもOK!</div>`;
   }
 
   showModal(`
@@ -1658,7 +1684,7 @@ function showTutorial() {
     <div class="rowbtns">
       <button class="buy" onclick="startGame('easy')">のんびり (資金1,300万)</button>
       <button class="primary" onclick="startGame('normal')">標準 (資金1,000万)</button>
-      <button class="danger" onclick="startGame('hard')">修羅 (資金700万・家賃増・プロ多)</button>
+      <button class="danger" onclick="startGame('hard')">修羅 (資金650万・家賃増・プロ多)</button>
     </div>
   `);
 }
