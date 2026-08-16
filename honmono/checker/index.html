@@ -41,18 +41,20 @@
 
 <main class="wrap">
   <h1>🔍 画像来歴チェッカー</h1>
-  <p class="lead">画像をドロップすると、C2PA(コンテンツ来歴)・EXIF・XMP・生成AIツールの痕跡をその場で解析します。
-  画像は<b>あなたのブラウザ内だけ</b>で処理され、どこにもアップロードされません。</p>
+  <p class="lead">画像や動画をドロップすると、C2PA(コンテンツ来歴)・EXIF・XMP・生成AIツールの痕跡をその場で解析します。
+  メタデータが消されている場合も、再圧縮の痕跡から「どんな経緯をたどったファイルか」を推定します。
+  ファイルは<b>あなたのブラウザ内だけ</b>で処理され、どこにもアップロードされません。</p>
 
-  <div id="drop" tabindex="0" role="button" aria-label="画像を選択">
-    <div class="big">画像をここにドロップ / クリックして選択</div>
-    <div class="note">対応形式: JPEG / PNG / WebP / HEIC / AVIF</div>
-    <input type="file" id="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.avif,image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif" hidden>
+  <div id="drop" tabindex="0" role="button" aria-label="画像・動画を選択">
+    <div class="big">画像・動画をここにドロップ / クリックして選択</div>
+    <div class="note">画像: JPEG / PNG / WebP / HEIC / AVIF ・ 動画: MP4 / MOV(Sora等のC2PA来歴にも対応)</div>
+    <input type="file" id="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.avif,.mp4,.mov,.m4v,image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif,video/mp4,video/quicktime" hidden>
   </div>
 
   <section id="result">
     <div class="card result-head">
       <img id="preview" alt="解析対象のプレビュー">
+      <video id="previewVid" controls muted playsinline style="display:none; max-width:240px; max-height:180px; border-radius:10px"></video>
       <div>
         <div id="fileName" style="font-weight:700"></div>
         <div class="file-meta" id="fileMeta"></div>
@@ -136,7 +138,21 @@ const AI_PATTERNS = [
   { re: /civitai/i,                        name: 'Civitai' },
   { re: /grok imagine|xai.?grok/i,         name: 'Grok' },
   { re: /google.?imagen|imagen[ \-_]?[23]/i, name: 'Google Imagen' },
+  { re: /\bsora\b/i,                       name: 'Sora (OpenAI)' },
+  { re: /google.?veo|veo[ \-_]?[23]/i,     name: 'Google Veo' },
+  { re: /kling.?ai|kuaishou.?kling/i,      name: 'Kling' },
+  { re: /runway(ml| ?gen)/i,               name: 'Runway' },
+  { re: /pika ?labs|pika\.art/i,           name: 'Pika' },
+  { re: /lumalabs|dream ?machine/i,        name: 'Luma Dream Machine' },
+  { re: /hailuo|minimax.?video/i,          name: 'Hailuo (MiniMax)' },
 ];
+
+/* 生成AIの定番出力サイズ(両辺一致で弱い手がかりとする) */
+const AI_SIZES = new Set([
+  '512x512', '512x768', '768x512', '640x640', '768x768', '768x1024', '1024x768',
+  '896x1152', '1152x896', '832x1216', '1216x832', '1024x1024', '1024x1536',
+  '1536x1024', '1344x768', '768x1344', '1152x768', '768x1152',
+]);
 
 const IFD0_TAGS = {
   0x010F: 'メーカー (Make)',
@@ -207,45 +223,69 @@ function extractStrings(bytes, minLen = 6, cap = 4 * 1024 * 1024) {
 
 /* ========== TIFF/EXIF パーサ ========== */
 function parseTIFF(bytes) {
-  const out = {};
-  if (bytes.length < 8) return out;
+  const tags = {};
+  let thumb = null;
+  const empty = { tags, thumb };
+  if (bytes.length < 8) return empty;
   const le = bytes[0] === 0x49 && bytes[1] === 0x49;
   const be = bytes[0] === 0x4D && bytes[1] === 0x4D;
-  if (!le && !be) return out;
+  if (!le && !be) return empty;
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const u16 = o => dv.getUint16(o, le);
   const u32 = o => dv.getUint32(o, le);
-  if (u16(2) !== 42) return out;
+  if (u16(2) !== 42) return empty;
 
   const visited = new Set(); // IFDポインタのループによる無限再帰対策
   const readIFD = (off, tagMap) => {
-    if (off <= 0 || off + 2 > bytes.length) return;
-    if (visited.has(off) || visited.size > 32) return;
+    if (off <= 0 || off + 2 > bytes.length) return 0;
+    if (visited.has(off) || visited.size > 32) return 0;
     visited.add(off);
     const n = u16(off);
-    if (n > 500) return; // 壊れたデータ対策
+    if (n > 500) return 0; // 壊れたデータ対策
     for (let i = 0; i < n; i++) {
       const e = off + 2 + i * 12;
       if (e + 12 > bytes.length) break;
       const tag = u16(e), type = u16(e + 2), count = u32(e + 4);
       if (tag === 0x8769) { readIFD(u32(e + 8), EXIF_TAGS); continue; }
-      if (tag === 0x8825) { out['GPS情報'] = 'あり(位置情報タグ検出)'; continue; }
+      if (tag === 0x8825) { tags['GPS情報'] = 'あり(位置情報タグ検出)'; continue; }
       const name = tagMap[tag];
       if (!name || type !== 2) continue;
       const size = (TYPE_SIZE[type] || 1) * count;
       const valOff = size > 4 ? u32(e + 8) : e + 8;
       if (valOff + size > bytes.length) continue;
       const v = ascii(bytes, valOff, count).replace(/\0+$/, '').trim();
-      if (v) out[name] = v;
+      if (v) tags[name] = v;
     }
+    const nextOff = off + 2 + n * 12;
+    return nextOff + 4 <= bytes.length ? u32(nextOff) : 0;
   };
-  readIFD(u32(4), IFD0_TAGS);
-  return out;
+  const ifd1 = readIFD(u32(4), IFD0_TAGS);
+
+  // IFD1 = 撮影時に埋め込まれたサムネイル(改ざん検知の材料)
+  if (ifd1 > 0 && ifd1 + 2 <= bytes.length && !visited.has(ifd1)) {
+    visited.add(ifd1);
+    const n = u16(ifd1);
+    let tOff = 0, tLen = 0;
+    if (n <= 500) {
+      for (let i = 0; i < n; i++) {
+        const e = ifd1 + 2 + i * 12;
+        if (e + 12 > bytes.length) break;
+        const tag = u16(e);
+        if (tag === 0x0201) tOff = u32(e + 8);
+        if (tag === 0x0202) tLen = u32(e + 8);
+      }
+    }
+    if (tOff > 0 && tLen > 100 && tLen < 2 * 1024 * 1024 && tOff + tLen <= bytes.length) {
+      thumb = bytes.subarray(tOff, tOff + tLen);
+    }
+  }
+  return { tags, thumb };
 }
 
 /* ========== JPEG ========== */
 function parseJPEG(bytes) {
-  const r = { exif: {}, xmp: '', comments: [], c2paPayloads: [], segments: [] };
+  const r = { exif: {}, xmp: '', comments: [], c2paPayloads: [], segments: [],
+              dqt: [], sof: null, hasJFIF: false, thumb: null };
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let off = 2;
   while (off + 4 <= bytes.length) {
@@ -263,7 +303,9 @@ function parseJPEG(bytes) {
     if (marker === 0xE1) { // APP1: EXIF or XMP
       const head = ascii(seg, 0, 29);
       if (head.startsWith('Exif\0\0')) {
-        Object.assign(r.exif, parseTIFF(seg.subarray(6)));
+        const t = parseTIFF(seg.subarray(6));
+        Object.assign(r.exif, t.tags);
+        if (t.thumb) r.thumb = t.thumb;
         r.segments.push('APP1/EXIF');
       } else if (head.startsWith('http://ns.adobe.com/xap/1.0/')) {
         r.xmp += utf8(seg.subarray(29));
@@ -281,6 +323,23 @@ function parseJPEG(bytes) {
     } else if (marker === 0xFE) { // COM
       const c = utf8(seg).trim();
       if (c) { r.comments.push(c); r.segments.push('COM(コメント)'); }
+    } else if (marker === 0xE0) { // APP0: JFIF
+      if (ascii(seg, 0, 4) === 'JFIF') r.hasJFIF = true;
+    } else if (marker === 0xDB) { // DQT: 量子化テーブル(再圧縮品質の推定材料)
+      let p = 0;
+      while (p < seg.length) {
+        const pq = seg[p] >> 4, tq = seg[p] & 15;
+        p++;
+        const cnt = pq ? 128 : 64;
+        if (p + cnt > seg.length) break;
+        const table = [];
+        for (let i = 0; i < 64; i++) table.push(pq ? ((seg[p + i * 2] << 8) | seg[p + i * 2 + 1]) : seg[p + i]);
+        r.dqt.push({ tq, table });
+        p += cnt;
+      }
+    } else if ([0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF].includes(marker)) {
+      // SOF: 画像サイズとプログレッシブ判定
+      if (seg.length >= 5) r.sof = { progressive: marker === 0xC2, h: (seg[1] << 8) | seg[2], w: (seg[3] << 8) | seg[4] };
     }
     off = segEnd;
   }
@@ -299,7 +358,9 @@ async function parsePNG(bytes) {
     if (dataEnd + 4 > bytes.length + 4 || len > bytes.length) break;
     const data = bytes.subarray(off + 8, Math.min(dataEnd, bytes.length));
 
-    if (type === 'tEXt') {
+    if (type === 'IHDR') {
+      if (len >= 8) r.dims = { w: dv.getUint32(off + 8), h: dv.getUint32(off + 12) };
+    } else if (type === 'tEXt') {
       const z = data.indexOf(0);
       if (z > 0) {
         const key = ascii(data, 0, z);
@@ -332,7 +393,7 @@ async function parsePNG(bytes) {
         r.segments.push(`iTXt:${key}`);
       }
     } else if (type === 'eXIf') {
-      Object.assign(r.exif, parseTIFF(data));
+      Object.assign(r.exif, parseTIFF(data).tags);
       r.segments.push('eXIf');
     } else if (type === 'caBX') {
       r.c2paPayloads.push(data);
@@ -354,7 +415,7 @@ function parseWebP(bytes) {
     const data = bytes.subarray(off + 8, Math.min(off + 8 + len, bytes.length));
     if (four === 'EXIF') {
       const tiff = ascii(data, 0, 6).startsWith('Exif\0\0') ? data.subarray(6) : data;
-      Object.assign(r.exif, parseTIFF(tiff));
+      Object.assign(r.exif, parseTIFF(tiff).tags);
       r.segments.push('EXIF');
     } else if (four === 'XMP ') {
       r.xmp += utf8(data);
@@ -385,10 +446,12 @@ function parseBMFF(bytes) {
   const r = { exif: {}, xmp: '', c2paPayloads: [], segments: [] };
   const exifIdx = findBytes(bytes, [0x45, 0x78, 0x69, 0x66, 0x00, 0x00]); // "Exif\0\0"
   if (exifIdx >= 0) {
-    Object.assign(r.exif, parseTIFF(bytes.subarray(exifIdx + 6)));
+    Object.assign(r.exif, parseTIFF(bytes.subarray(exifIdx + 6)).tags);
     r.segments.push('Exifアイテム');
   }
-  const latin = latin1(bytes);
+  // 動画等ではメタデータ(moov)がファイル末尾にあることも多いため、先頭+末尾を走査する
+  let latin = latin1(bytes);
+  if (bytes.length > 16 * 1024 * 1024) latin += '\n' + latin1(bytes.subarray(bytes.length - 8 * 1024 * 1024));
   const xs = latin.indexOf('<x:xmpmeta');
   if (xs >= 0) {
     const xe = latin.indexOf('</x:xmpmeta>', xs);
@@ -399,6 +462,68 @@ function parseBMFF(bytes) {
     r.segments.push('JUMBF(C2PA)');
   }
   return r;
+}
+
+/* ========== JPEG再圧縮品質の推定 ========== */
+/* IJG標準の輝度量子化テーブルとの照合で、最後に保存された時の品質(1-100)を推定する */
+const STD_LUM = [16,11,10,16,24,40,51,61,12,12,14,19,26,58,60,55,14,13,16,24,40,57,69,56,
+                 14,17,22,29,51,87,80,62,18,22,37,56,68,109,103,77,24,35,55,64,81,104,113,92,
+                 49,64,78,87,103,121,120,101,72,92,95,98,112,100,103,99];
+const ZIGZAG = [0,1,8,16,9,2,3,10,17,24,32,25,18,11,4,5,12,19,26,33,40,48,41,34,27,20,13,6,
+                7,14,21,28,35,42,49,56,57,50,43,36,29,22,15,23,30,37,44,51,58,59,52,45,38,31,
+                39,46,53,60,61,54,47,55,62,63];
+function estimateJpegQuality(zigzagTable) {
+  const natural = new Array(64);
+  for (let i = 0; i < 64; i++) natural[ZIGZAG[i]] = zigzagTable[i];
+  let bestQ = 0, bestErr = Infinity;
+  for (let q = 1; q <= 100; q++) {
+    const s = q < 50 ? 5000 / q : 200 - 2 * q;
+    let err = 0;
+    for (let i = 0; i < 64; i++) {
+      const v = Math.max(1, Math.min(255, Math.floor((STD_LUM[i] * s + 50) / 100)));
+      err += Math.abs(v - natural[i]);
+    }
+    if (err < bestErr) { bestErr = err; bestQ = q; }
+  }
+  return { q: bestQ, standard: bestErr < 64 };
+}
+
+/* ========== EXIFサムネイルと本体の照合(差し替え・大幅加工の検知) ========== */
+function bitmapToRGB(bmp, quarterTurns) {
+  const c = document.createElement('canvas');
+  c.width = 32; c.height = 32;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.save();
+  ctx.translate(16, 16);
+  ctx.rotate(quarterTurns * Math.PI / 2);
+  ctx.drawImage(bmp, -16, -16, 32, 32);
+  ctx.restore();
+  const d = ctx.getImageData(0, 0, 32, 32).data;
+  const out = new Float32Array(3072); // RGB各チャンネル(輝度だけだと赤⇔緑等の差し替えを見逃す)
+  for (let i = 0; i < 1024; i++) {
+    out[i * 3] = d[i * 4];
+    out[i * 3 + 1] = d[i * 4 + 1];
+    out[i * 3 + 2] = d[i * 4 + 2];
+  }
+  return out;
+}
+async function thumbMismatch(file, thumbBytes) {
+  try {
+    const [main, thumb] = await Promise.all([
+      createImageBitmap(file),
+      createImageBitmap(new Blob([thumbBytes], { type: 'image/jpeg' })),
+    ]);
+    const ga = bitmapToRGB(main, 0);
+    let best = Infinity;
+    for (const rot of [0, 1, 2, 3]) { // Orientation回転による見かけ違いを許容
+      const gb = bitmapToRGB(thumb, rot);
+      let d = 0;
+      for (let i = 0; i < 3072; i++) d += Math.abs(ga[i] - gb[i]);
+      best = Math.min(best, d / 3072);
+    }
+    main.close(); thumb.close();
+    return best > 40; // 平均チャンネル差(0-255)。リサイズ・再圧縮由来の差は通常15未満
+  } catch { return false; }
 }
 
 /* ========== 解析の統合 ========== */
@@ -421,13 +546,17 @@ async function analyze(file) {
   } else if (ascii(bytes, 0, 4) === 'RIFF' && ascii(bytes, 8, 4) === 'WEBP') {
     format = 'WebP'; parsed = parseWebP(bytes);
   } else if (bytes.length > 12 && ascii(bytes, 4, 4) === 'ftyp') {
-    const brand = ascii(bytes, 8, 4).toLowerCase();
-    format = (brand === 'avif' || brand === 'avis') ? 'AVIF' : 'HEIC/HEIF';
+    const brand = ascii(bytes, 8, 4).toLowerCase().trim();
+    const imageBrands = ['heic', 'heix', 'heim', 'heis', 'hevc', 'hevx', 'mif1', 'msf1', 'avif', 'avis'];
+    if (brand === 'avif' || brand === 'avis') format = 'AVIF';
+    else if (imageBrands.includes(brand)) format = 'HEIC/HEIF';
+    else format = '動画 (MP4/MOV)';
     parsed = parseBMFF(bytes);
   } else {
-    return { format: '不明', findings: [{ level: 'warn', title: '非対応の画像形式です',
-      detail: 'JPEG / PNG / WebP / HEIC / AVIF に対応しています。他の形式は変換してからお試しください。' }], meta, xmp: '', verdict: 'unknown', hasC2PA: false };
+    return { format: '不明', findings: [{ level: 'warn', title: '非対応のファイル形式です',
+      detail: '画像は JPEG / PNG / WebP / HEIC / AVIF、動画は MP4 / MOV に対応しています。他の形式は変換してからお試しください。' }], meta, xmp: '', verdict: 'unknown', hasC2PA: false };
   }
+  const isVideo = format.startsWith('動画');
 
   const exif = parsed.exif || {};
   const xmp = parsed.xmp || '';
@@ -523,8 +652,63 @@ async function analyze(file) {
     matchAI(c).forEach(g => aiHits.add(g));
   }
 
-  /* --- 最後の砦: ファイル全体の文字列スキャン --- */
-  const allStrings = extractStrings(bytes).join('\n');
+  /* --- 画像サイズと生成AI定番サイズの照合 --- */
+  let dims = parsed.dims || (parsed.sof ? { w: parsed.sof.w, h: parsed.sof.h } : null);
+  if (!dims && !isVideo) {
+    try { const bmp = await createImageBitmap(file); dims = { w: bmp.width, h: bmp.height }; bmp.close(); } catch {}
+  }
+  let aiSizeHit = false;
+  if (dims && dims.w > 0) {
+    meta['画像サイズ'] = `${dims.w} × ${dims.h}`;
+    if (!hasCameraExif && !isVideo && AI_SIZES.has(dims.w + 'x' + dims.h)) {
+      aiSizeHit = true;
+      findings.push({
+        level: 'warn',
+        title: '生成AIでよく使われる画像サイズです',
+        detail: `${dims.w}×${dims.h} は Stable Diffusion 等の定番出力サイズです。単独では弱い手がかりですが、撮影情報が皆無であることと合わせると注意に値します。`,
+      });
+    }
+  }
+
+  /* --- 画像の経緯(どう保存されてきたか)の推定 --- */
+  const traceNotes = [];
+  if (format === 'JPEG') {
+    if (parsed.hasJFIF && Object.keys(exif).length === 0 && !xmp && !hasC2PA) {
+      traceNotes.push('EXIF・XMPが存在せず、メタデータを保持しないソフトで再保存されています(SNS・メッセージアプリ経由の典型)');
+    }
+    if (parsed.sof && parsed.sof.progressive) {
+      traceNotes.push('プログレッシブJPEG — Web/SNS配信用に再圧縮された画像によく見られる形式');
+    }
+    const lum = (parsed.dqt || []).find(t => t.tq === 0);
+    if (lum && lum.table.length === 64) {
+      const est = estimateJpegQuality(lum.table);
+      if (est.q) traceNotes.push(`最後に保存された時の圧縮品質はおよそ ${est.q}/100${est.standard ? '' : '(非標準の圧縮テーブル使用)'}`);
+    }
+  }
+  if (/^(screen ?shot|screenshot|スクリーンショット|スクショ)/i.test(file.name)) {
+    traceNotes.push('ファイル名がスクリーンショットであることを示唆 — 元画像のメタデータは残っていません');
+  }
+  if (traceNotes.length) {
+    findings.push({ level: 'info', title: 'この画像がたどった経緯(推定)', detail: traceNotes.join(' / ') });
+  }
+
+  /* --- EXIFサムネイルと本体の照合 --- */
+  if (parsed.thumb) {
+    meta['埋め込みサムネイル'] = 'あり';
+    if (await thumbMismatch(file, parsed.thumb)) {
+      findings.push({
+        level: 'warn',
+        title: '埋め込みサムネイルと本体画像が一致しません',
+        detail: 'EXIF内に残っている撮影時のサムネイルと、現在の画像の内容が大きく異なります。撮影後に別の画像へ差し替えられた・大幅に加工された痕跡の可能性があります。',
+      });
+    }
+  }
+
+  /* --- 最後の砦: ファイル全体の文字列スキャン(大きいファイルは末尾も) --- */
+  let allStrings = extractStrings(bytes).join('\n');
+  if (bytes.length > 4 * 1024 * 1024) {
+    allStrings += '\n' + extractStrings(bytes.subarray(bytes.length - 4 * 1024 * 1024)).join('\n');
+  }
   matchAI(allStrings).forEach(g => aiHits.add(g));
   if (!hasC2PA && /c2pa\.(assertions|claim|signature)/.test(allStrings)) {
     findings.push({ level: 'info', title: 'C2PAらしきデータ断片を検出',
@@ -553,7 +737,7 @@ async function analyze(file) {
   meta['ファイルサイズ'] = (bytes.length / 1024).toFixed(1) + ' KB';
   if ((parsed.segments || []).length) meta['検出セグメント'] = parsed.segments.join(', ');
 
-  const verdict = aiList.length ? 'ai' : hasC2PA ? 'c2pa' : hasCameraExif ? 'camera' : 'unknown';
+  const verdict = aiList.length ? 'ai' : hasC2PA ? 'c2pa' : hasCameraExif ? 'camera' : aiSizeHit ? 'weak' : 'unknown';
   return { format, findings, meta, xmp, verdict, hasC2PA };
 }
 
@@ -640,25 +824,39 @@ const VERDICTS = {
              body: '来歴データが埋め込まれています。編集履歴・作成ツールの詳細は公式の検証ツールで確認できます。' },
   camera:  { cls: 'ok',   icon: '📷', title: 'カメラ撮影の痕跡があります',
              body: 'カメラ機種や撮影日時のメタデータが残っており、実写である可能性を高めます(偽装可能な点には注意)。' },
+  weak:    { cls: 'warn', icon: '🟡', title: 'AI生成を疑う手がかりがあります(弱)',
+             body: '決定的な証拠はありませんが、注意すべき特徴が見つかりました。詳細は下のシグナル一覧を確認し、逆画像検索や元データの入手で追加検証してください。' },
   unknown: { cls: 'warn', icon: '❓', title: '判定材料がありません',
-             body: 'メタデータが見つかりませんでした。SNS経由の画像はメタデータが消えるため、可能なら元データで再チェックを。' },
+             body: 'メタデータが見つかりませんでした。SNS経由のファイルはメタデータが消えるため、可能なら元データで再チェックを。下の「経緯(推定)」も参考にしてください。' },
 };
 
 async function handle(file) {
   $('result').style.display = 'block';
   $('fileName').textContent = file.name;
-  $('fileMeta').textContent = '解析中…';
   $('verdict').innerHTML = '';
   $('findings').innerHTML = '';
   $('metaTable').innerHTML = '';
   $('xmpDetails').style.display = 'none';
   $('c2paCard').style.display = 'none';
 
-  const prev = $('preview').src;
-  if (prev.startsWith('blob:')) URL.revokeObjectURL(prev);
-  $('preview').style.display = '';
-  $('preview').onerror = () => { $('preview').style.display = 'none'; }; // HEIC等ブラウザ非対応形式
-  $('preview').src = URL.createObjectURL(file);
+  if (file.size > 300 * 1024 * 1024) {
+    $('fileMeta').textContent = 'ファイルが大きすぎます(300MBまで)。動画は冒頭部分を切り出してお試しください。';
+    return;
+  }
+  $('fileMeta').textContent = '解析中…';
+
+  for (const el of [$('preview'), $('previewVid')]) {
+    if (el.src && el.src.startsWith('blob:')) URL.revokeObjectURL(el.src);
+  }
+  const isVideoFile = (file.type && file.type.startsWith('video/')) || /\.(mp4|mov|m4v)$/i.test(file.name);
+  $('preview').style.display = isVideoFile ? 'none' : '';
+  $('previewVid').style.display = isVideoFile ? '' : 'none';
+  if (isVideoFile) {
+    $('previewVid').src = URL.createObjectURL(file);
+  } else {
+    $('preview').onerror = () => { $('preview').style.display = 'none'; }; // HEIC等ブラウザ非対応形式
+    $('preview').src = URL.createObjectURL(file);
+  }
 
   let res;
   try {
