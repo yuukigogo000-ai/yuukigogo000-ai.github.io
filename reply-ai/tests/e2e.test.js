@@ -1,0 +1,201 @@
+const { chromium } = require('playwright');
+
+const PNG_1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
+const results = [];
+const check = (name, cond, extra = '') => results.push({ name, pass: !!cond, extra: String(extra).slice(0, 160) });
+
+const replyResult = (tag) => ({
+  stop_reason: 'end_turn',
+  content: [
+    { type: 'thinking', thinking: '' },
+    { type: 'text', text: JSON.stringify({
+        situation: `状況分析${tag}`,
+        interest_level: 72,
+        replies: [
+          { text: `返信案A-${tag}`, why: '理由1' },
+          { text: `返信案B-${tag}`, why: '理由2' },
+          { text: `返信案C-${tag}`, why: '理由3' },
+        ],
+        advice: `アドバイス${tag}`,
+      }) },
+  ],
+});
+
+const profileResult = () => ({
+  stop_reason: 'end_turn',
+  content: [{ type: 'text', text: JSON.stringify({
+    score: 68,
+    first_impression: '第一印象テスト',
+    strengths: ['強み1', '強み2'],
+    weaknesses: ['弱み1', '弱み2', '弱み3'],
+    improved_bios: [ { text: 'bio案1', why: '狙い1' }, { text: 'bio案2', why: '狙い2' } ],
+    photo_advice: '写真アドバイステスト',
+  }) }],
+});
+
+(async () => {
+  const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || undefined });
+  const page = await browser.newPage();
+  const consoleErrors = [];
+  const pageErrors = [];
+  page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+  page.on('pageerror', e => pageErrors.push(String(e)));
+
+  let mock = null;
+  let lastBody = null;
+  let callCount = 0;
+  await page.route('https://api.anthropic.com/**', async route => {
+    callCount++;
+    lastBody = JSON.parse(route.request().postData());
+    const r = mock ? mock(lastBody) : { status: 500, body: { error: { message: 'no mock configured' } } };
+    await route.fulfill({ status: r.status, contentType: 'application/json', body: JSON.stringify(r.body) });
+  });
+
+  await page.goto('http://localhost:8778/reply-ai/index.html');
+  await page.waitForTimeout(300);
+  check('1. ページ読込時にJSエラーなし', pageErrors.length === 0, pageErrors.join(' | '));
+
+  // --- 2. APIキー未入力で生成 ---
+  await page.click('#generate');
+  check('2. キー未入力→エラー表示', (await page.textContent('#error')).includes('APIキー'));
+
+  // --- 3. キーあり・会話なし ---
+  await page.click('summary');
+  await page.fill('#apiKey', 'sk-ant-test-123');
+  await page.check('#rememberKey');
+  await page.click('#generate');
+  check('3. 会話未入力→エラー表示', (await page.textContent('#error')).includes('貼り付け'));
+
+  // --- 4. 正常系(テキスト会話) ---
+  await page.fill('#conversation', '自分: テストやで\n相手: いいね〜');
+  mock = () => ({ status: 200, body: replyResult('1') });
+  await page.click('#generate');
+  await page.waitForSelector('#replyResults .card');
+  const cards = await page.$$('#replyResults .card');
+  check('4a. 返信カード3枚表示', cards.length === 3, `count=${cards.length}`);
+  check('4b. 脈あり度72%表示', (await page.textContent('#meterPct')) === '72%');
+  check('4c. アドバイス表示', (await page.textContent('#replyAdvice')).includes('アドバイス1'));
+  check('4d. 再生成ボタン出現', await page.isVisible('#regenerate'));
+  check('4e. リクエスト: model正しい', lastBody.model === 'claude-opus-5');
+  check('4f. リクエスト: 構造化出力指定', lastBody.output_config?.format?.type === 'json_schema');
+  check('4g. リクエスト: 会話が含まれる', JSON.stringify(lastBody.messages).includes('テストやで'));
+  check('4h. エラー欄が空', (await page.textContent('#error')) === '');
+
+  // --- 5. 再生成: 既出案が渡るか ---
+  mock = () => ({ status: 200, body: replyResult('2') });
+  await page.click('#regenerate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイス2'));
+  const msgStr = JSON.stringify(lastBody.messages);
+  check('5a. 再生成: 既出案リスト送信', msgStr.includes('既に提示済みの案') && msgStr.includes('返信案A-1'));
+
+  // --- 6. 文体サンプルがプロンプトに入るか ---
+  await page.fill('#styleSample', 'おつかれ〜今日どうだった');
+  mock = () => ({ status: 200, body: replyResult('3') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイス3'));
+  check('6. 文体サンプル送信', JSON.stringify(lastBody.messages).includes('おつかれ〜今日どうだった'));
+
+  // --- 7. APIエラー(401) ---
+  mock = () => ({ status: 401, body: { error: { type: 'authentication_error', message: 'invalid x-api-key' } } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#error').textContent.length > 0);
+  check('7a. 401→エラー表示', (await page.textContent('#error')).includes('invalid x-api-key'));
+  check('7b. 401後ボタン復活', !(await page.isDisabled('#generate')));
+
+  // --- 8. refusal ---
+  mock = () => ({ status: 200, body: { stop_reason: 'refusal', content: [] } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#error').textContent.includes('回答'));
+  check('8. refusal→丁寧なエラー', (await page.textContent('#error')).includes('回答できませんでした'));
+
+  // --- 9. max_tokens途中切断(壊れたJSON) ---
+  mock = () => ({ status: 200, body: { stop_reason: 'max_tokens', content: [{ type: 'text', text: '{"situation":"途中で切れ' }] } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#error').textContent.length > 0);
+  check('9. 途中切断→分かるエラー文言', (await page.textContent('#error')).includes('長すぎ') || (await page.textContent('#error')).includes('もう一度'),
+        await page.textContent('#error'));
+
+  // --- 10. 画像アップロード ---
+  const png = { name: 's.png', mimeType: 'image/png', buffer: PNG_1x1 };
+  await page.setInputFiles('#convFile', [png]);
+  await page.waitForSelector('#convThumbs .thumb');
+  check('10a. サムネイル表示', (await page.$$('#convThumbs .thumb')).length === 1);
+  // 7枚追加 → 上限エラー
+  await page.setInputFiles('#convFile', Array(7).fill(png));
+  await page.waitForTimeout(500);
+  check('10b. 6枚上限で停止+エラー', (await page.$$('#convThumbs .thumb')).length === 6 &&
+        (await page.textContent('#error')).includes('6枚'));
+  // 削除
+  await page.click('#convThumbs .thumb .del');
+  check('10c. サムネ削除できる', (await page.$$('#convThumbs .thumb')).length === 5);
+  // 画像つき送信
+  mock = () => ({ status: 200, body: replyResult('4') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイス4'));
+  const imgBlocks = lastBody.messages[0].content.filter(b => b.type === 'image');
+  check('10d. 画像ブロック送信(5枚)', imgBlocks.length === 5, `count=${imgBlocks.length}`);
+  check('10e. 画像はJPEGに変換済み', imgBlocks.every(b => b.source.media_type === 'image/jpeg'));
+
+  // --- 11. 壊れた画像ファイル ---
+  const before = pageErrors.length + consoleErrors.length;
+  await page.setInputFiles('#convFile', [{ name: 'evil.png', mimeType: 'image/png', buffer: Buffer.from('this is not an image at all') }]);
+  await page.waitForTimeout(800);
+  const errText = await page.textContent('#error');
+  check('11. 壊れた画像→ユーザーに見えるエラー(黙って失敗しない)', errText.includes('読み込め'), `error="${errText}" uncaught=${pageErrors.length + consoleErrors.length - before}`);
+
+  // --- 12. XSS: AI応答に悪意あるHTML ---
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
+    situation: '<img src=x onerror="window.__xss=1">', interest_level: 50,
+    replies: [{ text: '<script>window.__xss=2<\/script>案', why: '<b onclick=1>理由' }, { text: 'a', why: 'b' }, { text: 'c', why: 'd' }],
+    advice: '<svg onload="window.__xss=3">' }) }] } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#situation').textContent.includes('img'));
+  await page.waitForTimeout(300);
+  const xss = await page.evaluate(() => window.__xss);
+  check('12. XSS耐性(HTMLがそのまま文字として表示)', xss === undefined, `__xss=${xss}`);
+
+  // --- 13. プロフィールタブ ---
+  await page.click('#tabBtnProfile');
+  check('13a. タブ切替でプロフ画面表示', await page.isVisible('#profGenerate') && !(await page.isVisible('#generate')));
+  await page.click('#profGenerate');
+  check('13b. 入力なし診断→エラー', (await page.textContent('#error')).length > 0);
+  await page.click('label[for="pm2"]'); // ゼロから作成
+  await page.click('#profGenerate');
+  check('13c. 基本情報なし→エラー', (await page.textContent('#error')).includes('基本情報'));
+  await page.fill('#basicInfo', '29歳 会社員 サウナ好き');
+  mock = () => ({ status: 200, body: profileResult() });
+  await page.click('#profGenerate');
+  await page.waitForSelector('#profResults .card');
+  check('13d. 得点表示', (await page.textContent('#profMeterPct')) === '68点');
+  check('13e. 強み/弱みリスト', (await page.$$('#profStrengths li')).length === 2 && (await page.$$('#profWeaknesses li')).length === 3);
+  check('13f. bio改善案2枚', (await page.$$('#profResults .card')).length === 2);
+  check('13g. 写真アドバイス表示', (await page.textContent('#profPhotoAdvice')).includes('写真アドバイステスト'));
+  check('13h. プロフ用プロンプト送信', lastBody.system.includes('プロフィール'));
+
+  // --- 14. localStorage永続化 ---
+  await page.reload();
+  await page.waitForTimeout(300);
+  check('14. リロード後もキー復元', (await page.inputValue('#apiKey')) === 'sk-ant-test-123');
+
+  // --- 15. ネットワーク断 ---
+  await page.unroute('https://api.anthropic.com/**');
+  await page.route('https://api.anthropic.com/**', route => route.abort('internetdisconnected'));
+  await page.fill('#conversation', '自分: a\n相手: b');
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#error').textContent.length > 0, null, { timeout: 5000 }).catch(() => {});
+  check('15. ネットワーク断→エラー表示+ボタン復活', (await page.textContent('#error')).length > 0 && !(await page.isDisabled('#generate')),
+        await page.textContent('#error'));
+
+  check('X. コンソールエラーなし(想定内のfetch失敗以外)', consoleErrors.filter(e => !e.includes('Failed to load resource') && !e.includes('ERR_INTERNET')).length === 0,
+        consoleErrors.join(' | '));
+  check('Y. 未捕捉例外なし', pageErrors.length === 0, pageErrors.join(' | '));
+
+  await browser.close();
+  let failed = 0;
+  for (const r of results) {
+    console.log(`${r.pass ? 'PASS' : 'FAIL'}  ${r.name}${r.pass ? '' : '   [' + r.extra + ']'}`);
+    if (!r.pass) failed++;
+  }
+  console.log(`\n${results.length - failed}/${results.length} passed`);
+  process.exit(failed ? 1 : 0);
+})().catch(e => { console.error('TEST CRASH:', e); process.exit(2); });
