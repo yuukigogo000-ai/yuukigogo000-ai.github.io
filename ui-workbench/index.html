@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>UIワークベンチ — アプリごとのUI制作工房</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --bg: #fafaf9; --fg: #1c1917; --muted: #6b7280;
+  --card: #ffffff; --line: #e5e4e0;
+  --accent: #0e7490; --accent-strong: #155e75; --accent-soft: #0e74901a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16181d; --fg: #e7e5e4; --muted: #9ca3af;
+    --card: #1f232b; --line: #363b45;
+    --accent: #22a7c9; --accent-strong: #67cfe8; --accent-soft: #22a7c926;
+  }
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg); line-height: 1.7;
+  font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+.site-head { border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 20; }
+.site-head .wrap { display: flex; align-items: center; gap: 12px; padding: 10px 16px; flex-wrap: wrap; }
+.site-head h1 { font-size: 1.05rem; margin: 0; }
+.site-head .spacer { flex: 1; }
+section.panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; margin: 16px 0; }
+section.panel > h2 { font-size: 1rem; margin: 0 0 4px; }
+.note { font-size: .8rem; color: var(--muted); }
+label.fld { display: block; font-size: .8rem; margin: 8px 0 2px; color: var(--muted); }
+input[type=text], select, textarea {
+  width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 8px;
+  font-size: .95rem; font-family: inherit; background: var(--bg); color: var(--fg);
+}
+textarea { resize: vertical; }
+button {
+  font-size: .9rem; padding: 8px 14px; border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card); color: var(--fg); cursor: pointer;
+}
+button:hover { border-color: var(--accent); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.small { font-size: .8rem; padding: 4px 10px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+.row > div { flex: 1; min-width: 140px; }
+.cols { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 16px; align-items: start; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; } }
+
+/* 候補カード */
+#candidates { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 12px; }
+.cand { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+.cand .mini { padding: 14px; }
+.cand .mini .m-title { font-weight: 700; font-size: .9rem; margin-bottom: 8px; }
+.cand .m-btn { display: inline-block; padding: 6px 14px; font-size: .8rem; font-weight: 600; margin-right: 6px; }
+.cand .m-card { margin-top: 10px; padding: 8px 10px; font-size: .72rem; }
+.cand .m-bar { height: 8px; margin-top: 8px; overflow: hidden; }
+.cand .m-bar > div { height: 100%; width: 62%; }
+.cand .use { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-top: 1px solid var(--line); background: var(--card); }
+.cand .use .nm { font-size: .78rem; color: var(--muted); }
+
+/* テーマ編集 */
+.tokens { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 12px; margin-top: 8px; }
+.tok { display: flex; align-items: center; gap: 8px; font-size: .8rem; }
+.tok input[type=color] { width: 34px; height: 26px; padding: 1px; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
+
+/* スマホプレビュー */
+.phone-outer { position: sticky; top: 64px; }
+.phone {
+  width: 320px; height: 650px; border: 10px solid #111; border-radius: 34px;
+  overflow: hidden; position: relative; background: #000; margin: 0 auto;
+  box-shadow: 0 8px 30px #0004;
+}
+.screen { position: absolute; inset: 0; display: none; flex-direction: column; overflow: hidden; }
+.screen.active { display: flex; }
+.ptabs { display: flex; gap: 6px; justify-content: center; margin: 10px 0; flex-wrap: wrap; }
+.ptabs button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* チェックリスト */
+#assetList { list-style: none; margin: 8px 0 0; padding: 0; }
+#assetList li { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: .9rem; }
+#assetList li.done span { text-decoration: line-through; color: var(--muted); }
+#assetList li button { margin-left: auto; }
+
+/* 書き出し */
+.export-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-top: 10px; }
+.export-grid textarea { font-family: ui-monospace, Consolas, monospace; font-size: .74rem; min-height: 170px; }
+.copyline { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.copyline b { font-size: .84rem; }
+
+footer { text-align: center; font-size: .75rem; color: var(--muted); padding: 24px 0 40px; }
+</style>
+</head>
+<body>
+<header class="site-head">
+  <div class="wrap">
+    <h1>🎨 UIワークベンチ</h1>
+    <span class="note">アプリごとに最適なUIを決めて、素材をブレずに発注する工房</span>
+    <span class="spacer"></span>
+    <select id="projSelect" style="width:auto;min-width:160px"></select>
+    <button class="small" id="projNew">＋新規</button>
+    <button class="small" id="projDup">複製</button>
+    <button class="small" id="projDel">削除</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+<section class="panel" id="metaPanel">
+  <h2>プロジェクト設定</h2>
+  <div class="row">
+    <div>
+      <label class="fld" for="pName">アプリ名</label>
+      <input type="text" id="pName" placeholder="例: 勇者のパズル">
+    </div>
+    <div>
+      <label class="fld" for="pKind">種類</label>
+      <select id="pKind">
+        <option value="game">ゲーム</option>
+        <option value="tool">実用ツール</option>
+      </select>
+    </div>
+    <div>
+      <label class="fld" for="pMood">雰囲気</label>
+      <select id="pMood"></select>
+    </div>
+    <div>
+      <label class="fld" for="pWords">追加キーワード（プロンプトに足す・任意）</label>
+      <input type="text" id="pWords" placeholder="例: 剣と魔法, 中世, 手描き風">
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>1. 方向性を決める</h2>
+  <p class="note">雰囲気に合ったテーマ候補を自動生成します。気に入るものが出るまで何度でも生成し、「この案を使う」で採用してください。採用後は下の「2. 微調整」で細かく直せます。</p>
+  <button class="primary" id="genBtn">候補を6つ生成</button>
+  <div id="candidates"></div>
+</section>
+
+<div class="cols">
+  <section class="panel">
+    <h2>2. テーマ微調整</h2>
+    <p class="note">右のプレビューに即反映されます。</p>
+    <div class="tokens" id="tokenInputs"></div>
+    <div class="row" style="margin-top:12px">
+      <div>
+        <label class="fld" for="tRadius">角丸: <span id="radiusVal"></span>px</label>
+        <input type="range" id="tRadius" min="0" max="28" step="1" style="width:100%">
+      </div>
+      <div>
+        <label class="fld" for="tFont">フォントの雰囲気</label>
+        <select id="tFont">
+          <option value="system">標準ゴシック</option>
+          <option value="rounded">丸ゴシック（やわらかい）</option>
+          <option value="serif">明朝（和風・重厚）</option>
+          <option value="mono">等幅（レトロ・機械的）</option>
+        </select>
+      </div>
+      <div>
+        <label class="fld" for="tDensity">余白の密度</label>
+        <select id="tDensity">
+          <option value="compact">つめる</option>
+          <option value="normal" selected>ふつう</option>
+          <option value="loose">ゆったり</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel phone-outer">
+    <h2>3. スマホプレビュー</h2>
+    <div class="ptabs" id="ptabs"></div>
+    <div class="phone" id="phone">
+      <!-- タイトル画面 -->
+      <div class="screen" data-s="title" style="background:var(--p-bg);color:var(--p-text);font-family:var(--p-font)">
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:8px;padding:24px">
+          <div style="width:96px;height:96px;border-radius:calc(var(--p-radius) * 1.6);background:var(--p-primary);display:flex;align-items:center;justify-content:center;font-size:44px;box-shadow:0 6px 18px #0005">🎮</div>
+          <div id="pv-title" style="font-size:24px;font-weight:800;margin-top:10px;text-align:center"></div>
+          <div style="font-size:11px;color:var(--p-muted)">ver 1.0.0</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:calc(10px * var(--p-den));padding:0 32px 56px">
+          <div style="background:var(--p-primary);color:var(--p-primary-text);text-align:center;padding:calc(13px * var(--p-den));border-radius:var(--p-radius);font-weight:700">はじめる</div>
+          <div style="background:var(--p-surface);border:1px solid var(--p-line);text-align:center;padding:calc(13px * var(--p-den));border-radius:var(--p-radius)">つづきから</div>
+          <div style="background:var(--p-surface);border:1px solid var(--p-line);text-align:center;padding:calc(13px * var(--p-den));border-radius:var(--p-radius)">せってい</div>
+        </div>
+      </div>
+      <!-- 戦闘HUD -->
+      <div class="screen" data-s="hud" style="background:var(--p-bg);color:var(--p-text);font-family:var(--p-font)">
+        <div style="padding:calc(10px * var(--p-den)) 12px;display:flex;flex-direction:column;gap:6px;background:var(--p-surface);border-bottom:1px solid var(--p-line)">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px">
+            <b>HP</b>
+            <div style="flex:1;height:12px;border-radius:var(--p-radius);background:var(--p-line);overflow:hidden"><div style="width:72%;height:100%;background:var(--p-success)"></div></div>
+            <span>72/100</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px">
+            <b>MP</b>
+            <div style="flex:1;height:12px;border-radius:var(--p-radius);background:var(--p-line);overflow:hidden"><div style="width:40%;height:100%;background:var(--p-accent)"></div></div>
+            <span>40/100</span>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;position:relative;background:repeating-linear-gradient(45deg,transparent 0 14px,var(--p-line) 14px 15px);opacity:.9">
+          <div style="background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-radius);padding:8px 14px;font-size:12px;color:var(--p-muted)">（ゲーム画面）</div>
+          <div style="position:absolute;top:10px;right:10px;background:var(--p-warning);color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:var(--p-radius)">クエスト更新！</div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:calc(14px * var(--p-den)) 20px;background:var(--p-surface);border-top:1px solid var(--p-line)">
+          <div style="width:84px;height:84px;border-radius:50%;background:var(--p-line);display:flex;align-items:center;justify-content:center;font-size:20px;color:var(--p-muted)">✛</div>
+          <div style="display:flex;gap:12px">
+            <div style="width:52px;height:52px;border-radius:50%;background:var(--p-primary);color:var(--p-primary-text);display:flex;align-items:center;justify-content:center;font-weight:800">A</div>
+            <div style="width:52px;height:52px;border-radius:50%;background:var(--p-accent);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800">B</div>
+          </div>
+        </div>
+      </div>
+      <!-- 会話 -->
+      <div class="screen" data-s="talk" style="background:var(--p-bg);color:var(--p-text);font-family:var(--p-font)">
+        <div style="flex:1;display:flex;align-items:center;justify-content:center;font-size:64px;background:linear-gradient(var(--p-surface),var(--p-bg))">🧙</div>
+        <div style="padding:12px 12px 20px">
+          <div style="display:inline-block;background:var(--p-primary);color:var(--p-primary-text);font-size:11px;font-weight:700;padding:2px 12px;border-radius:var(--p-radius) var(--p-radius) 0 0">長老</div>
+          <div style="background:var(--p-surface);border:1px solid var(--p-line);border-radius:0 var(--p-radius) var(--p-radius) var(--p-radius);padding:calc(12px * var(--p-den));font-size:13px;min-height:72px">
+            よく来たな、旅の者よ。<br>この先の洞窟には気をつけるのじゃ……
+            <span style="color:var(--p-accent)">▼</span>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px">
+            <div style="flex:1;text-align:center;background:var(--p-primary);color:var(--p-primary-text);padding:calc(10px * var(--p-den));border-radius:var(--p-radius);font-size:12px;font-weight:700">話を聞く</div>
+            <div style="flex:1;text-align:center;background:var(--p-surface);border:1px solid var(--p-line);padding:calc(10px * var(--p-den));border-radius:var(--p-radius);font-size:12px">立ち去る</div>
+          </div>
+        </div>
+      </div>
+      <!-- 設定 -->
+      <div class="screen" data-s="settings" style="background:var(--p-bg);color:var(--p-text);font-family:var(--p-font)">
+        <div style="display:flex;align-items:center;gap:10px;padding:calc(12px * var(--p-den));background:var(--p-surface);border-bottom:1px solid var(--p-line)">
+          <span style="color:var(--p-accent)">←</span><b style="font-size:15px">せってい</b>
+        </div>
+        <div style="padding:12px;display:flex;flex-direction:column;gap:calc(10px * var(--p-den))">
+          <div style="background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-radius);padding:calc(12px * var(--p-den));display:flex;justify-content:space-between;align-items:center;font-size:13px">
+            BGM
+            <span style="display:inline-block;width:42px;height:24px;border-radius:12px;background:var(--p-success);position:relative"><span style="position:absolute;right:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#fff"></span></span>
+          </div>
+          <div style="background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-radius);padding:calc(12px * var(--p-den));display:flex;justify-content:space-between;align-items:center;font-size:13px">
+            効果音
+            <span style="display:inline-block;width:42px;height:24px;border-radius:12px;background:var(--p-line);position:relative"><span style="position:absolute;left:2px;top:2px;width:20px;height:20px;border-radius:50%;background:#fff"></span></span>
+          </div>
+          <div style="background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-radius);padding:calc(12px * var(--p-den));font-size:13px">
+            音量
+            <div style="height:8px;border-radius:4px;background:var(--p-line);margin-top:8px;position:relative"><div style="width:65%;height:100%;border-radius:4px;background:var(--p-accent)"></div><span style="position:absolute;left:65%;top:-4px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--p-accent)"></span></div>
+          </div>
+          <div style="background:var(--p-danger);color:#fff;text-align:center;border-radius:var(--p-radius);padding:calc(12px * var(--p-den));font-size:13px;font-weight:700;margin-top:8px">データを消去</div>
+        </div>
+      </div>
+      <!-- 実用ツール -->
+      <div class="screen" data-s="tool" style="background:var(--p-bg);color:var(--p-text);font-family:var(--p-font)">
+        <div style="display:flex;align-items:center;gap:10px;padding:calc(12px * var(--p-den));background:var(--p-primary);color:var(--p-primary-text)">
+          <b id="pv-toolname" style="font-size:15px"></b>
+        </div>
+        <div style="padding:12px;display:flex;flex-direction:column;gap:calc(10px * var(--p-den))">
+          <div>
+            <div style="font-size:11px;color:var(--p-muted);margin-bottom:3px">検索</div>
+            <div style="background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-radius);padding:calc(10px * var(--p-den));font-size:13px;color:var(--p-muted)">キーワードを入力…</div>
+          </div>
+          <div style="background:var(--p-surface);border:1px solid var(--p-line);border-radius:var(--p-radius);padding:calc(12px * var(--p-den))">
+            <b style="font-size:13px">今日のタスク</b>
+            <div style="font-size:12px;margin-top:6px;display:flex;align-items:center;gap:6px"><span style="color:var(--p-success)">✓</span> 素材を発注する</div>
+            <div style="font-size:12px;margin-top:4px;display:flex;align-items:center;gap:6px"><span style="color:var(--p-muted)">○</span> テーマを決める</div>
+            <div style="font-size:12px;margin-top:4px;display:flex;align-items:center;gap:6px"><span style="color:var(--p-muted)">○</span> プレビュー確認</div>
+          </div>
+          <div style="background:var(--p-accent);color:#fff;font-size:11px;border-radius:var(--p-radius);padding:8px 12px">ℹ️ 保存はこの端末内のみです</div>
+          <div style="background:var(--p-primary);color:var(--p-primary-text);text-align:center;padding:calc(13px * var(--p-den));border-radius:var(--p-radius);font-weight:700;font-size:14px;margin-top:6px">追加する</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>4. 素材発注デスク</h2>
+  <p class="note">画像AI（ChatGPT・Gemini・Midjourney など）に貼るプロンプトを、このアプリのテーマから自動で作ります。どの素材も同じスタイル指定が付くので、アプリ内で作風がブレません。</p>
+  <div class="row">
+    <div style="max-width:280px">
+      <label class="fld" for="assetType">頼む素材</label>
+      <select id="assetType">
+        <option>アプリアイコン</option>
+        <option>タイトルロゴ</option>
+        <option>ボタン一式（通常・押下・無効）</option>
+        <option>ウィンドウ枠（9スライス用）</option>
+        <option>UIアイコンセット（設定・閉じる・戻る など）</option>
+        <option>背景イラスト（タイトル画面）</option>
+        <option>キャラクター立ち絵</option>
+        <option>ゲージ・バーの枠</option>
+      </select>
+    </div>
+  </div>
+  <div class="export-grid">
+    <div>
+      <div class="copyline"><b>日本語プロンプト</b><button class="small" data-copy="promptJa">コピー</button></div>
+      <textarea id="promptJa" readonly></textarea>
+    </div>
+    <div>
+      <div class="copyline"><b>英語プロンプト</b><button class="small" data-copy="promptEn">コピー</button></div>
+      <textarea id="promptEn" readonly></textarea>
+    </div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>5. 素材チェックリスト</h2>
+  <p class="note">このアプリで用意する素材の進捗管理。チェック状態はブラウザに保存されます。</p>
+  <ul id="assetList"></ul>
+  <div class="row" style="margin-top:8px">
+    <div style="max-width:300px"><input type="text" id="assetNew" placeholder="項目を追加…"></div>
+    <div style="flex:0"><button class="small" id="assetAdd">追加</button></div>
+  </div>
+</section>
+
+<section class="panel">
+  <h2>6. 書き出し</h2>
+  <p class="note">決めたテーマを実装に持っていく形式で出力します。</p>
+  <div class="row" style="margin-bottom:8px">
+    <div style="flex:0"><button id="dlJson">tokens.json を保存</button></div>
+    <div style="flex:0"><button id="dlCss">theme.css を保存</button></div>
+  </div>
+  <div class="export-grid">
+    <div>
+      <div class="copyline"><b>CSS変数（Webアプリ / PWA / Capacitor）</b><button class="small" data-copy="outCss">コピー</button></div>
+      <textarea id="outCss" readonly></textarea>
+    </div>
+    <div>
+      <div class="copyline"><b>Flutter（ThemeData）</b><button class="small" data-copy="outFlutter">コピー</button></div>
+      <textarea id="outFlutter" readonly></textarea>
+    </div>
+    <div>
+      <div class="copyline"><b>JSON（Unity・Godot 等に取込む生データ）</b><button class="small" data-copy="outJson">コピー</button></div>
+      <textarea id="outJson" readonly></textarea>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer>UIワークベンチ — データはこのブラウザの localStorage にのみ保存されます</footer>
+
+<script>
+"use strict";
+
+/* ===== 雰囲気プリセット ===== */
+const MOODS = {
+  minimal: { label:"ミニマル・実用", bgMode:"light", hues:[210,175,250,140,25], sat:[55,80],
+    radius:[8,14], fonts:["system","rounded"],
+    wordsJa:["フラットデザイン","シンプル","余白を生かした","現代的"],
+    wordsEn:["flat design","clean and simple","generous whitespace","modern"] },
+  cute: { label:"かわいい・ポップ", bgMode:"light", hues:[340,20,200,270,150], sat:[60,85],
+    radius:[16,26], fonts:["rounded"],
+    wordsJa:["パステルカラー","丸くてかわいい","ポップ","手描き風のやわらかさ"],
+    wordsEn:["pastel colors","cute and round","pop style","soft hand-drawn feel"] },
+  retro: { label:"レトロ・ピクセル", bgMode:"dark", hues:[0,30,140,200,280], sat:[75,95],
+    radius:[0,4], fonts:["mono"],
+    wordsJa:["ドット絵","レトロゲーム風","くっきりした輪郭","限られた色数"],
+    wordsEn:["pixel art","retro game style","crisp outlines","limited color palette"] },
+  cyber: { label:"サイバー・ネオン", bgMode:"dark", hues:[185,300,260,150,330], sat:[80,100],
+    radius:[4,10], fonts:["system","mono"],
+    wordsJa:["サイバーパンク","ネオン発光","近未来的","ダークUI"],
+    wordsEn:["cyberpunk","neon glow","futuristic","dark UI"] },
+  wafu: { label:"和風", bgMode:"light", hues:[8,35,200,350,95], sat:[45,70],
+    radius:[2,8], fonts:["serif"],
+    wordsJa:["和風","和紙の質感","浮世絵・墨絵の趣","落ち着いた伝統色"],
+    wordsEn:["traditional Japanese style","washi paper texture","ukiyo-e ink painting mood","muted traditional colors"] },
+  darkfantasy: { label:"ダークファンタジー", bgMode:"dark", hues:[270,220,0,40,160], sat:[40,65],
+    radius:[4,10], fonts:["serif","system"],
+    wordsJa:["ダークファンタジー","重厚","金の装飾","中世の雰囲気"],
+    wordsEn:["dark fantasy","heavy ornate style","gold decorations","medieval atmosphere"] },
+};
+const FONT_STACKS = {
+  system: 'system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif',
+  rounded: '"Hiragino Maru Gothic ProN", "BIZ UDGothic", "Yu Gothic UI", system-ui, sans-serif',
+  serif: '"Hiragino Mincho ProN", "Yu Mincho", "BIZ UDMincho", serif',
+  mono: 'ui-monospace, "Consolas", "Courier New", monospace',
+};
+const DENSITY = { compact:.8, normal:1, loose:1.25 };
+const COLOR_LABELS = {
+  bg:"背景", surface:"面（カード）", text:"文字", muted:"補助文字", line:"罫線",
+  primary:"メイン", accent:"アクセント", success:"成功/HP", warning:"注意", danger:"危険",
+};
+
+/* ===== 色ユーティリティ ===== */
+function hslHex(h, s, l) {
+  h = ((h % 360) + 360) % 360; s /= 100; l /= 100;
+  const f = n => {
+    const k = (n + h / 30) % 12;
+    const c = l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(255 * c).toString(16).padStart(2, "0");
+  };
+  return "#" + f(0) + f(8) + f(4);
+}
+function lum(hex) {
+  const v = i => {
+    let c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= .03928 ? c / 12.92 : Math.pow((c + .055) / 1.055, 2.4);
+  };
+  return .2126 * v(1) + .7152 * v(3) + .0722 * v(5);
+}
+const textOn = hex => lum(hex) > .45 ? "#181818" : "#ffffff";
+const rand = (a, b) => a + Math.random() * (b - a);
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+/* ===== 候補生成 ===== */
+function genCandidate(moodKey) {
+  const m = MOODS[moodKey];
+  const dark = m.bgMode === "dark";
+  const hue = pick(m.hues) + rand(-12, 12);
+  const sat = rand(m.sat[0], m.sat[1]);
+  const bgHue = hue + pick([0, 0, rand(-30, 30)]);
+  const bg = dark ? hslHex(bgHue, rand(10, 28), rand(7, 13)) : hslHex(bgHue, rand(15, 45), rand(94, 98));
+  const surface = dark ? hslHex(bgHue, rand(12, 26), rand(14, 20)) : "#ffffff";
+  const primary = hslHex(hue, sat, dark ? rand(50, 62) : rand(38, 50));
+  const accentHue = hue + pick([120, 150, 180, -120, 60]);
+  const accent = hslHex(accentHue, Math.min(100, sat + 5), dark ? rand(52, 64) : rand(42, 52));
+  const c = {
+    bg, surface,
+    text: dark ? hslHex(bgHue, 12, 91) : hslHex(bgHue, 22, 14),
+    muted: dark ? hslHex(bgHue, 10, 62) : hslHex(bgHue, 10, 45),
+    line: dark ? hslHex(bgHue, 14, 27) : hslHex(bgHue, 18, 86),
+    primary, accent,
+    success: hslHex(145 + rand(-8, 8), Math.max(45, sat - 15), dark ? 52 : 38),
+    warning: hslHex(38 + rand(-6, 6), Math.max(60, sat), dark ? 55 : 45),
+    danger: hslHex(rand(-4, 8), Math.max(55, sat), dark ? 58 : 46),
+  };
+  return {
+    colors: c,
+    radius: Math.round(rand(m.radius[0], m.radius[1])),
+    font: pick(m.fonts),
+    density: "normal",
+  };
+}
+
+/* ===== 状態 ===== */
+const LS_KEY = "uiWorkbench.v1";
+let state = null;
+
+function defaultAssets(kind) {
+  const g = ["アプリアイコン","タイトルロゴ","ボタン一式","ウィンドウ枠（9スライス）","UIアイコンセット","タイトル背景","ゲーム内背景","BGM","効果音"];
+  const t = ["アプリアイコン","ロゴ","UIアイコンセット","空状態イラスト","スプラッシュ画像"];
+  return (kind === "game" ? g : t).map(n => ({ name: n, done: false }));
+}
+function newProject(name) {
+  return {
+    id: "p" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36),
+    name, kind: "game", mood: "minimal", words: "",
+    theme: genCandidate("minimal"),
+    assets: defaultAssets("game"),
+  };
+}
+function load() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) { state = JSON.parse(raw); if (state.projects && state.projects.length) return; }
+  } catch (e) { /* 破損時は作り直す */ }
+  state = { projects: [newProject("サンプルゲーム")], currentId: null };
+  state.currentId = state.projects[0].id;
+}
+function save() { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+function proj() { return state.projects.find(p => p.id === state.currentId) || state.projects[0]; }
+
+/* ===== 画面描画 ===== */
+const $ = id => document.getElementById(id);
+
+function renderProjSelect() {
+  $("projSelect").innerHTML = state.projects
+    .map(p => `<option value="${p.id}" ${p.id === state.currentId ? "selected" : ""}>${esc(p.name || "(無題)")}</option>`).join("");
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, ch => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[ch])); }
+
+function renderMeta() {
+  const p = proj();
+  $("pName").value = p.name;
+  $("pKind").value = p.kind;
+  $("pMood").innerHTML = Object.entries(MOODS)
+    .map(([k, m]) => `<option value="${k}" ${k === p.mood ? "selected" : ""}>${m.label}</option>`).join("");
+  $("pWords").value = p.words || "";
+}
+
+function renderTokens() {
+  const p = proj();
+  $("tokenInputs").innerHTML = Object.keys(COLOR_LABELS).map(k =>
+    `<label class="tok"><input type="color" data-tok="${k}" value="${p.theme.colors[k]}">${COLOR_LABELS[k]}</label>`).join("");
+  document.querySelectorAll("[data-tok]").forEach(inp => {
+    inp.addEventListener("input", () => {
+      proj().theme.colors[inp.dataset.tok] = inp.value;
+      afterThemeChange(false);
+    });
+  });
+  $("tRadius").value = p.theme.radius;
+  $("radiusVal").textContent = p.theme.radius;
+  $("tFont").value = p.theme.font;
+  $("tDensity").value = p.theme.density;
+}
+
+const SCREENS = [
+  { id:"title", label:"タイトル", kind:"game" },
+  { id:"hud", label:"HUD", kind:"game" },
+  { id:"talk", label:"会話", kind:"game" },
+  { id:"settings", label:"設定", kind:"game" },
+  { id:"tool", label:"ツール", kind:"tool" },
+];
+let currentScreen = "title";
+
+function renderTabs() {
+  const p = proj();
+  $("ptabs").innerHTML = SCREENS.map(s =>
+    `<button class="small ${s.id === currentScreen ? "on" : ""}" data-tab="${s.id}">${s.label}</button>`).join("");
+  document.querySelectorAll("[data-tab]").forEach(b =>
+    b.addEventListener("click", () => { currentScreen = b.dataset.tab; renderTabs(); renderPhone(); }));
+}
+
+function renderPhone() {
+  const p = proj();
+  const t = p.theme;
+  const ph = $("phone");
+  const c = t.colors;
+  ph.style.setProperty("--p-bg", c.bg);
+  ph.style.setProperty("--p-surface", c.surface);
+  ph.style.setProperty("--p-text", c.text);
+  ph.style.setProperty("--p-muted", c.muted);
+  ph.style.setProperty("--p-line", c.line);
+  ph.style.setProperty("--p-primary", c.primary);
+  ph.style.setProperty("--p-primary-text", textOn(c.primary));
+  ph.style.setProperty("--p-accent", c.accent);
+  ph.style.setProperty("--p-success", c.success);
+  ph.style.setProperty("--p-warning", c.warning);
+  ph.style.setProperty("--p-danger", c.danger);
+  ph.style.setProperty("--p-radius", t.radius + "px");
+  ph.style.setProperty("--p-font", FONT_STACKS[t.font]);
+  ph.style.setProperty("--p-den", DENSITY[t.density]);
+  $("pv-title").textContent = p.name || "マイゲーム";
+  $("pv-toolname").textContent = p.name || "マイツール";
+  document.querySelectorAll(".screen").forEach(s =>
+    s.classList.toggle("active", s.dataset.s === currentScreen));
+}
+
+function candMini(t, i) {
+  const c = t.colors;
+  return `<div class="cand">
+    <div class="mini" style="background:${c.bg};color:${c.text};font-family:${FONT_STACKS[t.font]}">
+      <div class="m-title">Aa あいう 123</div>
+      <span class="m-btn" style="background:${c.primary};color:${textOn(c.primary)};border-radius:${t.radius}px">スタート</span>
+      <span class="m-btn" style="background:${c.surface};border:1px solid ${c.line};border-radius:${t.radius}px">閉じる</span>
+      <div class="m-card" style="background:${c.surface};border:1px solid ${c.line};border-radius:${t.radius}px;color:${c.muted}">
+        カードの本文テキスト <b style="color:${c.accent}">リンク</b>
+        <div class="m-bar" style="background:${c.line};border-radius:${t.radius}px"><div style="background:${c.success}"></div></div>
+      </div>
+    </div>
+    <div class="use"><span class="nm">案 ${i + 1} / 角丸${t.radius}px</span><button class="small primary" data-use="${i}">この案を使う</button></div>
+  </div>`;
+}
+
+let candidates = [];
+function generate() {
+  const p = proj();
+  candidates = Array.from({ length: 6 }, () => genCandidate(p.mood));
+  $("candidates").innerHTML = candidates.map((t, i) => candMini(t, i)).join("");
+  document.querySelectorAll("[data-use]").forEach(b =>
+    b.addEventListener("click", () => {
+      proj().theme = JSON.parse(JSON.stringify(candidates[+b.dataset.use]));
+      afterThemeChange(true);
+    }));
+}
+
+/* ===== プロンプト生成 ===== */
+function buildPrompts() {
+  const p = proj();
+  const m = MOODS[p.mood];
+  const c = p.theme.colors;
+  const asset = $("assetType").value;
+  const extraJa = (p.words || "").trim();
+  const extraEn = extraJa; // ユーザー入力はそのまま添える
+  const radiusJa = p.theme.radius <= 4 ? "角ばった形" : p.theme.radius >= 16 ? "強めの丸み" : "ほどよい角丸";
+  const radiusEn = p.theme.radius <= 4 ? "sharp square corners" : p.theme.radius >= 16 ? "strongly rounded corners" : "moderately rounded corners";
+  const ja = `モバイルアプリのUI素材:「${asset}」。作風: ${m.wordsJa.join("、")}${extraJa ? "、" + extraJa : ""}。` +
+    `配色はメインカラー ${c.primary}、アクセント ${c.accent}、背景 ${c.bg} に合わせる。${radiusJa}。` +
+    `透過背景PNG、余白は切り詰めず、同じシリーズの素材として統一感を出す。文字は画像に入れない。`;
+  const en = `Mobile app UI asset: "${asset}". Style: ${m.wordsEn.join(", ")}${extraEn ? ", " + extraEn : ""}. ` +
+    `Color scheme: primary ${c.primary}, accent ${c.accent}, background ${c.bg}. ${radiusEn}. ` +
+    `Transparent background PNG, consistent as one matching set, no text in the image.`;
+  $("promptJa").value = ja;
+  $("promptEn").value = en;
+}
+
+/* ===== チェックリスト ===== */
+function renderAssets() {
+  const p = proj();
+  $("assetList").innerHTML = p.assets.map((a, i) =>
+    `<li class="${a.done ? "done" : ""}">
+      <input type="checkbox" data-chk="${i}" ${a.done ? "checked" : ""}>
+      <span>${esc(a.name)}</span>
+      <button class="small" data-rm="${i}">×</button>
+    </li>`).join("");
+  document.querySelectorAll("[data-chk]").forEach(cb =>
+    cb.addEventListener("change", () => { proj().assets[+cb.dataset.chk].done = cb.checked; save(); renderAssets(); }));
+  document.querySelectorAll("[data-rm]").forEach(b =>
+    b.addEventListener("click", () => { proj().assets.splice(+b.dataset.rm, 1); save(); renderAssets(); }));
+}
+
+/* ===== 書き出し ===== */
+function hexToFlutter(hex) { return "Color(0xFF" + hex.slice(1).toUpperCase() + ")"; }
+function buildExports() {
+  const p = proj();
+  const t = p.theme;
+  const c = t.colors;
+  const dark = lum(c.bg) < .3;
+
+  const css = `/* ${p.name} — UIワークベンチで生成 */\n:root {\n` +
+    Object.entries(c).map(([k, v]) => `  --ui-${k}: ${v};`).join("\n") +
+    `\n  --ui-primary-text: ${textOn(c.primary)};\n  --ui-radius: ${t.radius}px;\n` +
+    `  --ui-font: ${FONT_STACKS[t.font]};\n}\n`;
+
+  const flutter = `// ${p.name} テーマ（UIワークベンチで生成）\nimport 'package:flutter/material.dart';\n\n` +
+    `class AppTheme {\n` +
+    Object.entries(c).map(([k, v]) => `  static const ${k} = ${hexToFlutter(v)};`).join("\n") +
+    `\n  static const radius = ${t.radius}.0;\n\n` +
+    `  static ThemeData build() => ThemeData(\n` +
+    `    brightness: Brightness.${dark ? "dark" : "light"},\n` +
+    `    scaffoldBackgroundColor: bg,\n` +
+    `    cardColor: surface,\n` +
+    `    dividerColor: line,\n` +
+    `    colorScheme: ColorScheme.fromSeed(\n` +
+    `      seedColor: primary,\n` +
+    `      brightness: Brightness.${dark ? "dark" : "light"},\n` +
+    `      primary: primary,\n      secondary: accent,\n      error: danger,\n      surface: surface,\n` +
+    `    ),\n` +
+    `    elevatedButtonTheme: ElevatedButtonThemeData(\n` +
+    `      style: ElevatedButton.styleFrom(\n` +
+    `        backgroundColor: primary,\n` +
+    `        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(radius)),\n` +
+    `      ),\n    ),\n  );\n}\n`;
+
+  const json = JSON.stringify({
+    name: p.name, kind: p.kind, mood: p.mood,
+    colors: c, primaryText: textOn(c.primary),
+    radius: t.radius, font: t.font, fontStack: FONT_STACKS[t.font], density: t.density,
+  }, null, 2);
+
+  $("outCss").value = css;
+  $("outFlutter").value = flutter;
+  $("outJson").value = json;
+}
+function download(name, text, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+/* ===== 再描画のまとめ ===== */
+function afterThemeChange(fullTokenRedraw) {
+  save();
+  if (fullTokenRedraw) renderTokens();
+  renderPhone();
+  buildPrompts();
+  buildExports();
+}
+function renderAll() {
+  renderProjSelect();
+  renderMeta();
+  renderTokens();
+  renderTabs();
+  renderPhone();
+  buildPrompts();
+  renderAssets();
+  buildExports();
+}
+
+/* ===== イベント ===== */
+function init() {
+  load();
+
+  $("projSelect").addEventListener("change", e => { state.currentId = e.target.value; save(); renderAll(); });
+  $("projNew").addEventListener("click", () => {
+    const name = prompt("アプリ名を入力", "新しいアプリ");
+    if (name === null) return;
+    const p = newProject(name || "新しいアプリ");
+    state.projects.push(p); state.currentId = p.id; save(); renderAll();
+  });
+  $("projDup").addEventListener("click", () => {
+    const src = proj();
+    const p = JSON.parse(JSON.stringify(src));
+    p.id = newProject("x").id; p.name = src.name + " のコピー";
+    state.projects.push(p); state.currentId = p.id; save(); renderAll();
+  });
+  $("projDel").addEventListener("click", () => {
+    if (state.projects.length <= 1) { alert("最後の1件は削除できません"); return; }
+    if (!confirm(`「${proj().name}」を削除しますか？`)) return;
+    state.projects = state.projects.filter(p => p.id !== state.currentId);
+    state.currentId = state.projects[0].id; save(); renderAll();
+  });
+
+  $("pName").addEventListener("input", e => { proj().name = e.target.value; save(); renderProjSelect(); renderPhone(); buildExports(); });
+  $("pKind").addEventListener("change", e => {
+    const p = proj(); p.kind = e.target.value;
+    if (confirm("チェックリストをこの種類の標準内容に置き換えますか？（今のリストは消えます）")) p.assets = defaultAssets(p.kind);
+    currentScreen = p.kind === "tool" ? "tool" : "title";
+    save(); renderAll();
+  });
+  $("pMood").addEventListener("change", e => { proj().mood = e.target.value; save(); buildPrompts(); });
+  $("pWords").addEventListener("input", e => { proj().words = e.target.value; save(); buildPrompts(); });
+
+  $("genBtn").addEventListener("click", generate);
+  $("tRadius").addEventListener("input", e => { proj().theme.radius = +e.target.value; $("radiusVal").textContent = e.target.value; afterThemeChange(false); });
+  $("tFont").addEventListener("change", e => { proj().theme.font = e.target.value; afterThemeChange(false); });
+  $("tDensity").addEventListener("change", e => { proj().theme.density = e.target.value; afterThemeChange(false); });
+
+  $("assetType").addEventListener("change", buildPrompts);
+  $("assetAdd").addEventListener("click", () => {
+    const v = $("assetNew").value.trim();
+    if (!v) return;
+    proj().assets.push({ name: v, done: false });
+    $("assetNew").value = ""; save(); renderAssets();
+  });
+  $("assetNew").addEventListener("keydown", e => { if (e.key === "Enter") $("assetAdd").click(); });
+
+  document.querySelectorAll("[data-copy]").forEach(b =>
+    b.addEventListener("click", () => {
+      const ta = $(b.dataset.copy);
+      ta.select();
+      navigator.clipboard.writeText(ta.value).then(
+        () => { b.textContent = "✓ コピー済"; setTimeout(() => b.textContent = "コピー", 1500); },
+        () => document.execCommand("copy")
+      );
+    }));
+
+  $("dlJson").addEventListener("click", () => download("tokens.json", $("outJson").value, "application/json"));
+  $("dlCss").addEventListener("click", () => download("theme.css", $("outCss").value, "text/css"));
+
+  renderAll();
+  generate();
+}
+init();
+</script>
+</body>
+</html>
