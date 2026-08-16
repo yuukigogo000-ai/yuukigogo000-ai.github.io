@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>波チェック — 今日入れるか3秒判定</title>
+<meta name="description" content="サーフスポットの波・風・水温から「今日入れるか」とウェットスーツを自動判定">
+<style>
+:root {
+  color-scheme: light;
+  --surface-1: #fcfcfb;
+  --page: #f9f9f7;
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --grid: #e1e0d9;
+  --baseline: #c3c2b7;
+  --border: rgba(11,11,11,0.10);
+  --series-1: #2a78d6;
+  --series-1-soft: #cde2fb;
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --chip-bg: #f0efec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --surface-1: #1a1a19;
+    --page: #0d0d0d;
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --grid: #2c2c2a;
+    --baseline: #383835;
+    --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5;
+    --series-1-soft: #184f95;
+    --chip-bg: #383835;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --surface-1: #1a1a19;
+  --page: #0d0d0d;
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --grid: #2c2c2a;
+  --baseline: #383835;
+  --border: rgba(255,255,255,0.10);
+  --series-1: #3987e5;
+  --series-1-soft: #184f95;
+  --chip-bg: #383835;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--page);
+  color: var(--text-primary);
+  font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 640px; margin: 0 auto; padding: 16px 12px 48px; }
+header.app { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+header.app h1 { font-size: 1.35rem; letter-spacing: 0.01em; }
+header.app .date { color: var(--text-secondary); font-size: 0.85rem; }
+.sub { color: var(--text-muted); font-size: 0.78rem; margin-bottom: 14px; }
+.controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.levels { display: flex; gap: 6px; }
+.level-chip {
+  border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
+  border-radius: 999px; padding: 5px 12px; font-size: 0.82rem; cursor: pointer;
+}
+.level-chip.active { background: var(--series-1); border-color: var(--series-1); color: #fff; font-weight: 600; }
+.btn-refresh {
+  margin-left: auto; border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
+  border-radius: 999px; padding: 5px 12px; font-size: 0.82rem; cursor: pointer;
+}
+.btn-refresh:active { opacity: 0.7; }
+.updated { width: 100%; color: var(--text-muted); font-size: 0.72rem; }
+.cards { display: flex; flex-direction: column; gap: 10px; }
+.card {
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
+  padding: 14px 14px 12px; cursor: pointer;
+}
+.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.spot-name { font-size: 1.02rem; font-weight: 700; }
+.spot-region { color: var(--text-muted); font-size: 0.72rem; font-weight: 400; margin-left: 6px; }
+.badge {
+  display: inline-flex; align-items: center; gap: 5px; border-radius: 8px; padding: 3px 9px;
+  font-size: 0.82rem; font-weight: 700; color: #fff; white-space: nowrap; flex-shrink: 0;
+}
+.badge .b-icon { font-size: 0.9rem; line-height: 1; }
+.stats { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 0.86rem; color: var(--text-secondary); }
+.stat b { color: var(--text-primary); font-weight: 700; }
+.stat .lab { color: var(--text-muted); font-size: 0.72rem; display: block; }
+.wind-arrow { display: inline-block; font-weight: 700; }
+.wet-line { margin-top: 8px; font-size: 0.82rem; color: var(--text-secondary); border-top: 1px solid var(--grid); padding-top: 8px; }
+.wet-line b { color: var(--text-primary); }
+.err-line { margin-top: 8px; font-size: 0.8rem; color: var(--status-critical); }
+.stale-line { margin-top: 6px; font-size: 0.72rem; color: var(--text-muted); }
+.detail { display: none; margin-top: 12px; border-top: 1px solid var(--grid); padding-top: 12px; cursor: default; }
+.card.open .detail { display: block; }
+.detail h3 { font-size: 0.82rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; }
+.chart-box { position: relative; overflow-x: auto; }
+.chart-box svg { display: block; width: 100%; height: auto; min-width: 480px; }
+.tooltip {
+  position: absolute; pointer-events: none; display: none; z-index: 5;
+  background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.18); padding: 7px 10px; font-size: 0.75rem;
+  color: var(--text-secondary); white-space: nowrap;
+}
+.tooltip b { color: var(--text-primary); }
+.days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 12px; }
+.day-chip { background: var(--chip-bg); border-radius: 9px; padding: 7px 2px; text-align: center; }
+.day-chip .d-lab { font-size: 0.68rem; color: var(--text-muted); }
+.day-chip .d-val { font-size: 0.82rem; font-weight: 700; }
+.day-chip .d-score { font-size: 0.68rem; font-weight: 700; margin-top: 1px; }
+.detail-meta { margin-top: 12px; font-size: 0.8rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; }
+.add-spot { margin-top: 20px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 4px 14px; }
+.add-spot summary { cursor: pointer; padding: 10px 0; font-size: 0.9rem; color: var(--text-secondary); }
+.add-form { display: flex; flex-direction: column; gap: 8px; padding: 4px 0 14px; }
+.add-form label { font-size: 0.78rem; color: var(--text-muted); }
+.add-form input, .add-form select {
+  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--page); color: var(--text-primary); font-size: 0.9rem;
+}
+.add-form .hint { font-size: 0.72rem; color: var(--text-muted); }
+.add-form button {
+  align-self: flex-start; background: var(--series-1); color: #fff; border: none;
+  border-radius: 999px; padding: 8px 18px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+}
+.del-spot { background: none; border: none; color: var(--text-muted); font-size: 0.72rem; cursor: pointer; text-decoration: underline; margin-top: 8px; padding: 0; }
+footer { margin-top: 24px; font-size: 0.7rem; color: var(--text-muted); line-height: 1.7; }
+footer a { color: var(--text-muted); }
+.loading { color: var(--text-muted); font-size: 0.85rem; padding: 20px 0; text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="app">
+    <h1>波チェック</h1>
+    <span class="date" id="today-date"></span>
+  </header>
+  <p class="sub">波・風・水温から「今日入れるか」とウェットスーツを自動判定</p>
+
+  <div class="controls">
+    <div class="levels" id="levels" role="group" aria-label="レベル選択"></div>
+    <button class="btn-refresh" id="refresh">↻ 更新</button>
+    <span class="updated" id="updated"></span>
+  </div>
+
+  <div class="cards" id="cards"><div class="loading">読み込み中…</div></div>
+
+  <details class="add-spot">
+    <summary>＋ スポットを追加</summary>
+    <div class="add-form">
+      <div>
+        <label for="f-name">スポット名</label>
+        <input id="f-name" placeholder="例: 千倉">
+      </div>
+      <div>
+        <label for="f-lat">緯度 / 経度（少し沖の海上を指定すると確実）</label>
+        <input id="f-lat" placeholder="緯度 例: 34.95" inputmode="decimal">
+        <input id="f-lon" placeholder="経度 例: 139.96" inputmode="decimal" style="margin-top:6px">
+      </div>
+      <div>
+        <label for="f-off">オフショアになる風向（陸→海に吹く風の方角）</label>
+        <select id="f-off"></select>
+        <p class="hint">例: 南向きのビーチなら「北」</p>
+      </div>
+      <button id="f-add">追加する</button>
+    </div>
+  </details>
+
+  <footer>
+    データ: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>（予測モデル値・非商用利用）。
+    実測の波情報ではありません。海に入る判断は必ず現地の状況を確認し、自己責任で。
+  </footer>
+</div>
+
+<script>
+"use strict";
+
+/* ---------- 定数・設定 ---------- */
+const MARINE_URL = "https://marine-api.open-meteo.com/v1/marine";
+const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
+// best_matchが日本沿岸で全nullを返す既知事象への保険として明示モデルへ順にフォールバック
+const MARINE_MODEL_FALLBACKS = ["", "gwam", "ncep_gfswave025"];
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
+const PRESET_SPOTS = [
+  { id: "kugenuma",    name: "鵠沼海岸",   region: "湘南",    lat: 35.29, lon: 139.47, offshore: 0   },
+  { id: "tsurigasaki", name: "釣ヶ崎海岸", region: "千葉北",  lat: 35.36, lon: 140.43, offshore: 270 },
+  { id: "katakai",     name: "片貝海岸",   region: "九十九里", lat: 35.54, lon: 140.51, offshore: 270 },
+  { id: "hebara",      name: "部原海岸",   region: "千葉南",  lat: 35.13, lon: 140.34, offshore: 315 },
+  { id: "irago",       name: "伊良湖",     region: "愛知",    lat: 34.55, lon: 137.02, offshore: 0   },
+];
+
+const LEVELS = {
+  beginner:     { label: "初心者", lo: 0.3, peak: 0.6, hi: 1.0 },
+  intermediate: { label: "中級",   lo: 0.4, peak: 1.0, hi: 1.8 },
+  advanced:     { label: "上級",   lo: 0.6, peak: 1.5, hi: 2.5 },
+};
+
+const RANKS = [
+  { min: 75, label: "最高",     icon: "◎", color: "var(--status-good)" },
+  { min: 60, label: "良い",     icon: "○", color: "var(--status-good)" },
+  { min: 45, label: "まあまあ", icon: "△", color: "var(--status-warning)" },
+  { min: 30, label: "微妙",     icon: "▽", color: "var(--status-serious)" },
+  { min: -1, label: "見送り",   icon: "✕", color: "var(--status-critical)" },
+];
+
+const DIRS16 = ["北","北北東","北東","東北東","東","東南東","南東","南南東","南","南南西","南西","西南西","西","西北西","北西","北北西"];
+
+/* ---------- 状態 ---------- */
+const store = {
+  get(key, fallback) {
+    try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+    catch { return fallback; }
+  },
+  set(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch {} },
+};
+
+let level = store.get("sc.level", "intermediate");
+let customSpots = store.get("sc.spots", []);
+const results = new Map(); // spotId -> {marine, weather, model, stale, error}
+
+function allSpots() { return PRESET_SPOTS.concat(customSpots); }
+
+/* ---------- ユーティリティ ---------- */
+function dirLabel(deg) { return DIRS16[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16]; }
+function angleDiff(a, b) { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
+function fmt1(v) { return v == null ? "–" : (Math.round(v * 10) / 10).toFixed(1); }
+
+/* 風の吹いていく向きに矢印を回す（気象の風向は「吹いてくる方角」） */
+function windArrowSpan(fromDeg) {
+  return `<span class="wind-arrow" style="transform:rotate(${Math.round(fromDeg + 180)}deg);display:inline-block">↑</span>`;
+}
+
+function windRelation(spot, windFromDeg, speed) {
+  if (speed < 2) return { key: "glassy", label: "無風" };
+  const diff = angleDiff(windFromDeg, spot.offshore);
+  if (diff <= 45) return { key: "off", label: "オフショア" };
+  if (diff <= 90) return { key: "cross", label: "サイド" };
+  if (diff <= 135) return { key: "crosson", label: "サイドオン" };
+  return { key: "on", label: "オンショア" };
+}
+
+/* ---------- スコアリング ---------- */
+function sizeScore(h, lv) {
+  if (h == null) return 0;
+  const { lo, peak, hi } = LEVELS[lv];
+  if (h < 0.25) return 2;                       // ほぼフラット
+  if (h < lo) return 10 + 20 * (h - 0.25) / Math.max(lo - 0.25, 0.05);
+  if (h <= peak) return 30 + 10 * (h - lo) / Math.max(peak - lo, 0.05);
+  if (h <= hi) return 40 - 15 * (h - peak) / Math.max(hi - peak, 0.05);
+  if (h <= hi * 1.5) return 25 - 20 * (h - hi) / Math.max(hi * 0.5, 0.05);
+  return 3;                                     // 大きすぎ
+}
+
+function periodScore(p) {
+  if (p == null) return 5;
+  if (p >= 10) return 25;
+  if (p >= 8) return 20;
+  if (p >= 6) return 12;
+  if (p >= 5) return 6;
+  return 2;
+}
+
+function windScore(spot, windFromDeg, speed) {
+  if (windFromDeg == null || speed == null) return 15;
+  const rel = windRelation(spot, windFromDeg, speed);
+  if (rel.key === "glassy") return 32;
+  if (rel.key === "off") return 35 - Math.min(10, Math.max(0, speed - 8) * 2);
+  if (rel.key === "cross") return Math.max(6, 22 - speed);
+  if (rel.key === "crosson") return Math.max(2, 14 - speed);
+  return Math.max(0, 15 - speed * 2);
+}
+
+function hourScore(spot, h, p, windFrom, windSpd, lv) {
+  const raw = sizeScore(h, lv) + periodScore(p) + windScore(spot, windFrom, windSpd);
+  if (h != null && h < 0.25) return Math.min(raw, 20); // フラットは上限
+  return Math.max(0, Math.min(100, Math.round(raw)));
+}
+
+function rankOf(score) { return RANKS.find(r => score >= r.min); }
+
+/* ---------- ウェットスーツ判定 ---------- */
+function wetsuit(sst, airTemp, windSpd) {
+  if (sst == null) return { gear: "水温データなし", note: "" };
+  let gear;
+  if (sst >= 24) gear = "ボードショーツ / タッパー";
+  else if (sst >= 21) gear = "スプリング / シーガル";
+  else if (sst >= 18) gear = "3/2mm ジャーフル・フルスーツ";
+  else if (sst >= 15) gear = "3/3mm フルスーツ";
+  else if (sst >= 12) gear = "5/3mm セミドライ + ブーツ";
+  else gear = "セミドライ + ブーツ・グローブ・キャップ";
+  let note = "";
+  if ((airTemp != null && airTemp < sst - 5) || (windSpd != null && windSpd >= 8)) {
+    note = "風・気温で体感は1段階寒め。迷ったら厚めに。";
+  }
+  return { gear, note };
+}
+
+/* ---------- データ取得 ---------- */
+async function fetchJson(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+
+function marineHasData(data) {
+  const wh = data && data.hourly && data.hourly.wave_height;
+  return Array.isArray(wh) && wh.some(v => v != null);
+}
+
+async function fetchMarine(spot) {
+  const base = `${MARINE_URL}?latitude=${spot.lat}&longitude=${spot.lon}` +
+    `&hourly=wave_height,wave_direction,wave_period,swell_wave_height,swell_wave_period,sea_surface_temperature` +
+    `&timezone=Asia%2FTokyo&forecast_days=7&cell_selection=sea`;
+  let lastErr = null;
+  for (const model of MARINE_MODEL_FALLBACKS) {
+    try {
+      const data = await fetchJson(base + (model ? `&models=${model}` : ""));
+      if (marineHasData(data)) return { data, model: model || "best_match" };
+      lastErr = new Error("all-null");
+    } catch (e) { lastErr = e; }
+  }
+  throw lastErr || new Error("marine fetch failed");
+}
+
+async function fetchWeather(spot) {
+  const url = `${WEATHER_URL}?latitude=${spot.lat}&longitude=${spot.lon}` +
+    `&hourly=wind_speed_10m,wind_direction_10m,temperature_2m` +
+    `&daily=sunrise,sunset&timezone=Asia%2FTokyo&forecast_days=7&wind_speed_unit=ms`;
+  return fetchJson(url);
+}
+
+async function loadSpot(spot, force) {
+  const cacheKey = "sc.cache." + spot.id;
+  const cached = store.get(cacheKey, null);
+  if (!force && cached && Date.now() - cached.t < CACHE_TTL_MS) {
+    results.set(spot.id, { ...cached.payload, stale: false });
+    return;
+  }
+  try {
+    const [m, w] = await Promise.all([fetchMarine(spot), fetchWeather(spot)]);
+    const payload = { marine: m.data, model: m.model, weather: w, error: null };
+    store.set(cacheKey, { t: Date.now(), payload });
+    results.set(spot.id, { ...payload, stale: false });
+  } catch (e) {
+    if (cached) {
+      results.set(spot.id, { ...cached.payload, stale: true, staleAt: cached.t });
+    } else {
+      results.set(spot.id, { error: String(e && e.message || e) });
+    }
+  }
+}
+
+/* ---------- 解析 ---------- */
+function analyze(spot, r) {
+  if (!r || r.error) return { error: r ? r.error : "no data" };
+  const mh = r.marine.hourly, wh = r.weather.hourly, wd = r.weather.daily;
+  const times = mh.time;
+  const now = new Date();
+  const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}T${String(now.getHours()).padStart(2, "0")}:00`;
+  let nowIdx = times.indexOf(nowKey);
+  if (nowIdx < 0) nowIdx = 0;
+
+  const wTimes = wh.time;
+  const wIdxOf = t => { const i = wTimes.indexOf(t); return i >= 0 ? i : null; };
+
+  const hours = times.map((t, i) => {
+    const wi = wIdxOf(t);
+    return {
+      t, i,
+      h: mh.wave_height[i],
+      p: mh.wave_period[i],
+      sst: mh.sea_surface_temperature ? mh.sea_surface_temperature[i] : null,
+      windSpd: wi != null ? wh.wind_speed_10m[wi] : null,
+      windDir: wi != null ? wh.wind_direction_10m[wi] : null,
+      air: wi != null ? wh.temperature_2m[wi] : null,
+    };
+  });
+  hours.forEach(o => { o.score = hourScore(spot, o.h, o.p, o.windDir, o.windSpd, level); });
+
+  // 今日スコア = 今日の日中(6-18時)かつ現在以降のベスト
+  const todayStr = times[nowIdx].slice(0, 10);
+  const daylight = hours.filter(o => o.t.slice(0, 10) === todayStr && +o.t.slice(11, 13) >= 6 && +o.t.slice(11, 13) <= 18 && o.i >= nowIdx);
+  const pool = daylight.length ? daylight : hours.slice(nowIdx, nowIdx + 6);
+  const best = pool.reduce((a, b) => (b.score > a.score ? b : a), pool[0]);
+
+  const cur = hours[nowIdx];
+  const sstNow = cur.sst != null ? cur.sst : (hours.find(o => o.sst != null) || {}).sst;
+  const suit = wetsuit(sstNow, cur.air, cur.windSpd);
+
+  // 7日サマリ（日中の最大波高とベストスコア）
+  const byDay = new Map();
+  hours.forEach(o => {
+    const d = o.t.slice(0, 10);
+    const hr = +o.t.slice(11, 13);
+    if (hr < 6 || hr > 18) return;
+    if (!byDay.has(d)) byDay.set(d, { maxH: null, best: 0 });
+    const e = byDay.get(d);
+    if (o.h != null && (e.maxH == null || o.h > e.maxH)) e.maxH = o.h;
+    if (o.score > e.best) e.best = o.score;
+  });
+
+  return {
+    hours, nowIdx, cur, best, suit, sstNow,
+    todayScore: best ? best.score : 0,
+    days: Array.from(byDay.entries()).slice(0, 7),
+    sunrise: wd && wd.sunrise ? wd.sunrise[0] : null,
+    sunset: wd && wd.sunset ? wd.sunset[0] : null,
+    model: r.model, stale: r.stale, staleAt: r.staleAt,
+  };
+}
+
+/* ---------- 描画 ---------- */
+const cardsEl = document.getElementById("cards");
+
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+function badgeHtml(score) {
+  const r = rankOf(score);
+  return `<span class="badge" style="background:${r.color}"><span class="b-icon">${r.icon}</span>${r.label} ${score}</span>`;
+}
+
+function chartSvg(a, spotId) {
+  const H = 190, W = 720, padL = 34, padB = 30, padT = 16;
+  const seg = a.hours.slice(a.nowIdx, a.nowIdx + 48);
+  if (!seg.length) return "";
+  const maxH = Math.max(1, ...seg.map(o => o.h || 0)) * 1.15;
+  const bw = (W - padL - 6) / seg.length;
+  const y = v => padT + (H - padT - padB) * (1 - v / maxH);
+  const gridVals = [0.5, 1, 1.5, 2, 2.5, 3].filter(v => v < maxH);
+  let maxIdx = 0;
+  seg.forEach((o, i) => { if ((o.h || 0) > (seg[maxIdx].h || 0)) maxIdx = i; });
+
+  const grid = gridVals.map(v =>
+    `<line x1="${padL}" x2="${W - 4}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>` +
+    `<text x="${padL - 5}" y="${y(v) + 3}" text-anchor="end" font-size="9" fill="var(--text-muted)">${v}</text>`
+  ).join("");
+
+  const bars = seg.map((o, i) => {
+    const h = o.h || 0;
+    const x = padL + i * bw;
+    const barH = Math.max(2, (H - padT - padB) * h / maxH);
+    const rel = o.windDir != null ? windRelation({ offshore: currentSpotOffshore(spotId) }, o.windDir, o.windSpd || 0) : null;
+    return `<rect data-i="${i}" x="${(x + 1).toFixed(1)}" y="${(H - padB - barH).toFixed(1)}" width="${Math.max(1, bw - 2).toFixed(1)}" height="${barH.toFixed(1)}" rx="3" fill="var(--series-1)" opacity="${o.h == null ? 0.15 : (rel && (rel.key === "off" || rel.key === "glassy") ? 1 : 0.55)}"/>`;
+  }).join("");
+
+  const xLabels = seg.map((o, i) => {
+    const hr = +o.t.slice(11, 13);
+    if (hr % 6 !== 0) return "";
+    const day = +o.t.slice(8, 10);
+    return `<text x="${padL + i * bw + bw / 2}" y="${H - padB + 12}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${hr === 0 ? day + "日" : hr + "時"}</text>`;
+  }).join("");
+
+  const arrows = seg.map((o, i) => {
+    const hr = +o.t.slice(11, 13);
+    if (hr % 4 !== 0 || o.windDir == null) return "";
+    return `<g transform="translate(${padL + i * bw + bw / 2},${H - padB + 22}) rotate(${Math.round(o.windDir + 180)})"><path d="M0,-4 L0,4 M0,-4 L-2.5,-1 M0,-4 L2.5,-1" stroke="var(--text-muted)" stroke-width="1.2" fill="none" stroke-linecap="round"/></g>`;
+  }).join("");
+
+  const mo = seg[maxIdx];
+  const maxLabel = mo && mo.h != null
+    ? `<text x="${padL + maxIdx * bw + bw / 2}" y="${y(mo.h) - 5}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--text-secondary)">${fmt1(mo.h)}m</text>`
+    : "";
+
+  return `<svg viewBox="0 0 ${W} ${H + 6}" role="img" aria-label="今後48時間の波高予測">
+    ${grid}
+    <line x1="${padL}" x2="${W - 4}" y1="${H - padB}" y2="${H - padB}" stroke="var(--baseline)" stroke-width="1"/>
+    ${bars}${maxLabel}${xLabels}${arrows}
+    <text x="${padL}" y="${padT - 6}" font-size="9" fill="var(--text-muted)">波高(m)・濃い色=オフショア/無風の時間帯・矢印=風向</text>
+  </svg>`;
+}
+
+function currentSpotOffshore(spotId) {
+  const s = allSpots().find(x => x.id === spotId);
+  return s ? s.offshore : 0;
+}
+
+function dayChips(a) {
+  const weekJa = ["日", "月", "火", "水", "木", "金", "土"];
+  return a.days.map(([d, e]) => {
+    const dt = new Date(d + "T00:00:00");
+    const r = rankOf(e.best);
+    return `<div class="day-chip">
+      <div class="d-lab">${dt.getMonth() + 1}/${dt.getDate()}(${weekJa[dt.getDay()]})</div>
+      <div class="d-val">${e.maxH == null ? "–" : fmt1(e.maxH)}</div>
+      <div class="d-score" style="color:${r.color}">${r.icon}${e.best}</div>
+    </div>`;
+  }).join("");
+}
+
+function render() {
+  const spots = allSpots();
+  const analyzed = spots.map(s => ({ spot: s, a: analyze(s, results.get(s.id)) }));
+  analyzed.sort((x, y) => (y.a.todayScore || 0) - (x.a.todayScore || 0));
+
+  cardsEl.innerHTML = analyzed.map(({ spot, a }) => {
+    if (a.error) {
+      return `<div class="card" data-id="${esc(spot.id)}">
+        <div class="card-head"><span class="spot-name">${esc(spot.name)}<span class="spot-region">${esc(spot.region || "")}</span></span></div>
+        <p class="err-line">✕ データ取得不可（${esc(a.error)}）。座標が陸格子の可能性 — 少し沖の座標で登録し直すか、時間をおいて更新してください。</p>
+        ${spot.custom ? `<button class="del-spot" data-del="${esc(spot.id)}">このスポットを削除</button>` : ""}
+      </div>`;
+    }
+    const cur = a.cur;
+    const rel = cur.windDir != null ? windRelation(spot, cur.windDir, cur.windSpd || 0) : null;
+    const bestHr = a.best ? +a.best.t.slice(11, 13) : null;
+    return `<div class="card" data-id="${esc(spot.id)}">
+      <div class="card-head">
+        <span class="spot-name">${esc(spot.name)}<span class="spot-region">${esc(spot.region || "")}</span></span>
+        ${badgeHtml(a.todayScore)}
+      </div>
+      <div class="stats">
+        <span class="stat"><span class="lab">波高</span><b>${fmt1(cur.h)}m</b> <span style="color:var(--text-muted)">周期${cur.p == null ? "–" : Math.round(cur.p)}s</span></span>
+        <span class="stat"><span class="lab">風</span><b>${fmt1(cur.windSpd)}m/s</b> ${cur.windDir != null ? windArrowSpan(cur.windDir) + " " + dirLabel(cur.windDir) : ""} ${rel ? `<span style="color:var(--text-muted)">(${rel.label})</span>` : ""}</span>
+        <span class="stat"><span class="lab">水温</span><b>${fmt1(a.sstNow)}℃</b></span>
+        ${bestHr != null ? `<span class="stat"><span class="lab">狙い目</span><b>${bestHr}時ごろ</b></span>` : ""}
+      </div>
+      <div class="wet-line">🩱 <b>${esc(a.suit.gear)}</b>${a.suit.note ? `<br><span style="color:var(--text-muted)">${esc(a.suit.note)}</span>` : ""}</div>
+      ${a.stale ? `<p class="stale-line">⚠ 通信不可のため ${new Date(a.staleAt).toLocaleString("ja-JP")} 取得のキャッシュを表示中</p>` : ""}
+      <div class="detail">
+        <h3>今後48時間の波高</h3>
+        <div class="chart-box"><div class="tooltip"></div>${chartSvg(a, spot.id)}</div>
+        <h3 style="margin-top:12px">週間（日中の最大波高とスコア）</h3>
+        <div class="days">${dayChips(a)}</div>
+        <div class="detail-meta">
+          ${a.sunrise ? `<span>🌅 日の出 ${a.sunrise.slice(11)} / 日の入 ${a.sunset ? a.sunset.slice(11) : "–"}</span>` : ""}
+          <span style="color:var(--text-muted)">波モデル: ${esc(a.model || "-")} / 予測値のため実際の波と異なることがあります</span>
+          ${spot.custom ? `<button class="del-spot" data-del="${esc(spot.id)}">このスポットを削除</button>` : ""}
+        </div>
+      </div>
+    </div>`;
+  }).join("");
+
+  // カード開閉
+  cardsEl.querySelectorAll(".card").forEach(card => {
+    card.addEventListener("click", e => {
+      if (e.target.closest(".detail") || e.target.closest(".del-spot")) return;
+      card.classList.toggle("open");
+    });
+  });
+  // 削除
+  cardsEl.querySelectorAll(".del-spot").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.del;
+      customSpots = customSpots.filter(s => s.id !== id);
+      store.set("sc.spots", customSpots);
+      results.delete(id);
+      render();
+    });
+  });
+  // ツールチップ
+  cardsEl.querySelectorAll(".chart-box").forEach(box => {
+    const tip = box.querySelector(".tooltip");
+    const card = box.closest(".card");
+    const spot = allSpots().find(s => s.id === card.dataset.id);
+    const a = analyze(spot, results.get(spot.id));
+    if (a.error) return;
+    const seg = a.hours.slice(a.nowIdx, a.nowIdx + 48);
+    box.querySelectorAll("rect[data-i]").forEach(rect => {
+      const show = () => {
+        const o = seg[+rect.dataset.i];
+        if (!o) return;
+        const rel = o.windDir != null ? windRelation(spot, o.windDir, o.windSpd || 0) : null;
+        tip.innerHTML = `<b>${o.t.slice(5, 10).replace("-", "/")} ${o.t.slice(11, 16)}</b><br>波 <b>${fmt1(o.h)}m</b> / 周期 ${o.p == null ? "–" : Math.round(o.p)}s<br>風 ${fmt1(o.windSpd)}m/s ${o.windDir != null ? dirLabel(o.windDir) : ""}${rel ? `(${rel.label})` : ""}<br>スコア <b>${o.score}</b>`;
+        tip.style.display = "block";
+        const br = box.getBoundingClientRect(), rr = rect.getBoundingClientRect();
+        let x = rr.left - br.left + box.scrollLeft + 8;
+        if (x + 150 > box.scrollWidth) x -= 160;
+        tip.style.left = x + "px";
+        tip.style.top = Math.max(0, rr.top - br.top - 10) + "px";
+      };
+      rect.addEventListener("mouseenter", show);
+      rect.addEventListener("touchstart", show, { passive: true });
+    });
+    box.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+  });
+}
+
+/* ---------- コントロール ---------- */
+function renderLevels() {
+  const el = document.getElementById("levels");
+  el.innerHTML = Object.entries(LEVELS).map(([k, v]) =>
+    `<button class="level-chip${k === level ? " active" : ""}" data-lv="${k}">${v.label}</button>`).join("");
+  el.querySelectorAll(".level-chip").forEach(b => b.addEventListener("click", () => {
+    level = b.dataset.lv;
+    store.set("sc.level", level);
+    renderLevels();
+    render();
+  }));
+}
+
+document.getElementById("refresh").addEventListener("click", () => loadAll(true));
+
+document.getElementById("f-off").innerHTML = DIRS16.map((d, i) => `<option value="${i * 22.5}">${d}</option>`).join("");
+document.getElementById("f-add").addEventListener("click", () => {
+  const name = document.getElementById("f-name").value.trim();
+  const lat = parseFloat(document.getElementById("f-lat").value);
+  const lon = parseFloat(document.getElementById("f-lon").value);
+  const off = parseFloat(document.getElementById("f-off").value);
+  if (!name || !isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    alert("スポット名と正しい緯度・経度を入力してください");
+    return;
+  }
+  const spot = { id: "c" + Date.now(), name, region: "追加", lat, lon, offshore: off, custom: true };
+  customSpots.push(spot);
+  store.set("sc.spots", customSpots);
+  document.getElementById("f-name").value = "";
+  document.getElementById("f-lat").value = "";
+  document.getElementById("f-lon").value = "";
+  loadAll(false);
+});
+
+/* ---------- 起動 ---------- */
+async function loadAll(force) {
+  document.getElementById("updated").textContent = "取得中…";
+  await Promise.all(allSpots().map(s => loadSpot(s, force)));
+  document.getElementById("updated").textContent = "更新: " + new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+  render();
+}
+
+const now = new Date();
+document.getElementById("today-date").textContent =
+  `${now.getMonth() + 1}/${now.getDate()}(${["日","月","火","水","木","金","土"][now.getDay()]})`;
+renderLevels();
+loadAll(false);
+</script>
+</body>
+</html>
