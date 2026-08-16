@@ -485,17 +485,52 @@ const DEFAULT_TOOLS = [
 
 let db = load();
 
+// 外部由来のデータ（localStorage・インポートJSON）を安全な形に整える。
+// 欠損フィールドは補完し、型が合わない値は捨てる。
+function normalize(d) {
+  if (!d || !Array.isArray(d.projects) || !Array.isArray(d.tools)) return null;
+  const str = v => (typeof v === "string" ? v : "");
+  const num = v => { const n = Number(v); return isFinite(n) && n >= 0 ? String(v) : ""; };
+  return {
+    projects: d.projects.filter(p => p && typeof p === "object").map(p => ({
+      id: str(p.id) || uid("p"),
+      name: str(p.name) || "(名称未設定)",
+      desc: str(p.desc), targetLen: num(p.targetLen), due: str(p.due),
+      cuts: (Array.isArray(p.cuts) ? p.cuts : []).filter(c => c && typeof c === "object").map(c => ({
+        id: str(c.id) || uid("c"),
+        name: str(c.name) || "(名称未設定)",
+        len: num(c.len), desc: str(c.desc), tool: str(c.tool),
+        status: STATUSES.some(s => s.id === c.status) ? c.status : "todo",
+        prompt: str(c.prompt), output: str(c.output),
+      })),
+    })),
+    tools: d.tools.filter(t => t && typeof t === "object").map(t => ({
+      id: str(t.id) || uid("t"),
+      name: str(t.name) || "(名称未設定)",
+      cat: str(t.cat) || "その他", url: str(t.url), note: str(t.note),
+    })),
+  };
+}
+
 function load() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      const d = JSON.parse(raw);
-      if (d && Array.isArray(d.projects) && Array.isArray(d.tools)) return d;
+      const d = normalize(JSON.parse(raw));
+      if (d) return d;
     }
   } catch (e) { /* 壊れたデータは初期化 */ }
   return { projects: [], tools: DEFAULT_TOOLS.slice() };
 }
-function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(db)); }
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(db));
+  } catch (e) {
+    alert("保存に失敗しました（ブラウザの保存容量を超えた可能性があります）。JSONエクスポートでバックアップを取ってください。");
+  }
+}
+// リンクとして使ってよいURLか（javascript:等のスキームを弾く）
+function safeUrl(u) { return /^https?:\/\//i.test(u) ? u : ""; }
 function uid(prefix) { return prefix + "_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -528,6 +563,11 @@ document.querySelectorAll("nav button").forEach(b => {
 
 function statusOf(id) { return STATUSES.find(s => s.id === id) || STATUSES[0]; }
 function toolName(id) { const t = db.tools.find(t => t.id === id); return t ? t.name : "未定"; }
+function posNumStr(v) { const n = Number(v); return isFinite(n) && n > 0 ? String(v) : ""; }
+function totalLen(p) {
+  const t = p.cuts.reduce((n, c) => n + Math.max(0, Number(c.len) || 0), 0);
+  return Math.round(t * 100) / 100;
+}
 
 // ====================== ダッシュボード ======================
 function projectProgress(p) {
@@ -550,7 +590,7 @@ function renderDashboard() {
   $("projEmpty").style.display = db.projects.length ? "none" : "block";
   for (const p of db.projects) {
     const prog = projectProgress(p);
-    const total = p.cuts.reduce((n, c) => n + (Number(c.len) || 0), 0);
+    const total = totalLen(p);
     const el = document.createElement("div");
     el.className = "proj-card";
     el.innerHTML = `
@@ -579,7 +619,7 @@ function renderProject() {
   $("projTitle").textContent = p.name;
   $("projDesc").textContent = p.desc || "";
 
-  const total = p.cuts.reduce((n, c) => n + (Number(c.len) || 0), 0);
+  const total = totalLen(p);
   const byStatus = {};
   for (const s of STATUSES) byStatus[s.id] = p.cuts.filter(c => c.status === s.id).length;
   $("projStats").innerHTML = `
@@ -591,11 +631,11 @@ function renderProject() {
   // タイムライン
   const tl = $("timeline");
   tl.innerHTML = "";
-  const totalLen = p.cuts.reduce((n, c) => n + (Number(c.len) || 3), 0) || 1;
+  const tlTotal = p.cuts.reduce((n, c) => n + (Math.max(0, Number(c.len) || 0) || 3), 0) || 1;
   p.cuts.forEach((c, i) => {
     const seg = document.createElement("div");
-    const len = Number(c.len) || 3;
-    seg.style.flex = String(len / totalLen);
+    const len = Math.max(0, Number(c.len) || 0) || 3;
+    seg.style.flex = String(len / tlTotal);
     seg.style.background = STATUS_COLORS[c.status] || STATUS_COLORS.todo;
     seg.textContent = i + 1;
     seg.title = `#${i + 1} ${c.name}（${c.len || "?"}秒）`;
@@ -710,11 +750,11 @@ $("dlgProjectSave").addEventListener("click", () => {
   if (editingProjectId) {
     const p = db.projects.find(x => x.id === editingProjectId);
     p.name = name; p.desc = $("fProjDesc").value.trim();
-    p.targetLen = $("fProjLen").value; p.due = $("fProjDue").value.trim();
+    p.targetLen = posNumStr($("fProjLen").value); p.due = $("fProjDue").value.trim();
     save(); $("dlgProject").close(); renderProject();
   } else {
     const p = { id: uid("p"), name, desc: $("fProjDesc").value.trim(),
-      targetLen: $("fProjLen").value, due: $("fProjDue").value.trim(), cuts: [] };
+      targetLen: posNumStr($("fProjLen").value), due: $("fProjDue").value.trim(), cuts: [] };
     db.projects.push(p); save(); $("dlgProject").close();
     openProject(p.id);
   }
@@ -760,8 +800,10 @@ $("dlgCutSave").addEventListener("click", () => {
   const p = currentProject(); if (!p) return;
   const name = $("fCutName").value.trim();
   if (!name) { alert("シーン名を入れてください"); return; }
+  const lenNum = Number($("fCutLen").value);
   const data = {
-    name, len: $("fCutLen").value, desc: $("fCutDesc").value.trim(),
+    name, len: isFinite(lenNum) && lenNum > 0 ? $("fCutLen").value : "",
+    desc: $("fCutDesc").value.trim(),
     tool: $("fCutTool").value, status: $("fCutStatus").value,
     prompt: $("fCutPrompt").value.trim(), output: $("fCutOutput").value.trim(),
   };
@@ -847,7 +889,7 @@ function renderTools() {
       el.innerHTML = `
         <div class="tool-cat">${esc(t.cat)}</div>
         <h3>${esc(t.name)}</h3>
-        ${t.url ? `<a href="${esc(t.url)}" target="_blank" rel="noopener">サイトを開く ↗</a>` : ""}
+        ${safeUrl(t.url) ? `<a href="${esc(safeUrl(t.url))}" target="_blank" rel="noopener">サイトを開く ↗</a>` : ""}
         ${t.note ? `<p class="note" style="margin:6px 0 0">${esc(t.note)}</p>` : ""}
         <div style="margin-top:10px"><button class="mini">✏️ 編集</button></div>`;
       el.querySelector("button").addEventListener("click", () => openToolDialog(t.id));
@@ -902,8 +944,8 @@ $("importFile").addEventListener("change", async ev => {
   const file = ev.target.files[0];
   if (!file) return;
   try {
-    const d = JSON.parse(await file.text());
-    if (!d || !Array.isArray(d.projects) || !Array.isArray(d.tools)) throw new Error("形式が違います");
+    const d = normalize(JSON.parse(await file.text()));
+    if (!d) throw new Error("形式が違います");
     if (!confirm("現在のデータを読み込んだ内容で置き換えます。よろしいですか？")) return;
     db = d; save();
     renderDashboard(); renderTools();
