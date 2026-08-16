@@ -17,6 +17,7 @@
     --cyan: #35e0ff;
     --green: #4ade80;
     --red: #ff6b6b;
+    --loss: #ff8a5c;
   }
   * { box-sizing: border-box; }
   body {
@@ -80,6 +81,7 @@
     padding: 1px 5px; margin-left: 6px; vertical-align: middle;
   }
   .machine .msub { font-size: .72rem; color: var(--sub); }
+  .machine .mspec { font-size: .68rem; color: var(--cyan); }
   .machine .mstats { font-size: .75rem; min-width: 130px; }
   .popbar { height: 6px; background: #0006; border-radius: 3px; overflow: hidden; margin-top: 3px; width: 120px; }
   .popbar > div { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--neon)); }
@@ -94,6 +96,7 @@
     background: linear-gradient(135deg, var(--neon), #b3186f); border: 0; color: #fff; font-weight: 700;
   }
   button.buy { background: linear-gradient(135deg, #2563eb, #1e40af); border: 0; color: #fff; font-weight: 600; }
+  button.trial { background: linear-gradient(135deg, #0e7490, #155e75); border: 0; color: #fff; font-weight: 600; }
   button.danger { background: #47203a; color: var(--red); }
   button:disabled { opacity: .45; cursor: default; }
 
@@ -116,6 +119,18 @@
   .pos { color: var(--green); } .neg { color: var(--red); }
   .tablewrap { overflow-x: auto; }
 
+  /* 損益グラフ */
+  #chartWrap { position: relative; margin-bottom: 12px; }
+  #chartWrap svg { width: 100%; height: auto; display: block; }
+  .chart-tip {
+    position: absolute; pointer-events: none; background: #0e0a20f2; color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px;
+    font-size: .72rem; white-space: nowrap; transform: translate(-50%, -110%);
+    display: none; z-index: 5;
+  }
+  .chart-legend { font-size: .72rem; color: var(--sub); margin-top: 2px; }
+  .chart-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin: 0 3px 0 8px; }
+
   /* モーダル */
   .modal-bg {
     display: none; position: fixed; inset: 0; background: #000a; z-index: 100;
@@ -124,7 +139,7 @@
   .modal-bg.show { display: flex; }
   .modal {
     background: var(--panel); border: 1px solid var(--neon); border-radius: 14px;
-    max-width: 460px; width: 100%; max-height: 82vh; overflow-y: auto; padding: 18px;
+    max-width: 460px; width: 100%; max-height: 86vh; overflow-y: auto; padding: 18px;
   }
   .modal h2 { margin: 0 0 8px; font-size: 1.1rem; color: var(--gold); }
   .result-row { display: flex; justify-content: space-between; font-size: .88rem; padding: 3px 0; }
@@ -135,8 +150,80 @@
   }
   .machine-result { font-size: .75rem; color: var(--sub); margin-top: 8px; }
   .machine-result div { display: flex; justify-content: space-between; padding: 2px 0; }
+  .weekreport { border-top: 1px dashed var(--border); margin-top: 10px; padding-top: 8px; }
+  .weekreport h4 { margin: 0 0 4px; font-size: .85rem; color: var(--cyan); }
 
   .rowbtns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+  /* 実績 */
+  .achitem { display: flex; gap: 8px; align-items: center; padding: 5px 0; font-size: .8rem; border-bottom: 1px solid #ffffff10; }
+  .achitem .aicon { font-size: 1.1rem; }
+  .achitem.locked { opacity: .38; filter: grayscale(1); }
+  .achitem .adesc { color: var(--sub); font-size: .7rem; }
+
+  /* トースト */
+  #toasts { position: fixed; right: 12px; bottom: 76px; z-index: 200; display: flex; flex-direction: column; gap: 6px; }
+  .toast {
+    background: linear-gradient(135deg, #2b1a3d, #1a1430); border: 1px solid var(--gold);
+    color: var(--text); border-radius: 10px; padding: 9px 14px; font-size: .8rem;
+    box-shadow: 0 4px 20px #000a; animation: toastin .3s ease;
+  }
+  @keyframes toastin { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* ===== 試打ミニゲーム ===== */
+  .trial-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .trial-stats { display: flex; gap: 10px; flex-wrap: wrap; font-size: .75rem; color: var(--sub); margin: 8px 0; }
+  .trial-stats b { color: var(--text); }
+  .trial-banner {
+    min-height: 30px; text-align: center; font-weight: 800; font-size: 1.02rem;
+    color: var(--gold); margin: 6px 0;
+  }
+  .trial-banner.win { animation: bannerflash .5s ease infinite alternate; }
+  @keyframes bannerflash { from { text-shadow: 0 0 6px var(--gold); } to { text-shadow: 0 0 18px var(--neon); color: #fff; } }
+
+  /* スロット */
+  .slot-frame {
+    background: linear-gradient(180deg, #2a2050, #16112e); border: 2px solid var(--border);
+    border-radius: 12px; padding: 14px; text-align: center;
+  }
+  .reels { display: flex; gap: 8px; justify-content: center; margin: 8px 0; }
+  .reel {
+    width: 74px; height: 74px; background: #fdf9ee; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: 800; color: #222; border: 3px solid #c9b26a;
+    overflow: hidden;
+  }
+  .reel.spinning { animation: reelblur .12s linear infinite; }
+  @keyframes reelblur { from { box-shadow: inset 0 8px 10px #0003; } to { box-shadow: inset 0 -8px 10px #0003; } }
+  .lamp {
+    width: 26px; height: 26px; border-radius: 50%; margin: 0 auto 6px;
+    background: #3a2f22; border: 2px solid #6b5a3a; transition: all .2s;
+  }
+  .lamp.lit { background: var(--gold); box-shadow: 0 0 18px var(--gold), 0 0 40px var(--gold); animation: lampblink .35s ease infinite alternate; }
+  @keyframes lampblink { from { box-shadow: 0 0 10px var(--gold); } to { box-shadow: 0 0 26px var(--gold), 0 0 48px var(--neon); } }
+  .slot-btns { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+  .stopbtn { min-width: 60px; background: #7f1d1d; border: 0; color: #fff; font-weight: 700; }
+
+  /* パチンコ */
+  .pachi-frame {
+    background: linear-gradient(180deg, #113049, #0c1c30); border: 2px solid var(--border);
+    border-radius: 12px; padding: 14px; text-align: center;
+  }
+  .digits { display: flex; gap: 8px; justify-content: center; margin: 10px 0; }
+  .digit {
+    width: 62px; height: 78px; background: #05070f; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.4rem; font-weight: 900; color: var(--cyan);
+    border: 2px solid #2b4a6b; font-variant-numeric: tabular-nums;
+  }
+  .digit.spinning { color: #7ab; animation: digitflick .08s linear infinite; }
+  @keyframes digitflick { 50% { opacity: .55; } }
+  .digit.hit { color: var(--gold); border-color: var(--gold); box-shadow: 0 0 14px var(--gold); }
+  .reach-label { min-height: 22px; font-weight: 800; color: var(--neon); font-size: .95rem; }
+  .reach-label.on { animation: bannerflash .4s ease infinite alternate; }
+  .pachi-btns { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .autolabel { font-size: .78rem; color: var(--sub); display: flex; align-items: center; gap: 4px; }
+
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
   @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
 </style>
@@ -165,7 +252,7 @@
   <div class="panel active" id="panel-hall">
     <div class="card">
       <h3>設置中の台</h3>
-      <p class="note">出玉設定を調整しよう。<b>設定1〜2</b>は荒稼ぎできるが評判ダウン、<b>設定5〜6</b>は客が喜ぶが赤字リスクあり。7のつく日(特日)は客が高設定を期待して大勢来店する。</p>
+      <p class="note">出玉設定を調整しよう。<b>設定1〜2</b>は荒稼ぎできるが評判ダウン、<b>設定5〜6</b>は客が喜ぶが赤字リスクあり。7のつく日(特日)は客が高設定を期待して大勢来店する。「🕹️試打」で閉店後に実際に打って出方を確かめられる(収支に影響なし)。</p>
       <div id="hallList"></div>
     </div>
   </div>
@@ -174,7 +261,7 @@
   <div class="panel" id="panel-shop">
     <div class="card">
       <h3>メーカーカタログ</h3>
-      <p class="note">新台は導入から5日間「新台効果」で人気1.4倍。人気は日々少しずつ落ちるので、定期的な入替が繁盛のコツ。売却額は購入価格の40%。</p>
+      <p class="note">新台は導入から5日間「新台効果」で人気1.4倍。人気は日々少しずつ落ちるので、定期的な入替が繁盛のコツ。売却額は購入価格の40%。導入前に「🕹️試打」でスペックを体感できる。</p>
       <div id="shopList"></div>
     </div>
   </div>
@@ -205,6 +292,10 @@
       <p class="note">拡張すると家賃・光熱費も増える。台数を活かせる資金力があるうちに。</p>
     </div>
     <div class="card">
+      <h3>🏅 実績</h3>
+      <div id="achList"></div>
+    </div>
+    <div class="card">
       <h3>💾 データ</h3>
       <div class="rowbtns">
         <button id="btnSave">セーブ</button>
@@ -216,6 +307,11 @@
 
   <!-- 帳簿 -->
   <div class="panel" id="panel-ledger">
+    <div class="card">
+      <h3>純利益の推移 (直近30営業日)</h3>
+      <div id="chartWrap"></div>
+      <div class="chart-legend">基線より上=黒字<span class="sw" style="background:var(--cyan)"></span>黒字 / 下=赤字<span class="sw" style="background:var(--loss)"></span>赤字 (詳細は下表)</div>
+    </div>
     <div class="card">
       <h3>営業成績</h3>
       <div class="tablewrap">
@@ -234,7 +330,9 @@
   <button class="primary" id="btnOpen">🔔 営業開始</button>
 </div>
 
-<!-- 結果モーダル -->
+<div id="toasts"></div>
+
+<!-- モーダル -->
 <div class="modal-bg" id="modalBg">
   <div class="modal" id="modalBox"></div>
 </div>
@@ -242,7 +340,8 @@
 <script>
 "use strict";
 // ============================================================
-//  パチスロ帝国 - ホール経営シミュレーション
+//  パチスロ帝国 - ホール経営シミュレーション v2
+//  設計: DESIGN.md 参照
 // ============================================================
 
 const SAVE_KEY = "pachi-teikoku-save-v1";
@@ -250,17 +349,29 @@ const GOAL_ASSETS = 100000000; // 1億円でクリア
 const MAX_CAP = 60;            // 店舗拡張の上限台数
 
 // ---- 台カタログ(架空機種) ----
+// P機 spec: denom=大当り確率分母, rushPct=RUSH継続率, firstBalls=初当り出玉, rushBalls=RUSH中出玉
+// S機 spec: big1/big6=BIG確率分母(設定1/6), reg1/reg6=REG, bigPay/regPay=獲得枚数
 const CATALOG = [
-  { id:"p1", type:"P", name:"P海のメルヘン 甘デジ",   price: 400000, pop: 50, decay: 0.8, desc:"癒し系の定番。年配客に強い" },
-  { id:"p2", type:"P", name:"CR大江戸花火絵巻",       price: 520000, pop: 60, decay: 1.0, desc:"爆音花火演出が人気" },
-  { id:"p3", type:"P", name:"P戦国プリンセス廻",      price: 700000, pop: 75, decay: 1.3, desc:"若年層に刺さるキャラ機" },
-  { id:"p4", type:"P", name:"P新世紀インパクト",      price: 950000, pop: 92, decay: 1.5, desc:"版権最強クラスの集客力" },
-  { id:"p5", type:"P", name:"P究極神威ゴッドラッシュ", price:1250000, pop:108, decay: 1.8, desc:"超高継続RUSH搭載の話題作" },
-  { id:"s1", type:"S", name:"Sラッキーピエロ",        price: 450000, pop: 62, decay: 0.4, desc:"安定人気の完全告知機。枯れない" },
-  { id:"s2", type:"S", name:"S押忍!漢気番長",         price: 620000, pop: 72, decay: 1.1, desc:"出玉トリガーの伝統芸" },
-  { id:"s3", type:"S", name:"S忍烈伝〜朧の章〜",      price: 820000, pop: 86, decay: 1.4, desc:"継続率モノの金字塔" },
-  { id:"s4", type:"S", name:"S黄金神話クロニクル",    price:1100000, pop:100, decay: 1.6, desc:"一撃万枚の夢がある" },
-  { id:"s5", type:"S", name:"スマスロ蛇眼の傭兵",     price:1450000, pop:118, decay: 2.0, desc:"最新スマスロ。導入日は行列必至" },
+  { id:"p1", type:"P", name:"P海のメルヘン 甘デジ",   price: 400000, pop: 50, decay: 0.8, desc:"癒し系の定番。年配客に強い",
+    spec:{ denom:99,  rushPct:0.50, firstBalls:300, rushBalls:600,  label:"甘デジ 1/99・RUSH継続50%" } },
+  { id:"p2", type:"P", name:"CR大江戸花火絵巻",       price: 520000, pop: 60, decay: 1.0, desc:"爆音花火演出が人気",
+    spec:{ denom:199, rushPct:0.55, firstBalls:450, rushBalls:900,  label:"ライトミドル 1/199・RUSH55%" } },
+  { id:"p3", type:"P", name:"P戦国プリンセス廻",      price: 700000, pop: 75, decay: 1.3, desc:"若年層に刺さるキャラ機",
+    spec:{ denom:199, rushPct:0.60, firstBalls:450, rushBalls:900,  label:"ライトミドル 1/199・RUSH60%" } },
+  { id:"p4", type:"P", name:"P新世紀インパクト",      price: 950000, pop: 92, decay: 1.5, desc:"版権最強クラスの集客力",
+    spec:{ denom:319, rushPct:0.70, firstBalls:450, rushBalls:1500, label:"ミドル 1/319・RUSH70%" } },
+  { id:"p5", type:"P", name:"P究極神威ゴッドラッシュ", price:1250000, pop:108, decay: 1.8, desc:"超高継続RUSH搭載の話題作",
+    spec:{ denom:319, rushPct:0.80, firstBalls:450, rushBalls:1500, label:"ミドル 1/319・RUSH80%" } },
+  { id:"s1", type:"S", name:"Sラッキーピエロ",        price: 450000, pop: 62, decay: 0.4, desc:"安定人気の完全告知機。枯れない",
+    spec:{ big1:273, big6:134, reg1:439, reg6:163, bigPay:252, regPay:96,  label:"Aタイプ・完全告知ランプ" } },
+  { id:"s2", type:"S", name:"S押忍!漢気番長",         price: 620000, pop: 72, decay: 1.1, desc:"出玉トリガーの伝統芸",
+    spec:{ big1:299, big6:155, reg1:500, reg6:200, bigPay:300, regPay:100, label:"AT機・番長ボーナス搭載" } },
+  { id:"s3", type:"S", name:"S忍烈伝〜朧の章〜",      price: 820000, pop: 86, decay: 1.4, desc:"継続率モノの金字塔",
+    spec:{ big1:399, big6:199, reg1:600, reg6:300, bigPay:350, regPay:120, label:"AT機・継続率タイプ" } },
+  { id:"s4", type:"S", name:"S黄金神話クロニクル",    price:1100000, pop:100, decay: 1.6, desc:"一撃万枚の夢がある",
+    spec:{ big1:450, big6:220, reg1:650, reg6:320, bigPay:400, regPay:130, label:"AT機・一撃性能特化" } },
+  { id:"s5", type:"S", name:"スマスロ蛇眼の傭兵",     price:1450000, pop:118, decay: 2.0, desc:"最新スマスロ。導入日は行列必至",
+    spec:{ big1:400, big6:180, reg1:600, reg6:280, bigPay:450, regPay:150, label:"スマスロ・高純増AT" } },
 ];
 
 // 設定ごとの店側粗利率(売上に対する取り分の期待値)
@@ -274,7 +385,7 @@ const ADS = [
   { id:"tv",    name:"ローカルTV CM",  cost: 250000, boost: 150 },
 ];
 
-// ランダムイベント [確率, 適用関数を返す定義]
+// ランダムイベント
 const EVENTS = [
   { p: 0.10, msg:"☔ 大雨。客足が遠のいた…",                custMult: 0.75 },
   { p: 0.07, msg:"📰 パチンコ攻略誌に優良店として掲載された!", repDelta: +4 },
@@ -283,6 +394,22 @@ const EVENTS = [
   { p: 0.06, msg:"🎉 常連客が万枚達成!SNSで話題に!",          repDelta: +3, custMult: 1.1 },
   { p: 0.05, msg:"💥 ハイエナ軍団来襲!甘い台だけ狙われた…",    marginDelta: -0.04 },
   { p: 0.05, msg:"🌞 快晴の行楽日和。ふらっと立ち寄る客が増えた", custMult: 1.15 },
+];
+
+// 実績
+const ACHIEVEMENTS = [
+  { id:"first-day",  icon:"🔔", name:"開店初日",       desc:"初めて営業した" },
+  { id:"million",    icon:"💴", name:"日給100万",      desc:"1日の純利益が100万円を超えた" },
+  { id:"rep90",      icon:"🌟", name:"地域の優良店",   desc:"評判が90を超えた" },
+  { id:"m20",        icon:"🏬", name:"中堅ホール",     desc:"設置台数20台に到達" },
+  { id:"m60",        icon:"🏯", name:"巨艦店",         desc:"設置台数60台(最大)に到達" },
+  { id:"d30",        icon:"📆", name:"1ヶ月経営",      desc:"30日間営業を続けた" },
+  { id:"tokubi-god", icon:"🔥", name:"特日の神",       desc:"特日を平均設定5以上で営業した" },
+  { id:"asset30m",   icon:"📈", name:"軌道に乗る",     desc:"総資産3,000万円を達成" },
+  { id:"asset100m",  icon:"👑", name:"パチスロ帝国",   desc:"総資産1億円を達成(クリア!)" },
+  { id:"trial-hit",  icon:"🎯", name:"初当たり体験",   desc:"試打で大当り/ボーナスを引いた" },
+  { id:"trial-10",   icon:"💥", name:"事故連発生",     desc:"試打で10連チャン or BIG10回を達成" },
+  { id:"trial-5k",   icon:"🗼", name:"ドル箱タワー",   desc:"試打で差玉+5,000 or 差枚+2,000を達成" },
 ];
 
 const $ = id => document.getElementById(id);
@@ -305,6 +432,7 @@ function newGame() {
       makeMachine("s1"),
     ],
     history: [],   // {day, cust, sales, payout, exp, net, note}
+    ach: [],
     cleared: false,
     uid: 1000,
   };
@@ -313,32 +441,49 @@ function newGame() {
 function makeMachine(catalogId) {
   const c = CATALOG.find(m => m.id === catalogId);
   return {
-    uid: null,             // 後で採番
+    uid: null,
     cid: c.id,
-    pop: c.pop,            // 現在人気(劣化していく)
+    pop: c.pop,
     setting: 3,
     boughtDay: null,
-    lastNet: null,         // 前日のこの台の粗利
+    lastNet: null,
     lastCust: null,
   };
 }
 
 function catalogOf(m) { return CATALOG.find(c => c.id === m.cid); }
-
 function machineValue(m) { return Math.round(catalogOf(m).price * 0.4); }
-
 function totalAssets() {
   return state.money + state.machines.reduce((s, m) => s + machineValue(m), 0);
 }
-
 function isTokubi(day) { return String(day).includes("7"); }
 function isWeekend(day) { const w = day % 7; return w === 6 || w === 0; }
-
 function staffNeeded() { return Math.max(1, Math.ceil(state.machines.length / 8)); }
 
 function effectivePop(m) {
   const isNew = state.day - (m.boughtDay ?? -99) < 5;
   return m.pop * (isNew ? 1.4 : 1) * (1 + (m.setting - 3) * 0.05);
+}
+
+// ============================================================
+//  実績
+// ============================================================
+function hasAch(id) { return state.ach.includes(id); }
+function grantAch(id) {
+  if (hasAch(id)) return;
+  const a = ACHIEVEMENTS.find(x => x.id === id);
+  if (!a) return;
+  state.ach.push(id);
+  save(true);
+  toast(`${a.icon} 実績解除「${a.name}」`);
+  renderAch();
+}
+function toast(msg) {
+  const d = document.createElement("div");
+  d.className = "toast";
+  d.textContent = msg;
+  $("toasts").appendChild(d);
+  setTimeout(() => d.remove(), 3500);
 }
 
 // ============================================================
@@ -396,14 +541,12 @@ function simulateDay() {
     const mCust = customers * (effectivePop(m) / totalW);
     const spend = (c.type === "P" ? 32000 : 38000) * rand(0.8, 1.2); // 1人あたり投資額
     const mSales = mCust * spend;
-    // 台ごとの粗利: 設定期待値 + ブレ(引き強で赤字もある)
     const margin = MARGIN[m.setting] + marginDelta + rand(-0.09, 0.09);
     const mGross = mSales * margin;
     sales += mSales;
     gross += mGross;
     m.lastNet = Math.round(mGross);
     m.lastCust = Math.round(mCust);
-    // 人気劣化
     m.pop = Math.max(15, m.pop - c.decay * rand(0.7, 1.3));
   }
   const payout = sales - gross;
@@ -420,8 +563,9 @@ function simulateDay() {
   s.money += Math.round(net);
 
   // --- 評判の増減 ---
+  let avgSet = 3;
   if (s.machines.length > 0) {
-    const avgSet = s.machines.reduce((a, m) => a + m.setting, 0) / s.machines.length;
+    avgSet = s.machines.reduce((a, m) => a + m.setting, 0) / s.machines.length;
     let d = (avgSet - 3) * 1.4;
     if (tokubi) {
       if (avgSet >= 4) { d += 4; notes.push("😊 特日にしっかり出した!客は大満足、評判が上がった!"); }
@@ -431,7 +575,6 @@ function simulateDay() {
   }
   s.rep = Math.max(1, Math.min(100, s.rep + repDelta + rand(-0.5, 0.5)));
 
-  // 広告は1日で消化
   s.ad = "none";
 
   // --- 記録 ---
@@ -445,15 +588,50 @@ function simulateDay() {
   if (s.history.length > 60) s.history.pop();
 
   s.day++;
+
+  // --- 実績チェック ---
+  grantAch("first-day");
+  if (rec.net >= 1000000) grantAch("million");
+  if (s.rep >= 90) grantAch("rep90");
+  if (s.machines.length >= 20) grantAch("m20");
+  if (s.machines.length >= 60) grantAch("m60");
+  if (rec.day >= 30) grantAch("d30");
+  if (tokubi && avgSet >= 5) grantAch("tokubi-god");
+  if (totalAssets() >= 30000000) grantAch("asset30m");
+  if (totalAssets() >= GOAL_ASSETS) grantAch("asset100m");
+
   save(true);
   return { rec, notes };
 }
 
-// ============================================================
-//  UI
-// ============================================================
-function fmtSetting(v) { return "設定" + v; }
+// ---- 週次レポート ----
+function weeklyReport(rec) {
+  if (rec.day % 7 !== 0 || state.history.length < 7) return "";
+  const wk = state.history.slice(0, 7);
+  const total = wk.reduce((a, r) => a + r.net, 0);
+  const avgCust = Math.round(wk.reduce((a, r) => a + r.cust, 0) / 7);
+  const advice = [];
+  const avgSet = state.machines.length
+    ? state.machines.reduce((a, m) => a + m.setting, 0) / state.machines.length : 3;
+  const avgPop = state.machines.length
+    ? state.machines.reduce((a, m) => a + m.pop, 0) / state.machines.length : 0;
+  if (state.rep < 40) advice.push("評判が危険水域。設定を上げて信頼回復を。");
+  else if (state.rep > 85 && avgSet > 4) advice.push("評判は十分高い。設定を少し落として回収しても客はすぐには離れない。");
+  if (avgPop < 40 && state.machines.length) advice.push("台の人気が枯れてきている。新台入替を検討しよう。");
+  if (state.cap < MAX_CAP && state.machines.length >= state.cap && state.money > expandCost() + 2000000)
+    advice.push("満台状態で資金にも余裕あり。店舗拡張のチャンス。");
+  if (!advice.length) advice.push("経営は順調。この調子で!");
+  return `<div class="weekreport">
+    <h4>📋 週次レポート (${rec.day - 6}〜${rec.day}日目)</h4>
+    <div class="result-row"><span>週間純利益</span><b class="${total >= 0 ? "pos" : "neg"}">${total >= 0 ? "+" : ""}${yen(total)}</b></div>
+    <div class="result-row"><span>平均客数</span><b>${avgCust}人/日</b></div>
+    <div class="eventmsg">💡 ${advice.join("<br>💡 ")}</div>
+  </div>`;
+}
 
+// ============================================================
+//  UI (経営画面)
+// ============================================================
 function renderStatus() {
   $("stDay").textContent = state.day + "日目" + (isTokubi(state.day) ? " 🔥特日" : isWeekend(state.day) ? " 📅週末" : "");
   $("stMoney").textContent = yen(state.money);
@@ -485,6 +663,7 @@ function renderHall() {
       <div class="minfo">
         <div class="mname">${c.name}${isNew ? '<span class="newtag">NEW</span>' : ""}</div>
         <div class="msub">${c.desc}</div>
+        <div class="mspec">${c.spec.label}</div>
         <div class="msub">人気 ${Math.round(m.pop)}<div class="popbar"><div style="width:${Math.min(100, m.pop / 1.2)}%"></div></div></div>
       </div>
       <div class="mstats">前日収支: ${lastTxt}<br>売却額: ${yen(machineValue(m))}</div>
@@ -492,11 +671,14 @@ function renderHall() {
     const sel = document.createElement("select");
     for (let v = 1; v <= 6; v++) {
       const o = document.createElement("option");
-      o.value = v; o.textContent = fmtSetting(v);
+      o.value = v; o.textContent = "設定" + v;
       if (m.setting === v) o.selected = true;
       sel.appendChild(o);
     }
     sel.addEventListener("change", () => { m.setting = Number(sel.value); save(); });
+    const trialBtn = document.createElement("button");
+    trialBtn.className = "trial"; trialBtn.textContent = "🕹️試打";
+    trialBtn.addEventListener("click", () => openTrial(c, m.setting));
     const sellBtn = document.createElement("button");
     sellBtn.className = "danger"; sellBtn.textContent = "売却";
     sellBtn.addEventListener("click", () => {
@@ -506,6 +688,7 @@ function renderHall() {
       save(); renderAll();
     });
     div.appendChild(sel);
+    div.appendChild(trialBtn);
     div.appendChild(sellBtn);
     wrap.appendChild(div);
   });
@@ -522,10 +705,14 @@ function renderShop() {
       <div class="minfo">
         <div class="mname">${c.name}</div>
         <div class="msub">${c.desc}</div>
+        <div class="mspec">${c.spec.label}</div>
         <div class="msub">集客力 ${c.pop} ・ 人気低下 ${c.decay <= 0.8 ? "遅い" : c.decay <= 1.4 ? "普通" : "速い"}</div>
       </div>
       <div class="mstats">${yen(c.price)}</div>
     `;
+    const trialBtn = document.createElement("button");
+    trialBtn.className = "trial"; trialBtn.textContent = "🕹️試打";
+    trialBtn.addEventListener("click", () => openTrial(c, 3));
     const btn = document.createElement("button");
     btn.className = "buy"; btn.textContent = "導入する";
     const full = state.machines.length >= state.cap;
@@ -542,6 +729,7 @@ function renderShop() {
       state.machines.push(m);
       save(); renderAll();
     });
+    div.appendChild(trialBtn);
     div.appendChild(btn);
     wrap.appendChild(div);
   }
@@ -576,9 +764,82 @@ function renderMgmt() {
   $("adCurrent").textContent = cur.id === "none"
     ? "広告は未設定。設定すると次の営業日の客数が増える(費用はその日の経費に計上)。"
     : `本日の広告: ${cur.name} → 客数 +${cur.boost}人前後`;
+  renderAch();
+}
+
+function renderAch() {
+  const wrap = $("achList");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  for (const a of ACHIEVEMENTS) {
+    const got = hasAch(a.id);
+    const d = document.createElement("div");
+    d.className = "achitem" + (got ? "" : " locked");
+    d.innerHTML = `<span class="aicon">${a.icon}</span><span><b>${a.name}</b><div class="adesc">${a.desc}</div></span>`;
+    wrap.appendChild(d);
+  }
+}
+
+// ---- 損益グラフ (単一系列・正負を基線の上下+色で表現) ----
+function renderChart() {
+  const wrap = $("chartWrap");
+  const data = state.history.slice(0, 30).reverse(); // 古い→新しい
+  if (!data.length) {
+    wrap.innerHTML = "<p class='note'>営業を始めるとここに損益グラフが表示されます。</p>";
+    return;
+  }
+  const W = 660, H = 190, mL = 52, mR = 8, mT = 10, mB = 22;
+  const pw = W - mL - mR, ph = H - mT - mB;
+  let max = Math.max(0, ...data.map(d => d.net));
+  let min = Math.min(0, ...data.map(d => d.net));
+  if (max === min) { max = 1; }
+  const span = max - min;
+  const y = v => mT + (max - v) / span * ph;
+  const bw = Math.max(3, pw / data.length - 2);
+  const fmtMan = v => (v / 10000 >= 100 || v / 10000 <= -100)
+    ? Math.round(v / 10000).toLocaleString("ja-JP") + "万"
+    : (Math.round(v / 1000) / 10) + "万";
+
+  let bars = "";
+  data.forEach((d, i) => {
+    const x = mL + i * (pw / data.length) + 1;
+    const y0 = y(0), yv = y(d.net);
+    const top = Math.min(y0, yv), h = Math.max(2, Math.abs(y0 - yv));
+    const color = d.net >= 0 ? "var(--cyan)" : "var(--loss)";
+    bars += `<rect data-i="${i}" x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${color}"></rect>`;
+  });
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="直近${data.length}日の純利益推移">
+      <line x1="${mL}" y1="${y(0)}" x2="${W - mR}" y2="${y(0)}" stroke="#a99cd6" stroke-width="1.2"></line>
+      ${max > 0 ? `<line x1="${mL}" y1="${y(max)}" x2="${W - mR}" y2="${y(max)}" stroke="#3d2f6b" stroke-width="1" stroke-dasharray="3 3"></line>
+      <text x="${mL - 6}" y="${y(max) + 4}" text-anchor="end" font-size="10" fill="#a99cd6">${fmtMan(max)}</text>` : ""}
+      ${min < 0 ? `<line x1="${mL}" y1="${y(min)}" x2="${W - mR}" y2="${y(min)}" stroke="#3d2f6b" stroke-width="1" stroke-dasharray="3 3"></line>
+      <text x="${mL - 6}" y="${y(min) + 4}" text-anchor="end" font-size="10" fill="#a99cd6">${fmtMan(min)}</text>` : ""}
+      <text x="${mL - 6}" y="${y(0) + 4}" text-anchor="end" font-size="10" fill="#a99cd6">0</text>
+      <text x="${mL}" y="${H - 6}" font-size="10" fill="#a99cd6">${data[0].day}日目</text>
+      <text x="${W - mR}" y="${H - 6}" text-anchor="end" font-size="10" fill="#a99cd6">${data[data.length - 1].day}日目</text>
+      ${bars}
+    </svg>
+    <div class="chart-tip" id="chartTip"></div>`;
+
+  const tip = $("chartTip");
+  const svg = wrap.querySelector("svg");
+  svg.addEventListener("mousemove", e => {
+    const t = e.target;
+    if (t.tagName !== "rect") { tip.style.display = "none"; return; }
+    const d = data[Number(t.dataset.i)];
+    tip.textContent = `${d.day}日目: ${d.net >= 0 ? "+" : ""}${yen(d.net)}`;
+    const box = wrap.getBoundingClientRect();
+    tip.style.left = (e.clientX - box.left) + "px";
+    tip.style.top = (e.clientY - box.top) + "px";
+    tip.style.display = "block";
+  });
+  svg.addEventListener("mouseleave", () => { tip.style.display = "none"; });
 }
 
 function renderLedger() {
+  renderChart();
   const tb = $("ledgerBody");
   tb.innerHTML = "";
   if (!state.history.length) {
@@ -601,12 +862,19 @@ function renderAll() {
 }
 
 // ---- モーダル ----
+let trialCleanup = null;
 function showModal(html) {
+  if (trialCleanup) { trialCleanup(); trialCleanup = null; }
   $("modalBox").innerHTML = html;
   $("modalBg").classList.add("show");
 }
-function closeModal() { $("modalBg").classList.remove("show"); renderAll(); }
+function closeModal() {
+  if (trialCleanup) { trialCleanup(); trialCleanup = null; }
+  $("modalBg").classList.remove("show");
+  renderAll();
+}
 $("modalBg").addEventListener("click", e => { if (e.target === $("modalBg")) closeModal(); });
+window.closeModal = closeModal;
 
 function showDayResult(result) {
   const { rec, notes } = result;
@@ -637,12 +905,327 @@ function showDayResult(result) {
     <div class="result-row"><span>🏢 経費(家賃/人件費/広告等)</span><b>−${yen(rec.exp)}</b></div>
     <div class="result-row total"><span>本日の純利益</span><b class="${rec.net >= 0 ? "pos" : "neg"}">${rec.net >= 0 ? "+" : ""}${yen(rec.net)}</b></div>
     <div class="machine-result"><b>台別収支(店側):</b>${perMachine}</div>
+    ${weeklyReport(rec)}
     ${endHtml}
     ${state.money >= 0 ? '<div class="rowbtns"><button class="primary" onclick="closeModal()">閉じる</button></div>' : ""}
   `);
 }
 
-// ---- 保存/読込 ----
+// ============================================================
+//  試打ミニゲーム (営業収支には影響しない)
+// ============================================================
+function openTrial(c, setting) {
+  if (c.type === "S") openSlotTrial(c, setting);
+  else openPachiTrial(c, setting);
+}
+
+// ---- スロット試打 ----
+const SLOT_SYMBOLS = ["7️⃣", "🍇", "🍒", "🅱️", "🔔", "🃏"];
+function slotDenom(a1, a6, setting) { return a1 + (a6 - a1) * (setting - 1) / 5; }
+
+function openSlotTrial(c, initSetting) {
+  const t = {
+    setting: initSetting,
+    credits: 500, diff: 0, games: 0, bb: 0, rb: 0,
+    spinning: false, stopped: [true, true, true],
+    flag: "none", final: [], timers: [],
+  };
+  showModal(`
+    <h2>🎰 ${c.name}</h2>
+    <div class="trial-head">
+      <span class="note">${c.spec.label}</span>
+      <label class="autolabel">試打設定
+        <select id="trSet">${[1,2,3,4,5,6].map(v => `<option value="${v}" ${v===initSetting?"selected":""}>設定${v}</option>`).join("")}</select>
+      </label>
+    </div>
+    <div class="slot-frame">
+      <div class="lamp" id="trLamp"></div>
+      <div class="reels">
+        <div class="reel" id="reel0">7️⃣</div>
+        <div class="reel" id="reel1">🍇</div>
+        <div class="reel" id="reel2">🔔</div>
+      </div>
+      <div class="slot-btns">
+        <button class="primary" id="trLever">🕹️ レバーON (3枚)</button>
+        <button class="stopbtn" id="stop0" disabled>STOP</button>
+        <button class="stopbtn" id="stop1" disabled>STOP</button>
+        <button class="stopbtn" id="stop2" disabled>STOP</button>
+      </div>
+    </div>
+    <div class="trial-banner" id="trBanner"></div>
+    <div class="trial-stats">
+      <span>💳 <b id="tCredits">500</b>枚</span>
+      <span>🎮 <b id="tGames">0</b>G</span>
+      <span style="color:var(--gold)">BIG <b id="tBB">0</b></span>
+      <span>REG <b id="tRB">0</b></span>
+      <span>差枚 <b id="tDiff">0</b></span>
+    </div>
+    <p class="note">試打なので営業収支には影響しません。メダルが尽きたら無料で補充できます。</p>
+    <div class="rowbtns">
+      <button id="trRefill">メダル補充 (+500)</button>
+      <button class="danger" onclick="closeModal()">試打を終える</button>
+    </div>
+  `);
+
+  const lamp = $("trLamp"), banner = $("trBanner");
+  const reels = [ $("reel0"), $("reel1"), $("reel2") ];
+  const stops = [ $("stop0"), $("stop1"), $("stop2") ];
+
+  function updateStats() {
+    $("tCredits").textContent = t.credits;
+    $("tGames").textContent = t.games;
+    $("tBB").textContent = t.bb;
+    $("tRB").textContent = t.rb;
+    $("tDiff").textContent = (t.diff >= 0 ? "+" : "") + t.diff;
+  }
+
+  function rollFlag() {
+    const st = t.setting;
+    const pBig = 1 / slotDenom(c.spec.big1, c.spec.big6, st);
+    const pReg = 1 / slotDenom(c.spec.reg1, c.spec.reg6, st);
+    const r = Math.random();
+    if (r < pBig) return "big";
+    if (r < pBig + pReg) return "reg";
+    if (r < pBig + pReg + 1 / 6.5) return "grape";
+    if (r < pBig + pReg + 1 / 6.5 + 1 / 33) return "cherry";
+    if (r < pBig + pReg + 1 / 6.5 + 1 / 33 + 1 / 7.3) return "replay";
+    return "none";
+  }
+  function finalSymbols(flag) {
+    switch (flag) {
+      case "big":    return ["7️⃣","7️⃣","7️⃣"];
+      case "reg":    return ["🅱️","🅱️","🅱️"];
+      case "grape":  return ["🍇","🍇","🍇"];
+      case "cherry": return ["🍒","🔔","🃏"];
+      case "replay": return ["🃏","🃏","🃏"];
+      default: {
+        const a = SLOT_SYMBOLS[Math.floor(rand(1, 6))];
+        let b = SLOT_SYMBOLS[Math.floor(rand(0, 6))];
+        let d = SLOT_SYMBOLS[Math.floor(rand(0, 6))];
+        if (a === b && b === d) d = SLOT_SYMBOLS[(SLOT_SYMBOLS.indexOf(d) + 1) % 6];
+        return [a, b, d];
+      }
+    }
+  }
+
+  function lever() {
+    if (t.spinning || t.credits < 3) return;
+    t.credits -= 3; t.diff -= 3; t.games++;
+    t.flag = rollFlag();
+    t.final = finalSymbols(t.flag);
+    t.spinning = true; t.stopped = [false, false, false];
+    lamp.classList.remove("lit");
+    banner.textContent = ""; banner.classList.remove("win");
+    reels.forEach((r, i) => {
+      r.classList.add("spinning");
+      const timer = setInterval(() => {
+        r.textContent = SLOT_SYMBOLS[Math.floor(Math.random() * 6)];
+      }, 70);
+      t.timers[i] = timer;
+      stops[i].disabled = false;
+    });
+    $("trLever").disabled = true;
+    updateStats();
+  }
+
+  function stopReel(i) {
+    if (t.stopped[i]) return;
+    t.stopped[i] = true;
+    clearInterval(t.timers[i]);
+    reels[i].classList.remove("spinning");
+    reels[i].textContent = t.final[i];
+    stops[i].disabled = true;
+    if (t.stopped.every(Boolean)) resolve();
+  }
+
+  function resolve() {
+    t.spinning = false;
+    $("trLever").disabled = false;
+    let pay = 0, msg = "";
+    switch (t.flag) {
+      case "big":    pay = c.spec.bigPay; t.bb++; msg = `🎉 BIG BONUS! +${pay}枚`; break;
+      case "reg":    pay = c.spec.regPay; t.rb++; msg = `✨ REG BONUS +${pay}枚`; break;
+      case "grape":  pay = 8;  msg = "🍇 +8枚"; break;
+      case "cherry": pay = 2;  msg = "🍒 +2枚"; break;
+      case "replay": pay = 3;  msg = "🃏 リプレイ"; break;
+    }
+    if (t.flag === "big" || t.flag === "reg") {
+      lamp.classList.add("lit");
+      banner.classList.add("win");
+      grantAch("trial-hit");
+      if (t.bb >= 10) grantAch("trial-10");
+    }
+    t.credits += pay; t.diff += pay;
+    if (t.diff >= 2000) grantAch("trial-5k");
+    banner.textContent = msg;
+    updateStats();
+  }
+
+  $("trLever").addEventListener("click", lever);
+  stops.forEach((b, i) => b.addEventListener("click", () => stopReel(i)));
+  $("trSet").addEventListener("change", e => { t.setting = Number(e.target.value); });
+  $("trRefill").addEventListener("click", () => { t.credits += 500; updateStats(); });
+
+  trialCleanup = () => { t.timers.forEach(x => clearInterval(x)); };
+}
+
+// ---- パチンコ試打 ----
+function openPachiTrial(c, initSetting) {
+  const t = {
+    setting: initSetting,
+    balls: 1000, startBalls: 1000, spins: 0, hits: 0, maxRen: 0,
+    busy: false, auto: false, autoTimer: null, timers: [],
+  };
+  showModal(`
+    <h2>🎯 ${c.name}</h2>
+    <div class="trial-head">
+      <span class="note">${c.spec.label}</span>
+      <label class="autolabel">釘(設定)
+        <select id="trSet">${[1,2,3,4,5,6].map(v => `<option value="${v}" ${v===initSetting?"selected":""}>設定${v}</option>`).join("")}</select>
+      </label>
+    </div>
+    <div class="pachi-frame">
+      <div class="reach-label" id="pReach"></div>
+      <div class="digits">
+        <div class="digit" id="dg0">7</div>
+        <div class="digit" id="dg1">7</div>
+        <div class="digit" id="dg2">7</div>
+      </div>
+      <div class="pachi-btns">
+        <button class="primary" id="pSpin">🎯 回す</button>
+        <label class="autolabel"><input type="checkbox" id="pAuto"> オート</label>
+      </div>
+    </div>
+    <div class="trial-banner" id="pBanner"></div>
+    <div class="trial-stats">
+      <span>🔴 持ち玉 <b id="pBalls">1000</b></span>
+      <span>🔄 <b id="pSpins">0</b>回転</span>
+      <span style="color:var(--gold)">当り <b id="pHits">0</b></span>
+      <span>最高 <b id="pMaxRen">0</b>連</span>
+      <span>差玉 <b id="pDiff">0</b></span>
+    </div>
+    <p class="note">試打なので営業収支には影響しません。玉が尽きたら無料で補充できます。設定(釘)が良いほど玉持ちが良くなります。</p>
+    <div class="rowbtns">
+      <button id="pRefill">玉補充 (+1000)</button>
+      <button class="danger" onclick="closeModal()">試打を終える</button>
+    </div>
+  `);
+
+  const digits = [ $("dg0"), $("dg1"), $("dg2") ];
+  const banner = $("pBanner"), reach = $("pReach");
+
+  function updateStats() {
+    $("pBalls").textContent = t.balls;
+    $("pSpins").textContent = t.spins;
+    $("pHits").textContent = t.hits;
+    $("pMaxRen").textContent = t.maxRen;
+    const diff = t.balls - t.startBalls;
+    $("pDiff").textContent = (diff >= 0 ? "+" : "") + diff;
+    if (diff >= 5000) grantAch("trial-5k");
+  }
+  function later(fn, ms) { const id = setTimeout(fn, ms); t.timers.push(id); return id; }
+  function spinCost() { return Math.max(2, Math.round(5.5 - t.setting * 0.5)); }
+
+  function setDigit(el, v, cls) {
+    el.textContent = v;
+    el.classList.remove("spinning");
+    if (cls) el.classList.add(cls);
+  }
+
+  function spin() {
+    if (t.busy) return;
+    const cost = spinCost();
+    if (t.balls < cost) { banner.textContent = "玉切れ!補充してください"; t.busy = false; return; }
+    t.busy = true;
+    t.balls -= cost; t.spins++;
+    banner.textContent = ""; banner.classList.remove("win");
+    reach.textContent = ""; reach.classList.remove("on");
+    digits.forEach(d => { d.classList.remove("hit"); d.classList.add("spinning"); });
+    const spinAnim = setInterval(() => {
+      digits.forEach(d => { if (d.classList.contains("spinning")) d.textContent = Math.floor(Math.random() * 10); });
+    }, 80);
+    t.timers.push(spinAnim);
+
+    const win = Math.random() < 1 / c.spec.denom;
+    const isReach = win || Math.random() < 1 / 12;
+    const n = Math.floor(Math.random() * 10);
+    let mid;
+    if (win) mid = n;
+    else { mid = (n + 1 + Math.floor(Math.random() * 8)) % 10; }
+    const L = n, R = isReach ? n : (n + 1 + Math.floor(Math.random() * 8)) % 10;
+
+    later(() => setDigit(digits[0], L), 400);
+    later(() => {
+      setDigit(digits[2], R);
+      if (isReach) { reach.textContent = "リーチ!!"; reach.classList.add("on"); }
+    }, 800);
+    later(() => {
+      clearInterval(spinAnim);
+      setDigit(digits[1], win ? mid : (isReach ? mid : Math.floor(Math.random() * 10)));
+      if (!win && !isReach && digits[0].textContent === digits[1].textContent && digits[1].textContent === digits[2].textContent) {
+        digits[1].textContent = (Number(digits[1].textContent) + 1) % 10;
+      }
+      reach.classList.remove("on");
+      if (win) hitSequence();
+      else { reach.textContent = ""; t.busy = false; updateStats(); }
+    }, isReach ? 2000 : 1200);
+    updateStats();
+  }
+
+  function hitSequence() {
+    t.hits++;
+    let ren = 1;
+    digits.forEach(d => d.classList.add("hit"));
+    grantAch("trial-hit");
+    t.balls += c.spec.firstBalls;
+    banner.textContent = `🎊 大当り!! +${c.spec.firstBalls}玉`;
+    banner.classList.add("win");
+    reach.textContent = "RUSH突入!?";
+    updateStats();
+    function rushStep() {
+      later(() => {
+        if (Math.random() < c.spec.rushPct) {
+          ren++;
+          t.balls += c.spec.rushBalls;
+          banner.textContent = `🔥 RUSH ${ren}連!! +${c.spec.rushBalls}玉`;
+          reach.textContent = "継続!";
+          if (ren >= 10) grantAch("trial-10");
+          updateStats();
+          rushStep();
+        } else {
+          banner.textContent = `RUSH終了 (${ren}連 / +${(c.spec.firstBalls + (ren - 1) * c.spec.rushBalls).toLocaleString()}玉)`;
+          reach.textContent = "";
+          t.maxRen = Math.max(t.maxRen, ren);
+          digits.forEach(d => d.classList.remove("hit"));
+          t.busy = false;
+          updateStats();
+        }
+      }, 850);
+    }
+    rushStep();
+  }
+
+  $("pSpin").addEventListener("click", spin);
+  $("pAuto").addEventListener("change", e => {
+    t.auto = e.target.checked;
+    if (t.auto) {
+      t.autoTimer = setInterval(() => { if (!t.busy) spin(); }, 500);
+    } else {
+      clearInterval(t.autoTimer); t.autoTimer = null;
+    }
+  });
+  $("trSet").addEventListener("change", e => { t.setting = Number(e.target.value); });
+  $("pRefill").addEventListener("click", () => { t.balls += 1000; t.startBalls += 1000; updateStats(); });
+
+  trialCleanup = () => {
+    t.timers.forEach(x => { clearTimeout(x); clearInterval(x); });
+    if (t.autoTimer) clearInterval(t.autoTimer);
+  };
+}
+
+// ============================================================
+//  保存/読込
+// ============================================================
 function save(silent) {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
   if (!silent) renderStatus();
@@ -650,7 +1233,12 @@ function save(silent) {
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const s = JSON.parse(raw);
+      // v1セーブからの移行
+      if (!Array.isArray(s.ach)) s.ach = [];
+      return s;
+    }
   } catch (e) {}
   return null;
 }
@@ -662,7 +1250,6 @@ function doReset() {
   showTutorial();
 }
 window.doReset = doReset;
-window.closeModal = closeModal;
 
 function showTutorial() {
   showModal(`
@@ -671,6 +1258,7 @@ function showTutorial() {
     <div class="eventmsg">🎯 <b>出玉設定がすべて</b><br>設定1〜2で回収すると儲かるが評判が下がり客が減る。設定5〜6は客が集まるが赤字リスク。メリハリが勝負!</div>
     <div class="eventmsg">🔥 <b>7のつく日は特日</b><br>客が「出る」と期待して殺到する。ここで高設定にすれば評判爆上げ。裏切ると…</div>
     <div class="eventmsg">🛒 <b>新台入替で集客</b><br>台の人気は日々落ちる。新台は5日間ブーストつき。古い台は売却して回転させよう。</div>
+    <div class="eventmsg">🕹️ <b>実機を試打できる!</b><br>どの台も「試打」ボタンで実際に打てる。スロットはレバー&ストップ、パチンコはRUSH搭載。設定ごとの出方を体感して経営に活かそう。</div>
     <div class="rowbtns"><button class="primary" onclick="closeModal()">経営スタート!</button></div>
   `);
 }
