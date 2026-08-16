@@ -28,6 +28,7 @@
     <a href="../badge/">実在証明バッジ</a>
     <a href="../aicheck/">AIアカウント鑑定</a>
     <a href="../creators/">実在クリエイター名鑑</a>
+    <a href="../docs/">説明書</a>
   </nav>
 </div></header>
 
@@ -143,11 +144,30 @@ const ascii = (bytes, off, len) => {
 };
 const utf8 = (bytes) => { try { return new TextDecoder('utf-8', { fatal: false }).decode(bytes); } catch { return ''; } };
 
-async function inflate(data) {
+async function inflate(data, maxOut = 8 * 1024 * 1024) {
+  // 展開サイズを制限する(小さな入力が巨大に膨らむ zip爆弾 対策)
   try {
+    if (data.length > 5 * 1024 * 1024) return null;
     const ds = new DecompressionStream('deflate');
-    const stream = new Blob([data]).stream().pipeThrough(ds);
-    return new Uint8Array(await new Response(stream).arrayBuffer());
+    const reader = new Blob([data]).stream().pipeThrough(ds).getReader();
+    const parts = [];
+    let total = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      parts.push(value);
+      if (total >= maxOut) { try { await reader.cancel(); } catch {} break; }
+    }
+    const out = new Uint8Array(Math.min(total, maxOut));
+    let p = 0;
+    for (const part of parts) {
+      const room = out.length - p;
+      if (room <= 0) break;
+      out.set(part.subarray(0, room), p);
+      p += part.length;
+    }
+    return out;
   } catch { return null; }
 }
 
@@ -177,8 +197,11 @@ function parseTIFF(bytes) {
   const u32 = o => dv.getUint32(o, le);
   if (u16(2) !== 42) return out;
 
+  const visited = new Set(); // IFDポインタのループによる無限再帰対策
   const readIFD = (off, tagMap) => {
     if (off <= 0 || off + 2 > bytes.length) return;
+    if (visited.has(off) || visited.size > 32) return;
+    visited.add(off);
     const n = u16(off);
     if (n > 500) return; // 壊れたデータ対策
     for (let i = 0; i < n; i++) {
@@ -208,6 +231,7 @@ function parseJPEG(bytes) {
   while (off + 4 <= bytes.length) {
     if (bytes[off] !== 0xFF) break;
     const marker = bytes[off + 1];
+    if (marker === 0xFF) { off++; continue; } // フィルバイト(0xFF連続)をスキップ
     if (marker === 0xD8 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) { off += 2; continue; }
     if (marker === 0xDA || marker === 0xD9) break; // 画像データ開始/終端
     const len = dv.getUint16(off + 2);
@@ -472,7 +496,7 @@ async function analyze(file) {
 const $ = id => document.getElementById(id);
 const drop = $('drop'), fileInput = $('file');
 
-drop.addEventListener('click', () => fileInput.click());
+drop.addEventListener('click', e => { if (e.target !== fileInput) fileInput.click(); }); // inputからのバブリングで再帰しないようガード
 drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
 drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));
@@ -505,8 +529,9 @@ async function handle(file) {
   $('metaTable').innerHTML = '';
   $('xmpDetails').style.display = 'none';
 
-  const url = URL.createObjectURL(file);
-  $('preview').src = url;
+  const prev = $('preview').src;
+  if (prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+  $('preview').src = URL.createObjectURL(file);
 
   let res;
   try {

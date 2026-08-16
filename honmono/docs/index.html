@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>説明書 — HONMONO</title>
+<meta name="description" content="HONMONOプロジェクトの目的・各ツールの使い方・制限事項・プライバシーについての公式説明書。">
+<link rel="stylesheet" href="../honmono.css">
+<style>
+  .toc { font-size: .9rem; }
+  .toc a { display: inline-block; margin: 2px 10px 2px 0; }
+  .usecase-table td:first-child { white-space: nowrap; font-weight: 600; }
+  .step-flow { counter-reset: fstep; padding-left: 0; list-style: none; margin: 8px 0; }
+  .step-flow li { counter-increment: fstep; position: relative; padding: 5px 0 5px 40px; font-size: .9rem; }
+  .step-flow li::before {
+    content: counter(fstep); position: absolute; left: 0; top: 7px;
+    width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem;
+  }
+  .qa dt { font-weight: 700; font-size: .92rem; margin-top: 16px; }
+  .qa dt::before { content: "Q. "; color: var(--accent); }
+  .qa dd { margin: 4px 0 0; font-size: .88rem; color: var(--muted); }
+  .qa dd::before { content: "A. "; color: var(--ok); font-weight: 700; }
+</style>
+</head>
+<body>
+<header class="site-head"><div class="wrap">
+  <a class="brand" href="../">HONMONO</a>
+  <nav>
+    <a href="../checker/">来歴チェッカー</a>
+    <a href="../badge/">実在証明バッジ</a>
+    <a href="../aicheck/">AIアカウント鑑定</a>
+    <a href="../creators/">実在クリエイター名鑑</a>
+    <a href="./" aria-current="page">説明書</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <h1>📖 HONMONO 説明書</h1>
+  <p class="lead">HONMONOプロジェクトの目的、各ツールの使い方、制限事項をまとめた公式ドキュメントです。</p>
+
+  <div class="card toc">
+    <b>目次:</b>
+    <a href="#purpose">目的</a>
+    <a href="#which">どのツールを使う?</a>
+    <a href="#checker">来歴チェッカー</a>
+    <a href="#badge">実在証明バッジ</a>
+    <a href="#aicheck">AIアカウント鑑定</a>
+    <a href="#creators">クリエイター名鑑</a>
+    <a href="#faq">よくある質問</a>
+    <a href="#limits">制限と免責</a>
+    <a href="#privacy">プライバシー</a>
+  </div>
+
+  <h2 id="purpose">1. このソフトの目的</h2>
+  <div class="card" style="font-size:.92rem">
+    <p style="margin-top:0">生成AIによる「実在しない美男美女」のアカウント・コンテンツは、誰でも量産できるため急速に増え続けています。
+    その結果、次の3つの問題が起きています。</p>
+    <ul style="padding-left:1.3em">
+      <li><b>消費者の被害</b> — なりすまし・ロマンス詐欺・偽アカウントへの課金</li>
+      <li><b>クリエイターの埋没</b> — 実在の活動者がAI量産アカウントに埋もれ、疑われる</li>
+      <li><b>信頼の崩壊</b> — 「見ているものが本物か分からない」不信の常態化</li>
+    </ul>
+    <p>HONMONOは、AI美女ビジネスと同じ土俵で競うのではなく、<b>「実在すること」自体を検証可能な価値に変える</b>ことでこの問題に対抗するツール群です。
+    AI生成コンテンツが増えるほど、本物の証明の価値は上がる——その構造を利用しています。</p>
+    <p style="margin-bottom:0">全ツールは無料・登録不要・完全ブラウザ内動作(入力データはどこにも送信されません)。</p>
+  </div>
+
+  <h2 id="which">2. どのツールを使えばいい?</h2>
+  <table class="usecase-table">
+    <tr><th>あなたの状況</th><th>使うツール</th></tr>
+    <tr><td>この画像、AI生成か知りたい</td><td><a href="../checker/">🔍 来歴チェッカー</a> に画像をドロップ</td></tr>
+    <tr><td>このアカウント、実在する人か怪しい</td><td><a href="../aicheck/">🕵️ AIアカウント鑑定</a> でチェックリスト診断(画像があれば来歴チェッカーも併用)</td></tr>
+    <tr><td>クリエイターとして「本物」を証明したい</td><td><a href="../badge/">🪪 実在証明バッジ</a> で証明ページを作成 → <a href="../creators/">🌟 名鑑</a> に掲載申請</td></tr>
+    <tr><td>実在する人に仕事を頼みたい・応援したい</td><td><a href="../creators/">🌟 実在クリエイター名鑑</a> で検索</td></tr>
+  </table>
+
+  <h2 id="checker">3. 画像来歴チェッカーの使い方</h2>
+  <div class="card">
+    <ol class="step-flow">
+      <li>調べたい画像(JPEG / PNG / WebP)を用意します。<b>できるだけ「元データ」に近いもの</b>が有効です(SNSの再保存やスクリーンショットはメタデータが消えています)</li>
+      <li>ページの点線枠に画像をドロップ、またはクリックして選択します</li>
+      <li>数秒で判定バナーが表示されます(下表参照)</li>
+      <li>「検出されたシグナル」と「抽出メタデータ」で根拠を確認します</li>
+    </ol>
+    <table>
+      <tr><th>判定</th><th>意味</th></tr>
+      <tr><td>🤖 AI生成の痕跡があります</td><td>生成AIツールの記録・国際規格(IPTC)のAI申告・生成パラメータ等が画像内に見つかった</td></tr>
+      <tr><td>📜 コンテンツ来歴(C2PA)付き</td><td>編集履歴の来歴データが埋め込まれている。詳細検証は公式の <a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">Content Credentials Verify</a> へ</td></tr>
+      <tr><td>📷 カメラ撮影の痕跡があります</td><td>カメラ機種・撮影日時などのEXIFが残っている(実写の可能性を高める材料)</td></tr>
+      <tr><td>❓ 判定材料がありません</td><td>メタデータなし。<b>「AIではない」という意味ではない</b>点に注意</td></tr>
+    </table>
+    <p class="note">検出対象: C2PA来歴 / IPTC digitalSourceType(AI申告)/ Stable Diffusion・ComfyUI・NovelAI・Midjourney・DALL·E・Firefly など約25種のAIツール痕跡 / カメラEXIF / XMP / JPEGコメント</p>
+  </div>
+
+  <h2 id="badge">4. 実在証明バッジの使い方</h2>
+  <div class="card">
+    <p style="font-size:.9rem; margin-top:0"><b>対象:</b> 「実在する人間である」ことを差別化にしたいクリエイター(イラストレーター・モデル・コスプレイヤー・配信者など)。</p>
+    <ol class="step-flow">
+      <li>フォームに活動名・SNSリンク(2つ以上推奨)・実在宣言を入力し、「生成する」を押します</li>
+      <li>プレビューを確認し、証明ページ(<code>honmono-proof.html</code>)をダウンロードします</li>
+      <li>証明ページを<b>自分の管理下のURL</b>(自分のサイト・GitHub Pages等)で公開します</li>
+      <li><b>最重要:</b> 入力した全SNSのプロフィール(bio)に、公開した証明ページのURLを記載します。これで「SNS ⇄ 証明ページ」の相互リンクの輪が完成します</li>
+      <li>バッジ(HTML / Markdown)をサイトやREADMEに設置します。リンク先は公開済みの証明ページURLです</li>
+    </ol>
+    <p class="note"><b>なぜ偽造できない?</b> なりすまし犯は他人のSNSプロフィールを書き換えられないため、「証明ページ → SNS」のリンクは作れても「SNS → 証明ページ」の逆リンクを作れません。輪が閉じていることが本人性の証明になります(Keybase等で実績のある方式)。</p>
+  </div>
+
+  <h2 id="aicheck">5. AIアカウント鑑定の使い方</h2>
+  <div class="card">
+    <ol class="step-flow">
+      <li>調べたいアカウントの投稿・プロフィール・DMでのやり取りを思い浮かべながら、当てはまる項目にチェックを入れます</li>
+      <li>画面下部にリスクスコア(0〜100)と判定(低・中・高)がリアルタイムで表示されます</li>
+      <li>「信頼シグナル」(ビデオ通話で確認した等)に該当があればチェック — スコアが減点されます</li>
+      <li>「診断結果をコピー」で、友人や家族に相談する際の共有用テキストを出力できます</li>
+    </ol>
+    <table>
+      <tr><th>スコア</th><th>判定</th><th>推奨アクション</th></tr>
+      <tr><td>0〜19</td><td>低</td><td>強い危険信号なし。ただし金銭の話が出たら即再評価</td></tr>
+      <tr><td>20〜44</td><td>中</td><td>ビデオ通話・逆画像検索・来歴チェッカーで検証を。金銭・個人情報は渡さない</td></tr>
+      <tr><td>45〜100</td><td>高</td><td>典型的特徴に多数一致。ブロック・通報を検討。被害時は警察相談 #9110</td></tr>
+    </table>
+    <p class="note">「逆画像検索で別人がヒット」「金銭・投資への誘導」などの決定的シグナルは、1つでスコア40以上、2つで65以上になるよう下限が設定されています。</p>
+  </div>
+
+  <h2 id="creators">6. 実在クリエイター名鑑の使い方</h2>
+  <div class="card">
+    <p style="font-size:.9rem; margin-top:0"><b>探す側:</b> キーワード検索・ジャンルボタンで絞り込み、各カードの「証明ページ」リンクから相互リンクの輪を自分の目で検証できます。</p>
+    <p style="font-size:.9rem"><b>載りたい側:</b></p>
+    <ol class="step-flow">
+      <li><a href="../badge/">実在証明バッジ</a>で証明ページを作成・公開し、SNSとの相互リンクを完成させます</li>
+      <li>名鑑ページの「掲載申請フォーム(GitHub Issue)」から、活動名・ジャンル・証明ページURL・紹介文を送ります</li>
+      <li>運営が相互リンクの輪を確認後、名鑑に掲載されます(無料)</li>
+    </ol>
+  </div>
+
+  <h2 id="faq">7. よくある質問</h2>
+  <div class="card">
+    <dl class="qa" style="margin:0">
+      <dt>「判定材料がありません」と出たら、その画像は本物?</dt>
+      <dd>いいえ。SNS・メッセージアプリ・スクリーンショットを経由するとメタデータはほぼ確実に消えます。判定不能=中立です。可能なら投稿前の元データを入手して再チェックしてください。</dd>
+      <dt>「カメラ撮影の痕跡あり」なら実写と断定できる?</dt>
+      <dd>断定はできません。EXIFは専用ツールで偽装可能です。あくまで「実写の可能性を高める材料の1つ」として、他の証拠(ライブ配信・相互リンク証明など)と組み合わせてください。</dd>
+      <dt>AIで作った画像なのに「痕跡なし」になった。バグ?</dt>
+      <dd>バグではありません。メタデータを削除してから配布されたAI画像は、メタデータ検査では検出できません(これはあらゆる検査ツール共通の限界です)。画素そのものからの推定は原理的に誤判定が多く、本ツールは採用していません。</dd>
+      <dt>画像をアップロードして大丈夫?</dt>
+      <dd>画像はサーバーに送信されません。解析はすべてあなたのブラウザの中で行われ、ページを閉じれば何も残りません(オフラインでも動作します)。</dd>
+      <dt>鑑定スコアが「高」だったら、その人は偽物?</dt>
+      <dd>断定ではなく「典型的な特徴への一致度」です。実在の人でも当てはまる項目はあります。ただし金銭・投資の話が出ている場合は、スコアに関係なく詐欺を最優先で疑ってください。</dd>
+      <dt>実在証明バッジは審査があるの?</dt>
+      <dd>バッジ生成自体は誰でも可能で、審査はありません。証明力は「相互リンクの輪が実際に閉じているか」で決まり、見る人が検証できます。名鑑への掲載時のみ、運営が輪の完成を確認します。</dd>
+    </dl>
+  </div>
+
+  <h2 id="limits">8. 制限事項と免責</h2>
+  <div class="card" style="font-size:.88rem">
+    <ul style="margin:0; padding-left:1.3em">
+      <li>本ツール群の出力はすべて<b>参考情報</b>であり、真正性・実在性を法的に保証するものではありません</li>
+      <li>メタデータは追加・編集・削除が可能です。「痕跡なし」は人間の証明にならず、「カメラ情報あり」も偽装可能です</li>
+      <li>C2PAの<b>電子署名の暗号学的検証</b>は現バージョンでは行いません(存在検出と内容表示のみ)。署名検証は<a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">公式ツール</a>をご利用ください</li>
+      <li>対応画像形式は JPEG / PNG / WebP です(HEIC・AVIF・動画は非対応)</li>
+      <li>本ツールの利用により生じたいかなる損害についても、運営者は責任を負いません</li>
+      <li>虚偽の実在宣言・他人になりすました証明ページの作成は、信用毀損・詐欺等の法的責任を問われる可能性があります</li>
+    </ul>
+  </div>
+
+  <h2 id="privacy">9. プライバシー</h2>
+  <div class="card" style="font-size:.88rem">
+    <ul style="margin:0; padding-left:1.3em">
+      <li>画像・フォーム入力・チェック内容は、<b>一切サーバーに送信されません</b>。全処理がブラウザ内で完結します</li>
+      <li>本サイトは独自のCookie・トラッキング・アクセス解析を使用していません(ホスティングのGitHub Pagesが標準的なアクセスログを記録します)</li>
+      <li>名鑑への掲載申請はGitHub Issueを通じて行われ、その内容は公開されます</li>
+    </ul>
+  </div>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  HONMONO プロジェクト — 最終更新: 2026-08-16
+</div></footer>
+</body>
+</html>
