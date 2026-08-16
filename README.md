@@ -40,6 +40,26 @@
 - データは localStorage(v1→v2自動マイグレーション)、録音Blobのみ IndexedDB
 - Playwright(Chromium)による87項目のスモークテスト(QRの実デコード検証・v1移行・自動進行・録音まで)を全通過
 
+### デスクトップ版 — `desktop/`
+
+Web版(`band/`)をそのまま同梱した Electron 製デスクトップアプリです。オフライン前提の環境(スタジオ据え置きPCなど)や、ブラウザを開かずに常用したい場合向け。データはWeb版と同じ仕組み(localStorage/IndexedDB)でアプリ内に保存されます。
+
+**入手方法**:GitHub Actions の「Desktop Build」ワークフローが Windows(インストーラ/ポータブル)・macOS(dmg, Apple Silicon/Intel)・Linux(AppImage)を自動ビルドします。
+
+- 手動ビルド:リポジトリの Actions タブ → Desktop Build → Run workflow(成果物は Artifacts からダウンロード)
+- リリース発行:`desktop-v1.0.0` のようなタグをプッシュすると、GitHub Release にインストーラが自動添付されます
+
+**ローカルでの開発実行**:
+
+```bash
+cd desktop
+npm install
+npm start        # band/ を同梱して起動
+npm run dist     # 現在のOS向けインストーラをビルド
+```
+
+**実装メモ**:`file://` では ES モジュールが読めないため、独自スキーム `app://` で同梱ファイルを配信する薄いラッパー(`desktop/main.js`)になっています。マイク許可(チューナー/録音)、外部リンクのOSブラウザ起動、シングルインスタンス、日本語メニュー対応。共有リンクはデスクトップ版から発行しても Web 版の公開URLになります。macOS 版は未署名のため初回は「右クリック → 開く」で起動してください。
+
 ## JAN→楽天価格 取得ツール — `/`
 
 ルートの `index.html` は個人用の価格取得ツールです(既存)。

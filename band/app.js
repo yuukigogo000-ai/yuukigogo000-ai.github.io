@@ -877,12 +877,18 @@ function bindLibrary() {
 
 // ---------- 共有(リンク・QR・テキスト) ----------
 
+// 共有リンクの土台。デスクトップ版(app://)やfile://で開いている場合でも、
+// 受け取った相手がブラウザで開ける公開URLを使う
+const SHARE_BASE = location.protocol.startsWith("http")
+  ? `${location.origin}${location.pathname}`
+  : "https://yuukigogo000-ai.github.io/band/";
+
 async function buildShareUrl() {
   const sl = activeSetlist();
   const entries = entriesOf(sl);
   if (!entries.length) { toast("共有する曲がありません"); return null; }
   const payload = await encodeShare(sl, entries);
-  return `${location.origin}${location.pathname}#s=${payload}`;
+  return `${SHARE_BASE}#s=${payload}`;
 }
 
 function setlistText() {
