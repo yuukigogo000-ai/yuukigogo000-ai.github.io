@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>おじさん健康手帳</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --page:         #f9f9f7;
+    --surface:      #fcfcfb;
+    --ink:          #0b0b0b;
+    --ink-2:        #52514e;
+    --muted:        #898781;
+    --grid:         #e1e0d9;
+    --baseline:     #c3c2b7;
+    --border:       rgba(11,11,11,0.10);
+    --series-1:     #2a78d6;  /* 体重 / 収縮期 */
+    --series-2:     #eb6834;  /* 拡張期 */
+    --good:         #0ca30c;
+    --good-text:    #006300;
+    --warning:      #fab219;
+    --serious:      #ec835a;
+    --critical:     #d03b3b;
+    --accent:       #2a78d6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page:       #0d0d0d;
+      --surface:    #1a1a19;
+      --ink:        #ffffff;
+      --ink-2:      #c3c2b7;
+      --muted:      #898781;
+      --grid:       #2c2c2a;
+      --baseline:   #383835;
+      --border:     rgba(255,255,255,0.10);
+      --series-1:   #3987e5;
+      --series-2:   #d95926;
+      --good-text:  #0ca30c;
+      --accent:     #3987e5;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    background: var(--page); color: var(--ink);
+    max-width: 900px; margin: 0 auto; padding: 16px; line-height: 1.6;
+  }
+  h1 { font-size: 1.5rem; margin: 8px 0 2px; }
+  .tagline { color: var(--ink-2); font-size: .9rem; margin: 0 0 16px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; margin: 14px 0;
+  }
+  .card h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  /* stat tiles */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .tile .label { font-size: .8rem; color: var(--ink-2); }
+  .tile .value { font-size: 1.7rem; font-weight: 600; line-height: 1.3; }
+  .tile .unit { font-size: .9rem; font-weight: 400; color: var(--ink-2); margin-left: 2px; }
+  .tile .delta { font-size: .8rem; color: var(--ink-2); }
+  .tile .delta.up-bad   { color: var(--critical); }
+  .tile .delta.down-good{ color: var(--good-text); }
+  .status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; border-radius: 999px; padding: 1px 10px; border: 1px solid var(--border); color: var(--ink-2); }
+  .status-badge .dot { width: 9px; height: 9px; border-radius: 50%; }
+  /* form */
+  label { display: block; font-size: .85rem; color: var(--ink-2); margin: 8px 0 3px; }
+  input[type=number], input[type=date], input[type=text] {
+    width: 100%; padding: 10px; font-size: 1.05rem; font-family: inherit;
+    border: 1px solid var(--baseline); border-radius: 8px;
+    background: var(--surface); color: var(--ink);
+  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  button {
+    font-size: 1rem; padding: 10px 20px; border: 0; border-radius: 8px;
+    background: var(--accent); color: #fff; cursor: pointer; margin-top: 12px;
+  }
+  button.ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--baseline); }
+  button.small { font-size: .8rem; padding: 4px 10px; margin: 0; }
+  /* charts */
+  .chart-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  .legend { display: flex; gap: 14px; font-size: .8rem; color: var(--ink-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 5px; }
+  .legend i { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .chart-wrap { position: relative; }
+  .chart-wrap svg { width: 100%; height: auto; display: block; }
+  .tooltip {
+    position: absolute; pointer-events: none; display: none; z-index: 5;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.15); padding: 6px 10px; font-size: .8rem; white-space: nowrap;
+  }
+  .tooltip .t-date { color: var(--ink-2); }
+  .tooltip .t-row { display: flex; align-items: center; gap: 5px; }
+  .tooltip .t-row i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .empty { color: var(--muted); font-size: .85rem; padding: 18px 0; text-align: center; }
+  /* table */
+  .table-scroll { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+  th, td { border-bottom: 1px solid var(--grid); padding: 6px 8px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  th { color: var(--ink-2); font-weight: 600; }
+  th:first-child, td:first-child { text-align: left; }
+  td.memo { text-align: left; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+  .note { font-size: .8rem; color: var(--muted); }
+  .msg { font-size: .95rem; margin-top: 6px; }
+  .row-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  details summary { cursor: pointer; font-size: .9rem; color: var(--ink-2); }
+</style>
+</head>
+<body>
+
+<h1>🍺 おじさん健康手帳 💪</h1>
+<p class="tagline">飲んだ日も、歩いた日も、まず記録から。データはこのブラウザの中だけに保存されます。</p>
+
+<div class="tiles" id="tiles"></div>
+<p class="msg" id="coachMsg"></p>
+
+<div class="card">
+  <h2>今日の記録</h2>
+  <div class="grid">
+    <div><label for="fDate">日付</label><input type="date" id="fDate"></div>
+    <div><label for="fWeight">体重 (kg)</label><input type="number" id="fWeight" step="0.1" min="20" max="300" placeholder="72.5"></div>
+    <div><label for="fSys">血圧 上 (mmHg)</label><input type="number" id="fSys" step="1" min="50" max="300" placeholder="128"></div>
+    <div><label for="fDia">血圧 下 (mmHg)</label><input type="number" id="fDia" step="1" min="30" max="200" placeholder="82"></div>
+    <div><label for="fSteps">歩数</label><input type="number" id="fSteps" step="1" min="0" placeholder="6000"></div>
+    <div><label for="fSleep">睡眠 (時間)</label><input type="number" id="fSleep" step="0.5" min="0" max="24" placeholder="6.5"></div>
+    <div><label for="fDrinks">お酒 (杯)</label><input type="number" id="fDrinks" step="1" min="0" placeholder="0"></div>
+    <div><label for="fMemo">メモ</label><input type="text" id="fMemo" placeholder="飲み会 / 腰痛 など"></div>
+  </div>
+  <button id="saveBtn">記録する</button>
+  <span class="note" id="saveNote"></span>
+</div>
+
+<div class="card">
+  <div class="chart-head">
+    <h2>体重の推移（直近30日）</h2>
+  </div>
+  <div class="chart-wrap" id="weightChart"></div>
+</div>
+
+<div class="card">
+  <div class="chart-head">
+    <h2>血圧の推移（直近30日）</h2>
+    <div class="legend">
+      <span><i style="background:var(--series-1)"></i>上（収縮期）</span>
+      <span><i style="background:var(--series-2)"></i>下（拡張期）</span>
+    </div>
+  </div>
+  <div class="chart-wrap" id="bpChart"></div>
+</div>
+
+<div class="card">
+  <h2>記録一覧</h2>
+  <div class="table-scroll" id="tableWrap"></div>
+</div>
+
+<div class="card">
+  <details>
+    <summary>⚙️ 設定・データ管理</summary>
+    <div class="grid" style="margin-top:10px">
+      <div><label for="sHeight">身長 (cm)</label><input type="number" id="sHeight" step="0.1" min="100" max="250" placeholder="170"></div>
+      <div><label for="sTarget">目標体重 (kg)</label><input type="number" id="sTarget" step="0.1" min="20" max="300" placeholder="68"></div>
+    </div>
+    <div class="row-actions">
+      <button id="saveSettings">設定を保存</button>
+      <button class="ghost" id="exportBtn">CSVエクスポート</button>
+      <button class="ghost" id="importBtn">CSVインポート</button>
+      <input type="file" id="importFile" accept=".csv" style="display:none">
+    </div>
+    <p class="note">データは端末のブラウザ(localStorage)にのみ保存。機種変更前にCSVエクスポートを。<br>
+    血圧の区分は高血圧治療ガイドライン(JSH2019)の分類を参考にした目安です。診断は医師にご相談ください。</p>
+  </details>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const REC_KEY = "ojisan_health_records";
+const SET_KEY = "ojisan_health_settings";
+
+let records = load(REC_KEY, []);   // [{date:"YYYY-MM-DD", weight, sys, dia, steps, sleep, drinks, memo}]
+let settings = load(SET_KEY, {});
+
+function load(key, fallback) {
+  try { const v = JSON.parse(localStorage.getItem(key)); return v ?? fallback; }
+  catch { return fallback; }
+}
+function persist() {
+  localStorage.setItem(REC_KEY, JSON.stringify(records));
+  localStorage.setItem(SET_KEY, JSON.stringify(settings));
+}
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+function fmtDate(iso) { const [,m,d] = iso.split("-"); return Number(m) + "/" + Number(d); }
+function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+function num(v) { const n = parseFloat(v); return isFinite(n) ? n : null; }
+
+/* ===== 血圧区分 (JSH2019 目安) ===== */
+function bpClass(sys, dia) {
+  if (sys == null || dia == null) return null;
+  if (sys >= 180 || dia >= 110) return { label: "III度高血圧", color: "var(--critical)", icon: "🚨" };
+  if (sys >= 160 || dia >= 100) return { label: "II度高血圧",  color: "var(--critical)", icon: "⚠️" };
+  if (sys >= 140 || dia >= 90)  return { label: "I度高血圧",   color: "var(--serious)",  icon: "⚠️" };
+  if (sys >= 130 || dia >= 80)  return { label: "高値血圧",    color: "var(--warning)",  icon: "△" };
+  if (sys >= 120)               return { label: "正常高値",    color: "var(--warning)",  icon: "△" };
+  return { label: "正常", color: "var(--good)", icon: "✓" };
+}
+function bmiClass(bmi) {
+  if (bmi == null) return null;
+  if (bmi >= 30)   return { label: "肥満(2度〜)", color: "var(--critical)", icon: "⚠️" };
+  if (bmi >= 25)   return { label: "肥満(1度)",   color: "var(--serious)",  icon: "△" };
+  if (bmi < 18.5)  return { label: "低体重",      color: "var(--warning)",  icon: "△" };
+  return { label: "普通体重", color: "var(--good)", icon: "✓" };
+}
+
+/* ===== レコード操作 ===== */
+function latest(field) {
+  for (let i = records.length - 1; i >= 0; i--) if (records[i][field] != null) return records[i];
+  return null;
+}
+function valueOnOrBefore(field, dateISO) {
+  let best = null;
+  for (const r of records) if (r[field] != null && r.date <= dateISO) best = r;
+  return best;
+}
+function daysAgoISO(n) {
+  const d = new Date(); d.setDate(d.getDate() - n);
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+/* ===== 保存 ===== */
+$("saveBtn").addEventListener("click", () => {
+  const date = $("fDate").value;
+  if (!date) { alert("日付を入れてください"); return; }
+  const rec = {
+    date,
+    weight: num($("fWeight").value),
+    sys:    num($("fSys").value),
+    dia:    num($("fDia").value),
+    steps:  num($("fSteps").value),
+    sleep:  num($("fSleep").value),
+    drinks: num($("fDrinks").value),
+    memo:   $("fMemo").value.trim() || null
+  };
+  if (rec.weight == null && rec.sys == null && rec.dia == null && rec.steps == null
+      && rec.sleep == null && rec.drinks == null && !rec.memo) {
+    alert("どれか1つは入力してください"); return;
+  }
+  const i = records.findIndex(r => r.date === date);
+  if (i >= 0) {
+    // 同じ日付は上書きマージ（空欄は既存値を残す）
+    const old = records[i];
+    for (const k of ["weight","sys","dia","steps","sleep","drinks","memo"])
+      if (rec[k] == null) rec[k] = old[k];
+    records[i] = rec;
+    $("saveNote").textContent = date + " の記録を更新しました";
+  } else {
+    records.push(rec);
+    records.sort((a,b) => a.date < b.date ? -1 : 1);
+    $("saveNote").textContent = "記録しました。えらい!";
+  }
+  persist();
+  clearForm();
+  renderAll();
+});
+function clearForm() {
+  for (const id of ["fWeight","fSys","fDia","fSteps","fSleep","fDrinks","fMemo"]) $(id).value = "";
+}
+
+/* ===== 設定 ===== */
+$("saveSettings").addEventListener("click", () => {
+  settings.height = num($("sHeight").value);
+  settings.target = num($("sTarget").value);
+  persist();
+  renderAll();
+});
+
+/* ===== タイル ===== */
+function tile(label, valueHtml, subHtml) {
+  return `<div class="tile"><div class="label">${label}</div><div class="value">${valueHtml}</div>${subHtml || ""}</div>`;
+}
+function badge(cls) {
+  if (!cls) return "";
+  return `<span class="status-badge"><span class="dot" style="background:${cls.color}"></span>${cls.icon} ${cls.label}</span>`;
+}
+function renderTiles() {
+  const parts = [];
+
+  const w = latest("weight");
+  if (w) {
+    const prev = valueOnOrBefore("weight", daysAgoISO(7));
+    let delta = "";
+    if (prev && prev.date !== w.date) {
+      const d = w.weight - prev.weight;
+      const cls = d > 0 ? "up-bad" : (d < 0 ? "down-good" : "");
+      delta = `<div class="delta ${cls}">${d >= 0 ? "+" : ""}${d.toFixed(1)} kg（${fmtDate(prev.date)}比）</div>`;
+    }
+    let target = "";
+    if (settings.target != null) {
+      const gap = w.weight - settings.target;
+      target = `<div class="delta">目標まで ${gap <= 0 ? "達成! 🎉" : gap.toFixed(1) + " kg"}</div>`;
+    }
+    parts.push(tile("体重", w.weight.toFixed(1) + `<span class="unit">kg</span>`, delta + target));
+  } else {
+    parts.push(tile("体重", `<span class="unit">未記録</span>`, ""));
+  }
+
+  if (w && settings.height != null) {
+    const h = settings.height / 100;
+    const bmi = w.weight / (h * h);
+    parts.push(tile("BMI", bmi.toFixed(1), `<div class="delta">${badge(bmiClass(bmi))}</div>`));
+  } else {
+    parts.push(tile("BMI", `<span class="unit">${w ? "身長を設定" : "未記録"}</span>`, ""));
+  }
+
+  const bp = latest("sys");
+  if (bp && bp.dia != null) {
+    parts.push(tile("血圧", `${bp.sys}<span class="unit">/</span>${bp.dia}`, `<div class="delta">${badge(bpClass(bp.sys, bp.dia))}</div>`));
+  } else {
+    parts.push(tile("血圧", `<span class="unit">未記録</span>`, ""));
+  }
+
+  const weekAgo = daysAgoISO(6);
+  const stepRecs = records.filter(r => r.steps != null && r.date >= weekAgo);
+  if (stepRecs.length) {
+    const avg = Math.round(stepRecs.reduce((s,r) => s + r.steps, 0) / stepRecs.length);
+    parts.push(tile("歩数（7日平均）", avg.toLocaleString(), `<div class="delta">${stepRecs.length}日分の平均</div>`));
+  } else {
+    parts.push(tile("歩数（7日平均）", `<span class="unit">未記録</span>`, ""));
+  }
+
+  const drinkRecs = records.filter(r => r.drinks != null && r.date >= weekAgo);
+  if (drinkRecs.length) {
+    const total = drinkRecs.reduce((s,r) => s + r.drinks, 0);
+    const dry = drinkRecs.filter(r => r.drinks === 0).length;
+    parts.push(tile("お酒（直近7日）", total + `<span class="unit">杯</span>`, `<div class="delta">休肝日 ${dry}日</div>`));
+  }
+
+  $("tiles").innerHTML = parts.join("");
+}
+
+/* ===== ひとことコーチ ===== */
+function renderCoach() {
+  const msgs = [];
+  const w = latest("weight");
+  const prev = w ? valueOnOrBefore("weight", daysAgoISO(7)) : null;
+  if (w && prev && prev.date !== w.date) {
+    const d = w.weight - prev.weight;
+    if (d <= -0.5) msgs.push("体重、いい感じに落ちてます。その調子!");
+    else if (d >= 1.0) msgs.push("先週より増え気味…。今夜のビールは1杯減らしてみます?");
+  }
+  const bp = latest("sys");
+  if (bp && bp.dia != null) {
+    const c = bpClass(bp.sys, bp.dia);
+    if (c && (c.label.includes("II度") || c.label.includes("III度")))
+      msgs.push("血圧がかなり高めです。早めに医療機関で相談を。");
+  }
+  const weekAgo = daysAgoISO(6);
+  const drinkRecs = records.filter(r => r.drinks != null && r.date >= weekAgo);
+  if (drinkRecs.length >= 5 && drinkRecs.every(r => r.drinks > 0))
+    msgs.push("今週まだ休肝日ゼロ。肝臓もたまには定時退社させましょう。");
+  if (!records.length) msgs.push("まずは今日の体重から記録してみましょう。");
+  $("coachMsg").textContent = msgs.length ? "💬 " + msgs[0] : "";
+}
+
+/* ===== チャート（インラインSVG） ===== */
+const CHART_W = 700, CHART_H = 240, PAD = { top: 14, right: 16, bottom: 26, left: 44 };
+
+function niceTicks(min, max, count) {
+  if (min === max) { min -= 1; max += 1; }
+  const span = max - min;
+  const step0 = span / count;
+  const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  let step = mag;
+  for (const m of [1, 2, 5, 10]) if (m * mag >= step0) { step = m * mag; break; }
+  const lo = Math.floor(min / step) * step;
+  const hi = Math.ceil(max / step) * step;
+  const ticks = [];
+  for (let v = lo; v <= hi + step / 2; v += step) ticks.push(Math.round(v * 100) / 100);
+  return { lo, hi, ticks };
+}
+
+// series: [{name, color, points:[{date, value}]}]
+function drawChart(container, series, opts) {
+  const all = series.flatMap(s => s.points);
+  if (all.length === 0) {
+    container.innerHTML = `<div class="empty">まだデータがありません。上のフォームから記録すると、ここにグラフが出ます。</div>`;
+    return;
+  }
+  const dates = [...new Set(all.map(p => p.date))].sort();
+  const x = d => PAD.left + (dates.length === 1 ? (CHART_W - PAD.left - PAD.right) / 2
+              : (dates.indexOf(d) / (dates.length - 1)) * (CHART_W - PAD.left - PAD.right));
+  const vmin = Math.min(...all.map(p => p.value), opts.includeValue ?? Infinity);
+  const vmax = Math.max(...all.map(p => p.value), opts.includeValue ?? -Infinity);
+  const { lo, hi, ticks } = niceTicks(vmin, vmax, 4);
+  const y = v => PAD.top + (1 - (v - lo) / (hi - lo)) * (CHART_H - PAD.top - PAD.bottom);
+
+  let svg = `<svg viewBox="0 0 ${CHART_W} ${CHART_H}" role="img" aria-label="${esc(opts.aria)}">`;
+  // グリッド（水平ヘアライン）と目盛
+  for (const t of ticks) {
+    svg += `<line x1="${PAD.left}" y1="${y(t)}" x2="${CHART_W - PAD.right}" y2="${y(t)}" stroke="var(--grid)" stroke-width="1"/>`;
+    svg += `<text x="${PAD.left - 8}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" style="font-variant-numeric:tabular-nums">${t}</text>`;
+  }
+  // X軸ラベル（間引き）
+  const every = Math.max(1, Math.ceil(dates.length / 7));
+  dates.forEach((d, i) => {
+    if (i % every === 0 || i === dates.length - 1)
+      svg += `<text x="${x(d)}" y="${CHART_H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmtDate(d)}</text>`;
+  });
+  // 目標線
+  if (opts.refLine != null && opts.refLine >= lo && opts.refLine <= hi) {
+    svg += `<line x1="${PAD.left}" y1="${y(opts.refLine)}" x2="${CHART_W - PAD.right}" y2="${y(opts.refLine)}" stroke="var(--baseline)" stroke-width="1" stroke-dasharray="4 4"/>`;
+    svg += `<text x="${CHART_W - PAD.right}" y="${y(opts.refLine) - 5}" text-anchor="end" font-size="11" fill="var(--ink-2)">${esc(opts.refLabel)}</text>`;
+  }
+  // 系列（2pxライン + サーフェスリング付きマーカー）
+  for (const s of series) {
+    const pts = s.points;
+    if (pts.length > 1) {
+      const dAttr = pts.map((p, i) => (i ? "L" : "M") + x(p.date).toFixed(1) + " " + y(p.value).toFixed(1)).join(" ");
+      svg += `<path d="${dAttr}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    }
+    for (const p of pts)
+      svg += `<circle cx="${x(p.date).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="4" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`;
+    // 端点の直接ラベル（最新値のみ・点の上に中央揃えで置き、端では内側に寄せる）
+    const lastP = pts[pts.length - 1];
+    if (lastP) {
+      const lx = Math.max(PAD.left + 14, Math.min(x(lastP.date), CHART_W - 20));
+      svg += `<text x="${lx.toFixed(1)}" y="${(y(lastP.value) - 10).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="600" fill="var(--ink)" style="font-variant-numeric:tabular-nums">${lastP.value}</text>`;
+    }
+  }
+  svg += `</svg>`;
+  container.innerHTML = svg;
+
+  // ホバー: 最寄りの日付のツールチップ
+  const svgEl = container.querySelector("svg");
+  const tip = $("tooltip");
+  svgEl.addEventListener("mousemove", ev => {
+    const rect = svgEl.getBoundingClientRect();
+    const mx = (ev.clientX - rect.left) / rect.width * CHART_W;
+    let bestD = null, bestDist = Infinity;
+    for (const d of dates) { const dist = Math.abs(x(d) - mx); if (dist < bestDist) { bestDist = dist; bestD = d; } }
+    if (bestD == null) return;
+    let html = `<div class="t-date">${fmtDate(bestD)}</div>`;
+    let found = false;
+    for (const s of series) {
+      const p = s.points.find(q => q.date === bestD);
+      if (p) { found = true; html += `<div class="t-row"><i style="background:${s.color}"></i>${esc(s.name)}: <b>${p.value}${esc(opts.unit)}</b></div>`; }
+    }
+    if (!found) { tip.style.display = "none"; return; }
+    tip.innerHTML = html;
+    tip.style.display = "block";
+    const pageX = ev.pageX + 14, pageY = ev.pageY - 10;
+    tip.style.left = Math.min(pageX, window.scrollX + document.documentElement.clientWidth - tip.offsetWidth - 8) + "px";
+    tip.style.top = pageY + "px";
+  });
+  svgEl.addEventListener("mouseleave", () => { $("tooltip").style.display = "none"; });
+}
+
+function renderCharts() {
+  const cutoff = daysAgoISO(29);
+  const recent = records.filter(r => r.date >= cutoff);
+
+  const wPts = recent.filter(r => r.weight != null).map(r => ({ date: r.date, value: r.weight }));
+  drawChart($("weightChart"),
+    [{ name: "体重", color: "var(--series-1)", points: wPts }],
+    { unit: "kg", aria: "体重の推移グラフ", refLine: settings.target, refLabel: "目標 " + settings.target + "kg" });
+
+  const sPts = recent.filter(r => r.sys != null).map(r => ({ date: r.date, value: r.sys }));
+  const dPts = recent.filter(r => r.dia != null).map(r => ({ date: r.date, value: r.dia }));
+  drawChart($("bpChart"),
+    [{ name: "上", color: "var(--series-1)", points: sPts },
+     { name: "下", color: "var(--series-2)", points: dPts }],
+    { unit: "", aria: "血圧の推移グラフ" });
+}
+
+/* ===== テーブル ===== */
+function renderTable() {
+  if (!records.length) {
+    $("tableWrap").innerHTML = `<div class="empty">記録はまだありません。</div>`;
+    return;
+  }
+  let html = `<table><thead><tr><th>日付</th><th>体重</th><th>血圧</th><th>歩数</th><th>睡眠</th><th>酒</th><th>メモ</th><th></th></tr></thead><tbody>`;
+  const shown = [...records].reverse().slice(0, 60);
+  for (const r of shown) {
+    html += `<tr>
+      <td>${esc(r.date)}</td>
+      <td>${r.weight != null ? r.weight.toFixed(1) : "–"}</td>
+      <td>${r.sys != null && r.dia != null ? r.sys + "/" + r.dia : "–"}</td>
+      <td>${r.steps != null ? r.steps.toLocaleString() : "–"}</td>
+      <td>${r.sleep != null ? r.sleep + "h" : "–"}</td>
+      <td>${r.drinks != null ? (r.drinks === 0 ? "休肝" : r.drinks + "杯") : "–"}</td>
+      <td class="memo">${esc(r.memo ?? "")}</td>
+      <td><button class="ghost small" data-del="${esc(r.date)}">削除</button></td>
+    </tr>`;
+  }
+  html += `</tbody></table>`;
+  if (records.length > 60) html += `<p class="note">直近60件を表示（全${records.length}件はCSVエクスポートで）</p>`;
+  $("tableWrap").innerHTML = html;
+  $("tableWrap").querySelectorAll("[data-del]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const d = btn.getAttribute("data-del");
+      if (!confirm(d + " の記録を削除しますか?")) return;
+      records = records.filter(r => r.date !== d);
+      persist();
+      renderAll();
+    });
+  });
+}
+
+/* ===== CSV ===== */
+const CSV_COLS = ["date","weight","sys","dia","steps","sleep","drinks","memo"];
+function csvEscape(v) {
+  v = (v === null || v === undefined) ? "" : String(v);
+  return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+}
+$("exportBtn").addEventListener("click", () => {
+  const lines = [CSV_COLS.join(",")];
+  for (const r of records) lines.push(CSV_COLS.map(c => csvEscape(r[c])).join(","));
+  const blob = new Blob(["﻿" + lines.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "おじさん健康手帳_" + todayISO() + ".csv";
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
+});
+$("importBtn").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", ev => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const text = String(reader.result).replace(/^﻿/, "");
+      const rows = parseCsv(text);
+      if (!rows.length || rows[0][0] !== "date") { alert("CSVの形式が違います（1列目ヘッダは date）"); return; }
+      const header = rows[0];
+      let added = 0, updated = 0;
+      for (const row of rows.slice(1)) {
+        if (!row.length || !row[0]) continue;
+        const rec = { date: row[0], weight: null, sys: null, dia: null, steps: null, sleep: null, drinks: null, memo: null };
+        header.forEach((h, i) => {
+          if (h === "date") return;
+          if (h === "memo") rec.memo = row[i] || null;
+          else if (CSV_COLS.includes(h)) rec[h] = num(row[i]);
+        });
+        const idx = records.findIndex(r => r.date === rec.date);
+        if (idx >= 0) { records[idx] = rec; updated++; } else { records.push(rec); added++; }
+      }
+      records.sort((a,b) => a.date < b.date ? -1 : 1);
+      persist();
+      renderAll();
+      alert(`インポート完了: 追加 ${added}件 / 更新 ${updated}件`);
+    } catch (e) {
+      alert("インポートに失敗しました: " + e);
+    }
+    ev.target.value = "";
+  };
+  reader.readAsText(file);
+});
+function parseCsv(text) {
+  const rows = []; let row = []; let cur = ""; let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') { if (text[i+1] === '"') { cur += '"'; i++; } else inQ = false; }
+      else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") { row.push(cur); cur = ""; }
+    else if (c === "\n" || c === "\r") {
+      if (c === "\r" && text[i+1] === "\n") i++;
+      row.push(cur); cur = "";
+      if (row.length > 1 || row[0] !== "") rows.push(row);
+      row = [];
+    } else cur += c;
+  }
+  if (cur !== "" || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+
+/* ===== 初期化 ===== */
+function renderAll() {
+  renderTiles();
+  renderCoach();
+  renderCharts();
+  renderTable();
+}
+$("fDate").value = todayISO();
+if (settings.height != null) $("sHeight").value = settings.height;
+if (settings.target != null) $("sTarget").value = settings.target;
+renderAll();
+</script>
+</body>
+</html>
