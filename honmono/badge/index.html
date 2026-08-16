@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>実在証明バッジ — HONMONO</title>
+<meta name="description" content="クリエイター向け。「私はAIではなく実在の人間です」を相互リンク方式で証明するページとバッジを無料生成。">
+<link rel="stylesheet" href="../honmono.css">
+<style>
+  .steps { counter-reset: step; padding-left: 0; list-style: none; margin: 0; }
+  .steps li { counter-increment: step; position: relative; padding: 6px 0 6px 42px; font-size: .9rem; }
+  .steps li::before {
+    content: counter(step); position: absolute; left: 0; top: 8px;
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff;
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .85rem;
+  }
+  #previewFrame { width: 100%; height: 460px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+  .badge-preview { padding: 14px; border: 1px dashed var(--line); border-radius: 10px; display: inline-block; }
+  .copy-ok { color: var(--ok); font-size: .8rem; margin-left: 10px; }
+</style>
+</head>
+<body>
+<header class="site-head"><div class="wrap">
+  <a class="brand" href="../">HONMONO</a>
+  <nav>
+    <a href="../checker/">来歴チェッカー</a>
+    <a href="../badge/" aria-current="page">実在証明バッジ</a>
+    <a href="../aicheck/">AIアカウント鑑定</a>
+    <a href="../creators/">実在クリエイター名鑑</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <h1>🪪 実在証明バッジ</h1>
+  <p class="lead">AI製アカウントが溢れる今、「実在する人間である」ことはクリエイターの強い差別化になります。
+  このツールは<b>相互リンク方式の証明ページ</b>とバッジを生成します。入力内容はブラウザ外に送信されません。</p>
+
+  <div class="card">
+    <h2 style="margin-top:0">仕組み(相互リンク証明)</h2>
+    <ol class="steps">
+      <li><b>証明ページを生成</b> — あなたの活動名・SNS一覧・実在宣言を記載したHTMLをダウンロード</li>
+      <li><b>自分の管理下で公開</b> — 自分のサイトやGitHub Pagesにアップロード(URLの所有=第一の証明)</li>
+      <li><b>各SNSのプロフィールに証明ページのURLを記載</b> — これで「SNS ⇄ 証明ページ」の相互リンクが完成</li>
+      <li><b>バッジを設置</b> — 見た人は、バッジ → 証明ページ → 各SNSのプロフィール、と辿って相互リンクを確認できます。なりすましは他人のSNSプロフィールを書き換えられないため、この輪を偽造できません</li>
+    </ol>
+  </div>
+
+  <h2>1. 情報を入力</h2>
+  <div class="card">
+    <label for="name">活動名(必須)</label>
+    <input type="text" id="name" placeholder="例: 山田ハナ / hana_creates">
+    <label for="category">活動ジャンル</label>
+    <input type="text" id="category" placeholder="例: イラストレーター / コスプレイヤー / 写真家">
+    <label for="links">SNS・公式リンク(1行に1つ、2つ以上推奨)</label>
+    <textarea id="links" placeholder="https://x.com/your_account&#10;https://www.instagram.com/your_account&#10;https://www.youtube.com/@your_channel"></textarea>
+    <label for="video">実在の裏付けリンク(任意)</label>
+    <input type="url" id="video" placeholder="例: ライブ配信アーカイブ、イベント出演記録、対談動画などのURL">
+    <label for="statement">実在宣言(編集可)</label>
+    <textarea id="statement">私はAIによって生成された架空の人物ではなく、実在する人間のクリエイターです。このページに記載したSNSアカウントはすべて私本人が運用しており、各プロフィールには本ページのURLを記載しています。私の作品における生成AIの利用有無は、各作品の説明に明記します。</textarea>
+    <label for="proofUrl">証明ページを公開する予定のURL(任意・バッジのリンク先になります)</label>
+    <input type="url" id="proofUrl" placeholder="例: https://あなたのID.github.io/proof.html">
+    <button id="generate">証明ページとバッジを生成する</button>
+  </div>
+
+  <section id="output" style="display:none">
+    <h2>2. 証明ページのプレビュー</h2>
+    <iframe id="previewFrame" title="証明ページのプレビュー"></iframe>
+    <button id="download">証明ページ(HTML)をダウンロード</button>
+
+    <h2>3. バッジを設置</h2>
+    <div class="card">
+      <div class="badge-preview" id="badgeBox"></div>
+      <h3>HTML用(サイト・ブログに貼る)<span id="copiedHtml" class="copy-ok" hidden>コピーしました ✓</span></h3>
+      <pre class="snippet" id="snippetHtml"></pre>
+      <button class="secondary" data-copy="snippetHtml" data-flag="copiedHtml">HTMLをコピー</button>
+      <h3>Markdown用(GitHub READMEなど)<span id="copiedMd" class="copy-ok" hidden>コピーしました ✓</span></h3>
+      <pre class="snippet" id="snippetMd"></pre>
+      <button class="secondary" data-copy="snippetMd" data-flag="copiedMd">Markdownをコピー</button>
+      <p class="note">Markdown版のバッジ画像は shields.io(外部サービス)を利用しています。自サイトに貼る場合はHTML版(完全自己完結のSVG)がおすすめです。</p>
+    </div>
+
+    <h2>4. 仕上げ(重要)</h2>
+    <div class="card" style="font-size:.9rem">
+      <ol style="margin:0; padding-left:1.4em">
+        <li>ダウンロードした <code>honmono-proof.html</code> を自分のサイト・GitHub Pagesにアップロード</li>
+        <li>入力した<b>すべてのSNSプロフィール(bio)に証明ページのURLを記載</b>する — これを忘れると証明の輪が完成しません</li>
+        <li>バッジをサイトやREADMEに設置し、リンク先を公開した証明ページのURLにする</li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="notice">
+    <b>この証明が示すこと・示さないこと:</b> 相互リンク証明は「これらのアカウント群を同一人物(組織)が管理している」ことを示します。
+    運用者が実在の人間であることの確からしさは、ライブ配信・イベント出演など裏付けリンクの質で決まります。
+    虚偽の宣言はご自身の信用を損なうだけでなく、法的責任を問われる可能性があります。
+  </div>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  HONMONO プロジェクト — 入力内容はブラウザ外に送信されません。
+</div></footer>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const BADGE_SVG = (
+  '<svg xmlns="http://www.w3.org/2000/svg" width="232" height="44" role="img" aria-label="実在クリエイター宣言">' +
+  '<rect width="232" height="44" rx="8" fill="#0e7490"/>' +
+  '<rect x="2" y="2" width="228" height="40" rx="6" fill="none" stroke="#ffffff55"/>' +
+  '<text x="14" y="27" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#fff">✓ 実在クリエイター宣言</text>' +
+  '<text x="168" y="27" font-family="system-ui,sans-serif" font-size="11" font-weight="800" letter-spacing="1" fill="#a5f3fc">HONMONO</text>' +
+  '</svg>');
+
+function proofPageHTML(d) {
+  const linkItems = d.links.map(u =>
+    `      <li><a href="${esc(u)}" rel="me noopener" target="_blank">${esc(u)}</a></li>`).join('\n');
+  const videoBlock = d.video
+    ? `    <h2>実在の裏付け</h2>\n    <p><a href="${esc(d.video)}" target="_blank" rel="noopener">${esc(d.video)}</a></p>\n`
+    : '';
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(d.name)} — 実在証明ページ</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+         max-width: 680px; margin: 0 auto; padding: 32px 20px; line-height: 1.8; }
+  .badge { display: inline-block; background: #0e7490; color: #fff; border-radius: 8px;
+           padding: 6px 14px; font-weight: 700; font-size: .85rem; letter-spacing: .05em; }
+  h1 { margin: 14px 0 2px; font-size: 1.5rem; }
+  .cat { color: #888; margin: 0 0 20px; }
+  h2 { font-size: 1.05rem; border-left: 4px solid #0e7490; padding-left: 10px; margin-top: 32px; }
+  blockquote { background: #0e74901a; border-radius: 8px; padding: 14px 18px; margin: 0; font-size: .95rem; }
+  ul { padding-left: 1.3em; }
+  .how { font-size: .85rem; color: #888; border-top: 1px solid #8884; margin-top: 36px; padding-top: 14px; }
+  footer { margin-top: 30px; font-size: .78rem; color: #999; }
+</style>
+</head>
+<body>
+  <span class="badge">✓ 実在クリエイター宣言 | HONMONO</span>
+  <h1>${esc(d.name)}</h1>
+  <p class="cat">${esc(d.category || 'クリエイター')}</p>
+
+  <h2>実在宣言</h2>
+  <blockquote>${esc(d.statement)}</blockquote>
+
+  <h2>本人が運用するアカウント</h2>
+  <ul>
+${linkItems}
+  </ul>
+${videoBlock}
+  <h2>このページの検証方法</h2>
+  <div class="how">
+    <p>① 上記の各SNSプロフィール(bio)に、<b>このページのURLが記載されている</b>ことを確認してください。<br>
+    ② 相互リンクが確認できれば、これらのアカウントとこのページは同一の人物が管理しています。<br>
+    ③ 裏付けリンク(ライブ配信・イベント記録など)で、運用者が実在の人間であることを確認できます。</p>
+  </div>
+
+  <footer>発行日: ${esc(d.date)} / この証明ページは <a href="${esc(d.generatorUrl)}">HONMONO 実在証明バッジ</a> で生成されました。</footer>
+</body>
+</html>
+`;
+}
+
+let currentHTML = '';
+
+$('generate').addEventListener('click', () => {
+  const name = $('name').value.trim();
+  if (!name) { $('name').focus(); $('name').style.borderColor = 'var(--bad)'; return; }
+  $('name').style.borderColor = '';
+  const links = $('links').value.split('\n').map(s => s.trim()).filter(s => /^https?:\/\//.test(s));
+  const d = {
+    name,
+    category: $('category').value.trim(),
+    links: links.length ? links : ['(SNSリンク未入力 — 追記してください)'],
+    video: $('video').value.trim(),
+    statement: $('statement').value.trim(),
+    proofUrl: $('proofUrl').value.trim() || 'https://(証明ページを公開したURL)',
+    date: new Date().toISOString().slice(0, 10),
+    generatorUrl: location.origin.startsWith('http') ? location.href : 'https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io',
+  };
+
+  currentHTML = proofPageHTML(d);
+  $('previewFrame').srcdoc = currentHTML;
+  $('badgeBox').innerHTML = `<a href="${esc(d.proofUrl)}" target="_blank" rel="noopener">${BADGE_SVG}</a>`;
+  $('snippetHtml').textContent =
+    `<a href="${d.proofUrl}" target="_blank" rel="noopener" title="実在証明ページを見る">\n` +
+    BADGE_SVG + '\n</a>';
+  $('snippetMd').textContent =
+    `[![実在クリエイター宣言 | HONMONO](https://img.shields.io/badge/HONMONO-%E5%AE%9F%E5%9C%A8%E3%82%AF%E3%83%AA%E3%82%A8%E3%82%A4%E3%82%BF%E3%83%BC%E5%AE%A3%E8%A8%80-0e7490)](${d.proofUrl})`;
+  $('output').style.display = 'block';
+  $('output').scrollIntoView({ behavior: 'smooth' });
+});
+
+$('download').addEventListener('click', () => {
+  const blob = new Blob([currentHTML], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'honmono-proof.html';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+});
+
+document.querySelectorAll('button[data-copy]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const text = $(btn.dataset.copy).textContent;
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+    }
+    const flag = $(btn.dataset.flag);
+    flag.hidden = false;
+    setTimeout(() => { flag.hidden = true; }, 2000);
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AIアカウント鑑定 — HONMONO</title>
+<meta name="description" content="SNS・マッチングアプリのアカウントがAI製・なりすましでないかをチェックリストでリスク診断。ロマンス詐欺対策にも。">
+<link rel="stylesheet" href="../honmono.css">
+<style>
+  .check { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .check:last-child { border-bottom: 0; }
+  .check input { margin-top: 5px; width: 17px; height: 17px; accent-color: var(--accent); flex: 0 0 auto; }
+  .check label { margin: 0; font-weight: 500; font-size: .92rem; cursor: pointer; }
+  .check .why { display: block; font-size: .8rem; color: var(--muted); font-weight: 400; }
+  .weight { font-size: .72rem; font-weight: 700; color: var(--accent-strong); background: var(--accent-soft);
+            border-radius: 999px; padding: 1px 8px; margin-left: 6px; white-space: nowrap; }
+  .trust-card { border-color: var(--ok); }
+  .trust-card h2 { color: var(--ok); }
+  #scorebar { height: 14px; border-radius: 999px; background: var(--line); overflow: hidden; margin: 10px 0; }
+  #scorefill { height: 100%; width: 0%; background: var(--ok); transition: width .4s, background .4s; }
+  .score-num { font-size: 2rem; font-weight: 800; }
+  #resultArea { position: sticky; bottom: 0; background: var(--bg); padding: 10px 0; border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<header class="site-head"><div class="wrap">
+  <a class="brand" href="../">HONMONO</a>
+  <nav>
+    <a href="../checker/">来歴チェッカー</a>
+    <a href="../badge/">実在証明バッジ</a>
+    <a href="../aicheck/" aria-current="page">AIアカウント鑑定</a>
+    <a href="../creators/">実在クリエイター名鑑</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <h1>🕵️ AIアカウント鑑定</h1>
+  <p class="lead">SNS・マッチングアプリで出会ったアカウントについて、当てはまる項目にチェックを入れてください。
+  AI製アカウント・なりすまし・ロマンス詐欺に共通する特徴から<b>リスクスコア</b>を算出します。すべてブラウザ内で完結します。</p>
+
+  <div id="checklists"></div>
+
+  <div class="card trust-card">
+    <h2 style="margin-top:0">✅ 信頼シグナル(当てはまればリスク減点)</h2>
+    <div id="trustlist"></div>
+  </div>
+
+  <div id="resultArea">
+    <div class="card" style="margin:0">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px">
+        <div><span class="score-num" id="scoreNum">0</span><span class="note"> / 100 リスクスコア</span></div>
+        <div id="bandLabel" style="font-weight:800; font-size:1.05rem">リスク: 低</div>
+      </div>
+      <div id="scorebar"><div id="scorefill"></div></div>
+      <p id="advice" class="note" style="margin:4px 0 0">チェックを入れると診断が更新されます。</p>
+      <button class="secondary" id="copyResult" style="margin-top:10px">診断結果をコピー</button>
+      <span id="copied" style="color:var(--ok); font-size:.8rem; margin-left:8px" hidden>コピーしました ✓</span>
+    </div>
+  </div>
+
+  <div class="notice">
+    <b>免責:</b> この診断は統計的な傾向に基づく参考情報です。実在の人でも当てはまる項目はありますし、
+    巧妙な詐欺は項目を回避します。<b>金銭・投資・暗号資産の話が出たら、スコアに関わらず詐欺を疑ってください。</b>
+    被害が疑われる場合は警察相談専用電話「#9110」または
+    <a href="https://www.npa.go.jp/bureau/cyber/index.html" target="_blank" rel="noopener">警察庁サイバー犯罪相談窓口</a>へ。
+  </div>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  HONMONO プロジェクト — チェック内容はブラウザ外に送信されません。
+</div></footer>
+
+<script>
+'use strict';
+
+const GROUPS = [
+  {
+    title: '🖼 画像・動画の特徴',
+    items: [
+      { w: 3, text: '手の指・歯・耳・髪の生え際に不自然な崩れや溶けがある',
+        why: '生成AIが最も苦手とする部位。複数の画像で繰り返し見られたら強いシグナル。' },
+      { w: 2, text: '背景の文字・看板・ロゴが読めない、または歪んでいる',
+        why: 'AIは背景の文字列を正しく描けないことが多い。' },
+      { w: 2, text: 'アクセサリー・服の模様・ほくろが投稿ごとに食い違う',
+        why: '実在人物なら一貫するディテールが、生成のたびに変わる。' },
+      { w: 2, text: '全投稿が似た構図・過剰につるっとした肌質感で統一されている',
+        why: '同一モデル・同一プロンプトからの量産に典型的な均質さ。' },
+      { w: 3, text: 'ライブ配信・生の動画・雑談動画が一切ない(静止画のみ)',
+        why: 'リアルタイム動画はAI偽装のコストが最も高い。実在の証拠が静止画だけなのは不自然。' },
+      { w: 4, text: '逆画像検索(Google レンズ等)で別人・別名義がヒットする',
+        why: '他人の写真の盗用(なりすまし)の直接証拠。' },
+      { w: 4, text: '「画像来歴チェッカー」等でAI生成の痕跡が出た',
+        why: 'メタデータによる自己申告レベルの強い証拠。' },
+    ],
+  },
+  {
+    title: '📜 アカウントの履歴',
+    items: [
+      { w: 2, text: 'アカウント作成から日が浅いのに投稿数・フォロワーが多い',
+        why: '買われたフォロワー+一括投稿で「実績」を偽装するのが定番。' },
+      { w: 2, text: '過去の投稿が短期間に一括で投稿されている',
+        why: '数年分の生活履歴を一晩で偽造した痕跡。投稿日時を確認。' },
+      { w: 2, text: '友人・家族・他人と一緒に写った写真が1枚もない',
+        why: '他者との関係の写真はAI量産アカウントには作りにくい。' },
+      { w: 3, text: 'イベント出演・雑誌掲載・第三者による言及が検索で確認できない',
+        why: '実在の活動者は本人以外の発信(タグ付け・レポ・記事)が必ず残る。' },
+    ],
+  },
+  {
+    title: '💬 行動・コミュニケーション',
+    items: [
+      { w: 4, text: 'DMで早い段階から金銭・投資・暗号資産・別アプリへ誘導された',
+        why: 'ロマンス詐欺の最重要シグナル。この項目単独でも即ブロック推奨。' },
+      { w: 2, text: '日本語(使用言語)が微妙に不自然、返信がテンプレ的で噛み合わない',
+        why: '翻訳ツール・チャットボット運用の痕跡。' },
+      { w: 3, text: 'ビデオ通話・音声通話を理由をつけて断り続ける',
+        why: 'リアルタイムの顔出しはAI・なりすましが最も避けたい検証手段。' },
+      { w: 2, text: '会話よりも「限定写真」「サブスク」等への課金誘導が中心',
+        why: 'AI美女ビジネスの主要な収益導線。' },
+    ],
+  },
+  {
+    title: '🔗 クロスチェック',
+    items: [
+      { w: 2, text: '他のSNSアカウントとの相互リンクがない・一方通行',
+        why: '実在の活動者は複数プラットフォームが相互に繋がっている。' },
+      { w: 2, text: '活動名で検索しても本人発信以外の情報が出てこない',
+        why: '外部からの言及ゼロは「昨日生まれたペルソナ」の特徴。' },
+      { w: 2, text: 'プロフィールの経歴(学校・所属・受賞歴)が具体的に検証できない',
+        why: '検証可能な固有名詞を避けるのは偽装ペルソナの定石。' },
+    ],
+  },
+];
+
+const TRUST_ITEMS = [
+  { w: 5, text: 'ビデオ通話や配信で、写真と同一人物が動いて話すのを確認した' },
+  { w: 5, text: 'イベント・オフ会など対面で本人に会ったことがある' },
+  { w: 3, text: '第三者(共通の知人・公式メディア)が本人の実在を裏付けている' },
+  { w: 3, text: '実在証明ページ(相互リンク証明)を公開しており、輪が検証できた' },
+];
+
+const MAX = GROUPS.flatMap(g => g.items).reduce((s, i) => s + i.w, 0);
+
+const $ = id => document.getElementById(id);
+
+/* チェックリスト描画 */
+let riskIdx = 0, trustIdx = 0;
+$('checklists').innerHTML = GROUPS.map(g =>
+  `<div class="card"><h2 style="margin-top:0">${g.title}</h2>` +
+  g.items.map(it => {
+    const id = 'r' + (riskIdx++);
+    return `<div class="check"><input type="checkbox" id="${id}" data-w="${it.w}" data-kind="risk">` +
+      `<label for="${id}">${it.text}<span class="weight">+${it.w}</span><span class="why">${it.why}</span></label></div>`;
+  }).join('') + '</div>'
+).join('');
+
+$('trustlist').innerHTML = TRUST_ITEMS.map(it => {
+  const id = 't' + (trustIdx++);
+  return `<div class="check"><input type="checkbox" id="${id}" data-w="${it.w}" data-kind="trust">` +
+    `<label for="${id}">${it.text}<span class="weight">−${it.w}</span></label></div>`;
+}).join('');
+
+const BANDS = [
+  { max: 20, label: 'リスク: 低', color: 'var(--ok)',
+    advice: '現時点で強い危険信号はありません。ただし金銭の話が出た瞬間に再評価を。' },
+  { max: 45, label: 'リスク: 中', color: 'var(--warn)',
+    advice: '複数の注意信号があります。ビデオ通話・逆画像検索・来歴チェッカーでの検証を強くおすすめします。金銭・個人情報は渡さないでください。' },
+  { max: 101, label: 'リスク: 高', color: 'var(--bad)',
+    advice: 'AI製・なりすまし・詐欺アカウントの典型的特徴に多数一致しています。金銭・個人情報のやり取りは絶対に避け、ブロック・通報を検討してください。' },
+];
+
+function recalc() {
+  let risk = 0, trust = 0, decisive = 0;
+  const checkedRisk = [], checkedTrust = [];
+  document.querySelectorAll('input[data-kind="risk"]:checked').forEach(el => {
+    const w = +el.dataset.w;
+    risk += w;
+    if (w >= 4) decisive++; // 逆画像検索ヒット・金銭誘導・AI痕跡検出などの決定的シグナル
+    checkedRisk.push(el.nextElementSibling.firstChild.textContent);
+  });
+  document.querySelectorAll('input[data-kind="trust"]:checked').forEach(el => {
+    trust += +el.dataset.w;
+    checkedTrust.push(el.nextElementSibling.firstChild.textContent);
+  });
+  // 決定的シグナルはスコア下限を保証する(1つで「中」、2つ以上で「高」に到達)
+  const floor = decisive >= 2 ? 65 : decisive === 1 ? 40 : 0;
+  const base = Math.max(Math.round(risk / MAX * 100), floor);
+  const pct = Math.min(100, Math.max(0, base - trust * 3));
+  const band = BANDS.find(b => pct < b.max) || BANDS[2];
+
+  $('scoreNum').textContent = pct;
+  $('bandLabel').textContent = band.label;
+  $('bandLabel').style.color = band.color;
+  $('scorefill').style.width = pct + '%';
+  $('scorefill').style.background = band.color;
+  $('advice').textContent = band.advice + (checkedTrust.length ? ' (信頼シグナルによりスコアを減点済み)' : '');
+  return { pct, band, checkedRisk, checkedTrust };
+}
+
+document.addEventListener('change', e => { if (e.target.matches('input[type=checkbox]')) recalc(); });
+
+$('copyResult').addEventListener('click', async () => {
+  const { pct, band, checkedRisk, checkedTrust } = recalc();
+  const lines = [
+    `【AIアカウント鑑定結果】リスクスコア ${pct}/100 (${band.label})`,
+    '',
+    checkedRisk.length ? '■ 該当した注意信号:' : '■ 注意信号の該当なし',
+    ...checkedRisk.map(t => `・${t}`),
+    ...(checkedTrust.length ? ['', '■ 信頼シグナル:', ...checkedTrust.map(t => `・${t}`)] : []),
+    '',
+    '診断: HONMONO AIアカウント鑑定(判定は参考情報です)',
+  ];
+  const text = lines.join('\n');
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+  }
+  $('copied').hidden = false;
+  setTimeout(() => { $('copied').hidden = true; }, 2000);
+});
+
+recalc();
+</script>
+</body>
+</html>

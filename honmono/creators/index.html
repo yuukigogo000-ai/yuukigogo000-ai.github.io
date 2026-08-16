@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>実在クリエイター名鑑 — HONMONO</title>
+<meta name="description" content="「AI不使用・実在証明済み」を掲げるクリエイターのディレクトリ。本物の人間に仕事を頼みたい企業・ファンのための検索台帳。">
+<link rel="stylesheet" href="../honmono.css">
+<style>
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
+  .filters button { margin: 0; padding: 7px 16px; font-size: .85rem; border-radius: 999px;
+    background: var(--card); color: var(--fg); border: 1px solid var(--line); }
+  .filters button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .creator { position: relative; }
+  .creator .vbadge { display: inline-block; font-size: .7rem; font-weight: 800; color: #fff;
+    background: var(--accent); border-radius: 999px; padding: 2px 10px; letter-spacing: .04em; }
+  .creator .sample { position: absolute; top: 12px; right: 14px; font-size: .7rem; font-weight: 700;
+    color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 2px 10px; }
+  .creator h3 { margin: 8px 0 2px; font-size: 1.05rem; }
+  .creator .cat { font-size: .8rem; color: var(--muted); margin: 0 0 8px; }
+  .creator .desc { font-size: .87rem; margin: 0 0 10px; }
+  .creator .links { font-size: .82rem; display: flex; gap: 12px; flex-wrap: wrap; }
+  .promise { font-size: .8rem; color: var(--muted); border-top: 1px dashed var(--line); margin-top: 10px; padding-top: 8px; }
+  .promise b { color: var(--ok); }
+  #empty { text-align: center; color: var(--muted); padding: 30px 0; display: none; }
+</style>
+</head>
+<body>
+<header class="site-head"><div class="wrap">
+  <a class="brand" href="../">HONMONO</a>
+  <nav>
+    <a href="../checker/">来歴チェッカー</a>
+    <a href="../badge/">実在証明バッジ</a>
+    <a href="../aicheck/">AIアカウント鑑定</a>
+    <a href="../creators/" aria-current="page">実在クリエイター名鑑</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <h1>🌟 実在クリエイター名鑑</h1>
+  <p class="lead">「実在する人間であること」を証明ページ付きで宣言したクリエイターの台帳です。
+  AI量産コンテンツではなく<b>本物の人間</b>に仕事を頼みたい企業・本物を応援したいファンのための検索ディレクトリを目指しています。</p>
+
+  <div class="card" style="background:var(--accent-soft); border-color:var(--accent)">
+    <b>📣 掲載クリエイター募集中(無料)</b>
+    <p style="font-size:.88rem; margin:6px 0 0">
+      掲載条件は「<a href="../badge/">実在証明バッジ</a>で証明ページを公開し、SNSとの相互リンクを完成させていること」。
+      準備ができたら
+      <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%E5%90%8D%E9%91%91%E6%8E%B2%E8%BC%89%E7%94%B3%E8%AB%8B&body=%E6%B4%BB%E5%8B%95%E5%90%8D%3A%0A%E3%82%B8%E3%83%A3%E3%83%B3%E3%83%AB%3A%0A%E8%A8%BC%E6%98%8E%E3%83%9A%E3%83%BC%E3%82%B8URL%3A%0A%E4%B8%BB%E3%81%AASNS%3A%0A%E7%B4%B9%E4%BB%8B%E6%96%87%28100%E5%AD%97%E4%BB%A5%E5%86%85%29%3A"
+      target="_blank" rel="noopener">掲載申請フォーム(GitHub Issue)</a>からご連絡ください。
+      相互リンクを確認のうえ掲載します。
+    </p>
+  </div>
+
+  <label for="q" style="margin-top:20px">キーワード検索</label>
+  <input type="text" id="q" placeholder="名前・ジャンル・キーワードで絞り込み">
+  <div class="filters" id="filters"></div>
+
+  <div class="grid" id="list"></div>
+  <div id="empty">該当するクリエイターが見つかりませんでした。</div>
+
+  <div class="notice">
+    現在の掲載カードは<b>すべて表示イメージ用のサンプル(架空)</b>です。実在のクリエイターの掲載申請を受け付け次第、順次差し替えます。
+    掲載は実在を保証する審査ではなく、相互リンク証明の確認に基づくものです。
+  </div>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  HONMONO プロジェクト
+</div></footer>
+
+<script>
+'use strict';
+
+/* 掲載データ — 掲載申請を確認後、この配列に追記していく */
+const CREATORS = [
+  {
+    sample: true,
+    name: '(サンプル)葉山みお',
+    category: 'イラストレーター',
+    desc: '装画・キャラクターデザイン。制作過程をすべてタイムラプスで公開し、手描きの全工程を検証可能にしています。',
+    links: { '証明ページ': '#', 'X': '#', 'ポートフォリオ': '#' },
+    promise: '生成AI不使用(制作過程公開)',
+  },
+  {
+    sample: true,
+    name: '(サンプル)如月ケイ',
+    category: 'コスプレイヤー',
+    desc: 'イベント出演とライブ配信を中心に活動。全投稿写真に撮影者クレジットとC2PA来歴データを付与。',
+    links: { '証明ページ': '#', 'Instagram': '#', 'イベント出演記録': '#' },
+    promise: '全写真に来歴データ付与・加工内容明記',
+  },
+  {
+    sample: true,
+    name: '(サンプル)真田ユウ',
+    category: '写真家・モデル',
+    desc: 'ポートレート撮影。RAWデータの照合に応じる「実写証明」ポリシーを掲げています。',
+    links: { '証明ページ': '#', 'X': '#', '作品集': '#' },
+    promise: 'RAW照合対応・AIレタッチの範囲を明記',
+  },
+  {
+    sample: true,
+    name: '(サンプル)音無こはる',
+    category: 'VTuber・配信者',
+    desc: '「中の人は実在の一人の人間」を相互リンク証明で宣言。週3回のライブ配信で継続的に実在を示しています。',
+    links: { '証明ページ': '#', 'YouTube': '#' },
+    promise: 'ライブ配信による継続的実在証明',
+  },
+];
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const cats = ['すべて', ...new Set(CREATORS.map(c => c.category))];
+let activeCat = 'すべて';
+
+$('filters').innerHTML = cats.map(c =>
+  `<button data-cat="${esc(c)}" class="${c === activeCat ? 'active' : ''}">${esc(c)}</button>`).join('');
+
+function render() {
+  const q = $('q').value.trim().toLowerCase();
+  const shown = CREATORS.filter(c => {
+    if (activeCat !== 'すべて' && c.category !== activeCat) return false;
+    if (!q) return true;
+    return (c.name + c.category + c.desc + c.promise).toLowerCase().includes(q);
+  });
+  $('list').innerHTML = shown.map(c =>
+    `<div class="card creator">` +
+    (c.sample ? '<span class="sample">サンプル</span>' : '') +
+    `<span class="vbadge">✓ 実在証明ページあり</span>` +
+    `<h3>${esc(c.name)}</h3>` +
+    `<p class="cat">${esc(c.category)}</p>` +
+    `<p class="desc">${esc(c.desc)}</p>` +
+    `<div class="links">` +
+    Object.entries(c.links).map(([label, url]) =>
+      `<a href="${esc(url)}" ${url === '#' ? '' : 'target="_blank" rel="noopener"'}>${esc(label)}</a>`).join('') +
+    `</div>` +
+    `<div class="promise">約束: <b>${esc(c.promise)}</b></div>` +
+    `</div>`).join('');
+  $('empty').style.display = shown.length ? 'none' : 'block';
+}
+
+$('filters').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-cat]');
+  if (!btn) return;
+  activeCat = btn.dataset.cat;
+  document.querySelectorAll('#filters button').forEach(b => b.classList.toggle('active', b === btn));
+  render();
+});
+$('q').addEventListener('input', render);
+render();
+</script>
+</body>
+</html>

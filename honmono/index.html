@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HONMONO — 実在性を証明するツール群</title>
+<meta name="description" content="AI生成コンテンツが溢れる時代に「本物の人間であること」を価値に変える無料ツール群。画像来歴チェッカー、実在証明バッジ、AIアカウント鑑定、実在クリエイター名鑑。">
+<link rel="stylesheet" href="honmono.css">
+<style>
+  .hero { padding: 30px 0 10px; }
+  .hero h1 { font-size: 1.9rem; }
+  .hero .tagline { font-size: 1.05rem; color: var(--muted); max-width: 640px; }
+  .tool-card { display: flex; flex-direction: column; text-decoration: none; color: var(--fg); transition: border-color .15s; }
+  .tool-card:hover { border-color: var(--accent); }
+  .tool-card .icon { font-size: 1.8rem; }
+  .tool-card h3 { margin: 6px 0 4px; color: var(--accent-strong); }
+  .tool-card p { margin: 0; font-size: .85rem; color: var(--muted); flex: 1; }
+  .tool-card .cta { margin-top: 10px; font-size: .85rem; font-weight: 700; color: var(--accent); }
+  .pillar { border-left: 4px solid var(--accent); padding: 4px 0 4px 14px; margin: 14px 0; }
+  .pillar b { display: block; }
+  .pillar span { font-size: .88rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<header class="site-head"><div class="wrap">
+  <a class="brand" href="./">HONMONO<small>実在性証明プロジェクト</small></a>
+  <nav>
+    <a href="checker/">来歴チェッカー</a>
+    <a href="badge/">実在証明バッジ</a>
+    <a href="aicheck/">AIアカウント鑑定</a>
+    <a href="creators/">実在クリエイター名鑑</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <h1>AIが「美女」を無限に作る時代、<br>いちばん希少なのは「本物の人間」です。</h1>
+    <p class="tagline">HONMONO は、AI生成コンテンツが溢れるインターネットで
+    「実在すること」を証明し、見分け、価値に変えるための無料ツール群です。
+    すべてブラウザ内で動作し、あなたのデータはどこにも送信されません。</p>
+  </div>
+
+  <h2>ツール一覧</h2>
+  <div class="grid">
+    <a class="card tool-card" href="checker/">
+      <span class="icon">🔍</span>
+      <h3>画像来歴チェッカー</h3>
+      <p>画像をドロップすると、C2PA(コンテンツ来歴)・EXIF・XMP・生成AIツールの痕跡をその場で解析。
+      「この写真はAI生成か? カメラ撮影か?」の判定材料を提示します。</p>
+      <span class="cta">画像を調べる →</span>
+    </a>
+    <a class="card tool-card" href="badge/">
+      <span class="icon">🪪</span>
+      <h3>実在証明バッジ</h3>
+      <p>クリエイター向け。「私はAIではなく実在の人間です」を相互リンク方式で証明するページとバッジを、
+      その場で生成してダウンロードできます。</p>
+      <span class="cta">バッジを作る →</span>
+    </a>
+    <a class="card tool-card" href="aicheck/">
+      <span class="icon">🕵️</span>
+      <h3>AIアカウント鑑定</h3>
+      <p>SNS・マッチングアプリで出会ったアカウントが「AI製・なりすまし」でないかを、
+      チェックリストでリスク診断。ロマンス詐欺対策にも。</p>
+      <span class="cta">診断する →</span>
+    </a>
+    <a class="card tool-card" href="creators/">
+      <span class="icon">🌟</span>
+      <h3>実在クリエイター名鑑</h3>
+      <p>「AI不使用・実在証明済み」を掲げるクリエイターのディレクトリ。
+      本物の人間に仕事を頼みたい企業・ファンのための検索台帳です。</p>
+      <span class="cta">名鑑を見る →</span>
+    </a>
+  </div>
+
+  <h2>なぜ作ったか</h2>
+  <div class="card">
+    <p style="font-size:.92rem">
+    AI美女・AIインフルエンサーは誰でも量産できるため、市場は急速に飽和し、
+    同時に「見ているものが本物か分からない」という不信がインターネット全体に広がっています。
+    HONMONO はその逆張りです。AI生成が増えるほど価値が上がる 3 つの軸で設計しています。</p>
+    <div class="pillar"><b>① 証明する</b><span>実在の人間・実写のコンテンツであることを、来歴データと相互リンクで示す(来歴チェッカー/実在証明バッジ)</span></div>
+    <div class="pillar"><b>② 見分ける</b><span>AI製アカウント・なりすまし・詐欺を、誰でも使える道具で検知する(AIアカウント鑑定)</span></div>
+    <div class="pillar"><b>③ 束ねる</b><span>「本物であること」を選んだクリエイターを可視化し、仕事とファンにつなぐ(実在クリエイター名鑑)</span></div>
+  </div>
+
+  <h2>ロードマップ</h2>
+  <div class="card">
+    <ul style="font-size:.9rem; margin:0; padding-left:1.3em">
+      <li><b>Phase 1(現在)</b> — 4ツールのMVP公開。全機能ブラウザ内完結・無料。</li>
+      <li><b>Phase 2</b> — C2PA電子署名のブラウザ内フル検証、証明ページのホスティング代行、名鑑の掲載審査フロー。</li>
+      <li><b>Phase 3</b> — マッチングアプリ・ファンコミュニティ向け検出API(B2B)、広告主向け「実在クリエイター」マッチング。</li>
+    </ul>
+  </div>
+
+  <div class="notice">
+    <b>免責:</b> 本ツール群の判定は「参考情報」です。メタデータは編集・削除が可能なため、
+    AI生成の痕跡がない=人間、痕跡がある=悪意、を断定するものではありません。
+    重要な判断には複数の証拠を組み合わせてください。
+  </div>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  HONMONO プロジェクト — すべての処理はあなたのブラウザ内で完結します。画像やフォーム入力が外部に送信されることはありません。
+</div></footer>
+</body>
+</html>
