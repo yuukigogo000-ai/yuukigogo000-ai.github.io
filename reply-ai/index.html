@@ -10,7 +10,7 @@
   body { font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
          max-width: 640px; margin: 0 auto; padding: 16px; line-height: 1.65; }
   h1 { font-size: 1.35rem; margin: 8px 0 2px; }
-  .tagline { color: #888; font-size: .85rem; margin: 0 0 16px; }
+  .tagline { color: #888; font-size: .85rem; margin: 0 0 12px; }
   fieldset { border: 1px solid #8886; border-radius: 10px; margin: 12px 0; padding: 12px 14px; }
   legend { font-weight: 600; padding: 0 6px; font-size: .92rem; }
   label { display: block; margin: 8px 0 4px; font-size: .85rem; color: #666; }
@@ -23,6 +23,10 @@
   .chips label { display: inline-block; margin: 0; padding: 8px 14px; border: 1px solid #8886;
     border-radius: 999px; cursor: pointer; font-size: .88rem; color: inherit; user-select: none; }
   .chips input:checked + label { background: #e8506b; border-color: #e8506b; color: #fff; font-weight: 600; }
+  .tabs { display: flex; gap: 6px; margin: 14px 0 4px; border-bottom: 2px solid #8884; }
+  .tabs button { flex: 1; padding: 11px 6px; font-size: .95rem; font-weight: 700; border: 0;
+    background: none; color: #888; cursor: pointer; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+  .tabs button.active { color: #e8506b; border-bottom-color: #e8506b; }
   button.primary { width: 100%; font-size: 1.05rem; font-weight: 700; padding: 14px; border: 0;
     border-radius: 10px; background: #e8506b; color: #fff; cursor: pointer; margin-top: 14px; }
   button.primary:disabled { background: #999; cursor: default; }
@@ -34,14 +38,14 @@
   .card .why { font-size: .8rem; color: #888; margin-bottom: 8px; }
   .card button { font-size: .8rem; padding: 6px 12px; border: 1px solid #8886; background: none;
     color: inherit; border-radius: 6px; cursor: pointer; }
-  #analysis { border: 1px solid #8885; border-radius: 10px; padding: 12px 14px; margin: 12px 0; display: none; }
-  #analysis .situation { font-size: .9rem; margin-bottom: 8px; }
+  .analysisBox { border: 1px solid #8885; border-radius: 10px; padding: 12px 14px; margin: 12px 0; display: none; }
+  .analysisBox .situation { font-size: .9rem; margin-bottom: 8px; }
   .meterWrap { display: flex; align-items: center; gap: 10px; }
   .meterLabel { font-size: .8rem; color: #888; white-space: nowrap; }
   .meter { flex: 1; height: 10px; background: #8883; border-radius: 5px; overflow: hidden; }
   .meter > div { height: 100%; width: 0%; border-radius: 5px; background: linear-gradient(90deg,#f6a,#e8506b); transition: width .6s; }
   .meterPct { font-weight: 700; font-size: .95rem; min-width: 3.2em; text-align: right; }
-  #advice { background: #e8506b14; border-left: 4px solid #e8506b; border-radius: 6px;
+  .adviceBox { background: #e8506b14; border-left: 4px solid #e8506b; border-radius: 6px;
     padding: 10px 14px; font-size: .9rem; margin: 12px 0; display: none; }
   #error { color: #d33; font-size: .9rem; white-space: pre-wrap; margin: 10px 0; }
   .note { font-size: .78rem; color: #888; }
@@ -51,17 +55,20 @@
   .dropzone { border: 2px dashed #8886; border-radius: 10px; padding: 14px; text-align: center;
     font-size: .85rem; color: #888; cursor: pointer; margin-top: 6px; }
   .dropzone.drag { border-color: #e8506b; color: #e8506b; }
-  #thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-  #thumbs .thumb { position: relative; }
-  #thumbs img { height: 84px; border-radius: 8px; border: 1px solid #8886; display: block; }
-  #thumbs .del { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
+  .thumbs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .thumbs .thumb { position: relative; }
+  .thumbs img { height: 84px; border-radius: 8px; border: 1px solid #8886; display: block; }
+  .thumbs .del { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%;
     border: 0; background: #333; color: #fff; font-size: .8rem; line-height: 22px; padding: 0; cursor: pointer; }
+  ul.points { margin: 6px 0; padding-left: 20px; font-size: .9rem; }
+  .goodTitle { color: #2a9d5c; font-weight: 700; font-size: .85rem; margin-top: 8px; }
+  .badTitle { color: #d97706; font-weight: 700; font-size: .85rem; margin-top: 8px; }
 </style>
 </head>
 <body>
 
 <h1>💬 アポ取りAI</h1>
-<p class="tagline">会話のスクショを撮るか、貼り付けるだけ。デートに繋がる「自分らしい」返信をAIが3案提案。</p>
+<p class="tagline">スクショを撮るか貼り付けるだけ。デートに繋がる「自分らしい」返信とプロフィールをAIがコーチ。</p>
 
 <details>
   <summary>🔑 APIキー設定(初回のみ)</summary>
@@ -73,21 +80,29 @@
   </fieldset>
 </details>
 
+<div class="tabs">
+  <button id="tabBtnReply" class="active">💬 返信提案</button>
+  <button id="tabBtnProfile">👤 プロフィール添削</button>
+</div>
+
+<!-- ============ タブ1: 返信提案 ============ -->
+<div id="tabReply">
+
 <fieldset>
   <legend>1. 会話を読み込む(スクショ or 貼り付け)</legend>
-  <div class="dropzone" id="dropzone">📷 トーク画面のスクショをタップして選択(複数OK・ドラッグ&ドロップ対応)<br>
+  <div class="dropzone" id="convDrop">📷 トーク画面のスクショをタップして選択(複数OK・ドラッグ&ドロップ対応)<br>
     <span class="note">LINE・Pairs・Tinder等のスクショをそのまま。右側=自分として自動で読み取ります</span>
   </div>
-  <input type="file" id="fileInput" accept="image/*" multiple style="display:none;">
-  <div id="thumbs"></div>
+  <input type="file" id="convFile" accept="image/*" multiple style="display:none;">
+  <div class="thumbs" id="convThumbs"></div>
   <label for="conversation">またはテキストで貼り付け(スクショと併用OK)</label>
   <textarea id="conversation" placeholder="例:
 自分: プロフィール見てカフェ巡り好きって書いてあって気になりました
 相手: ありがとうございます!週末によく行ってます☕
 自分: 最近どこか行きました?
 相手: 代官山の新しいお店行きましたよ〜"></textarea>
-  <label for="profile">相手のプロフィール情報(任意・あると精度UP)</label>
-  <input type="text" id="profile" placeholder="例: 26歳 看護師 カフェ巡り・韓国ドラマ好き">
+  <label for="partnerProfile">相手のプロフィール情報(任意・あると精度UP)</label>
+  <input type="text" id="partnerProfile" placeholder="例: 26歳 看護師 カフェ巡り・韓国ドラマ好き">
 </fieldset>
 
 <fieldset>
@@ -110,11 +125,8 @@
 
 <button class="primary" id="generate">返信案を3つ提案してもらう</button>
 <button class="secondary" id="regenerate">🔄 方向性を変えて別の3案</button>
-<div class="spinner" id="spinner">AIが会話を分析中…(十数秒かかることがあります)</div>
 
-<div id="error"></div>
-
-<div id="analysis">
+<div class="analysisBox" id="replyAnalysis">
   <div class="situation" id="situation"></div>
   <div class="meterWrap">
     <span class="meterLabel">脈あり度</span>
@@ -122,32 +134,119 @@
     <span class="meterPct" id="meterPct"></span>
   </div>
 </div>
-<div id="results"></div>
-<div id="advice"></div>
+<div id="replyResults"></div>
+<div class="adviceBox" id="replyAdvice"></div>
+
+</div>
+
+<!-- ============ タブ2: プロフィール添削 ============ -->
+<div id="tabProfile" style="display:none;">
+
+<fieldset>
+  <legend>1. 自分のプロフィールを読み込む</legend>
+  <div class="dropzone" id="profDrop">📷 自分のプロフィール画面のスクショをタップして選択(写真+自己紹介文が写っているとベスト)</div>
+  <input type="file" id="profFile" accept="image/*" multiple style="display:none;">
+  <div class="thumbs" id="profThumbs"></div>
+  <label for="bioText">または自己紹介文を貼り付け(新規作成の場合は空欄でOK)</label>
+  <textarea id="bioText" placeholder="今使っている自己紹介文をそのまま貼り付け"></textarea>
+  <label for="basicInfo">自分の基本情報(年齢・職業・趣味・性格など)</label>
+  <textarea id="basicInfo" style="min-height:80px;" placeholder="例: 29歳 IT企業勤務 趣味はサウナ・キャンプ・ラーメン屋巡り。休日は友達とドライブが多い。人見知りだが慣れると喋る"></textarea>
+  <label for="targetInfo">どんな相手に刺さりたいか(任意)</label>
+  <input type="text" id="targetInfo" placeholder="例: 20代後半 落ち着いた人 / 一緒に飲みに行ける人">
+</fieldset>
+
+<fieldset>
+  <legend>2. やってほしいこと</legend>
+  <div class="chips">
+    <input type="radio" name="profMode" id="pm1" value="review" checked><label for="pm1">📝 今のプロフィールを診断・改善</label>
+    <input type="radio" name="profMode" id="pm2" value="create"><label for="pm2">✨ ゼロから作ってもらう</label>
+  </div>
+</fieldset>
+
+<button class="primary" id="profGenerate">プロフィールを診断してもらう</button>
+
+<div class="analysisBox" id="profAnalysis">
+  <div class="situation" id="profImpression"></div>
+  <div class="meterWrap">
+    <span class="meterLabel">プロフ得点</span>
+    <div class="meter"><div id="profMeterBar"></div></div>
+    <span class="meterPct" id="profMeterPct"></span>
+  </div>
+  <div class="goodTitle">✅ 良い点</div>
+  <ul class="points" id="profStrengths"></ul>
+  <div class="badTitle">⚠️ 直すべき点</div>
+  <ul class="points" id="profWeaknesses"></ul>
+</div>
+<div id="profResults"></div>
+<div class="adviceBox" id="profPhotoAdvice"></div>
+
+</div>
+
+<!-- ============ 共通 ============ -->
+<div class="spinner" id="spinner">AIが分析中…(十数秒かかることがあります)</div>
+<div id="error"></div>
 
 <p class="note" style="margin-top:20px;">
-  ⚠️ 提案はあくまで参考です。嘘の自己紹介や相手を騙す内容は提案しません。相手に脈がなさそうな場合は「引き際」もアドバイスします。<br>
+  ⚠️ 提案はあくまで参考です。嘘の自己紹介や経歴を盛る提案はしません。相手に脈がなさそうな場合は「引き際」もアドバイスします。<br>
   各マッチングアプリの利用規約を守ってご利用ください。スクショはAI処理のためAnthropicに直接送信され、このサイトのサーバーには保存されません(サーバー自体がありません)。
 </p>
 
 <script>
 const $ = (id) => document.getElementById(id);
 
+// ---------- タブ切替 ----------
+$('tabBtnReply').addEventListener('click', () => switchTab('reply'));
+$('tabBtnProfile').addEventListener('click', () => switchTab('profile'));
+function switchTab(name) {
+  const reply = name === 'reply';
+  $('tabReply').style.display = reply ? 'block' : 'none';
+  $('tabProfile').style.display = reply ? 'none' : 'block';
+  $('tabBtnReply').classList.toggle('active', reply);
+  $('tabBtnProfile').classList.toggle('active', !reply);
+  $('error').textContent = '';
+}
+
 // ---------- APIキーの保存・復元 ----------
 const savedKey = localStorage.getItem('reply_ai_key');
 if (savedKey) { $('apiKey').value = savedKey; $('rememberKey').checked = true; }
 
-// ---------- スクショの取り込み(クライアント側で縮小) ----------
-let images = []; // {data: base64(jpeg), thumbUrl}
+function getKeyOrWarn() {
+  const key = $('apiKey').value.trim();
+  if (!key) { $('error').textContent = '上の「APIキー設定」を開いてAPIキーを入力してください。'; return null; }
+  if ($('rememberKey').checked) localStorage.setItem('reply_ai_key', key);
+  else localStorage.removeItem('reply_ai_key');
+  return key;
+}
 
-async function addFiles(files) {
-  for (const file of files) {
-    if (!file.type.startsWith('image/')) continue;
-    if (images.length >= 6) { $('error').textContent = 'スクショは最大6枚までです。'; break; }
-    const resized = await resizeImage(file, 1400);
-    images.push(resized);
+// ---------- 画像取り込み(共通・クライアント側で縮小) ----------
+function setupImagePicker(dropId, fileId, thumbsId, store) {
+  const drop = $(dropId), file = $(fileId);
+  drop.addEventListener('click', () => file.click());
+  file.addEventListener('change', (e) => { addFiles([...e.target.files]); e.target.value = ''; });
+  drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('drag'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('drag'));
+  drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('drag'); addFiles([...e.dataTransfer.files]); });
+
+  async function addFiles(files) {
+    for (const f of files) {
+      if (!f.type.startsWith('image/')) continue;
+      if (store.length >= 6) { $('error').textContent = 'スクショは最大6枚までです。'; break; }
+      store.push(await resizeImage(f, 1400));
+    }
+    render();
   }
-  renderThumbs();
+  function render() {
+    const box = $(thumbsId);
+    box.innerHTML = '';
+    store.forEach((im, i) => {
+      const wrap = document.createElement('div'); wrap.className = 'thumb';
+      const img = document.createElement('img'); img.src = im.thumbUrl;
+      const del = document.createElement('button'); del.className = 'del'; del.textContent = '×';
+      del.addEventListener('click', () => { store.splice(i, 1); render(); });
+      wrap.append(img, del);
+      box.appendChild(wrap);
+    });
+  }
 }
 
 function resizeImage(file, maxEdge) {
@@ -169,30 +268,60 @@ function resizeImage(file, maxEdge) {
   });
 }
 
-function renderThumbs() {
-  const box = $('thumbs');
-  box.innerHTML = '';
-  images.forEach((im, i) => {
-    const wrap = document.createElement('div'); wrap.className = 'thumb';
-    const img = document.createElement('img'); img.src = im.thumbUrl;
-    const del = document.createElement('button'); del.className = 'del'; del.textContent = '×';
-    del.addEventListener('click', () => { images.splice(i, 1); renderThumbs(); });
-    wrap.append(img, del);
-    box.appendChild(wrap);
+const convImages = [];
+const profImages = [];
+setupImagePicker('convDrop', 'convFile', 'convThumbs', convImages);
+setupImagePicker('profDrop', 'profFile', 'profThumbs', profImages);
+
+// ---------- API呼び出し(共通) ----------
+async function callClaude(key, system, schema, content) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-opus-5',
+      max_tokens: 16000,
+      output_config: { format: { type: 'json_schema', schema } },
+      system,
+      messages: [{ role: 'user', content }]
+    })
   });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.error?.message || `APIエラー (${res.status})`);
+  if (data.stop_reason === 'refusal') throw new Error('この内容にはAIが回答できませんでした。入力内容を変えてお試しください。');
+  const textBlock = data.content.find(b => b.type === 'text');
+  if (!textBlock) throw new Error('AIから結果を取得できませんでした。もう一度お試しください。');
+  return JSON.parse(textBlock.text);
 }
 
-$('dropzone').addEventListener('click', () => $('fileInput').click());
-$('fileInput').addEventListener('change', (e) => { addFiles([...e.target.files]); e.target.value = ''; });
-$('dropzone').addEventListener('dragover', (e) => { e.preventDefault(); $('dropzone').classList.add('drag'); });
-$('dropzone').addEventListener('dragleave', () => $('dropzone').classList.remove('drag'));
-$('dropzone').addEventListener('drop', (e) => {
-  e.preventDefault(); $('dropzone').classList.remove('drag');
-  addFiles([...e.dataTransfer.files]);
-});
+function imageBlocks(store) {
+  return store.map(im => ({
+    type: 'image',
+    source: { type: 'base64', media_type: 'image/jpeg', data: im.data }
+  }));
+}
 
-// ---------- スキーマ ----------
-const SCHEMA = {
+async function withSpinner(btns, fn) {
+  btns.forEach(b => b.disabled = true);
+  $('spinner').style.display = 'block';
+  $('error').textContent = '';
+  try { await fn(); }
+  catch (err) { $('error').textContent = 'エラー: ' + err.message; }
+  finally {
+    btns.forEach(b => b.disabled = false);
+    $('spinner').style.display = 'none';
+  }
+}
+
+/* ==================================================================
+   タブ1: 返信提案
+================================================================== */
+const REPLY_SCHEMA = {
   type: "object",
   properties: {
     situation: { type: "string", description: "会話の現状分析。会話のステージと相手の温度感を1〜2文で" },
@@ -215,8 +344,7 @@ const SCHEMA = {
   additionalProperties: false
 };
 
-// ---------- システムプロンプト(AI臭さ排除の中核) ----------
-const SYSTEM_PROMPT = `あなたは日本のマッチングアプリの会話に精通したコーチ。男性ユーザー本人になりきって、「本人がスマホでサッと打った」としか思えない返信を作る。提案文がAI生成だと相手に一瞬でも感じさせたら失敗。
+const REPLY_SYSTEM = `あなたは日本のマッチングアプリの会話に精通したコーチ。男性ユーザー本人になりきって、「本人がスマホでサッと打った」としか思えない返信を作る。提案文がAI生成だと相手に一瞬でも感じさせたら失敗。
 
 # 手順
 1. まず「自分」側の過去メッセージを観察し、文体の癖を抽出する:敬語/タメ口の混ざり具合、絵文字・顔文字・「w」「笑」の頻度と種類、文の長さ、句読点の打ち方(「、。」を使うか、スペースや改行で区切るか)、テンション。スクショの場合、LINEやアプリのトーク画面では右側の吹き出しが「自分」、左側が「相手」。時系列順に読み取る。
@@ -254,37 +382,29 @@ const SYSTEM_PROMPT = `あなたは日本のマッチングアプリの会話に
 - 相手を不安にさせる駆け引き、操作的な手法、しつこいプッシュは提案しない
 - 相手の返信が素っ気ない・脈が薄いと判断したら、interest_levelとadviceで正直に伝え、「今日は送らず寝かせる」「軽い一通で引く」などの選択肢も示す`;
 
-// ---------- 生成 ----------
-let lastReplies = [];   // 再生成時に「既出」として渡す
-let regenCount = 0;
+let lastReplies = [];
 
-$('generate').addEventListener('click', () => { lastReplies = []; regenCount = 0; run(); });
-$('regenerate').addEventListener('click', () => { regenCount++; run(); });
+$('generate').addEventListener('click', () => { lastReplies = []; runReply(); });
+$('regenerate').addEventListener('click', () => runReply());
 
-async function run() {
-  const key = $('apiKey').value.trim();
+async function runReply() {
+  const key = getKeyOrWarn(); if (!key) return;
   const conversation = $('conversation').value.trim();
-  $('error').textContent = '';
-
-  if (!key) { $('error').textContent = '上の「APIキー設定」を開いてAPIキーを入力してください。'; return; }
-  if (!conversation && images.length === 0) {
+  if (!conversation && convImages.length === 0) {
     $('error').textContent = 'トーク画面のスクショを追加するか、やり取りを貼り付けてください。'; return;
   }
-
-  if ($('rememberKey').checked) localStorage.setItem('reply_ai_key', key);
-  else localStorage.removeItem('reply_ai_key');
 
   const goal = document.querySelector('input[name=goal]:checked').value;
   const toneValue = document.querySelector('input[name=tone]:checked').value;
   const tone = toneValue === 'auto'
     ? '指定なし。「自分」の過去メッセージの文体・テンションから本人らしさを最優先で再現する'
     : toneValue;
-  const profile = $('profile').value.trim();
+  const partnerProfile = $('partnerProfile').value.trim();
   const extra = $('extra').value.trim();
 
   let userPrompt =
-    `## 相手のプロフィール\n${profile || '(情報なし)'}\n\n` +
-    (images.length ? `## 会話(添付スクショ${images.length}枚を時系列順に読み取ること)\n` : '') +
+    `## 相手のプロフィール\n${partnerProfile || '(情報なし)'}\n\n` +
+    (convImages.length ? `## 会話(添付スクショ${convImages.length}枚を時系列順に読み取ること)\n` : '') +
     (conversation ? `## 会話(テキスト)\n${conversation}\n\n` : '\n') +
     `## 今回のゴール\n${goal}\n\n` +
     `## トーン\n${tone}\n` +
@@ -296,86 +416,153 @@ async function run() {
   }
   userPrompt += `\nこの状況に最適な返信を3案提案してください。`;
 
-  const content = [
-    ...images.map(im => ({
-      type: 'image',
-      source: { type: 'base64', media_type: 'image/jpeg', data: im.data }
-    })),
-    { type: 'text', text: userPrompt }
-  ];
+  const content = [...imageBlocks(convImages), { type: 'text', text: userPrompt }];
 
-  $('generate').disabled = true;
-  $('regenerate').disabled = true;
-  $('spinner').style.display = 'block';
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-5',
-        max_tokens: 16000,
-        output_config: { format: { type: 'json_schema', schema: SCHEMA } },
-        system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content }]
-      })
-    });
-
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.error?.message || `APIエラー (${res.status})`);
-    if (data.stop_reason === 'refusal') {
-      throw new Error('この内容にはAIが回答できませんでした。入力内容を変えてお試しください。');
-    }
-
-    const textBlock = data.content.find(b => b.type === 'text');
-    if (!textBlock) throw new Error('AIから返信案を取得できませんでした。もう一度お試しください。');
-    const result = JSON.parse(textBlock.text);
-
-    renderResult(result);
+  await withSpinner([$('generate'), $('regenerate')], async () => {
+    const result = await callClaude(key, REPLY_SYSTEM, REPLY_SCHEMA, content);
+    renderReplyResult(result);
     lastReplies = lastReplies.concat(result.replies.map(r => r.text)).slice(-9);
     $('regenerate').style.display = 'block';
-  } catch (err) {
-    $('error').textContent = 'エラー: ' + err.message;
-  } finally {
-    $('generate').disabled = false;
-    $('regenerate').disabled = false;
-    $('spinner').style.display = 'none';
-  }
+  });
 }
 
-function renderResult(result) {
+function renderReplyResult(result) {
   const pct = Math.max(0, Math.min(100, result.interest_level | 0));
   $('situation').textContent = '📊 ' + result.situation;
   $('meterBar').style.width = pct + '%';
   $('meterPct').textContent = pct + '%';
-  $('analysis').style.display = 'block';
+  $('replyAnalysis').style.display = 'block';
 
-  $('results').innerHTML = '';
-  result.replies.forEach((r, i) => {
-    const card = document.createElement('div');
-    card.className = 'card';
-    const num = document.createElement('div'); num.className = 'num'; num.textContent = `案 ${i + 1}`;
-    const reply = document.createElement('div'); reply.className = 'reply'; reply.textContent = r.text;
-    const why = document.createElement('div'); why.className = 'why'; why.textContent = '💡 ' + r.why;
-    const btn = document.createElement('button');
-    btn.textContent = '📋 コピー';
-    btn.addEventListener('click', () => {
-      navigator.clipboard.writeText(r.text);
-      btn.textContent = '✅ コピーしました';
-      setTimeout(() => { btn.textContent = '📋 コピー'; }, 1500);
-    });
-    card.append(num, reply, why, btn);
-    $('results').appendChild(card);
+  $('replyResults').innerHTML = '';
+  result.replies.forEach((r, i) => $('replyResults').appendChild(makeCard(`案 ${i + 1}`, r.text, r.why)));
+
+  $('replyAdvice').textContent = '🧭 ' + result.advice;
+  $('replyAdvice').style.display = 'block';
+  $('replyAnalysis').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ==================================================================
+   タブ2: プロフィール添削
+================================================================== */
+const PROFILE_SCHEMA = {
+  type: "object",
+  properties: {
+    score: { type: "integer", description: "現在のプロフィールの総合点。0〜100。新規作成の場合は基本情報から想定される素材の良さを採点。甘くしない" },
+    first_impression: { type: "string", description: "女性がこのプロフィールを見た時の率直な第一印象。1〜2文" },
+    strengths: { type: "array", items: { type: "string" }, description: "良い点。2〜4個。新規作成なら活かせる素材" },
+    weaknesses: { type: "array", items: { type: "string" }, description: "直すべき点。具体的に。2〜5個" },
+    improved_bios: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          text: { type: "string", description: "そのまま使える自己紹介文の完成形" },
+          why:  { type: "string", description: "この方向性の狙い(1文)" }
+        },
+        required: ["text", "why"],
+        additionalProperties: false
+      },
+      description: "改善版の自己紹介文を2案。方向性を変えること"
+    },
+    photo_advice: { type: "string", description: "写真の戦略アドバイス。スクショがあれば写真ごとに具体的に。なければ一般的な写真戦略を2〜3文で" }
+  },
+  required: ["score", "first_impression", "strengths", "weaknesses", "improved_bios", "photo_advice"],
+  additionalProperties: false
+};
+
+const PROFILE_SYSTEM = `あなたは日本のマッチングアプリ(Pairs・with・Tinder・タップル等)のプロフィール改善のプロコーチ。数千件のプロフィールを見てきた経験から、「女性側がどう見るか」の視点で診断する。
+
+# 診断の姿勢
+- 採点は甘くしない。平均的なプロフィールは50点台。80点以上は本当に良いものだけ
+- 指摘は具体的に。「もっと魅力的に」ではなく「『よろしくお願いします』で終わる定型締めは情報量ゼロなので、会話のフックになる一文に差し替える」のように
+- 女性が最初の3秒で見るのは写真→年齢→職業→bioの冒頭。この優先度で評価する
+
+# 自己紹介文の改善案の書き方
+- ユーザーの基本情報にある事実だけを使う。趣味・職業・経歴を盛らない、作らない
+- 「本人が書いた自然な文」にする。AIっぽい定型(「〜な今日この頃です」「素敵なご縁があれば」)や、絵文字だらけの箇条書きテンプレは避ける
+- 会話のフックを必ず入れる(質問しやすい具体的な固有名詞: 店名、サウナ、作品名など)
+- ネガティブ・言い訳(「マッチングアプリ初めてで慣れてません」「奥手です」)は削る
+- 長さは300〜400字程度。読みやすく2〜3ブロックに分ける
+- 2案は方向性を変える(例: ①誠実・落ち着き重視 ②親しみやすさ・ユーモア重視)
+
+# 写真アドバイス
+- スクショが添付されていれば、写真1枚ごとに順番に評価(メイン写真が最重要)
+- 自撮り・無表情・暗い写真・過度な加工はマッチ率を下げる定番要因として指摘
+- 「他撮り・笑顔・趣味がわかる写真・清潔感」の原則で、撮り直しの具体的な提案をする
+
+# 誠実さ(絶対)
+- 存在しない趣味・職業・実績を書かせない。話を盛る提案をしない
+- 出会いの安全やモラルに反する内容は提案しない`;
+
+$('profGenerate').addEventListener('click', runProfile);
+
+async function runProfile() {
+  const key = getKeyOrWarn(); if (!key) return;
+  const bioText = $('bioText').value.trim();
+  const basicInfo = $('basicInfo').value.trim();
+  const mode = document.querySelector('input[name=profMode]:checked').value;
+
+  if (mode === 'review' && !bioText && profImages.length === 0) {
+    $('error').textContent = '診断するには、プロフィールのスクショを追加するか自己紹介文を貼り付けてください(ゼロから作る場合は「ゼロから作ってもらう」を選択)。'; return;
+  }
+  if (!basicInfo) {
+    $('error').textContent = '「自分の基本情報」を入力してください(改善案の材料になります)。'; return;
+  }
+
+  const targetInfo = $('targetInfo').value.trim();
+  const userPrompt =
+    (profImages.length ? `## 現在のプロフィール(添付スクショ${profImages.length}枚。写真とbioを読み取ること)\n\n` : '') +
+    (bioText ? `## 現在の自己紹介文\n${bioText}\n\n` : '') +
+    `## 本人の基本情報(改善案はこの事実だけを使うこと)\n${basicInfo}\n\n` +
+    (targetInfo ? `## 刺さりたい相手のイメージ\n${targetInfo}\n\n` : '') +
+    (mode === 'create'
+      ? `## 依頼\n自己紹介文をゼロから作ってください。scoreとweaknessesは「現状の素材」に対する評価として書いてください。`
+      : `## 依頼\n現在のプロフィールを診断し、改善版を提案してください。`);
+
+  const content = [...imageBlocks(profImages), { type: 'text', text: userPrompt }];
+
+  await withSpinner([$('profGenerate')], async () => {
+    const result = await callClaude(key, PROFILE_SYSTEM, PROFILE_SCHEMA, content);
+    renderProfileResult(result);
   });
+}
 
-  $('advice').textContent = '🧭 ' + result.advice;
-  $('advice').style.display = 'block';
-  $('analysis').scrollIntoView({ behavior: 'smooth', block: 'start' });
+function renderProfileResult(result) {
+  const pct = Math.max(0, Math.min(100, result.score | 0));
+  $('profImpression').textContent = '👀 第一印象: ' + result.first_impression;
+  $('profMeterBar').style.width = pct + '%';
+  $('profMeterPct').textContent = pct + '点';
+
+  $('profStrengths').innerHTML = '';
+  result.strengths.forEach(s => { const li = document.createElement('li'); li.textContent = s; $('profStrengths').appendChild(li); });
+  $('profWeaknesses').innerHTML = '';
+  result.weaknesses.forEach(s => { const li = document.createElement('li'); li.textContent = s; $('profWeaknesses').appendChild(li); });
+  $('profAnalysis').style.display = 'block';
+
+  $('profResults').innerHTML = '';
+  result.improved_bios.forEach((b, i) => $('profResults').appendChild(makeCard(`改善案 ${i + 1}`, b.text, b.why)));
+
+  $('profPhotoAdvice').textContent = '📷 写真アドバイス: ' + result.photo_advice;
+  $('profPhotoAdvice').style.display = 'block';
+  $('profAnalysis').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ---------- 共通UI部品 ---------- */
+function makeCard(label, text, why) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  const num = document.createElement('div'); num.className = 'num'; num.textContent = label;
+  const reply = document.createElement('div'); reply.className = 'reply'; reply.textContent = text;
+  const whyEl = document.createElement('div'); whyEl.className = 'why'; whyEl.textContent = '💡 ' + why;
+  const btn = document.createElement('button');
+  btn.textContent = '📋 コピー';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(text);
+    btn.textContent = '✅ コピーしました';
+    setTimeout(() => { btn.textContent = '📋 コピー'; }, 1500);
+  });
+  card.append(num, reply, whyEl, btn);
+  return card;
 }
 </script>
 </body>
