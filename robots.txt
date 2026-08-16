@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://yuukigogo000-ai.github.io/sitemap.xml

@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>画像来歴チェッカー — HONMONO</title>
 <meta name="description" content="画像のC2PA(コンテンツ来歴)・EXIF・XMP・生成AIツールの痕跡をブラウザ内で解析。AI生成画像かカメラ撮影かの判定材料を提示します。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="画像来歴チェッカー — HONMONO">
+<meta property="og:description" content="画像をドロップするだけで、AI生成の痕跡・C2PA来歴・カメラEXIFをブラウザ内で解析。アップロード不要・無料。">
+<meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/checker/">
+<meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
   #drop {
@@ -39,8 +46,8 @@
 
   <div id="drop" tabindex="0" role="button" aria-label="画像を選択">
     <div class="big">画像をここにドロップ / クリックして選択</div>
-    <div class="note">対応形式: JPEG / PNG / WebP(HEIC・AVIFは非対応)</div>
-    <input type="file" id="file" accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" hidden>
+    <div class="note">対応形式: JPEG / PNG / WebP / HEIC / AVIF</div>
+    <input type="file" id="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.avif,image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif" hidden>
   </div>
 
   <section id="result">
@@ -52,9 +59,22 @@
       </div>
     </div>
     <div id="verdict"></div>
+    <div class="card" id="c2paCard" style="display:none">
+      <h2 style="margin-top:0">C2PA署名の検証</h2>
+      <div id="c2paBody"></div>
+    </div>
     <div class="card">
       <h2 style="margin-top:0">検出されたシグナル</h2>
       <div id="findings"></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0">次の一手: 逆画像検索で確かめる</h3>
+      <p class="note" style="margin-top:4px">メタデータが消されていても、逆画像検索で「盗用元の別人」や「同じ画像の使い回し」が見つかることがあります。
+      下記サービスを開き、同じ画像ファイルを検索窓にドラッグしてください。</p>
+      <a class="btn secondary" href="https://lens.google.com/" target="_blank" rel="noopener">Google レンズ</a>
+      <a class="btn secondary" href="https://www.bing.com/visualsearch" target="_blank" rel="noopener">Bing ビジュアル検索</a>
+      <a class="btn secondary" href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex Images</a>
+      <a class="btn secondary" href="https://tineye.com/" target="_blank" rel="noopener">TinEye</a>
     </div>
     <div class="card" id="metaCard">
       <h2 style="margin-top:0">抽出メタデータ</h2>
@@ -348,6 +368,39 @@ function parseWebP(bytes) {
   return r;
 }
 
+/* ========== HEIC / AVIF (ISO BMFF) ========== */
+const latin1 = (bytes, cap = 16 * 1024 * 1024) => {
+  try { return new TextDecoder('latin1').decode(bytes.subarray(0, Math.min(bytes.length, cap))); }
+  catch { return ascii(bytes, 0, Math.min(bytes.length, cap)); }
+};
+function findBytes(hay, needle, from = 0) {
+  outer: for (let i = from; i + needle.length <= hay.length; i++) {
+    for (let j = 0; j < needle.length; j++) if (hay[i + j] !== needle[j]) continue outer;
+    return i;
+  }
+  return -1;
+}
+/* フルデコードはせず、Exif/XMP/C2PAの各アイテムを走査で抽出する実利優先パーサ */
+function parseBMFF(bytes) {
+  const r = { exif: {}, xmp: '', c2paPayloads: [], segments: [] };
+  const exifIdx = findBytes(bytes, [0x45, 0x78, 0x69, 0x66, 0x00, 0x00]); // "Exif\0\0"
+  if (exifIdx >= 0) {
+    Object.assign(r.exif, parseTIFF(bytes.subarray(exifIdx + 6)));
+    r.segments.push('Exifアイテム');
+  }
+  const latin = latin1(bytes);
+  const xs = latin.indexOf('<x:xmpmeta');
+  if (xs >= 0) {
+    const xe = latin.indexOf('</x:xmpmeta>', xs);
+    if (xe > xs) { r.xmp = latin.slice(xs, xe + 12); r.segments.push('XMPアイテム'); }
+  }
+  if (latin.includes('jumb') && latin.includes('c2pa')) {
+    r.c2paPayloads.push(bytes); // 存在検出+文字列走査用(構造解析はSDKに委ねる)
+    r.segments.push('JUMBF(C2PA)');
+  }
+  return r;
+}
+
 /* ========== 解析の統合 ========== */
 function matchAI(text) {
   const hits = [];
@@ -367,9 +420,13 @@ async function analyze(file) {
     format = 'PNG'; parsed = await parsePNG(bytes);
   } else if (ascii(bytes, 0, 4) === 'RIFF' && ascii(bytes, 8, 4) === 'WEBP') {
     format = 'WebP'; parsed = parseWebP(bytes);
+  } else if (bytes.length > 12 && ascii(bytes, 4, 4) === 'ftyp') {
+    const brand = ascii(bytes, 8, 4).toLowerCase();
+    format = (brand === 'avif' || brand === 'avis') ? 'AVIF' : 'HEIC/HEIF';
+    parsed = parseBMFF(bytes);
   } else {
     return { format: '不明', findings: [{ level: 'warn', title: '非対応の画像形式です',
-      detail: 'JPEG / PNG / WebP に対応しています。HEIC・AVIF等は変換してからお試しください。' }], meta, xmp: '', verdict: 'unknown' };
+      detail: 'JPEG / PNG / WebP / HEIC / AVIF に対応しています。他の形式は変換してからお試しください。' }], meta, xmp: '', verdict: 'unknown', hasC2PA: false };
   }
 
   const exif = parsed.exif || {};
@@ -382,12 +439,20 @@ async function analyze(file) {
     const c2paText = parsed.c2paPayloads.map(p => extractStrings(p, 4).join(' ')).join(' ');
     const gens = matchAI(c2paText);
     gens.forEach(g => aiHits.add(g + '(C2PA記載)'));
+    if (/trainedAlgorithmicMedia/i.test(c2paText)) {
+      aiHits.add('AI生成申告(C2PA内)');
+      findings.push({
+        level: 'bad',
+        title: 'C2PA来歴データ内に「AI生成」の申告があります',
+        detail: '来歴の作成アクションに digitalSourceType: trainedAlgorithmicMedia(AI生成メディア)が記録されています。国際標準に基づく自己申告です。',
+      });
+    }
     findings.push({
       level: gens.length ? 'bad' : 'info',
       title: 'C2PA(コンテンツ来歴)データが埋め込まれています',
       detail: gens.length
         ? `来歴データ内に生成AIツールの記載を検出: ${gens.join(', ')}。この画像はAI生成であると自己申告しています。`
-        : '来歴の署名検証は Content Credentials Verify(下記リンク)で行えます。来歴があること自体は透明性の高い運用の証拠です。',
+        : '下の「C2PA署名の検証」で署名の真正性を確認できます。来歴があること自体は透明性の高い運用の証拠です。',
     });
     meta['C2PA来歴'] = 'あり';
   }
@@ -489,7 +554,66 @@ async function analyze(file) {
   if ((parsed.segments || []).length) meta['検出セグメント'] = parsed.segments.join(', ');
 
   const verdict = aiList.length ? 'ai' : hasC2PA ? 'c2pa' : hasCameraExif ? 'camera' : 'unknown';
-  return { format, findings, meta, xmp, verdict };
+  return { format, findings, meta, xmp, verdict, hasC2PA };
+}
+
+/* ========== C2PA署名検証(同梱SDK・遅延読み込み) ========== */
+let c2paInstance = null;
+async function getC2pa() {
+  if (!c2paInstance) {
+    const mod = await import(new URL('../vendor/c2pa/c2pa.esm.min.js', location.href).href);
+    c2paInstance = await mod.createC2pa({
+      wasmSrc: new URL('../vendor/c2pa/assets/wasm/toolkit_bg.wasm', location.href).href,
+      workerSrc: new URL('../vendor/c2pa/c2pa.worker.min.js', location.href).href,
+    });
+  }
+  return c2paInstance;
+}
+
+async function verifyC2pa(file) {
+  let c2pa;
+  try {
+    c2pa = await getC2pa();
+  } catch (e) {
+    return `<p class="note">署名検証エンジンを読み込めませんでした(オフライン、または file:// で開いている場合は動作しません)。` +
+      `公開サイト上で再度お試しいただくか、<a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">公式の検証ツール</a>をご利用ください。</p>`;
+  }
+  let store;
+  try {
+    const result = await c2pa.read(file);
+    store = result && result.manifestStore;
+  } catch (e) {
+    return `<div class="verdict warn" style="margin:0"><h2>⚠ 来歴データを読み取れませんでした</h2>` +
+      `<p>C2PAらしきデータはありますが、SDKで解析できませんでした(破損・非標準形式の可能性)。${esc(e && e.message || '')}</p></div>`;
+  }
+  if (!store || !store.activeManifest) {
+    return '<p class="note">C2PAらしきデータはありますが、有効なマニフェストは見つかりませんでした。</p>';
+  }
+  const m = store.activeManifest;
+  const status = store.validationStatus || [];
+  const sig = m.signatureInfo || {};
+  const rows = [];
+  if (sig.issuer) rows.push(['署名発行者', sig.issuer]);
+  if (sig.cert_serial_number) rows.push(['証明書シリアル', sig.cert_serial_number]);
+  if (sig.time) rows.push(['署名日時', sig.time]);
+  if (m.claimGenerator) rows.push(['作成ツール', String(m.claimGenerator).split('(')[0].trim()]);
+  if (m.title) rows.push(['タイトル', m.title]);
+  const ingredients = (m.ingredients || []).length;
+  if (ingredients) rows.push(['素材(取り込み元)', `${ingredients}件`]);
+
+  let head;
+  if (status.length === 0) {
+    head = `<div class="verdict ok" style="margin:0 0 12px"><h2>✅ 署名は有効です</h2>` +
+      `<p>この画像は署名された後、改ざんされていません。ただし「署名発行者が信頼できる組織か」は発行者名で別途判断してください(信頼リスト照合は行っていません)。</p></div>`;
+  } else {
+    const items = status.map(s => `<li>${esc(s.code || '')} ${esc(s.explanation || '')}</li>`).join('');
+    head = `<div class="verdict bad" style="margin:0 0 12px"><h2>❌ 署名検証で問題が見つかりました</h2>` +
+      `<p>署名後にデータが改変されているか、署名が不正な可能性があります。</p></div><ul style="font-size:.85rem">${items}</ul>`;
+  }
+  const table = rows.length
+    ? '<table><tbody>' + rows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('') + '</tbody></table>'
+    : '';
+  return head + table;
 }
 
 /* ========== UI ========== */
@@ -528,9 +652,12 @@ async function handle(file) {
   $('findings').innerHTML = '';
   $('metaTable').innerHTML = '';
   $('xmpDetails').style.display = 'none';
+  $('c2paCard').style.display = 'none';
 
   const prev = $('preview').src;
   if (prev.startsWith('blob:')) URL.revokeObjectURL(prev);
+  $('preview').style.display = '';
+  $('preview').onerror = () => { $('preview').style.display = 'none'; }; // HEIC等ブラウザ非対応形式
   $('preview').src = URL.createObjectURL(file);
 
   let res;
@@ -561,6 +688,14 @@ async function handle(file) {
   if (res.xmp) {
     $('xmpDetails').style.display = 'block';
     $('xmpRaw').textContent = res.xmp.slice(0, 20000);
+  }
+
+  if (res.hasC2PA) {
+    $('c2paCard').style.display = 'block';
+    $('c2paBody').innerHTML = '<p class="note">署名検証エンジンを読み込み中…(初回は数秒かかります)</p>';
+    verifyC2pa(file)
+      .then(html => { $('c2paBody').innerHTML = html; })
+      .catch(() => { $('c2paBody').innerHTML = '<p class="note">署名検証中に予期しないエラーが発生しました。</p>'; });
   }
 }
 </script>

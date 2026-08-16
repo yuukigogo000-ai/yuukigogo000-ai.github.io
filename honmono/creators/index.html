@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>実在クリエイター名鑑 — HONMONO</title>
 <meta name="description" content="「AI不使用・実在証明済み」を掲げるクリエイターのディレクトリ。本物の人間に仕事を頼みたい企業・ファンのための検索台帳。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="実在クリエイター名鑑 — HONMONO">
+<meta property="og:description" content="実在を証明したクリエイターだけを載せる無料ディレクトリ。本物の人間に仕事を頼みたい企業・応援したいファンのために。">
+<meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/creators/">
+<meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
   .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
@@ -73,8 +80,9 @@
 <script>
 'use strict';
 
-/* 掲載データ — 掲載申請を確認後、この配列に追記していく */
-const CREATORS = [
+/* 掲載データは creators.json で管理(掲載申請を確認後にJSONへ追記する)。
+   file:// などfetch不可の環境向けに同内容のフォールバックを持つ。 */
+const FALLBACK_CREATORS = [
   {
     sample: true,
     name: '(サンプル)葉山みお',
@@ -109,14 +117,18 @@ const CREATORS = [
   },
 ];
 
+let CREATORS = [];
+
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const cats = ['すべて', ...new Set(CREATORS.map(c => c.category))];
 let activeCat = 'すべて';
 
-$('filters').innerHTML = cats.map(c =>
-  `<button data-cat="${esc(c)}" class="${c === activeCat ? 'active' : ''}">${esc(c)}</button>`).join('');
+function initFilters() {
+  const cats = ['すべて', ...new Set(CREATORS.map(c => c.category))];
+  $('filters').innerHTML = cats.map(c =>
+    `<button data-cat="${esc(c)}" class="${c === activeCat ? 'active' : ''}">${esc(c)}</button>`).join('');
+}
 
 function render() {
   const q = $('q').value.trim().toLowerCase();
@@ -149,7 +161,20 @@ $('filters').addEventListener('click', e => {
   render();
 });
 $('q').addEventListener('input', render);
-render();
+
+(async () => {
+  try {
+    if (location.protocol !== 'http:' && location.protocol !== 'https:') throw new Error('local file');
+    const r = await fetch('creators.json', { cache: 'no-store' });
+    if (!r.ok) throw new Error('fetch failed');
+    const data = await r.json();
+    CREATORS = Array.isArray(data) ? data : FALLBACK_CREATORS;
+  } catch {
+    CREATORS = FALLBACK_CREATORS;
+  }
+  initFilters();
+  render();
+})();
 </script>
 </body>
 </html>

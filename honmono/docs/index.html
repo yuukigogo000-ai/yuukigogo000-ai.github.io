@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>説明書 — HONMONO</title>
 <meta name="description" content="HONMONOプロジェクトの目的・各ツールの使い方・制限事項・プライバシーについての公式説明書。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="説明書 — HONMONO">
+<meta property="og:description" content="HONMONOの目的・各ツールの使い方・制限事項・プライバシーをまとめた公式ドキュメント。">
+<meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/docs/">
+<meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
   .toc { font-size: .9rem; }
@@ -78,19 +85,22 @@
   <h2 id="checker">3. 画像来歴チェッカーの使い方</h2>
   <div class="card">
     <ol class="step-flow">
-      <li>調べたい画像(JPEG / PNG / WebP)を用意します。<b>できるだけ「元データ」に近いもの</b>が有効です(SNSの再保存やスクリーンショットはメタデータが消えています)</li>
+      <li>調べたい画像(JPEG / PNG / WebP / HEIC / AVIF)を用意します。<b>できるだけ「元データ」に近いもの</b>が有効です(SNSの再保存やスクリーンショットはメタデータが消えています)</li>
       <li>ページの点線枠に画像をドロップ、またはクリックして選択します</li>
       <li>数秒で判定バナーが表示されます(下表参照)</li>
       <li>「検出されたシグナル」と「抽出メタデータ」で根拠を確認します</li>
+      <li>C2PA来歴があれば「C2PA署名の検証」欄で<b>署名の真正性(改ざんの有無)</b>が自動検証されます</li>
+      <li>メタデータが消されていた場合は「次の一手」の<b>逆画像検索ボタン</b>で盗用元・使い回しを探せます</li>
     </ol>
     <table>
       <tr><th>判定</th><th>意味</th></tr>
       <tr><td>🤖 AI生成の痕跡があります</td><td>生成AIツールの記録・国際規格(IPTC)のAI申告・生成パラメータ等が画像内に見つかった</td></tr>
-      <tr><td>📜 コンテンツ来歴(C2PA)付き</td><td>編集履歴の来歴データが埋め込まれている。詳細検証は公式の <a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">Content Credentials Verify</a> へ</td></tr>
+      <tr><td>📜 コンテンツ来歴(C2PA)付き</td><td>編集履歴の来歴データが埋め込まれている。署名の真正性はページ内の「C2PA署名の検証」で自動チェックされる</td></tr>
       <tr><td>📷 カメラ撮影の痕跡があります</td><td>カメラ機種・撮影日時などのEXIFが残っている(実写の可能性を高める材料)</td></tr>
       <tr><td>❓ 判定材料がありません</td><td>メタデータなし。<b>「AIではない」という意味ではない</b>点に注意</td></tr>
     </table>
-    <p class="note">検出対象: C2PA来歴 / IPTC digitalSourceType(AI申告)/ Stable Diffusion・ComfyUI・NovelAI・Midjourney・DALL·E・Firefly など約25種のAIツール痕跡 / カメラEXIF / XMP / JPEGコメント</p>
+    <p class="note">検出対象: C2PA来歴(署名検証つき)/ IPTC digitalSourceType(AI申告)/ Stable Diffusion・ComfyUI・NovelAI・Midjourney・DALL·E・Firefly など約25種のAIツール痕跡 / カメラEXIF / XMP / JPEGコメント。
+    署名検証はC2PA公式のオープンソースSDK(WASM)を同梱しており、画像を外部送信せずブラウザ内で完結します。</p>
   </div>
 
   <h2 id="badge">4. 実在証明バッジの使い方</h2>
@@ -112,7 +122,7 @@
       <li>調べたいアカウントの投稿・プロフィール・DMでのやり取りを思い浮かべながら、当てはまる項目にチェックを入れます</li>
       <li>画面下部にリスクスコア(0〜100)と判定(低・中・高)がリアルタイムで表示されます</li>
       <li>「信頼シグナル」(ビデオ通話で確認した等)に該当があればチェック — スコアが減点されます</li>
-      <li>「診断結果をコピー」で、友人や家族に相談する際の共有用テキストを出力できます</li>
+      <li>「診断結果をコピー」で共有用テキストを、「結果画像を保存」でSNS等に貼れる結果カード画像(PNG)を出力できます</li>
     </ol>
     <table>
       <tr><th>スコア</th><th>判定</th><th>推奨アクション</th></tr>
@@ -157,8 +167,8 @@
     <ul style="margin:0; padding-left:1.3em">
       <li>本ツール群の出力はすべて<b>参考情報</b>であり、真正性・実在性を法的に保証するものではありません</li>
       <li>メタデータは追加・編集・削除が可能です。「痕跡なし」は人間の証明にならず、「カメラ情報あり」も偽装可能です</li>
-      <li>C2PAの<b>電子署名の暗号学的検証</b>は現バージョンでは行いません(存在検出と内容表示のみ)。署名検証は<a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">公式ツール</a>をご利用ください</li>
-      <li>対応画像形式は JPEG / PNG / WebP です(HEIC・AVIF・動画は非対応)</li>
+      <li>C2PAの署名検証は「改ざんの有無」を確認するものです。<b>署名発行者が信頼できる組織かどうかの照合(トラストリスト)は行っていません</b>。発行者名は表示されるので、内容はご自身で判断してください。<a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">公式ツール</a>との併用も有効です</li>
+      <li>対応画像形式は JPEG / PNG / WebP / HEIC / AVIF です(動画は非対応)。HEIC/AVIFはメタデータ走査のみで、ブラウザによってはプレビューが表示されません</li>
       <li>本ツールの利用により生じたいかなる損害についても、運営者は責任を負いません</li>
       <li>虚偽の実在宣言・他人になりすました証明ページの作成は、信用毀損・詐欺等の法的責任を問われる可能性があります</li>
     </ul>

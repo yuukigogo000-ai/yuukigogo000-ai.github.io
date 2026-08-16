@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AIアカウント鑑定 — HONMONO</title>
 <meta name="description" content="SNS・マッチングアプリのアカウントがAI製・なりすましでないかをチェックリストでリスク診断。ロマンス詐欺対策にも。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="AIアカウント鑑定 — HONMONO">
+<meta property="og:description" content="そのアカウント、実在する人間ですか? AI製・なりすまし・ロマンス詐欺のリスクを無料でチェックリスト診断。">
+<meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/aicheck/">
+<meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
   .check { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--line); }
@@ -55,6 +62,7 @@
       <div id="scorebar"><div id="scorefill"></div></div>
       <p id="advice" class="note" style="margin:4px 0 0">チェックを入れると診断が更新されます。</p>
       <button class="secondary" id="copyResult" style="margin-top:10px">診断結果をコピー</button>
+      <button class="secondary" id="saveImage" style="margin-top:10px">結果画像を保存</button>
       <span id="copied" style="color:var(--ok); font-size:.8rem; margin-left:8px" hidden>コピーしました ✓</span>
     </div>
   </div>
@@ -220,6 +228,86 @@ $('copyResult').addEventListener('click', async () => {
   }
   $('copied').hidden = false;
   setTimeout(() => { $('copied').hidden = true; }, 2000);
+});
+
+/* ========== 結果画像の生成(SNSシェア用・1200x630) ========== */
+const BAND_COLORS = { 'リスク: 低': '#22c55e', 'リスク: 中': '#f59e0b', 'リスク: 高': '#ef4444' };
+
+function wrapText(ctx, text, maxWidth) {
+  const out = [];
+  let line = '';
+  for (const ch of text) {
+    if (ctx.measureText(line + ch).width > maxWidth) { out.push(line); line = ch; }
+    else line += ch;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+$('saveImage').addEventListener('click', () => {
+  const { pct, band, checkedRisk } = recalc();
+  const c = document.createElement('canvas');
+  c.width = 1200; c.height = 630;
+  const ctx = c.getContext('2d');
+  const color = BAND_COLORS[band.label] || '#22c55e';
+
+  ctx.fillStyle = '#151a21';
+  ctx.fillRect(0, 0, 1200, 630);
+  ctx.fillStyle = '#0e7490';
+  ctx.fillRect(0, 0, 1200, 10);
+
+  ctx.fillStyle = '#67cfe8';
+  ctx.font = '700 34px system-ui, sans-serif';
+  ctx.fillText('HONMONO', 70, 92);
+  ctx.fillStyle = '#e7e5e4';
+  ctx.font = '700 46px system-ui, sans-serif';
+  ctx.fillText('AIアカウント鑑定 結果', 70, 158);
+
+  // スコア
+  ctx.fillStyle = color;
+  ctx.font = '800 150px system-ui, sans-serif';
+  const scoreText = String(pct);
+  ctx.fillText(scoreText, 70, 340);
+  const w = ctx.measureText(scoreText).width;
+  ctx.fillStyle = '#9ca3af';
+  ctx.font = '600 40px system-ui, sans-serif';
+  ctx.fillText('/ 100', 80 + w, 340);
+  ctx.fillStyle = color;
+  ctx.font = '800 52px system-ui, sans-serif';
+  ctx.fillText(band.label, 70, 420);
+
+  // スコアバー
+  ctx.fillStyle = '#363b45';
+  ctx.beginPath(); ctx.roundRect(70, 448, 500, 22, 11); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.roundRect(70, 448, Math.max(22, 500 * pct / 100), 22, 11); ctx.fill();
+
+  // 該当シグナル(右カラム・最大6件)
+  ctx.fillStyle = '#9ca3af';
+  ctx.font = '600 26px system-ui, sans-serif';
+  ctx.fillText(checkedRisk.length ? `該当した注意信号 (${checkedRisk.length}件)` : '注意信号の該当なし', 640, 230);
+  ctx.fillStyle = '#e7e5e4';
+  ctx.font = '400 24px system-ui, sans-serif';
+  let y = 272;
+  for (const item of checkedRisk.slice(0, 6)) {
+    const lines = wrapText(ctx, '・' + item, 490).slice(0, 2);
+    for (const ln of lines) { if (y > 500) break; ctx.fillText(ln, 640, y); y += 34; }
+    y += 4;
+  }
+  if (checkedRisk.length > 6) { ctx.fillStyle = '#9ca3af'; ctx.fillText(`…ほか ${checkedRisk.length - 6}件`, 640, Math.min(y, 530)); }
+
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '400 24px system-ui, sans-serif';
+  ctx.fillText('無料診断: yuukigogo000-ai.github.io/honmono/aicheck/  ※判定は参考情報です', 70, 585);
+
+  c.toBlob(blob => {
+    if (!blob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'honmono-aicheck.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }, 'image/png');
 });
 
 recalc();
