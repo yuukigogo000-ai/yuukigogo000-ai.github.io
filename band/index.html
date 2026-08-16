@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>セトリズム | バンドのためのセトリ設計スタジオ</title>
+<meta name="description" content="セットリスト作成・エナジーフロー設計・高精度メトロノーム・チューナー・共有リンク・ステージシート印刷。バンドの現場のためのオールインワンPWA。">
+<meta name="theme-color" content="#0d1017">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="4" y="18" width="4" height="10" rx="2" fill="#ffb454"/>
+      <rect x="11" y="10" width="4" height="18" rx="2" fill="#ffb454"/>
+      <rect x="18" y="4" width="4" height="24" rx="2" fill="#ff8a3d"/>
+      <rect x="25" y="12" width="4" height="16" rx="2" fill="#ffb454"/>
+    </svg>
+    <div class="brand-text">
+      <span class="brand-name">セトリズム</span>
+      <span class="brand-sub">SETLISM — バンドのためのセトリ設計スタジオ</span>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="機能切り替え">
+    <button class="tab" role="tab" id="tabbtn-setlist" aria-selected="true" aria-controls="tab-setlist" data-tab="setlist">セトリ</button>
+    <button class="tab" role="tab" id="tabbtn-metronome" aria-selected="false" aria-controls="tab-metronome" data-tab="metronome">メトロノーム</button>
+    <button class="tab" role="tab" id="tabbtn-tuner" aria-selected="false" aria-controls="tab-tuner" data-tab="tuner">チューナー</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============ セットリスト ============ -->
+<section id="tab-setlist" role="tabpanel" aria-labelledby="tabbtn-setlist">
+
+  <div class="setlist-bar card">
+    <select id="setlistSelect" aria-label="セットリスト選択"></select>
+    <div class="setlist-bar-actions">
+      <button id="newSetlistBtn" class="ghost" title="新しいセットリスト">＋ 新規</button>
+      <button id="renameSetlistBtn" class="ghost" title="名前を変更">名前変更</button>
+      <button id="deleteSetlistBtn" class="ghost danger" title="このセットリストを削除">削除</button>
+    </div>
+    <div class="setlist-bar-actions">
+      <button id="shareBtn" class="accent">共有リンク</button>
+      <button id="printBtn" class="ghost">ステージシート印刷</button>
+    </div>
+  </div>
+
+  <div class="time-panel card">
+    <div class="time-inputs">
+      <label>持ち時間
+        <span class="input-suffix"><input type="number" id="targetMin" min="0" max="600" inputmode="numeric">分</span>
+      </label>
+      <label>曲間の転換
+        <span class="input-suffix"><input type="number" id="gapSec" min="0" max="600" inputmode="numeric">秒</span>
+      </label>
+      <label>MC 1回あたり
+        <span class="input-suffix"><input type="number" id="mcSec" min="0" max="1800" inputmode="numeric">秒</span>
+      </label>
+    </div>
+    <div class="time-readout">
+      <div class="time-total"><span class="time-total-label">合計</span><span id="totalTime" class="time-total-value">0:00</span></div>
+      <div id="timeDiff" class="time-diff"></div>
+    </div>
+    <div class="time-bar" aria-hidden="true"><div id="timeBarFill" class="time-bar-fill"></div></div>
+    <p id="timeBreakdown" class="note"></p>
+  </div>
+
+  <div class="energy-card card">
+    <div class="card-head">
+      <h2>エナジーフロー</h2>
+      <p class="note">セット全体の盛り上がりの流れ。点にふれると曲名が出ます。</p>
+    </div>
+    <div id="energyChart" class="energy-chart"></div>
+  </div>
+
+  <ol id="songList" class="song-list" aria-label="曲リスト"></ol>
+  <p id="emptyHint" class="empty-hint" hidden>まだ曲がありません。「＋ 曲を追加」から始めましょう。</p>
+
+  <button id="addSongBtn" class="primary big">＋ 曲を追加</button>
+</section>
+
+<!-- ============ メトロノーム ============ -->
+<section id="tab-metronome" role="tabpanel" aria-labelledby="tabbtn-metronome" hidden>
+  <div class="card metro-card">
+    <p id="metroSongLabel" class="metro-song-label" hidden></p>
+
+    <div class="bpm-display">
+      <button id="bpmMinus5" class="bpm-step" aria-label="5下げる">−5</button>
+      <button id="bpmMinus1" class="bpm-step" aria-label="1下げる">−1</button>
+      <div class="bpm-value-wrap">
+        <span id="bpmValue" class="bpm-value">120</span>
+        <span class="bpm-unit">BPM</span>
+      </div>
+      <button id="bpmPlus1" class="bpm-step" aria-label="1上げる">＋1</button>
+      <button id="bpmPlus5" class="bpm-step" aria-label="5上げる">＋5</button>
+    </div>
+
+    <input type="range" id="bpmSlider" min="30" max="260" value="120" step="1" aria-label="BPM">
+
+    <div id="beatDots" class="beat-dots" aria-hidden="true"></div>
+
+    <div class="metro-controls">
+      <label>拍子
+        <select id="beatsSelect" aria-label="1小節の拍数">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
+          <option value="7">7</option>
+        </select>
+      </label>
+      <label>刻み
+        <select id="subSelect" aria-label="1拍の分割">
+          <option value="1" selected>♩ 4分</option>
+          <option value="2">♫ 8分</option>
+          <option value="3">3連符</option>
+          <option value="4">16分</option>
+        </select>
+      </label>
+      <label class="check-label"><input type="checkbox" id="accentCheck" checked> 頭にアクセント</label>
+      <label>音量
+        <input type="range" id="volSlider" min="0" max="100" value="70" aria-label="クリック音量">
+      </label>
+    </div>
+
+    <div class="metro-main-buttons">
+      <button id="tapBtn" class="ghost big">TAP<span class="btn-sub">タップでテンポ</span></button>
+      <button id="metroToggle" class="primary big">スタート</button>
+    </div>
+    <p class="note center">スペースキーでもスタート／ストップできます</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>セトリから読み込み</h2></div>
+    <div id="songChips" class="song-chips"></div>
+  </div>
+</section>
+
+<!-- ============ チューナー ============ -->
+<section id="tab-tuner" role="tabpanel" aria-labelledby="tabbtn-tuner" hidden>
+  <div class="card tuner-card">
+    <div id="tunerGaugeWrap" class="tuner-gauge-wrap">
+      <svg id="tunerGauge" viewBox="0 0 300 180" aria-hidden="true"></svg>
+      <div class="tuner-readout">
+        <span id="tunerNote" class="tuner-note">--</span>
+        <span id="tunerOctave" class="tuner-octave"></span>
+      </div>
+    </div>
+    <div class="tuner-numbers">
+      <span id="tunerCents" class="tuner-cents">± 0 cent</span>
+      <span id="tunerFreq" class="tuner-freq">0.0 Hz</span>
+    </div>
+    <p id="tunerStatus" class="tuner-status">マイクを使ってクロマチックチューニングします。</p>
+    <div class="metro-main-buttons">
+      <button id="tunerToggle" class="primary big">チューナー開始</button>
+    </div>
+    <div class="tuner-settings">
+      <label>基準ピッチ A4 =
+        <span class="input-suffix"><input type="number" id="a4Input" min="415" max="466" value="440" inputmode="numeric">Hz</span>
+      </label>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="app-footer">
+  <p>データはこの端末のブラウザにのみ保存されます。端末の乗り換え前にバックアップを書き出してください。</p>
+  <div class="footer-actions">
+    <button id="exportBtn" class="ghost small">バックアップを書き出す</button>
+    <button id="importBtn" class="ghost small">バックアップを読み込む</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+</footer>
+
+<!-- 曲編集ダイアログ -->
+<dialog id="songDialog">
+  <form method="dialog" id="songForm">
+    <h2 id="songDialogTitle">曲を追加</h2>
+    <label>曲名 <span class="req">必須</span>
+      <input type="text" id="f-title" required maxlength="80" autocomplete="off">
+    </label>
+    <div class="form-row">
+      <label>BPM
+        <input type="number" id="f-bpm" min="20" max="400" inputmode="numeric" placeholder="例: 140">
+      </label>
+      <label>キー
+        <input type="text" id="f-key" list="keyList" maxlength="10" autocomplete="off" placeholder="例: Am">
+        <datalist id="keyList">
+          <option value="C"><option value="Am"><option value="G"><option value="Em">
+          <option value="D"><option value="Bm"><option value="A"><option value="F#m">
+          <option value="E"><option value="C#m"><option value="B"><option value="F">
+          <option value="Dm"><option value="B♭"><option value="Gm"><option value="E♭"><option value="Cm">
+        </datalist>
+      </label>
+    </div>
+    <div class="form-row">
+      <label>チューニング
+        <input type="text" id="f-tuning" list="tuningList" maxlength="20" autocomplete="off" placeholder="例: 半音下げ">
+        <datalist id="tuningList">
+          <option value="レギュラー"><option value="半音下げ"><option value="全音下げ">
+          <option value="ドロップD"><option value="ドロップC#"><option value="ドロップC">
+          <option value="DADGAD"><option value="オープンG">
+        </datalist>
+      </label>
+      <label>曲の長さ
+        <input type="text" id="f-dur" inputmode="numeric" placeholder="例: 4:30" pattern="^\d{1,3}(:[0-5]?\d)?$" title="「分:秒」または秒数で入力(例: 4:30)">
+      </label>
+    </div>
+    <label>盛り上がり度(エナジー) <output id="f-energyOut">3</output>
+      <input type="range" id="f-energy" min="1" max="5" step="1" value="3">
+      <span class="range-labels"><span>静</span><span>爆</span></span>
+    </label>
+    <label class="check-label"><input type="checkbox" id="f-mc"> この曲のあとに MC を入れる</label>
+    <label>メモ(機材・同期・照明の指示など)
+      <textarea id="f-memo" rows="2" maxlength="500"></textarea>
+    </label>
+    <div class="dialog-actions">
+      <button type="button" id="songCancelBtn" class="ghost">キャンセル</button>
+      <button type="submit" class="primary" id="songSaveBtn">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 共有インポートダイアログ -->
+<dialog id="importDialog">
+  <h2>共有されたセットリスト</h2>
+  <p id="importSummary"></p>
+  <p class="note">読み込むと新しいセットリストとして追加されます。既存のデータは変更されません。</p>
+  <div class="dialog-actions">
+    <button type="button" id="importCancelBtn" class="ghost">読み込まない</button>
+    <button type="button" id="importOkBtn" class="primary">読み込む</button>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- 印刷専用ステージシート -->
+<div id="stageSheet" class="stage-sheet" aria-hidden="true"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
