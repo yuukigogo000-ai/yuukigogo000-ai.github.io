@@ -23,6 +23,7 @@
     --serious:      #ec835a;
     --critical:     #d03b3b;
     --accent:       #2a78d6;
+    --meter-track:  #cde2fb;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -38,6 +39,7 @@
       --series-2:   #d95926;
       --good-text:  #0ca30c;
       --accent:     #3987e5;
+      --meter-track:#184f95;
     }
   }
   * { box-sizing: border-box; }
@@ -47,23 +49,28 @@
     max-width: 900px; margin: 0 auto; padding: 16px; line-height: 1.6;
   }
   h1 { font-size: 1.5rem; margin: 8px 0 2px; }
-  .tagline { color: var(--ink-2); font-size: .9rem; margin: 0 0 16px; }
+  .tagline { color: var(--ink-2); font-size: .88rem; margin: 0 0 6px; }
+  .senryu { font-size: .95rem; color: var(--ink-2); margin: 0 0 14px; }
+  .senryu b { color: var(--ink); font-weight: 600; }
   .card {
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 12px; padding: 16px; margin: 14px 0;
   }
   .card h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  .card h2 .sub { font-size: .78rem; color: var(--muted); font-weight: 400; margin-left: 8px; }
   /* stat tiles */
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 12px; }
   .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
   .tile .label { font-size: .8rem; color: var(--ink-2); }
-  .tile .value { font-size: 1.7rem; font-weight: 600; line-height: 1.3; }
+  .tile .value { font-size: 1.65rem; font-weight: 600; line-height: 1.3; }
   .tile .unit { font-size: .9rem; font-weight: 400; color: var(--ink-2); margin-left: 2px; }
-  .tile .delta { font-size: .8rem; color: var(--ink-2); }
+  .tile .delta { font-size: .78rem; color: var(--ink-2); }
   .tile .delta.up-bad   { color: var(--critical); }
   .tile .delta.down-good{ color: var(--good-text); }
-  .status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; border-radius: 999px; padding: 1px 10px; border: 1px solid var(--border); color: var(--ink-2); }
-  .status-badge .dot { width: 9px; height: 9px; border-radius: 50%; }
+  .status-badge { display: inline-flex; align-items: center; gap: 4px; font-size: .76rem; border-radius: 999px; padding: 1px 9px; border: 1px solid var(--border); color: var(--ink-2); }
+  .status-badge .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .meter { height: 8px; border-radius: 4px; background: var(--meter-track); margin: 6px 0 2px; overflow: hidden; }
+  .meter i { display: block; height: 100%; border-radius: 4px; }
   /* form */
   label { display: block; font-size: .85rem; color: var(--ink-2); margin: 8px 0 3px; }
   input[type=number], input[type=date], input[type=text] {
@@ -72,12 +79,22 @@
     background: var(--surface); color: var(--ink);
   }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+  .grid-sm { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
   button {
     font-size: 1rem; padding: 10px 20px; border: 0; border-radius: 8px;
     background: var(--accent); color: #fff; cursor: pointer; margin-top: 12px;
   }
   button.ghost { background: transparent; color: var(--ink-2); border: 1px solid var(--baseline); }
   button.small { font-size: .8rem; padding: 4px 10px; margin: 0; }
+  /* 晩酌カウンター */
+  .drink-chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 4px; }
+  .chip {
+    font-size: .92rem; padding: 8px 14px; margin: 0; border-radius: 999px;
+    background: transparent; color: var(--ink); border: 1px solid var(--baseline);
+  }
+  .chip .cnt { font-weight: 700; color: var(--accent); margin-left: 4px; }
+  .drink-sum { font-size: .95rem; margin-top: 8px; }
+  .drink-sum b { font-size: 1.3rem; }
   /* charts */
   .chart-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
   .legend { display: flex; gap: 14px; font-size: .8rem; color: var(--ink-2); }
@@ -100,53 +117,96 @@
   th, td { border-bottom: 1px solid var(--grid); padding: 6px 8px; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
   th { color: var(--ink-2); font-weight: 600; }
   th:first-child, td:first-child { text-align: left; }
-  td.memo { text-align: left; max-width: 200px; overflow: hidden; text-overflow: ellipsis; }
+  td.memo { text-align: left; max-width: 180px; overflow: hidden; text-overflow: ellipsis; }
+  td.judge { text-align: left; }
   .note { font-size: .8rem; color: var(--muted); }
   .msg { font-size: .95rem; margin-top: 6px; }
-  .row-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .countdown { font-size: .95rem; margin: 4px 0 0; }
+  .countdown b { font-size: 1.2rem; }
+  .row-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
   details summary { cursor: pointer; font-size: .9rem; color: var(--ink-2); }
 </style>
 </head>
 <body>
 
 <h1>🍺 おじさん健康手帳 💪</h1>
-<p class="tagline">飲んだ日も、歩いた日も、まず記録から。データはこのブラウザの中だけに保存されます。</p>
+<p class="tagline">対象:おじさん限定。メタボ・痛風・γ-GTPと静かに戦う人のための記録帳。データはこのブラウザの中だけに保存。</p>
+<p class="senryu" id="senryu"></p>
 
 <div class="tiles" id="tiles"></div>
 <p class="msg" id="coachMsg"></p>
+<p class="countdown" id="countdown"></p>
 
 <div class="card">
-  <h2>今日の記録</h2>
+  <h2>🍶 晩酌カウンター<span class="sub">飲んだらその場でタップ。今日の分が即保存されます</span></h2>
+  <div class="drink-chips" id="drinkChips"></div>
+  <div class="row-actions">
+    <button class="ghost small" id="dryDayBtn">今日は休肝日で確定</button>
+    <button class="ghost small" id="resetDrinkBtn">今日の酒をやり直す</button>
+  </div>
+  <div class="drink-sum" id="drinkSum"></div>
+  <p class="note">純アルコール量の目安で計算(ビール中ジョッキ≈20g など)。厚労省の目安は男性で1日20g程度、40g以上は生活習慣病リスク上昇。</p>
+</div>
+
+<div class="card">
+  <h2>📝 今日の記録</h2>
   <div class="grid">
     <div><label for="fDate">日付</label><input type="date" id="fDate"></div>
     <div><label for="fWeight">体重 (kg)</label><input type="number" id="fWeight" step="0.1" min="20" max="300" placeholder="72.5"></div>
+    <div><label for="fWaist">腹囲 (cm)</label><input type="number" id="fWaist" step="0.5" min="40" max="200" placeholder="84.5"></div>
     <div><label for="fSys">血圧 上 (mmHg)</label><input type="number" id="fSys" step="1" min="50" max="300" placeholder="128"></div>
     <div><label for="fDia">血圧 下 (mmHg)</label><input type="number" id="fDia" step="1" min="30" max="200" placeholder="82"></div>
     <div><label for="fSteps">歩数</label><input type="number" id="fSteps" step="1" min="0" placeholder="6000"></div>
     <div><label for="fSleep">睡眠 (時間)</label><input type="number" id="fSleep" step="0.5" min="0" max="24" placeholder="6.5"></div>
-    <div><label for="fDrinks">お酒 (杯)</label><input type="number" id="fDrinks" step="1" min="0" placeholder="0"></div>
-    <div><label for="fMemo">メモ</label><input type="text" id="fMemo" placeholder="飲み会 / 腰痛 など"></div>
+    <div><label for="fMemo">メモ</label><input type="text" id="fMemo" placeholder="接待 / 腰にきてる など"></div>
   </div>
   <button id="saveBtn">記録する</button>
   <span class="note" id="saveNote"></span>
+  <p class="note">腹囲はへその高さで、息を吐いた状態で測るのが健診と同じ条件です。吸って測るのは反則。</p>
 </div>
 
 <div class="card">
   <div class="chart-head">
-    <h2>体重の推移（直近30日）</h2>
+    <h2>体重の推移<span class="sub">直近30日</span></h2>
   </div>
   <div class="chart-wrap" id="weightChart"></div>
 </div>
 
+<div class="card" id="waistCard" style="display:none">
+  <div class="chart-head">
+    <h2>腹囲の推移<span class="sub">直近90日・点線がメタボライン85cm</span></h2>
+  </div>
+  <div class="chart-wrap" id="waistChart"></div>
+</div>
+
 <div class="card">
   <div class="chart-head">
-    <h2>血圧の推移（直近30日）</h2>
+    <h2>血圧の推移<span class="sub">直近30日</span></h2>
     <div class="legend">
       <span><i style="background:var(--series-1)"></i>上（収縮期）</span>
       <span><i style="background:var(--series-2)"></i>下（拡張期）</span>
     </div>
   </div>
   <div class="chart-wrap" id="bpChart"></div>
+</div>
+
+<div class="card">
+  <h2>🩺 健康診断の結果<span class="sub">年1回の答え合わせ。届いたら転記して経年比較</span></h2>
+  <div id="checkupSummary"></div>
+  <details id="checkupForm">
+    <summary>＋ 健診結果を入力する</summary>
+    <div class="grid-sm" style="margin-top:10px">
+      <div><label for="cDate">実施日</label><input type="date" id="cDate"></div>
+      <div><label for="cGgt">γ-GTP</label><input type="number" id="cGgt" step="1" min="0" placeholder="48"></div>
+      <div><label for="cTg">中性脂肪</label><input type="number" id="cTg" step="1" min="0" placeholder="140"></div>
+      <div><label for="cHdl">HDL</label><input type="number" id="cHdl" step="1" min="0" placeholder="55"></div>
+      <div><label for="cLdl">LDL</label><input type="number" id="cLdl" step="1" min="0" placeholder="118"></div>
+      <div><label for="cGlu">空腹時血糖</label><input type="number" id="cGlu" step="1" min="0" placeholder="95"></div>
+      <div><label for="cHba1c">HbA1c</label><input type="number" id="cHba1c" step="0.1" min="0" placeholder="5.5"></div>
+      <div><label for="cUa">尿酸値</label><input type="number" id="cUa" step="0.1" min="0" placeholder="6.8"></div>
+    </div>
+    <button id="saveCheckup">健診結果を保存</button>
+  </details>
 </div>
 
 <div class="card">
@@ -160,15 +220,17 @@
     <div class="grid" style="margin-top:10px">
       <div><label for="sHeight">身長 (cm)</label><input type="number" id="sHeight" step="0.1" min="100" max="250" placeholder="170"></div>
       <div><label for="sTarget">目標体重 (kg)</label><input type="number" id="sTarget" step="0.1" min="20" max="300" placeholder="68"></div>
+      <div><label for="sCheckupDate">次の健康診断の日</label><input type="date" id="sCheckupDate"></div>
     </div>
     <div class="row-actions">
       <button id="saveSettings">設定を保存</button>
-      <button class="ghost" id="exportBtn">CSVエクスポート</button>
-      <button class="ghost" id="importBtn">CSVインポート</button>
+      <button class="ghost" id="exportBtn">日次CSV</button>
+      <button class="ghost" id="exportCheckupBtn">健診CSV</button>
+      <button class="ghost" id="importBtn">日次CSVインポート</button>
       <input type="file" id="importFile" accept=".csv" style="display:none">
     </div>
     <p class="note">データは端末のブラウザ(localStorage)にのみ保存。機種変更前にCSVエクスポートを。<br>
-    血圧の区分は高血圧治療ガイドライン(JSH2019)の分類を参考にした目安です。診断は医師にご相談ください。</p>
+    血圧区分はJSH2019、メタボ判定は特定健診(男性)の基準、健診値の基準は一般的な目安です。判定はあくまで目安で、診断・治療は医師にご相談ください。</p>
   </details>
 </div>
 
@@ -179,9 +241,11 @@
 const $ = id => document.getElementById(id);
 const REC_KEY = "ojisan_health_records";
 const SET_KEY = "ojisan_health_settings";
+const CHK_KEY = "ojisan_health_checkups";
 
-let records = load(REC_KEY, []);   // [{date:"YYYY-MM-DD", weight, sys, dia, steps, sleep, drinks, memo}]
+let records  = load(REC_KEY, []);  // [{date, weight, waist, sys, dia, steps, sleep, alc:{key:n}, alc_g, drinks, memo}]
 let settings = load(SET_KEY, {});
+let checkups = load(CHK_KEY, []);  // [{date, ggt, tg, hdl, ldl, glu, hba1c, ua}]
 
 function load(key, fallback) {
   try { const v = JSON.parse(localStorage.getItem(key)); return v ?? fallback; }
@@ -190,16 +254,63 @@ function load(key, fallback) {
 function persist() {
   localStorage.setItem(REC_KEY, JSON.stringify(records));
   localStorage.setItem(SET_KEY, JSON.stringify(settings));
+  localStorage.setItem(CHK_KEY, JSON.stringify(checkups));
 }
-function todayISO() {
-  const d = new Date();
-  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
-}
+function isoOf(d) { return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function todayISO() { return isoOf(new Date()); }
+function daysAgoISO(n) { const d = new Date(); d.setDate(d.getDate() - n); return isoOf(d); }
 function fmtDate(iso) { const [,m,d] = iso.split("-"); return Number(m) + "/" + Number(d); }
 function esc(s) { return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
 function num(v) { const n = parseFloat(v); return isFinite(n) ? n : null; }
 
-/* ===== 血圧区分 (JSH2019 目安) ===== */
+/* ===== 今日の一句（日替わり） ===== */
+const SENRYU = [
+  "健診の 前夜だけ飲む 特保茶",
+  "腹囲測る 息を吸うのは 反則です",
+  "休肝日 カレンダーには 書いてある",
+  "階段を 使った日だけ 声でかい",
+  "万歩計 稼ぐつもりが タクシーで",
+  "γ-GTP 読み方覚え 三年目",
+  "痛風の 気配で覚える プリン体",
+  "糖質を 抜いた分だけ 語り出す",
+  "体重計 乗る前に外す 腕時計",
+  "ジム契約 通ったのは 初月だけ",
+  "〆のラーメン 断った夜は よく眠れ",
+  "ハイボール 糖質ゼロを 免罪符",
+  "目標は 去年も言った 気がします",
+  "血圧計 深呼吸して 二度目測る",
+  "若手より 検査項目で マウント取る"
+];
+function renderSenryu() {
+  const d = new Date();
+  const dayOfYear = Math.floor((d - new Date(d.getFullYear(), 0, 0)) / 864e5);
+  $("senryu").innerHTML = "今日の一句　<b>" + esc(SENRYU[dayOfYear % SENRYU.length]) + "</b>";
+}
+
+/* ===== お酒の種類と純アルコール量(g) ===== */
+const DRINKS = [
+  { key: "b500", emoji: "🍺", label: "ビール中",     g: 20 },
+  { key: "b350", emoji: "🍺", label: "缶ビール350",  g: 14 },
+  { key: "high", emoji: "🥃", label: "ハイボール",   g: 14 },
+  { key: "sake", emoji: "🍶", label: "日本酒1合",    g: 22 },
+  { key: "sho",  emoji: "🍵", label: "焼酎1杯",      g: 12 },
+  { key: "chu",  emoji: "🍋", label: "チューハイ",   g: 18 },
+  { key: "wine", emoji: "🍷", label: "ワイン",       g: 12 }
+];
+function alcGrams(rec) {
+  if (!rec) return null;
+  if (rec.alc) return DRINKS.reduce((s, d) => s + (rec.alc[d.key] || 0) * d.g, 0);
+  if (rec.alc_g != null) return rec.alc_g;
+  if (rec.drinks != null) return rec.drinks * 20; // 旧データ: 1杯≈ビール中換算
+  return null;
+}
+function drinkCount(rec) {
+  if (!rec) return null;
+  if (rec.alc) return DRINKS.reduce((s, d) => s + (rec.alc[d.key] || 0), 0);
+  return rec.drinks ?? null;
+}
+
+/* ===== 判定ロジック ===== */
 function bpClass(sys, dia) {
   if (sys == null || dia == null) return null;
   if (sys >= 180 || dia >= 110) return { label: "III度高血圧", color: "var(--critical)", icon: "🚨" };
@@ -209,12 +320,74 @@ function bpClass(sys, dia) {
   if (sys >= 120)               return { label: "正常高値",    color: "var(--warning)",  icon: "△" };
   return { label: "正常", color: "var(--good)", icon: "✓" };
 }
+// 特定健診(男性)のメタボ判定。腹囲85cm以上 + 追加リスク(血圧/脂質/血糖)の数で判定
+function metaboClass() {
+  const w = latest("waist");
+  if (!w) return null;
+  const bp = latest("sys");
+  const chk = checkups.length ? checkups[checkups.length - 1] : null;
+  let flags = 0; const reasons = [];
+  if (bp && (bp.sys >= 130 || bp.dia >= 85)) { flags++; reasons.push("血圧"); }
+  if (chk && ((chk.tg != null && chk.tg >= 150) || (chk.hdl != null && chk.hdl < 40))) { flags++; reasons.push("脂質"); }
+  if (chk && ((chk.glu != null && chk.glu >= 110) || (chk.hba1c != null && chk.hba1c >= 6.0))) { flags++; reasons.push("血糖"); }
+  if (w.waist < 85) {
+    return { waist: w, cls: { label: "セーフ", color: "var(--good)", icon: "✓" },
+             note: "メタボラインまで " + (85 - w.waist).toFixed(1) + "cm の余裕" };
+  }
+  if (flags >= 2) return { waist: w, cls: { label: "メタボ該当", color: "var(--critical)", icon: "⚠️" }, note: reasons.join("・") + "が基準超え" };
+  if (flags === 1) return { waist: w, cls: { label: "メタボ予備群", color: "var(--serious)", icon: "△" }, note: reasons.join("・") + "が基準超え" };
+  return { waist: w, cls: { label: "腹囲オーバー", color: "var(--warning)", icon: "△" }, note: "85cm超。血圧・健診値しだいで予備群" };
+}
+// 健診値の判定（一般的な基準の目安・男性）
+const CHK_METRICS = [
+  { key: "ggt",   label: "γ-GTP",     unit: "U/L",   judge: v => v <= 50 ? 0 : v <= 100 ? 1 : 2, ref: "〜50" },
+  { key: "tg",    label: "中性脂肪",  unit: "mg/dL", judge: v => v < 150 ? 0 : v < 300 ? 1 : 2,  ref: "〜149" },
+  { key: "hdl",   label: "HDL",       unit: "mg/dL", judge: v => v >= 40 ? 0 : 2,                ref: "40〜" },
+  { key: "ldl",   label: "LDL",       unit: "mg/dL", judge: v => v < 120 ? 0 : v < 140 ? 1 : 2,  ref: "〜119" },
+  { key: "glu",   label: "空腹時血糖",unit: "mg/dL", judge: v => v < 100 ? 0 : v < 126 ? 1 : 2,  ref: "〜99" },
+  { key: "hba1c", label: "HbA1c",     unit: "%",     judge: v => v < 5.6 ? 0 : v < 6.5 ? 1 : 2,  ref: "〜5.5" },
+  { key: "ua",    label: "尿酸値",    unit: "mg/dL", judge: v => v <= 7.0 ? 0 : v < 9.0 ? 1 : 2, ref: "〜7.0" }
+];
+const JUDGE_BADGE = [
+  { label: "基準内", color: "var(--good)",    icon: "✓" },
+  { label: "要注意", color: "var(--warning)", icon: "△" },
+  { label: "要相談", color: "var(--critical)",icon: "⚠️" }
+];
 function bmiClass(bmi) {
   if (bmi == null) return null;
   if (bmi >= 30)   return { label: "肥満(2度〜)", color: "var(--critical)", icon: "⚠️" };
   if (bmi >= 25)   return { label: "肥満(1度)",   color: "var(--serious)",  icon: "△" };
   if (bmi < 18.5)  return { label: "低体重",      color: "var(--warning)",  icon: "△" };
   return { label: "普通体重", color: "var(--good)", icon: "✓" };
+}
+
+/* ===== 記録継続 → 役職 ===== */
+const RANKS = [
+  { days: 365, title: "会長" },
+  { days: 100, title: "専務" },
+  { days: 60,  title: "部長" },
+  { days: 30,  title: "課長" },
+  { days: 14,  title: "係長" },
+  { days: 7,   title: "主任" },
+  { days: 3,   title: "平社員" },
+  { days: 1,   title: "研修中" }
+];
+function streakDays() {
+  const dates = new Set(records.map(r => r.date));
+  let n = 0;
+  let d = new Date();
+  if (!dates.has(isoOf(d))) d.setDate(d.getDate() - 1); // 今日未記録なら昨日から遡る
+  while (dates.has(isoOf(d))) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+function rankOf(days) {
+  for (const r of RANKS) if (days >= r.days) return r;
+  return { days: 0, title: "見習い" };
+}
+function nextRank(days) {
+  let next = null;
+  for (const r of RANKS) if (days < r.days) next = r;
+  return next;
 }
 
 /* ===== レコード操作 ===== */
@@ -227,56 +400,99 @@ function valueOnOrBefore(field, dateISO) {
   for (const r of records) if (r[field] != null && r.date <= dateISO) best = r;
   return best;
 }
-function daysAgoISO(n) {
-  const d = new Date(); d.setDate(d.getDate() - n);
-  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+function upsert(rec) {
+  const i = records.findIndex(r => r.date === rec.date);
+  if (i >= 0) records[i] = rec;
+  else { records.push(rec); records.sort((a,b) => a.date < b.date ? -1 : 1); }
+}
+function getOrCreateToday() {
+  const date = todayISO();
+  let r = records.find(x => x.date === date);
+  if (!r) {
+    r = { date, weight: null, waist: null, sys: null, dia: null, steps: null, sleep: null, alc: null, memo: null };
+    records.push(r); records.sort((a,b) => a.date < b.date ? -1 : 1);
+  }
+  return r;
 }
 
-/* ===== 保存 ===== */
+/* ===== 晩酌カウンター ===== */
+function renderDrinks() {
+  const today = records.find(r => r.date === todayISO());
+  const alc = today && today.alc ? today.alc : {};
+  $("drinkChips").innerHTML = DRINKS.map(d =>
+    `<button class="chip" data-drink="${d.key}">${d.emoji} ${d.label}<span class="cnt">${alc[d.key] ? "×" + alc[d.key] : "+"}</span></button>`
+  ).join("");
+  $("drinkChips").querySelectorAll("[data-drink]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const r = getOrCreateToday();
+      if (!r.alc) r.alc = {};
+      const k = btn.getAttribute("data-drink");
+      r.alc[k] = (r.alc[k] || 0) + 1;
+      persist(); renderAll();
+    });
+  });
+  const g = today ? alcGrams(today) : null;
+  if (g == null) {
+    $("drinkSum").innerHTML = `<span class="note">今日はまだ未記録。飲まずに寝られたら「休肝日で確定」を。</span>`;
+  } else if (g === 0) {
+    $("drinkSum").innerHTML = `🌿 今日は<b>休肝日</b>。肝臓が定時で帰れます。`;
+  } else {
+    const over = g > 40 ? "　🚨 今日はもう十分では" : g > 20 ? "　△ 適量ライン超え" : "　✓ 適量圏内";
+    $("drinkSum").innerHTML = `今日の純アルコール <b>${g}</b>g${over}`;
+  }
+}
+$("dryDayBtn").addEventListener("click", () => {
+  const r = getOrCreateToday();
+  r.alc = {};
+  persist(); renderAll();
+});
+$("resetDrinkBtn").addEventListener("click", () => {
+  const r = records.find(x => x.date === todayISO());
+  if (r) { r.alc = null; persist(); renderAll(); }
+});
+
+/* ===== 保存（日次フォーム） ===== */
 $("saveBtn").addEventListener("click", () => {
   const date = $("fDate").value;
   if (!date) { alert("日付を入れてください"); return; }
   const rec = {
     date,
     weight: num($("fWeight").value),
+    waist:  num($("fWaist").value),
     sys:    num($("fSys").value),
     dia:    num($("fDia").value),
     steps:  num($("fSteps").value),
     sleep:  num($("fSleep").value),
-    drinks: num($("fDrinks").value),
+    alc:    null,
     memo:   $("fMemo").value.trim() || null
   };
-  if (rec.weight == null && rec.sys == null && rec.dia == null && rec.steps == null
-      && rec.sleep == null && rec.drinks == null && !rec.memo) {
+  if (rec.weight == null && rec.waist == null && rec.sys == null && rec.dia == null
+      && rec.steps == null && rec.sleep == null && !rec.memo) {
     alert("どれか1つは入力してください"); return;
   }
-  const i = records.findIndex(r => r.date === date);
-  if (i >= 0) {
-    // 同じ日付は上書きマージ（空欄は既存値を残す）
-    const old = records[i];
-    for (const k of ["weight","sys","dia","steps","sleep","drinks","memo"])
+  const old = records.find(r => r.date === date);
+  if (old) {
+    for (const k of ["weight","waist","sys","dia","steps","sleep","memo"])
       if (rec[k] == null) rec[k] = old[k];
-    records[i] = rec;
+    rec.alc = old.alc ?? null;
+    rec.alc_g = old.alc_g; rec.drinks = old.drinks; // 旧フィールド温存
+    upsert(rec);
     $("saveNote").textContent = date + " の記録を更新しました";
   } else {
-    records.push(rec);
-    records.sort((a,b) => a.date < b.date ? -1 : 1);
-    $("saveNote").textContent = "記録しました。えらい!";
+    upsert(rec);
+    $("saveNote").textContent = "記録完了。継続は役職に響きます。";
   }
   persist();
-  clearForm();
+  for (const id of ["fWeight","fWaist","fSys","fDia","fSteps","fSleep","fMemo"]) $(id).value = "";
   renderAll();
 });
-function clearForm() {
-  for (const id of ["fWeight","fSys","fDia","fSteps","fSleep","fDrinks","fMemo"]) $(id).value = "";
-}
 
 /* ===== 設定 ===== */
 $("saveSettings").addEventListener("click", () => {
   settings.height = num($("sHeight").value);
   settings.target = num($("sTarget").value);
-  persist();
-  renderAll();
+  settings.checkupDate = $("sCheckupDate").value || null;
+  persist(); renderAll();
 });
 
 /* ===== タイル ===== */
@@ -290,33 +506,39 @@ function badge(cls) {
 function renderTiles() {
   const parts = [];
 
+  // 体重 + BMI
   const w = latest("weight");
   if (w) {
     const prev = valueOnOrBefore("weight", daysAgoISO(7));
-    let delta = "";
+    let sub = "";
     if (prev && prev.date !== w.date) {
       const d = w.weight - prev.weight;
       const cls = d > 0 ? "up-bad" : (d < 0 ? "down-good" : "");
-      delta = `<div class="delta ${cls}">${d >= 0 ? "+" : ""}${d.toFixed(1)} kg（${fmtDate(prev.date)}比）</div>`;
+      sub += `<div class="delta ${cls}">${d >= 0 ? "+" : ""}${d.toFixed(1)} kg（${fmtDate(prev.date)}比）</div>`;
     }
-    let target = "";
+    if (settings.height != null) {
+      const bmi = w.weight / ((settings.height / 100) ** 2);
+      sub += `<div class="delta">BMI ${bmi.toFixed(1)} ${badge(bmiClass(bmi))}</div>`;
+    }
     if (settings.target != null) {
       const gap = w.weight - settings.target;
-      target = `<div class="delta">目標まで ${gap <= 0 ? "達成! 🎉" : gap.toFixed(1) + " kg"}</div>`;
+      sub += `<div class="delta">目標まで ${gap <= 0 ? "達成! 🎉" : gap.toFixed(1) + " kg"}</div>`;
     }
-    parts.push(tile("体重", w.weight.toFixed(1) + `<span class="unit">kg</span>`, delta + target));
+    parts.push(tile("体重", w.weight.toFixed(1) + `<span class="unit">kg</span>`, sub));
   } else {
     parts.push(tile("体重", `<span class="unit">未記録</span>`, ""));
   }
 
-  if (w && settings.height != null) {
-    const h = settings.height / 100;
-    const bmi = w.weight / (h * h);
-    parts.push(tile("BMI", bmi.toFixed(1), `<div class="delta">${badge(bmiClass(bmi))}</div>`));
+  // 腹囲・メタボ
+  const m = metaboClass();
+  if (m) {
+    parts.push(tile("腹囲・メタボ判定", m.waist.waist.toFixed(1) + `<span class="unit">cm</span>`,
+      `<div class="delta">${badge(m.cls)}</div><div class="delta">${esc(m.note)}</div>`));
   } else {
-    parts.push(tile("BMI", `<span class="unit">${w ? "身長を設定" : "未記録"}</span>`, ""));
+    parts.push(tile("腹囲・メタボ判定", `<span class="unit">腹囲を記録</span>`, `<div class="delta">85cmが特定健診の境界線</div>`));
   }
 
+  // 血圧
   const bp = latest("sys");
   if (bp && bp.dia != null) {
     parts.push(tile("血圧", `${bp.sys}<span class="unit">/</span>${bp.dia}`, `<div class="delta">${badge(bpClass(bp.sys, bp.dia))}</div>`));
@@ -324,21 +546,38 @@ function renderTiles() {
     parts.push(tile("血圧", `<span class="unit">未記録</span>`, ""));
   }
 
+  // 今週の肝臓（純アルコール + 休肝日 + メーター）
   const weekAgo = daysAgoISO(6);
+  const weekRecs = records.filter(r => r.date >= weekAgo && alcGrams(r) != null);
+  if (weekRecs.length) {
+    const total = weekRecs.reduce((s, r) => s + alcGrams(r), 0);
+    const dry = weekRecs.filter(r => alcGrams(r) === 0).length;
+    const LIMIT = 140; // 純アル20g×7日
+    const pct = Math.min(100, total / (LIMIT * 2) * 100);
+    const color = total <= LIMIT ? "var(--accent)" : total <= LIMIT * 2 ? "var(--warning)" : "var(--critical)";
+    const liver = dry === 0 ? "肝臓:連勤続き 🥲" : dry >= 2 ? "肝臓:働き方改革OK" : "肝臓:週休" + dry + "日";
+    parts.push(tile("今週の純アルコール", Math.round(total) + `<span class="unit">g /適量140g</span>`,
+      `<div class="meter"><i style="width:${pct}%;background:${color}"></i></div><div class="delta">${liver}（休肝${dry}日/${weekRecs.length}日分）</div>`));
+  } else {
+    parts.push(tile("今週の純アルコール", `<span class="unit">未記録</span>`, `<div class="delta">晩酌カウンターでタップ記録</div>`));
+  }
+
+  // 歩数
   const stepRecs = records.filter(r => r.steps != null && r.date >= weekAgo);
   if (stepRecs.length) {
     const avg = Math.round(stepRecs.reduce((s,r) => s + r.steps, 0) / stepRecs.length);
-    parts.push(tile("歩数（7日平均）", avg.toLocaleString(), `<div class="delta">${stepRecs.length}日分の平均</div>`));
+    parts.push(tile("歩数（7日平均）", avg.toLocaleString(), `<div class="delta">目安8,000歩/日</div>`));
   } else {
     parts.push(tile("歩数（7日平均）", `<span class="unit">未記録</span>`, ""));
   }
 
-  const drinkRecs = records.filter(r => r.drinks != null && r.date >= weekAgo);
-  if (drinkRecs.length) {
-    const total = drinkRecs.reduce((s,r) => s + r.drinks, 0);
-    const dry = drinkRecs.filter(r => r.drinks === 0).length;
-    parts.push(tile("お酒（直近7日）", total + `<span class="unit">杯</span>`, `<div class="delta">休肝日 ${dry}日</div>`));
-  }
+  // 記録継続 → 役職
+  const days = streakDays();
+  const rank = rankOf(days);
+  const next = nextRank(days);
+  parts.push(tile("記録継続で出世", esc(rank.title),
+    `<div class="delta">継続 ${days}日</div>` +
+    (next ? `<div class="delta">${esc(next.title)}まであと${next.days - days}日</div>` : `<div class="delta">これ以上の役職はありません</div>`)));
 
   $("tiles").innerHTML = parts.join("");
 }
@@ -346,25 +585,48 @@ function renderTiles() {
 /* ===== ひとことコーチ ===== */
 function renderCoach() {
   const msgs = [];
-  const w = latest("weight");
-  const prev = w ? valueOnOrBefore("weight", daysAgoISO(7)) : null;
-  if (w && prev && prev.date !== w.date) {
-    const d = w.weight - prev.weight;
-    if (d <= -0.5) msgs.push("体重、いい感じに落ちてます。その調子!");
-    else if (d >= 1.0) msgs.push("先週より増え気味…。今夜のビールは1杯減らしてみます?");
-  }
   const bp = latest("sys");
   if (bp && bp.dia != null) {
     const c = bpClass(bp.sys, bp.dia);
     if (c && (c.label.includes("II度") || c.label.includes("III度")))
-      msgs.push("血圧がかなり高めです。早めに医療機関で相談を。");
+      msgs.push("その血圧は武勇伝になりません。近いうちに病院へ。");
+  }
+  const m = metaboClass();
+  if (m && m.cls.label === "メタボ該当")
+    msgs.push("メタボ判定が出ています。まずは腹囲マイナス1cm＝体重約1kg減から。");
+  const chk = checkups.length ? checkups[checkups.length - 1] : null;
+  if (chk && chk.ua != null && chk.ua > 7.0)
+    msgs.push("尿酸値が7超え。プリン体がひそひそしてます。水を多めに、ビールは本数半分から。");
+  if (chk && chk.ggt != null && chk.ggt > 100)
+    msgs.push("γ-GTPが三桁です。肝臓が退職届を書き始める前に休肝日を。");
+  const w = latest("weight");
+  const prev = w ? valueOnOrBefore("weight", daysAgoISO(7)) : null;
+  if (w && prev && prev.date !== w.date) {
+    const d = w.weight - prev.weight;
+    if (d >= 1.0) msgs.push("先週比プラス1kg超。ベルトの穴がまた一つ旅立つ前に、今夜の〆は我慢。");
+    else if (d <= -0.5) msgs.push("体重、いい感じに落ちてます。スーツが心なしか誇らしげ。");
   }
   const weekAgo = daysAgoISO(6);
-  const drinkRecs = records.filter(r => r.drinks != null && r.date >= weekAgo);
-  if (drinkRecs.length >= 5 && drinkRecs.every(r => r.drinks > 0))
+  const alcRecs = records.filter(r => r.date >= weekAgo && alcGrams(r) != null);
+  if (alcRecs.length >= 5 && alcRecs.every(r => alcGrams(r) > 0))
     msgs.push("今週まだ休肝日ゼロ。肝臓もたまには定時退社させましょう。");
-  if (!records.length) msgs.push("まずは今日の体重から記録してみましょう。");
+  if (!records.length) msgs.push("まずは今日の体重と腹囲から。現実を直視するのが第一歩です。");
   $("coachMsg").textContent = msgs.length ? "💬 " + msgs[0] : "";
+}
+
+/* ===== 健診カウントダウン ===== */
+function renderCountdown() {
+  const el = $("countdown");
+  if (!settings.checkupDate) { el.textContent = ""; return; }
+  const diff = Math.ceil((new Date(settings.checkupDate) - new Date(todayISO())) / 864e5);
+  let quip;
+  if (diff > 60)      quip = "まだ余裕。ただし脂肪は着々と仕込み中。";
+  else if (diff > 30) quip = "「そろそろ本気出す」と言い始める時期です。";
+  else if (diff > 7)  quip = "今から動けば数値はまだ変わります。特にγ-GTP。";
+  else if (diff > 0)  quip = "今週の禁酒でγ-GTPに誠意を見せるラストチャンス。";
+  else if (diff === 0) quip = "本日決戦。朝食を抜くのをお忘れなく。";
+  else { el.innerHTML = `🩺 健診お疲れさまでした。結果が届いたら下の「健康診断の結果」へ転記を。`; return; }
+  el.innerHTML = `🩺 健康診断まで あと<b>${diff}</b>日 — ${esc(quip)}`;
 }
 
 /* ===== チャート（インラインSVG） ===== */
@@ -388,7 +650,7 @@ function niceTicks(min, max, count) {
 function drawChart(container, series, opts) {
   const all = series.flatMap(s => s.points);
   if (all.length === 0) {
-    container.innerHTML = `<div class="empty">まだデータがありません。上のフォームから記録すると、ここにグラフが出ます。</div>`;
+    container.innerHTML = `<div class="empty">まだデータがありません。記録するとここにグラフが出ます。</div>`;
     return;
   }
   const dates = [...new Set(all.map(p => p.date))].sort();
@@ -400,23 +662,19 @@ function drawChart(container, series, opts) {
   const y = v => PAD.top + (1 - (v - lo) / (hi - lo)) * (CHART_H - PAD.top - PAD.bottom);
 
   let svg = `<svg viewBox="0 0 ${CHART_W} ${CHART_H}" role="img" aria-label="${esc(opts.aria)}">`;
-  // グリッド（水平ヘアライン）と目盛
   for (const t of ticks) {
     svg += `<line x1="${PAD.left}" y1="${y(t)}" x2="${CHART_W - PAD.right}" y2="${y(t)}" stroke="var(--grid)" stroke-width="1"/>`;
     svg += `<text x="${PAD.left - 8}" y="${y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)" style="font-variant-numeric:tabular-nums">${t}</text>`;
   }
-  // X軸ラベル（間引き）
   const every = Math.max(1, Math.ceil(dates.length / 7));
   dates.forEach((d, i) => {
     if (i % every === 0 || i === dates.length - 1)
       svg += `<text x="${x(d)}" y="${CHART_H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmtDate(d)}</text>`;
   });
-  // 目標線
   if (opts.refLine != null && opts.refLine >= lo && opts.refLine <= hi) {
     svg += `<line x1="${PAD.left}" y1="${y(opts.refLine)}" x2="${CHART_W - PAD.right}" y2="${y(opts.refLine)}" stroke="var(--baseline)" stroke-width="1" stroke-dasharray="4 4"/>`;
     svg += `<text x="${CHART_W - PAD.right}" y="${y(opts.refLine) - 5}" text-anchor="end" font-size="11" fill="var(--ink-2)">${esc(opts.refLabel)}</text>`;
   }
-  // 系列（2pxライン + サーフェスリング付きマーカー）
   for (const s of series) {
     const pts = s.points;
     if (pts.length > 1) {
@@ -425,7 +683,6 @@ function drawChart(container, series, opts) {
     }
     for (const p of pts)
       svg += `<circle cx="${x(p.date).toFixed(1)}" cy="${y(p.value).toFixed(1)}" r="4" fill="${s.color}" stroke="var(--surface)" stroke-width="2"/>`;
-    // 端点の直接ラベル（最新値のみ・点の上に中央揃えで置き、端では内側に寄せる）
     const lastP = pts[pts.length - 1];
     if (lastP) {
       const lx = Math.max(PAD.left + 14, Math.min(x(lastP.date), CHART_W - 20));
@@ -435,7 +692,6 @@ function drawChart(container, series, opts) {
   svg += `</svg>`;
   container.innerHTML = svg;
 
-  // ホバー: 最寄りの日付のツールチップ
   const svgEl = container.querySelector("svg");
   const tip = $("tooltip");
   svgEl.addEventListener("mousemove", ev => {
@@ -469,6 +725,14 @@ function renderCharts() {
     [{ name: "体重", color: "var(--series-1)", points: wPts }],
     { unit: "kg", aria: "体重の推移グラフ", refLine: settings.target, refLabel: "目標 " + settings.target + "kg" });
 
+  const waistPts = records.filter(r => r.waist != null && r.date >= daysAgoISO(89)).map(r => ({ date: r.date, value: r.waist }));
+  $("waistCard").style.display = waistPts.length ? "" : "none";
+  if (waistPts.length) {
+    drawChart($("waistChart"),
+      [{ name: "腹囲", color: "var(--series-1)", points: waistPts }],
+      { unit: "cm", aria: "腹囲の推移グラフ", refLine: 85, refLabel: "メタボライン 85cm", includeValue: 85 });
+  }
+
   const sPts = recent.filter(r => r.sys != null).map(r => ({ date: r.date, value: r.sys }));
   const dPts = recent.filter(r => r.dia != null).map(r => ({ date: r.date, value: r.dia }));
   drawChart($("bpChart"),
@@ -477,22 +741,87 @@ function renderCharts() {
     { unit: "", aria: "血圧の推移グラフ" });
 }
 
-/* ===== テーブル ===== */
+/* ===== 健診結果 ===== */
+$("saveCheckup").addEventListener("click", () => {
+  const date = $("cDate").value;
+  if (!date) { alert("実施日を入れてください"); return; }
+  const rec = { date };
+  let any = false;
+  for (const m of CHK_METRICS) {
+    rec[m.key] = num($("c" + m.key.charAt(0).toUpperCase() + m.key.slice(1)).value);
+    if (rec[m.key] != null) any = true;
+  }
+  if (!any) { alert("どれか1つは入力してください"); return; }
+  const i = checkups.findIndex(c => c.date === date);
+  if (i >= 0) checkups[i] = rec; else { checkups.push(rec); checkups.sort((a,b) => a.date < b.date ? -1 : 1); }
+  persist();
+  for (const m of CHK_METRICS) $("c" + m.key.charAt(0).toUpperCase() + m.key.slice(1)).value = "";
+  $("cDate").value = "";
+  renderAll();
+});
+function renderCheckups() {
+  const el = $("checkupSummary");
+  if (!checkups.length) {
+    el.innerHTML = `<p class="note">まだ健診結果がありません。会社の健診結果が届いたら、γ-GTP・中性脂肪・尿酸値あたりだけでも転記しておくと、来年の自分と戦えます。</p>`;
+    return;
+  }
+  const cur = checkups[checkups.length - 1];
+  const prev = checkups.length > 1 ? checkups[checkups.length - 2] : null;
+  let html = `<p class="note">最新: ${esc(cur.date)}${prev ? "（前回 " + esc(prev.date) + " と比較）" : ""}</p>`;
+  html += `<div class="table-scroll"><table><thead><tr><th>項目</th><th>今回</th><th>前回</th><th>基準目安</th><th style="text-align:left">判定</th></tr></thead><tbody>`;
+  for (const m of CHK_METRICS) {
+    const v = cur[m.key];
+    if (v == null && (!prev || prev[m.key] == null)) continue;
+    const pv = prev ? prev[m.key] : null;
+    let diff = "";
+    if (v != null && pv != null) {
+      const d = Math.round((v - pv) * 10) / 10;
+      if (d !== 0) diff = ` <span class="note">(${d > 0 ? "+" : ""}${d})</span>`;
+    }
+    const j = v != null ? JUDGE_BADGE[m.judge(v)] : null;
+    html += `<tr><td>${m.label} <span class="note">${m.unit}</span></td>`
+         +  `<td>${v != null ? v + diff : "–"}</td><td>${pv != null ? pv : "–"}</td><td>${m.ref}</td>`
+         +  `<td class="judge">${j ? badge(j) : "–"}</td></tr>`;
+  }
+  html += `</tbody></table></div>`;
+  if (checkups.length > 1) {
+    html += `<p class="note">記録済み: ` + checkups.map(c =>
+      `${esc(c.date)} <button class="ghost small" data-delchk="${esc(c.date)}">削除</button>`).join("　") + `</p>`;
+  } else {
+    html += `<p class="note"><button class="ghost small" data-delchk="${esc(cur.date)}">この健診記録を削除</button></p>`;
+  }
+  el.innerHTML = html;
+  el.querySelectorAll("[data-delchk]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const d = btn.getAttribute("data-delchk");
+      if (!confirm(d + " の健診記録を削除しますか?")) return;
+      checkups = checkups.filter(c => c.date !== d);
+      persist(); renderAll();
+    });
+  });
+}
+
+/* ===== 記録一覧 ===== */
 function renderTable() {
   if (!records.length) {
     $("tableWrap").innerHTML = `<div class="empty">記録はまだありません。</div>`;
     return;
   }
-  let html = `<table><thead><tr><th>日付</th><th>体重</th><th>血圧</th><th>歩数</th><th>睡眠</th><th>酒</th><th>メモ</th><th></th></tr></thead><tbody>`;
+  let html = `<table><thead><tr><th>日付</th><th>体重</th><th>腹囲</th><th>血圧</th><th>歩数</th><th>睡眠</th><th>酒</th><th>メモ</th><th></th></tr></thead><tbody>`;
   const shown = [...records].reverse().slice(0, 60);
   for (const r of shown) {
+    const g = alcGrams(r);
+    let alcCell = "–";
+    if (g === 0) alcCell = "休肝";
+    else if (g != null) alcCell = r.alc ? g + "g" : (drinkCount(r) + "杯");
     html += `<tr>
       <td>${esc(r.date)}</td>
       <td>${r.weight != null ? r.weight.toFixed(1) : "–"}</td>
+      <td>${r.waist != null ? r.waist.toFixed(1) : "–"}</td>
       <td>${r.sys != null && r.dia != null ? r.sys + "/" + r.dia : "–"}</td>
       <td>${r.steps != null ? r.steps.toLocaleString() : "–"}</td>
       <td>${r.sleep != null ? r.sleep + "h" : "–"}</td>
-      <td>${r.drinks != null ? (r.drinks === 0 ? "休肝" : r.drinks + "杯") : "–"}</td>
+      <td>${alcCell}</td>
       <td class="memo">${esc(r.memo ?? "")}</td>
       <td><button class="ghost small" data-del="${esc(r.date)}">削除</button></td>
     </tr>`;
@@ -505,27 +834,38 @@ function renderTable() {
       const d = btn.getAttribute("data-del");
       if (!confirm(d + " の記録を削除しますか?")) return;
       records = records.filter(r => r.date !== d);
-      persist();
-      renderAll();
+      persist(); renderAll();
     });
   });
 }
 
 /* ===== CSV ===== */
-const CSV_COLS = ["date","weight","sys","dia","steps","sleep","drinks","memo"];
 function csvEscape(v) {
   v = (v === null || v === undefined) ? "" : String(v);
   return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
 }
-$("exportBtn").addEventListener("click", () => {
-  const lines = [CSV_COLS.join(",")];
-  for (const r of records) lines.push(CSV_COLS.map(c => csvEscape(r[c])).join(","));
+function downloadCsv(name, lines) {
   const blob = new Blob(["﻿" + lines.join("\n") + "\n"], { type: "text/csv;charset=utf-8" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = "おじさん健康手帳_" + todayISO() + ".csv";
+  a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(a.href);
+}
+const CSV_COLS = ["date","weight","waist","sys","dia","steps","sleep","alc_g","drinks","memo"];
+$("exportBtn").addEventListener("click", () => {
+  const lines = [CSV_COLS.join(",")];
+  for (const r of records) {
+    const out = { ...r, alc_g: alcGrams(r), drinks: drinkCount(r) };
+    lines.push(CSV_COLS.map(c => csvEscape(out[c])).join(","));
+  }
+  downloadCsv("おじさん健康手帳_日次_" + todayISO() + ".csv", lines);
+});
+$("exportCheckupBtn").addEventListener("click", () => {
+  const cols = ["date", ...CHK_METRICS.map(m => m.key)];
+  const lines = [cols.join(",")];
+  for (const c of checkups) lines.push(cols.map(k => csvEscape(c[k])).join(","));
+  downloadCsv("おじさん健康手帳_健診_" + todayISO() + ".csv", lines);
 });
 $("importBtn").addEventListener("click", () => $("importFile").click());
 $("importFile").addEventListener("change", ev => {
@@ -541,7 +881,7 @@ $("importFile").addEventListener("change", ev => {
       let added = 0, updated = 0;
       for (const row of rows.slice(1)) {
         if (!row.length || !row[0]) continue;
-        const rec = { date: row[0], weight: null, sys: null, dia: null, steps: null, sleep: null, drinks: null, memo: null };
+        const rec = { date: row[0], weight: null, waist: null, sys: null, dia: null, steps: null, sleep: null, alc: null, alc_g: null, drinks: null, memo: null };
         header.forEach((h, i) => {
           if (h === "date") return;
           if (h === "memo") rec.memo = row[i] || null;
@@ -551,8 +891,7 @@ $("importFile").addEventListener("change", ev => {
         if (idx >= 0) { records[idx] = rec; updated++; } else { records.push(rec); added++; }
       }
       records.sort((a,b) => a.date < b.date ? -1 : 1);
-      persist();
-      renderAll();
+      persist(); renderAll();
       alert(`インポート完了: 追加 ${added}件 / 更新 ${updated}件`);
     } catch (e) {
       alert("インポートに失敗しました: " + e);
@@ -583,14 +922,19 @@ function parseCsv(text) {
 
 /* ===== 初期化 ===== */
 function renderAll() {
+  renderSenryu();
   renderTiles();
   renderCoach();
+  renderCountdown();
+  renderDrinks();
   renderCharts();
+  renderCheckups();
   renderTable();
 }
 $("fDate").value = todayISO();
 if (settings.height != null) $("sHeight").value = settings.height;
 if (settings.target != null) $("sTarget").value = settings.target;
+if (settings.checkupDate) $("sCheckupDate").value = settings.checkupDate;
 renderAll();
 </script>
 </body>
