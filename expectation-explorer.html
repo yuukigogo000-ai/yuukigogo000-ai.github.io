@@ -363,26 +363,68 @@ const TEMPLATES = [
     scenarios:[{prob:30,effect:-60,years:5},{prob:40,effect:40,years:10},{prob:30,effect:100,years:10}] },
 ];
 
-/* ---------- 状態 ---------- */
-let profile = loadProfile();
-let options = loadOptions();
+/* ---------- 状態（初期化は関数定義の後） ---------- */
+let profile, options;
 let editingId = null;
 let comboChecked = new Set();
 let sortKey = "ev", sortDesc = true;
 
+const PROFILE_DEF = { lumpSumMax:100, monthlyBudget:3, monthlyHours:30, age:35, activeYears:30,
+                      maxLoss:200, livingCost:20, discountRate:3, parallelMax:2 };
+
+// 数値の強制・クランプ（NaN/Infinity/文字列/負数はここで無害化する）
+function num(v, def, min, max) {
+  const n = Number(v);
+  if (!isFinite(n)) return def;
+  return Math.min(max, Math.max(min, n));
+}
+function sanitizeProfile(raw) {
+  raw = raw && typeof raw === "object" ? raw : {};
+  const p = {};
+  for (const k of Object.keys(PROFILE_DEF)) p[k] = num(raw[k], PROFILE_DEF[k], 0, 1e9);
+  if (p.activeYears < 1) p.activeYears = 1;
+  if (p.parallelMax < 1) p.parallelMax = 1;
+  return p;
+}
+function sanitizeOption(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const sc = Array.isArray(raw.scenarios) ? raw.scenarios : [];
+  return {
+    id: (typeof raw.id === "string" && /^[A-Za-z0-9_-]{1,32}$/.test(raw.id))
+      ? raw.id : "o" + Math.random().toString(36).slice(2, 9),
+    name: String(raw.name || "無名の選択肢").slice(0, 80),
+    domain: DOMAINS.includes(raw.domain) ? raw.domain : "その他",
+    note: String(raw.note || "").slice(0, 300),
+    initialCost: num(raw.initialCost, 0, 0, 1e9),
+    monthlyCost: num(raw.monthlyCost, 0, 0, 1e9),
+    monthlyHours: num(raw.monthlyHours, 0, 0, 1e5),
+    effortYears: num(raw.effortYears, 0, 0, 200),
+    scenarios: ["悲観","中位","楽観"].map((label, i) => ({
+      label,
+      prob: num(sc[i] && sc[i].prob, i === 1 ? 100 : 0, 0, 100),
+      effect: num(sc[i] && sc[i].effect, 0, -1e9, 1e9),
+      years: num(sc[i] && sc[i].years, 0, 0, 200),
+    })),
+  };
+}
 function loadProfile() {
-  const def = { lumpSumMax:100, monthlyBudget:3, monthlyHours:30, age:35, activeYears:30,
-                maxLoss:200, livingCost:20, discountRate:3, parallelMax:2 };
-  try { return Object.assign(def, JSON.parse(localStorage.getItem(LS_PROFILE) || "{}")); }
-  catch { return def; }
+  try { return sanitizeProfile(JSON.parse(localStorage.getItem(LS_PROFILE) || "{}")); }
+  catch { return sanitizeProfile(null); }
 }
 function loadOptions() {
-  try { return JSON.parse(localStorage.getItem(LS_OPTIONS) || "[]"); } catch { return []; }
+  try {
+    const raw = JSON.parse(localStorage.getItem(LS_OPTIONS) || "[]");
+    return Array.isArray(raw) ? raw.map(sanitizeOption).filter(Boolean) : [];
+  } catch { return []; }
 }
 function persist() {
-  localStorage.setItem(LS_PROFILE, JSON.stringify(profile));
-  localStorage.setItem(LS_OPTIONS, JSON.stringify(options));
+  try {
+    localStorage.setItem(LS_PROFILE, JSON.stringify(profile));
+    localStorage.setItem(LS_OPTIONS, JSON.stringify(options));
+  } catch { toast("保存できませんでした（ストレージ容量を確認してください）"); }
 }
+profile = loadProfile();
+options = loadOptions();
 
 /* ---------- 計算コア ---------- */
 function annuity(years, rate) { // 年金現価係数：毎年1を years 年受け取る現在価値
@@ -434,10 +476,14 @@ function calc(o, prof, overrides = {}) {
 /* ---------- フォーマッタ ---------- */
 function fmtMan(v, signed = false) { // v: 万円
   if (v === null || v === undefined || !isFinite(v)) return "—";
-  const sign = v < 0 ? "−" : (signed && v > 0 ? "+" : "");
   const a = Math.abs(v);
-  if (a >= 10000) return sign + (a / 10000).toFixed(1).replace(/\.0$/, "") + "億円";
-  return sign + Math.round(a).toLocaleString() + "万円";
+  if (a >= 10000) {
+    const sign = v < 0 ? "−" : (signed ? "+" : "");
+    return sign + (a / 10000).toFixed(1).replace(/\.0$/, "") + "億円";
+  }
+  const r = Math.round(a); // 丸めて0になる値に符号を付けない（「−0万円」防止）
+  const sign = r === 0 ? "" : (v < 0 ? "−" : (signed ? "+" : ""));
+  return sign + r.toLocaleString() + "万円";
 }
 function fmtPerHour(v) { // 万円/h → 円/h
   if (v === null || !isFinite(v)) return "—";
@@ -528,25 +574,26 @@ function applyTemplate(t) {
 function readEditor() {
   return {
     id: editingId || ("o" + Math.random().toString(36).slice(2, 9)),
-    name: $("o-name").value.trim(),
+    name: $("o-name").value.trim().slice(0, 80),
     domain: $("o-domain").value,
-    note: $("o-note").value.trim(),
-    initialCost: Number($("o-initialCost").value) || 0,
-    monthlyCost: Number($("o-monthlyCost").value) || 0,
-    monthlyHours: Number($("o-monthlyHours").value) || 0,
-    effortYears: Number($("o-effortYears").value) || 0,
+    note: $("o-note").value.trim().slice(0, 300),
+    initialCost: num($("o-initialCost").value, 0, 0, 1e9),
+    monthlyCost: num($("o-monthlyCost").value, 0, 0, 1e9),
+    monthlyHours: num($("o-monthlyHours").value, 0, 0, 1e5),
+    effortYears: num($("o-effortYears").value, 0, 0, 200),
     scenarios: [0,1,2].map(i => ({
       label: ["悲観","中位","楽観"][i],
-      prob: Number($(`s${i}-prob`).value) || 0,
-      effect: Number($(`s${i}-effect`).value) || 0,
-      years: Number($(`s${i}-years`).value) || 0,
+      prob: num($(`s${i}-prob`).value, 0, 0, 100),
+      effect: num($(`s${i}-effect`).value, 0, -1e9, 1e9),
+      years: num($(`s${i}-years`).value, 0, 0, 200),
     })),
   };
 }
 function renderEditorCalc() {
   const o = readEditor();
   const probSum = o.scenarios.reduce((a, s) => a + s.prob, 0);
-  $("probWarn").textContent = probSum === 100 ? "" : `⚠ 確率の合計が ${probSum}% です（100%にしてください）`;
+  const probOk = Math.abs(probSum - 100) < 0.05; // 33.3+33.3+33.4 のような浮動小数点誤差を許容
+  $("probWarn").textContent = probOk ? "" : `⚠ 確率の合計が ${Math.round(probSum * 10) / 10}% です（100%にしてください）`;
   const m = calc(o, profile);
   $("e-ev").textContent = fmtMan(m.ev, true);
   $("e-ev").style.color = m.ev >= 0 ? "var(--ink)" : "var(--neg)";
@@ -583,7 +630,7 @@ $("saveOption").addEventListener("click", () => {
   const o = readEditor();
   if (!o.name) { toast("名前を入れてください"); $("o-name").focus(); return; }
   const probSum = o.scenarios.reduce((a, s) => a + s.prob, 0);
-  if (probSum !== 100) { toast(`確率の合計が${probSum}%です。100%にしてください`); return; }
+  if (Math.abs(probSum - 100) >= 0.05) { toast(`確率の合計が${Math.round(probSum * 10) / 10}%です。100%にしてください`); return; }
   const idx = options.findIndex(x => x.id === o.id);
   if (idx >= 0) options[idx] = o; else options.push(o);
   persist();
@@ -697,7 +744,7 @@ const VERDICT_COLOR = { "有望": "var(--good)", "条件付き": "var(--warn)", 
 
 function renderScatter() {
   const svg = $("scatter");
-  const rows = metricsAll();
+  const rows = metricsAll().filter(r => isFinite(r.m.ev) && isFinite(r.m.worst));
   if (!rows.length) { svg.innerHTML = ""; return; }
   const W = 760, H = 440, L = 70, R = 24, T = 20, B = 46;
   const xs = rows.map(r => r.m.worst), ys = rows.map(r => r.m.ev);
@@ -894,8 +941,8 @@ $("importFile").addEventListener("change", async () => {
   if (!f) return;
   try {
     const data = JSON.parse(await f.text());
-    if (data.profile) profile = Object.assign(loadProfile(), data.profile);
-    if (Array.isArray(data.options)) options = data.options;
+    if (data && data.profile) profile = sanitizeProfile(data.profile);
+    if (data && Array.isArray(data.options)) options = data.options.map(sanitizeOption).filter(Boolean);
     persist(); renderProfileForm(); renderProfileTiles(); renderOptionList();
     toast("インポートしました");
   } catch { toast("読み込めませんでした（JSON形式を確認してください）"); }
