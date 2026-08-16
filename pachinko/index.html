@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0d0a1a">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
 <title>パチスロ帝国 〜ホール経営シミュレーション〜</title>
 <style>
   :root {
@@ -1748,6 +1752,11 @@ $("btnSave").addEventListener("click", () => { save(); alert("セーブしまし
 $("btnReset").addEventListener("click", () => {
   if (confirm("本当に最初からやり直しますか?セーブデータは消えます。")) doReset();
 });
+
+// ---- PWA: Service Worker登録 (http(s)配信時のみ。file://やElectronでは何もしない) ----
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
 
 // ---- 起動 ----
 const loaded = load();

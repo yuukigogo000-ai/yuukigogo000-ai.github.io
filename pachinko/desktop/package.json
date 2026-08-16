@@ -1,0 +1,53 @@
+{
+  "name": "pachi-slot-teikoku",
+  "version": "1.0.0",
+  "description": "パチスロ帝国 〜ホール経営シミュレーション〜 デスクトップ版",
+  "main": "main.js",
+  "author": "yuukigogo000-ai",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io.git"
+  },
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.yuukigogo000.pachiteikoku",
+    "productName": "PachiSlotTeikoku",
+    "publish": null,
+    "directories": {
+      "buildResources": "build",
+      "output": "dist"
+    },
+    "files": [
+      "main.js"
+    ],
+    "extraResources": [
+      { "from": "../index.html", "to": "game/index.html" }
+    ],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "shortcutName": "パチスロ帝国"
+    },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "icon": "build/icon.png",
+      "category": "public.app-category.games"
+    },
+    "linux": {
+      "target": [{ "target": "AppImage", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "category": "Game"
+    }
+  }
+}

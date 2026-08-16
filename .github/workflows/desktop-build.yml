@@ -1,0 +1,39 @@
+name: Desktop Build
+
+on:
+  push:
+    tags:
+      - "desktop-v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: pachinko/desktop
+        run: npm install
+
+      - name: Build installer
+        working-directory: pachinko/desktop
+        run: npm run dist
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: PachiSlotTeikoku-${{ runner.os }}
+          path: |
+            pachinko/desktop/dist/*.exe
+            pachinko/desktop/dist/*.dmg
+            pachinko/desktop/dist/*.AppImage
+          if-no-files-found: error
