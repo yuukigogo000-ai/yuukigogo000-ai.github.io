@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>セトリズム | バンドのためのセトリ設計スタジオ</title>
+<meta name="description" content="セットリスト設計・エナジーフロー・セトリ診断・メトロノーム・チューナー・通し練習・リハ録音・本番進行・共有リンク。バンドの現場のためのオールインワンPWA。">
+<meta name="theme-color" content="#0d1017">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 32 32" aria-hidden="true">
+      <rect x="4" y="18" width="4" height="10" rx="2" fill="#ffb454"/>
+      <rect x="11" y="10" width="4" height="18" rx="2" fill="#ffb454"/>
+      <rect x="18" y="4" width="4" height="24" rx="2" fill="#ff8a3d"/>
+      <rect x="25" y="12" width="4" height="16" rx="2" fill="#ffb454"/>
+    </svg>
+    <div class="brand-text">
+      <span class="brand-name">セトリズム</span>
+      <span class="brand-sub">SETLISM — バンドのためのセトリ設計スタジオ</span>
+    </div>
+  </div>
+  <nav class="tabs" role="tablist" aria-label="機能切り替え">
+    <button class="tab" role="tab" id="tabbtn-setlist" aria-selected="true" aria-controls="tab-setlist" data-tab="setlist">セトリ</button>
+    <button class="tab" role="tab" id="tabbtn-library" aria-selected="false" aria-controls="tab-library" data-tab="library">ライブラリ</button>
+    <button class="tab" role="tab" id="tabbtn-practice" aria-selected="false" aria-controls="tab-practice" data-tab="practice">練習</button>
+    <button class="tab" role="tab" id="tabbtn-metronome" aria-selected="false" aria-controls="tab-metronome" data-tab="metronome">メトロノーム</button>
+    <button class="tab" role="tab" id="tabbtn-tuner" aria-selected="false" aria-controls="tab-tuner" data-tab="tuner">チューナー</button>
+    <button class="tab" role="tab" id="tabbtn-live" aria-selected="false" aria-controls="tab-live" data-tab="live">本番</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ============ セットリスト ============ -->
+<section id="tab-setlist" role="tabpanel" aria-labelledby="tabbtn-setlist">
+
+  <div class="setlist-bar card">
+    <select id="setlistSelect" aria-label="セットリスト選択"></select>
+    <div class="setlist-bar-actions">
+      <button id="newSetlistBtn" class="ghost" title="新しいセットリスト">＋ 新規</button>
+      <button id="dupSetlistBtn" class="ghost" title="このセットリストを複製">複製</button>
+      <button id="renameSetlistBtn" class="ghost" title="名前を変更">名前変更</button>
+      <button id="deleteSetlistBtn" class="ghost danger" title="このセットリストを削除">削除</button>
+    </div>
+    <div class="setlist-bar-actions">
+      <button id="undoBtn" class="ghost" title="元に戻す (Ctrl+Z)">↶</button>
+      <button id="redoBtn" class="ghost" title="やり直す (Ctrl+Y)">↷</button>
+      <button id="shareBtn" class="accent">共有</button>
+      <button id="printBtn" class="ghost">ステージシート印刷</button>
+    </div>
+  </div>
+
+  <div class="time-panel card">
+    <div class="time-inputs">
+      <label>持ち時間
+        <span class="input-suffix"><input type="number" id="targetMin" min="0" max="600" inputmode="numeric">分</span>
+      </label>
+      <label>曲間の転換
+        <span class="input-suffix"><input type="number" id="gapSec" min="0" max="600" inputmode="numeric">秒</span>
+      </label>
+      <label>MC 1回あたり
+        <span class="input-suffix"><input type="number" id="mcSec" min="0" max="1800" inputmode="numeric">秒</span>
+      </label>
+    </div>
+    <div class="time-readout">
+      <div class="time-total"><span class="time-total-label">合計</span><span id="totalTime" class="time-total-value">0:00</span></div>
+      <div id="timeDiff" class="time-diff"></div>
+    </div>
+    <div class="time-bar" aria-hidden="true"><div id="timeBarFill" class="time-bar-fill"></div></div>
+    <p id="timeBreakdown" class="note"></p>
+  </div>
+
+  <div class="energy-card card">
+    <div class="card-head">
+      <h2>エナジーフロー</h2>
+      <p class="note">セット全体の盛り上がりの流れ。点にふれると曲名が出ます。</p>
+    </div>
+    <div class="chart-controls">
+      <select id="templateSelect" aria-label="型テンプレート"></select>
+      <select id="compareSelect" aria-label="別のセトリと比較"></select>
+      <span id="templateFit" class="template-fit"></span>
+    </div>
+    <div id="energyChart" class="energy-chart"></div>
+    <div id="chartLegend" class="chart-legend"></div>
+    <p id="compareInfo" class="note" hidden></p>
+  </div>
+
+  <div class="card diag-card">
+    <div class="card-head">
+      <h2>セトリ診断</h2>
+      <p class="note">構成上の注意点を自動チェックします。</p>
+    </div>
+    <div id="diagList" class="diag-list"></div>
+  </div>
+
+  <details class="card planner-card">
+    <summary><h2>持ち替えプランナー</h2></summary>
+    <div id="plannerBody" class="planner-body"></div>
+  </details>
+
+  <ol id="songList" class="song-list" aria-label="曲リスト"></ol>
+  <p id="emptyHint" class="empty-hint" hidden>まだ曲がありません。「＋ 曲を追加」から始めましょう。</p>
+
+  <button id="addSongBtn" class="primary big">＋ 曲を追加</button>
+</section>
+
+<!-- ============ ライブラリ ============ -->
+<section id="tab-library" role="tabpanel" aria-labelledby="tabbtn-library" hidden>
+  <div class="card">
+    <div class="card-head">
+      <h2>曲ライブラリ</h2>
+      <p class="note">バンドの持ち曲マスター。ここで直すと、すべてのセトリに反映されます。<span id="libCount"></span></p>
+    </div>
+    <div class="lib-bar">
+      <input type="text" id="libSearch" placeholder="曲名・キー・チューニングで検索" aria-label="ライブラリ検索">
+      <button id="libAddBtn" class="primary">＋ 新しい曲</button>
+    </div>
+  </div>
+  <ol id="libList" class="song-list" aria-label="ライブラリの曲"></ol>
+</section>
+
+<!-- ============ 練習 ============ -->
+<section id="tab-practice" role="tabpanel" aria-labelledby="tabbtn-practice" hidden>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>通し練習モード</h2>
+      <p class="note">セトリを頭から自動進行。各曲のBPMでクリックが鳴り、曲が終わると転換タイマーを挟んで次へ進みます。</p>
+    </div>
+    <div id="runIdle">
+      <p id="runSetlistInfo" class="note"></p>
+      <label class="check-label"><input type="checkbox" id="runCountIn" checked> 各曲の頭に1小節カウントイン</label>
+      <button id="runStartBtn" class="primary big">通し練習を開始</button>
+    </div>
+    <div id="runView" hidden>
+      <p class="metro-song-label" id="runSetlistName"></p>
+      <p class="run-step-type" id="runStepType"></p>
+      <p class="run-title" id="runTitle"></p>
+      <div id="runMeta" class="run-meta"></div>
+      <div id="runDots" class="beat-dots" aria-hidden="true"></div>
+      <div class="time-bar"><div id="runProgressFill" class="time-bar-fill"></div></div>
+      <p id="runTime" class="run-time"></p>
+      <div id="runChecklist" class="run-checklist"></div>
+      <p id="runNext" class="note center"></p>
+      <div class="run-buttons">
+        <button id="runPrevBtn" class="ghost">◂ 前の曲</button>
+        <button id="runPauseBtn" class="ghost">一時停止</button>
+        <button id="runNextBtn" class="ghost">次へ ▸</button>
+      </div>
+      <button id="runStopBtn" class="ghost danger big" style="margin-top:10px">通し練習を終了</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>耳コピ・ループ再生</h2>
+      <p class="note">音源を開いて、聞きたい区間をA-Bループ。速度を落としても音程は変わりません。ファイルは端末外に送信されません。</p>
+    </div>
+    <label class="file-label">音源ファイルを開く
+      <input type="file" id="loopFile" accept="audio/*">
+    </label>
+    <p id="loopFileName" class="note"></p>
+    <div id="loopControls" hidden>
+      <canvas id="loopWave" class="loop-wave" aria-label="波形"></canvas>
+      <div class="loop-row">
+        <span id="loopTime" class="loop-time">0:00 / 0:00</span>
+        <span id="loopABLabel" class="note">A-B未設定</span>
+      </div>
+      <div class="loop-buttons">
+        <button id="loopPlayBtn" class="primary">再生</button>
+        <button id="loopBackBtn" class="ghost">−5秒</button>
+        <button id="loopABtn" class="ghost">A</button>
+        <button id="loopBBtn" class="ghost">B</button>
+        <button id="loopClearBtn" class="ghost">解除</button>
+      </div>
+      <label>速度 <output id="loopSpeedOut">1.00x</output>
+        <input type="range" id="loopSpeed" min="0.5" max="1.5" step="0.05" value="1">
+      </label>
+    </div>
+    <p id="loopStatus" class="note"></p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>リハ録音</h2>
+      <p class="note">スタジオでの通しをその場で録音。この端末の中だけに保存されます。</p>
+    </div>
+    <div class="rec-controls">
+      <button id="recToggleBtn" class="primary">録音開始</button>
+      <span id="recTime" class="rec-time">0:00</span>
+      <span id="recStatus" class="note"></span>
+    </div>
+    <p id="recPlayerLabel" class="note" hidden></p>
+    <audio id="recPlayer" controls hidden style="width:100%"></audio>
+    <div id="recList" class="rec-list"></div>
+    <p id="recStorage" class="note"></p>
+  </div>
+</section>
+
+<!-- ============ メトロノーム ============ -->
+<section id="tab-metronome" role="tabpanel" aria-labelledby="tabbtn-metronome" hidden>
+  <div class="card metro-card">
+    <p id="metroSongLabel" class="metro-song-label" hidden></p>
+
+    <div class="bpm-display">
+      <button id="bpmMinus5" class="bpm-step" aria-label="5下げる">−5</button>
+      <button id="bpmMinus1" class="bpm-step" aria-label="1下げる">−1</button>
+      <div class="bpm-value-wrap">
+        <span id="bpmValue" class="bpm-value">120</span>
+        <span class="bpm-unit">BPM</span>
+      </div>
+      <button id="bpmPlus1" class="bpm-step" aria-label="1上げる">＋1</button>
+      <button id="bpmPlus5" class="bpm-step" aria-label="5上げる">＋5</button>
+    </div>
+
+    <input type="range" id="bpmSlider" min="30" max="260" value="120" step="1" aria-label="BPM">
+
+    <div id="beatDots" class="beat-dots" aria-hidden="true"></div>
+
+    <div class="metro-controls">
+      <label>拍子
+        <select id="beatsSelect" aria-label="1小節の拍数">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4" selected>4</option><option value="5">5</option><option value="6">6</option>
+          <option value="7">7</option>
+        </select>
+      </label>
+      <label>刻み
+        <select id="subSelect" aria-label="1拍の分割">
+          <option value="1" selected>♩ 4分</option>
+          <option value="2">♫ 8分</option>
+          <option value="3">3連符</option>
+          <option value="4">16分</option>
+        </select>
+      </label>
+      <label class="check-label"><input type="checkbox" id="accentCheck" checked> 頭にアクセント</label>
+      <label class="check-label"><input type="checkbox" id="countInCheck"> 1小節カウントイン</label>
+      <label>音量
+        <input type="range" id="volSlider" min="0" max="100" value="70" aria-label="クリック音量">
+      </label>
+    </div>
+
+    <div class="metro-main-buttons">
+      <button id="tapBtn" class="ghost big">TAP<span class="btn-sub">タップでテンポ</span></button>
+      <button id="metroToggle" class="primary big">スタート</button>
+    </div>
+    <p class="note center">スペースキーでもスタート/ストップできます</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>練習ツール</h2></div>
+    <label class="check-label"><input type="checkbox" id="trainerCheck"> 段階テンポアップ</label>
+    <div id="trainerFields" class="trainer-fields">
+      <label>目標BPM <input type="number" id="trainerTo" min="30" max="260" inputmode="numeric"></label>
+      <label>上げ幅 <input type="number" id="trainerStep" min="1" max="40" inputmode="numeric"></label>
+      <label>何小節ごと <input type="number" id="trainerBars" min="1" max="64" inputmode="numeric"></label>
+    </div>
+    <p class="note">今のBPMから始めて、指定の小節数ごとに少しずつ目標まで上がります(停止すると元のBPMに戻ります)。</p>
+    <hr class="rule">
+    <label class="check-label"><input type="checkbox" id="muteCheck"> 抜き練習(クリックが消える小節)</label>
+    <div id="muteFields" class="trainer-fields">
+      <label>鳴らす小節 <input type="number" id="mutePlay" min="1" max="64" inputmode="numeric"></label>
+      <label>消す小節 <input type="number" id="muteRest" min="1" max="64" inputmode="numeric"></label>
+    </div>
+    <p class="note">クリックが消えている間も自分のテンポをキープする練習です。表示の点滅は続きます。</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>セトリから読み込み</h2></div>
+    <div id="songChips" class="song-chips"></div>
+  </div>
+</section>
+
+<!-- ============ チューナー ============ -->
+<section id="tab-tuner" role="tabpanel" aria-labelledby="tabbtn-tuner" hidden>
+  <div class="card tuner-card">
+    <div id="tunerGaugeWrap" class="tuner-gauge-wrap">
+      <svg id="tunerGauge" viewBox="0 0 300 180" aria-hidden="true"></svg>
+      <div class="tuner-readout">
+        <span id="tunerNote" class="tuner-note">--</span>
+        <span id="tunerOctave" class="tuner-octave"></span>
+      </div>
+    </div>
+    <div class="tuner-numbers">
+      <span id="tunerCents" class="tuner-cents">± 0 cent</span>
+      <span id="tunerFreq" class="tuner-freq">0.0 Hz</span>
+    </div>
+    <p id="tunerStatus" class="tuner-status">マイクを使ってクロマチックチューニングします。</p>
+    <div class="metro-main-buttons">
+      <button id="tunerToggle" class="primary big">チューナー開始</button>
+    </div>
+    <div class="tuner-settings">
+      <label>基準ピッチ A4 =
+        <span class="input-suffix"><input type="number" id="a4Input" min="415" max="466" value="440" inputmode="numeric">Hz</span>
+      </label>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 本番 ============ -->
+<section id="tab-live" role="tabpanel" aria-labelledby="tabbtn-live" hidden>
+
+  <div class="card live-card">
+    <div class="card-head">
+      <h2>本番モード(Now Playing)</h2>
+      <p class="note">ライブ開始で打刻すると、今の曲と「押し/巻き」をリアルタイム表示します。足元に置いてもすぐ分かる大きさで。</p>
+    </div>
+    <div id="liveIdle">
+      <p id="liveIdleInfo" class="note"></p>
+      <button id="liveStartBtn" class="primary big">▶ 本番スタート(打刻)</button>
+    </div>
+    <div id="liveView" hidden>
+      <p class="metro-song-label" id="liveSetlistName"></p>
+      <div id="liveDelta" class="live-delta ontime">オンタイム</div>
+      <p class="run-step-type" id="liveStepType"></p>
+      <p class="run-title live-title" id="liveTitle"></p>
+      <div id="liveMeta" class="run-meta"></div>
+      <div class="time-bar"><div id="liveProgressFill" class="time-bar-fill"></div></div>
+      <p id="liveStepTime" class="run-time"></p>
+      <p id="liveNext" class="note center"></p>
+      <div id="liveChecklist" class="run-checklist"></div>
+      <div class="run-buttons">
+        <button id="livePrevBtn" class="ghost">◂ 戻る</button>
+        <button id="liveNextBtn" class="primary">次へ ▸</button>
+      </div>
+      <button id="liveAbortBtn" class="ghost danger big" style="margin-top:10px">本番モードを中止</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2>イベント・タイムテーブル</h2>
+      <p class="note">対バン・自主企画の進行表。各バンドの開始を打刻すると、押しが以降の予想時刻に反映されます。</p>
+    </div>
+    <div id="eventEmpty">
+      <button id="newEventBtn2" class="primary big">＋ イベントを作る</button>
+    </div>
+    <div id="eventEditor" hidden>
+      <div class="setlist-bar" style="padding:0; border:0; background:none; box-shadow:none; margin-bottom:10px">
+        <select id="eventSelect" aria-label="イベント選択"></select>
+        <div class="setlist-bar-actions">
+          <button id="newEventBtn" class="ghost">＋ 新規</button>
+          <button id="renameEventBtn" class="ghost">名前変更</button>
+          <button id="deleteEventBtn" class="ghost danger">削除</button>
+        </div>
+      </div>
+      <div class="time-inputs" style="grid-template-columns: 1fr 1fr">
+        <label>開演
+          <input type="time" id="eventStart">
+        </label>
+        <label>バンド間の転換
+          <span class="input-suffix"><input type="number" id="eventChangeover" min="0" max="120" inputmode="numeric">分</span>
+        </label>
+      </div>
+      <p id="eventDelta" class="time-diff" style="margin-top:8px"></p>
+      <div id="actList" class="act-list"></div>
+      <div class="run-buttons" style="margin-top:10px">
+        <button id="addActBtn" class="ghost">＋ バンドを追加</button>
+        <button id="addUsBtn" class="ghost">＋ 自分たち(今のセトリ)</button>
+        <button id="copyTimetableBtn" class="ghost">📋 コピー</button>
+      </div>
+      <p id="eventEnd" class="note" style="margin-top:8px"></p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="app-footer">
+  <p>データはこの端末のブラウザにのみ保存されます。端末の乗り換え前にバックアップを書き出してください。</p>
+  <div class="footer-actions">
+    <button id="exportBtn" class="ghost small">バックアップを書き出す</button>
+    <button id="importBtn" class="ghost small">バックアップを読み込む</button>
+    <input type="file" id="importFile" accept="application/json,.json" hidden>
+  </div>
+</footer>
+
+<!-- 曲編集ダイアログ -->
+<dialog id="songDialog">
+  <form method="dialog" id="songForm">
+    <h2 id="songDialogTitle">曲を追加</h2>
+    <p id="songDialogNote" class="note" hidden></p>
+    <label>曲名 <span class="req">必須</span>
+      <input type="text" id="f-title" required maxlength="80" autocomplete="off">
+    </label>
+    <div class="form-row">
+      <label>BPM
+        <input type="number" id="f-bpm" min="20" max="400" inputmode="numeric" placeholder="例: 140">
+      </label>
+      <label>キー
+        <input type="text" id="f-key" list="keyList" maxlength="10" autocomplete="off" placeholder="例: Am">
+        <datalist id="keyList">
+          <option value="C"><option value="Am"><option value="G"><option value="Em">
+          <option value="D"><option value="Bm"><option value="A"><option value="F#m">
+          <option value="E"><option value="C#m"><option value="B"><option value="F">
+          <option value="Dm"><option value="B♭"><option value="Gm"><option value="E♭"><option value="Cm">
+        </datalist>
+      </label>
+    </div>
+    <div class="form-row">
+      <label>チューニング
+        <input type="text" id="f-tuning" list="tuningList" maxlength="20" autocomplete="off" placeholder="例: 半音下げ">
+        <datalist id="tuningList">
+          <option value="レギュラー"><option value="半音下げ"><option value="全音下げ">
+          <option value="ドロップD"><option value="ドロップC#"><option value="ドロップC">
+          <option value="DADGAD"><option value="オープンG">
+        </datalist>
+      </label>
+      <label>曲の長さ
+        <input type="text" id="f-dur" inputmode="numeric" placeholder="例: 4:30" pattern="^\d{1,3}(:[0-5]?\d)?$" title="「分:秒」または秒数で入力(例: 4:30)">
+      </label>
+    </div>
+    <label>盛り上がり度(エナジー) <output id="f-energyOut">3</output>
+      <input type="range" id="f-energy" min="1" max="5" step="1" value="3">
+      <span class="range-labels"><span>静</span><span>爆</span></span>
+    </label>
+    <label>転換チェックリスト(1行に1項目。本番モード・印刷に出ます)
+      <textarea id="f-gear" rows="2" maxlength="1200" placeholder="例:&#10;ギター持ち替え(半音下げ)&#10;ディレイON"></textarea>
+    </label>
+    <label>メモ(アレンジ・同期・照明の指示など)
+      <textarea id="f-memo" rows="2" maxlength="500"></textarea>
+    </label>
+    <div class="dialog-actions">
+      <button type="button" id="songCancelBtn" class="ghost">キャンセル</button>
+      <button type="submit" class="primary" id="songSaveBtn">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- 曲ピッカー(セトリへ追加) -->
+<dialog id="pickerDialog">
+  <h2>セトリに曲を追加</h2>
+  <input type="text" id="pickerSearch" placeholder="ライブラリを検索" aria-label="曲を検索">
+  <div id="pickerList" class="picker-list"></div>
+  <div class="dialog-actions">
+    <button type="button" id="pickerNewBtn" class="ghost">＋ 新しい曲を作る</button>
+    <button type="button" id="pickerClose" class="primary">閉じる</button>
+  </div>
+</dialog>
+
+<!-- 共有メニュー -->
+<dialog id="shareDialog">
+  <h2>セトリを共有</h2>
+  <div class="share-menu">
+    <button id="shareLinkBtn" class="ghost big">🔗 共有リンクをコピー<span class="btn-sub">送るだけでメンバーの端末に取り込めます</span></button>
+    <button id="shareQrBtn" class="ghost big">🔳 QRコードを表示<span class="btn-sub">その場でスマホをかざして受け渡し</span></button>
+    <button id="shareTextBtn" class="ghost big">📋 テキストでコピー<span class="btn-sub">LINEなどにそのまま貼れる形式</span></button>
+  </div>
+  <div class="dialog-actions">
+    <button type="button" id="shareDialogClose" class="ghost">閉じる</button>
+  </div>
+</dialog>
+
+<!-- QRコード表示 -->
+<dialog id="qrDialog">
+  <h2>QRコードで共有</h2>
+  <div id="qrBox" class="qr-box"></div>
+  <p id="qrCaption" class="note center"></p>
+  <div class="dialog-actions">
+    <button type="button" id="qrClose" class="primary">閉じる</button>
+  </div>
+</dialog>
+
+<!-- 共有インポートダイアログ -->
+<dialog id="importDialog">
+  <h2>共有されたセットリスト</h2>
+  <p id="importSummary"></p>
+  <p class="note">読み込むと新しいセットリストとして追加されます。同じ曲がライブラリにあれば再利用します。</p>
+  <div class="dialog-actions">
+    <button type="button" id="importCancelBtn" class="ghost">読み込まない</button>
+    <button type="button" id="importOkBtn" class="primary">読み込む</button>
+  </div>
+</dialog>
+
+<!-- 本番まとめダイアログ -->
+<dialog id="liveSummaryDialog">
+  <h2>お疲れさまでした!本番のまとめ</h2>
+  <div id="liveSummaryBody" class="summary-body"></div>
+  <div class="dialog-actions">
+    <button type="button" id="liveSummaryClose" class="primary">閉じる</button>
+  </div>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<!-- 印刷専用ステージシート -->
+<div id="stageSheet" class="stage-sheet" aria-hidden="true"></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
