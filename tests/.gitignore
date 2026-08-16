@@ -1,0 +1,4 @@
+node_modules/
+shot-*.png
+fixture.wav
+package-lock.json
