@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>期待値エクスプローラー</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    /* palette (light) */
+    --surface: #fcfcfb;
+    --page: #f9f9f7;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --baseline: #c3c2b7;
+    --border: rgba(11,11,11,0.10);
+    --accent: #2a78d6;
+    --accent-weak: #cde2fb;
+    --good: #0ca30c;
+    --warn: #fab219;
+    --danger: #d03b3b;
+    --pos: #2a78d6;
+    --neg: #e34948;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --surface: #1a1a19;
+      --page: #0d0d0d;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --baseline: #383835;
+      --border: rgba(255,255,255,0.10);
+      --accent: #3987e5;
+      --accent-weak: #184f95;
+      --pos: #3987e5;
+      --neg: #e66767;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+         max-width: 920px; margin: 0 auto; padding: 16px 16px 80px; line-height: 1.6;
+         background: var(--page); color: var(--ink); }
+  h1 { font-size: 1.35rem; margin: 8px 0 2px; }
+  h2 { font-size: 1.05rem; margin: 0 0 10px; }
+  .tagline { color: var(--ink-2); font-size: .88rem; margin: 0 0 14px; }
+  .note { font-size: .8rem; color: var(--muted); }
+  a { color: var(--accent); }
+
+  /* tabs */
+  nav { display: flex; gap: 6px; margin: 14px 0; flex-wrap: wrap; position: sticky; top: 0;
+        background: var(--page); padding: 8px 0; z-index: 5; }
+  nav button { font-size: .95rem; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border);
+        background: var(--surface); color: var(--ink-2); cursor: pointer; }
+  nav button.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+
+  section.tab { display: none; }
+  section.tab.active { display: block; }
+
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+          padding: 16px; margin: 12px 0; }
+  label { display: block; margin: 8px 0 2px; font-size: .85rem; color: var(--ink-2); }
+  input[type=text], input[type=number], select, textarea {
+    width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 1rem; font-family: inherit; background: var(--page); color: var(--ink); }
+  input[type=number] { text-align: right; }
+  .grid { display: grid; gap: 10px 14px; }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 640px) { .g3, .g4 { grid-template-columns: repeat(2, 1fr); } }
+
+  button.primary { font-size: 1rem; padding: 10px 20px; border: 0; border-radius: 8px;
+    background: var(--accent); color: #fff; cursor: pointer; font-weight: 600; }
+  button.ghost { font-size: .85rem; padding: 6px 12px; border: 1px solid var(--border); border-radius: 8px;
+    background: transparent; color: var(--ink-2); cursor: pointer; }
+  button.ghost:hover { background: var(--surface); }
+
+  /* stat tiles */
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  @media (max-width: 640px) { .tiles { grid-template-columns: 1fr 1fr; } }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+  .tile .t-label { font-size: .78rem; color: var(--muted); }
+  .tile .t-value { font-size: 1.5rem; font-weight: 600; line-height: 1.3; }
+  .tile .t-sub { font-size: .76rem; color: var(--ink-2); }
+
+  /* badges */
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-size: .78rem; font-weight: 600;
+    padding: 2px 10px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap; }
+  .badge.ok   { color: var(--good); }
+  .badge.cond { color: var(--ink); background: color-mix(in srgb, var(--warn) 22%, transparent); }
+  .badge.skip { color: var(--muted); }
+
+  /* template chips */
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 6px 0 10px; }
+  .chips button { font-size: .85rem; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--page); color: var(--ink-2); cursor: pointer; }
+  .chips button:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* scenario table */
+  table { border-collapse: collapse; width: 100%; font-size: .85rem; }
+  th, td { border-bottom: 1px solid var(--grid); padding: 6px 8px; text-align: right; }
+  th { color: var(--muted); font-weight: 500; font-size: .78rem; }
+  th:first-child, td:first-child, th.tl, td.tl { text-align: left; }
+  td input { padding: 5px 6px; font-size: .95rem; }
+  tbody tr:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+  .num { font-variant-numeric: tabular-nums; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--accent); }
+
+  .verdict-line { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+  .verdict-line .ev { font-size: 1.8rem; font-weight: 700; }
+  .reasons { font-size: .8rem; color: var(--ink-2); }
+
+  /* breakdown bars */
+  .bd-row { display: grid; grid-template-columns: 10em 1fr 6.5em; gap: 8px; align-items: center;
+            font-size: .8rem; margin: 3px 0; }
+  .bd-row > span:first-child { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bd-track { height: 14px; position: relative; }
+  .bd-bar { position: absolute; top: 1px; height: 12px; border-radius: 0 4px 4px 0; }
+  .bd-bar.negv { border-radius: 4px 0 0 4px; }
+
+  /* meter */
+  .meter { position: relative; height: 18px; border-radius: 9px; background: var(--accent-weak); overflow: visible; margin: 22px 0 6px; }
+  .meter .fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 9px; background: var(--accent); }
+  .meter .mark { position: absolute; top: -5px; bottom: -5px; width: 2px; background: var(--ink); }
+  .meter .mark-label { position: absolute; top: -22px; transform: translateX(-50%); font-size: .72rem; color: var(--ink-2); white-space: nowrap; }
+
+  /* sliders */
+  .slider-row { display: grid; grid-template-columns: 11em 1fr 5.5em; gap: 10px; align-items: center; margin: 8px 0; }
+  @media (max-width: 640px) { .slider-row { grid-template-columns: 8em 1fr 5em; } }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .slider-row output { text-align: right; font-variant-numeric: tabular-nums; font-size: .9rem; }
+
+  /* scatter */
+  #scatterWrap { position: relative; }
+  #scatter { width: 100%; height: auto; display: block; }
+  #tooltip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 10px; font-size: .78rem; box-shadow: 0 2px 8px rgba(0,0,0,.15);
+    opacity: 0; transition: opacity .1s; max-width: 240px; z-index: 6; }
+
+  /* toast */
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(60px);
+    background: var(--ink); color: var(--page); padding: 8px 18px; border-radius: 999px; font-size: .85rem;
+    opacity: 0; transition: all .25s; z-index: 20; }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .empty { text-align: center; color: var(--muted); padding: 28px 12px; font-size: .9rem; }
+  .row-actions button { margin-left: 4px; }
+  .flex { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .spacer { flex: 1; }
+</style>
+</head>
+<body>
+
+<h1>期待値エクスプローラー</h1>
+<p class="tagline">人生の選択肢を、同じ物差し（円・現在価値）に並べて眺める道具。<br>
+予測を当てるためではなく、<b>桁と順位を間違えない</b>ためのラフな見積もり環境です。数値はすべて自分で入力し、データはこのブラウザの中（localStorage）だけに保存されます。</p>
+
+<nav>
+  <button data-tab="profile" class="active">① 前提</button>
+  <button data-tab="editor">② 選択肢</button>
+  <button data-tab="overview">③ 俯瞰</button>
+  <button data-tab="sense">④ 感度</button>
+</nav>
+
+<!-- ================= ① 前提 ================= -->
+<section class="tab active" id="tab-profile">
+  <div class="card">
+    <h2>自分のリソース（できる範囲）</h2>
+    <p class="note">すべての選択肢はこの前提と照合されます。金額の単位は<b>万円</b>です。</p>
+    <div class="grid g3">
+      <div><label>投入できる一時金（万円）</label><input type="number" id="p-lumpSumMax" value="100" min="0"></div>
+      <div><label>月に投入できる資金（万円/月）</label><input type="number" id="p-monthlyBudget" value="3" min="0" step="0.5"></div>
+      <div><label>月に投入できる時間（h/月）</label><input type="number" id="p-monthlyHours" value="30" min="0"></div>
+      <div><label>年齢（歳）</label><input type="number" id="p-age" value="35" min="0"></div>
+      <div><label>残り活動年数（年）</label><input type="number" id="p-activeYears" value="30" min="1"></div>
+      <div><label>許容できる最大損失（万円）</label><input type="number" id="p-maxLoss" value="200" min="0"></div>
+      <div><label>月の生活費（万円/月・任意）</label><input type="number" id="p-livingCost" value="20" min="0"></div>
+      <div><label>割引率（%/年）</label><input type="number" id="p-discountRate" value="3" min="0" max="20" step="0.5"></div>
+      <div><label>同時に走らせられる数（個）</label><input type="number" id="p-parallelMax" value="2" min="1"></div>
+    </div>
+  </div>
+
+  <div class="tiles" id="profileTiles"></div>
+
+  <div class="card">
+    <div class="flex">
+      <div>
+        <h2>はじめての方へ</h2>
+        <p class="note">サンプルの選択肢（転職・資格・積立増額）を入れて、まず俯瞰と感度を触ってみるのがおすすめ。</p>
+      </div>
+      <span class="spacer"></span>
+      <button class="primary" id="loadSample">サンプルを入れてみる</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>データの持ち出し</h2>
+    <div class="flex">
+      <button class="ghost" id="exportJson">JSONエクスポート</button>
+      <button class="ghost" id="importJson">JSONインポート</button>
+      <input type="file" id="importFile" accept=".json" style="display:none">
+      <span class="spacer"></span>
+      <button class="ghost" id="wipeAll">全データ削除</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ② 選択肢 ================= -->
+<section class="tab" id="tab-editor">
+  <div class="card">
+    <h2 id="editorTitle">選択肢を作る</h2>
+    <p class="note">テンプレートを選ぶと参考値が入ります。数字は必ず自分の状況に合わせて直してください。</p>
+    <div class="chips" id="templateChips"></div>
+
+    <div class="grid g3">
+      <div style="grid-column: span 2;"><label>名前</label><input type="text" id="o-name" placeholder="例：〇〇業界へ転職する"></div>
+      <div><label>ドメイン</label><select id="o-domain"></select></div>
+      <div><label>初期コスト（万円）</label><input type="number" id="o-initialCost" value="0" min="0"></div>
+      <div><label>継続コスト（万円/月）</label><input type="number" id="o-monthlyCost" value="0" min="0" step="0.5"></div>
+      <div><label>投入時間（h/月）</label><input type="number" id="o-monthlyHours" value="0" min="0"></div>
+      <div><label>投入期間（年）</label><input type="number" id="o-effortYears" value="1" min="0" step="0.5"></div>
+      <div style="grid-column: span 2;"><label>メモ（任意）</label><input type="text" id="o-note" placeholder="前提や気持ちを書いておく"></div>
+    </div>
+
+    <h2 style="margin-top:16px;">シナリオ（3点見積もり）</h2>
+    <p class="note">「効果額」は年あたりの収入増・支出減・運用益など（マイナス可）。確率の合計は100%にしてください。</p>
+    <table>
+      <thead><tr><th>シナリオ</th><th>確率（%）</th><th>効果額（万円/年）</th><th>効く年数</th></tr></thead>
+      <tbody>
+        <tr><td>悲観</td><td><input type="number" id="s0-prob" value="30" min="0" max="100"></td><td><input type="number" id="s0-effect" value="0" step="5"></td><td><input type="number" id="s0-years" value="10" min="0"></td></tr>
+        <tr><td>中位</td><td><input type="number" id="s1-prob" value="50" min="0" max="100"></td><td><input type="number" id="s1-effect" value="30" step="5"></td><td><input type="number" id="s1-years" value="10" min="0"></td></tr>
+        <tr><td>楽観</td><td><input type="number" id="s2-prob" value="20" min="0" max="100"></td><td><input type="number" id="s2-effect" value="100" step="5"></td><td><input type="number" id="s2-years" value="10" min="0"></td></tr>
+      </tbody>
+    </table>
+    <p class="note" id="probWarn"></p>
+
+    <div class="verdict-line">
+      <span>期待値（現在価値）</span><span class="ev num" id="e-ev">—</span><span id="e-verdict"></span>
+    </div>
+    <div id="e-breakdown" style="margin:10px 0;"></div>
+    <div class="grid g4" style="font-size:.85rem;">
+      <div><span class="note">時間対効果</span><br><b class="num" id="e-perHour">—</b></div>
+      <div><span class="note">資金対効果</span><br><b class="num" id="e-perYen">—</b></div>
+      <div><span class="note">最悪ケース</span><br><b class="num" id="e-worst">—</b></div>
+      <div><span class="note">損益分岐の成功確率</span><br><b class="num" id="e-breakeven">—</b></div>
+    </div>
+    <p class="reasons" id="e-reasons"></p>
+
+    <div class="flex" style="margin-top:12px;">
+      <button class="primary" id="saveOption">この選択肢を保存</button>
+      <button class="ghost" id="clearEditor">フォームをクリア</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>保存済みの選択肢</h2>
+    <div id="optionList"></div>
+  </div>
+</section>
+
+<!-- ================= ③ 俯瞰 ================= -->
+<section class="tab" id="tab-overview">
+  <div class="card">
+    <h2>比較テーブル</h2>
+    <p class="note">列見出しをクリックでソート。チェックを入れると下の「組合せチェック」で同時実行できるか判定します。</p>
+    <div style="overflow-x:auto;">
+      <div id="overviewTable"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>リスク × リターンの地図</h2>
+    <p class="note">横軸＝最悪ケース（外したとき何を失うか）、縦軸＝期待値。<b>右上にあるほど張りやすい</b>。点にカーソルを合わせると詳細が出ます。</p>
+    <div id="scatterWrap">
+      <svg id="scatter" viewBox="0 0 760 440" role="img" aria-label="リスクとリターンの散布図"></svg>
+      <div id="tooltip"></div>
+    </div>
+    <p class="note">● 有望　◆ 条件付き　○ 見送り（形でも区別できます）</p>
+  </div>
+
+  <div class="card">
+    <h2>組合せチェック</h2>
+    <div id="comboPanel" class="note">テーブルで選択肢にチェックを入れると、ここに合計と判定が出ます。</div>
+  </div>
+</section>
+
+<!-- ================= ④ 感度 ================= -->
+<section class="tab" id="tab-sense">
+  <div class="card">
+    <h2>前提を動かして眺める</h2>
+    <p class="note">「どのくらい信じられれば張れるか」を体で覚えるコーナー。スライダーは保存されません（下のボタンで確率だけ書き戻せます）。</p>
+    <label>選択肢</label>
+    <select id="senseSelect"></select>
+
+    <div id="sensePanel" style="display:none;">
+      <div class="slider-row"><span>楽観シナリオの確率</span><input type="range" id="sl-p2" min="0" max="100" value="20"><output id="ov-p2">20%</output></div>
+      <div class="slider-row"><span>悲観シナリオの確率</span><input type="range" id="sl-p0" min="0" max="100" value="30"><output id="ov-p0">30%</output></div>
+      <div class="slider-row"><span>効果額の強気度</span><input type="range" id="sl-scale" min="50" max="150" value="100"><output id="ov-scale">100%</output></div>
+      <div class="slider-row"><span>割引率</span><input type="range" id="sl-rate" min="0" max="8" value="3" step="0.5"><output id="ov-rate">3%</output></div>
+      <p class="note">中位シナリオの確率は自動で残り（<span id="ov-p1">50%</span>）になります。</p>
+
+      <div class="verdict-line">
+        <span>期待値</span><span class="ev num" id="s-ev">—</span><span id="s-verdict"></span>
+      </div>
+      <div class="grid g4" style="font-size:.85rem;">
+        <div><span class="note">時間対効果</span><br><b class="num" id="s-perHour">—</b></div>
+        <div><span class="note">資金対効果</span><br><b class="num" id="s-perYen">—</b></div>
+        <div><span class="note">最悪ケース</span><br><b class="num" id="s-worst">—</b></div>
+        <div><span class="note">損益分岐の成功確率</span><br><b class="num" id="s-breakeven">—</b></div>
+      </div>
+
+      <h2 style="margin-top:18px;">いまの楽観確率 vs 損益分岐</h2>
+      <p class="note">▼マークより右（＝楽観確率が損益分岐より高い）なら、期待値はプラス圏。</p>
+      <div class="meter" id="senseMeter">
+        <div class="fill" id="meterFill" style="width:20%;"></div>
+        <div class="mark" id="meterMark" style="left:40%;"></div>
+        <div class="mark-label" id="meterMarkLabel" style="left:40%;">分岐 40%</div>
+      </div>
+      <div class="flex" style="margin-top:14px;">
+        <button class="ghost" id="applySense">この確率を選択肢に書き戻す</button>
+      </div>
+    </div>
+    <div class="empty" id="senseEmpty">選択肢を保存すると、ここで遊べます。</div>
+  </div>
+</section>
+
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* =========================================================
+   期待値エクスプローラー
+   金額の内部単位はすべて「万円」。データは localStorage のみ。
+   ========================================================= */
+const $ = id => document.getElementById(id);
+const LS_PROFILE = "ee_profile_v1";
+const LS_OPTIONS = "ee_options_v1";
+
+const DOMAINS = ["キャリア","学習・スキル","資産形成","独立・事業","健康","生活基盤","その他"];
+
+const TEMPLATES = [
+  { name:"転職する", domain:"キャリア", initialCost:0, monthlyCost:0, monthlyHours:10, effortYears:0.5,
+    note:"転職活動は半年・月10hの想定。効果額は年収の差分。",
+    scenarios:[{prob:20,effect:-50,years:10},{prob:50,effect:50,years:10},{prob:30,effect:150,years:10}] },
+  { name:"資格・スキルを取る", domain:"学習・スキル", initialCost:30, monthlyCost:1, monthlyHours:20, effortYears:2,
+    note:"2年学習の想定。効果額は収入への反映分。反映までのラグに注意。",
+    scenarios:[{prob:30,effect:0,years:8},{prob:50,effect:30,years:8},{prob:20,effect:100,years:8}] },
+  { name:"積立投資を増額する", domain:"資産形成", initialCost:0, monthlyCost:0, monthlyHours:0, effortYears:0,
+    note:"拠出額は自分の資産のままなのでコストに入れない。効果額＝年あたりの運用益（±）だけを入れる。",
+    scenarios:[{prob:20,effect:-15,years:20},{prob:50,effect:25,years:20},{prob:30,effect:60,years:20}] },
+  { name:"独立・起業する", domain:"独立・事業", initialCost:100, monthlyCost:5, monthlyHours:40, effortYears:2,
+    note:"立ち上げ2年の想定。悲観は撤退（収入減が2年続く）。",
+    scenarios:[{prob:50,effect:-150,years:2},{prob:30,effect:100,years:10},{prob:20,effect:400,years:10}] },
+  { name:"運動を習慣にする", domain:"健康", initialCost:0, monthlyCost:1, monthlyHours:8, effortYears:20,
+    note:"効果額は医療費減＋稼働率アップの粗い円換算。効く年数が長いのが強み。",
+    scenarios:[{prob:30,effect:0,years:20},{prob:50,effect:20,years:20},{prob:20,effect:50,years:20}] },
+  { name:"移住する", domain:"生活基盤", initialCost:100, monthlyCost:0, monthlyHours:0, effortYears:0.5,
+    note:"効果額は生活費差分と収入機会の変化の合算。可逆性が低いので最悪ケース重視で。",
+    scenarios:[{prob:30,effect:-60,years:5},{prob:40,effect:40,years:10},{prob:30,effect:100,years:10}] },
+];
+
+/* ---------- 状態 ---------- */
+let profile = loadProfile();
+let options = loadOptions();
+let editingId = null;
+let comboChecked = new Set();
+let sortKey = "ev", sortDesc = true;
+
+function loadProfile() {
+  const def = { lumpSumMax:100, monthlyBudget:3, monthlyHours:30, age:35, activeYears:30,
+                maxLoss:200, livingCost:20, discountRate:3, parallelMax:2 };
+  try { return Object.assign(def, JSON.parse(localStorage.getItem(LS_PROFILE) || "{}")); }
+  catch { return def; }
+}
+function loadOptions() {
+  try { return JSON.parse(localStorage.getItem(LS_OPTIONS) || "[]"); } catch { return []; }
+}
+function persist() {
+  localStorage.setItem(LS_PROFILE, JSON.stringify(profile));
+  localStorage.setItem(LS_OPTIONS, JSON.stringify(options));
+}
+
+/* ---------- 計算コア ---------- */
+function annuity(years, rate) { // 年金現価係数：毎年1を years 年受け取る現在価値
+  if (years <= 0) return 0;
+  if (rate <= 0) return years;
+  return (1 - Math.pow(1 + rate, -years)) / rate;
+}
+
+// overrides: {p0,p1,p2(小数), scale, rate} 感度分析用
+function calc(o, prof, overrides = {}) {
+  const r = (overrides.rate !== undefined ? overrides.rate : prof.discountRate) / 100;
+  const scale = overrides.scale !== undefined ? overrides.scale : 1;
+  const probs = overrides.probs || o.scenarios.map(s => s.prob / 100);
+
+  const costPV = o.initialCost + o.monthlyCost * 12 * annuity(o.effortYears, r);
+  const totalCost = o.initialCost + o.monthlyCost * 12 * o.effortYears;
+  const totalHours = o.monthlyHours * 12 * o.effortYears;
+
+  const values = o.scenarios.map(s => s.effect * scale * annuity(s.years, r) - costPV);
+  const ev = values.reduce((a, v, i) => a + v * (probs[i] || 0), 0);
+  const worst = Math.min(...values);
+  const best = Math.max(...values);
+
+  let breakeven = null; // 楽観と悲観の2択だとして、EV=0になる成功確率
+  if (worst < 0 && best > 0) breakeven = -worst / (best - worst);
+  else if (worst >= 0) breakeven = 0;
+  else breakeven = 1;
+
+  const blockedBy = [];
+  if (o.initialCost > prof.lumpSumMax) blockedBy.push("一時金が上限超え");
+  if (o.monthlyCost > prof.monthlyBudget) blockedBy.push("月あたり資金が上限超え");
+  if (o.monthlyHours > prof.monthlyHours) blockedBy.push("月あたり時間が上限超え");
+  if (worst < -prof.maxLoss) blockedBy.push("最悪ケースが許容損失超え");
+  const longest = Math.max(o.effortYears, ...o.scenarios.map(s => s.years));
+  if (longest > prof.activeYears) blockedBy.push("残り活動年数を超える");
+
+  let verdict;
+  if (ev <= 0) verdict = "見送り";
+  else if (blockedBy.length) verdict = "条件付き";
+  else verdict = "有望";
+
+  return {
+    ev, worst, best, values, costPV, totalCost, totalHours, breakeven, blockedBy, verdict,
+    perHour: totalHours > 0 ? ev / totalHours : null,   // 万円/h
+    perYen: totalCost > 0 ? ev / totalCost : null,      // 倍率
+  };
+}
+
+/* ---------- フォーマッタ ---------- */
+function fmtMan(v, signed = false) { // v: 万円
+  if (v === null || v === undefined || !isFinite(v)) return "—";
+  const sign = v < 0 ? "−" : (signed && v > 0 ? "+" : "");
+  const a = Math.abs(v);
+  if (a >= 10000) return sign + (a / 10000).toFixed(1).replace(/\.0$/, "") + "億円";
+  return sign + Math.round(a).toLocaleString() + "万円";
+}
+function fmtPerHour(v) { // 万円/h → 円/h
+  if (v === null || !isFinite(v)) return "—";
+  const yen = v * 10000;
+  const sign = yen < 0 ? "−" : "";
+  const a = Math.abs(yen);
+  return sign + (a >= 10000 ? Math.round(a / 1000).toLocaleString() + "千円/h" : Math.round(a).toLocaleString() + "円/h");
+}
+function fmtX(v) { return (v === null || !isFinite(v)) ? "—" : ((v >= 0 ? "" : "−") + Math.abs(v).toFixed(1) + "倍"); }
+function fmtPct(v) { return (v === null) ? "—" : Math.round(v * 100) + "%"; }
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function verdictBadge(v) {
+  if (v === "有望") return '<span class="badge ok">● 有望</span>';
+  if (v === "条件付き") return '<span class="badge cond">◆ 条件付き</span>';
+  return '<span class="badge skip">○ 見送り</span>';
+}
+
+/* ---------- toast ---------- */
+let toastTimer = null;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1800);
+}
+
+/* ---------- タブ ---------- */
+document.querySelectorAll("nav button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.remove("active"));
+  document.querySelectorAll("section.tab").forEach(x => x.classList.remove("active"));
+  b.classList.add("active");
+  $("tab-" + b.dataset.tab).classList.add("active");
+  if (b.dataset.tab === "overview") renderOverview();
+  if (b.dataset.tab === "sense") renderSenseSelect();
+  if (b.dataset.tab === "profile") renderProfileTiles();
+}));
+function gotoTab(name) { document.querySelector(`nav button[data-tab="${name}"]`).click(); }
+
+/* ---------- ① 前提 ---------- */
+const PROFILE_FIELDS = ["lumpSumMax","monthlyBudget","monthlyHours","age","activeYears","maxLoss","livingCost","discountRate","parallelMax"];
+function renderProfileForm() {
+  PROFILE_FIELDS.forEach(k => { $("p-" + k).value = profile[k]; });
+}
+PROFILE_FIELDS.forEach(k => $("p-" + k).addEventListener("change", () => {
+  profile[k] = Number($("p-" + k).value) || 0;
+  persist(); renderProfileTiles(); toast("前提を保存しました");
+}));
+function renderProfileTiles() {
+  const runway = profile.livingCost > 0 ? profile.lumpSumMax / profile.livingCost : null;
+  const hourBudgetYear = profile.monthlyHours * 12;
+  $("profileTiles").innerHTML = `
+    <div class="tile"><div class="t-label">収入ゼロで耐えられる期間</div>
+      <div class="t-value">${runway === null ? "—" : runway.toFixed(1) + "ヶ月"}</div>
+      <div class="t-sub">一時金 ÷ 月の生活費</div></div>
+    <div class="tile"><div class="t-label">年間で張れる時間</div>
+      <div class="t-value">${hourBudgetYear.toLocaleString()}h</div>
+      <div class="t-sub">月${profile.monthlyHours}h × 12</div></div>
+    <div class="tile"><div class="t-label">残り活動年数</div>
+      <div class="t-value">${profile.activeYears}年</div>
+      <div class="t-sub">回収がこれを超える選択肢には警告</div></div>`;
+}
+
+/* ---------- ② 選択肢エディタ ---------- */
+function renderTemplateChips() {
+  $("templateChips").innerHTML = TEMPLATES.map((t, i) =>
+    `<button data-i="${i}">${esc(t.name)}</button>`).join("");
+  $("templateChips").querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
+    applyTemplate(TEMPLATES[Number(b.dataset.i)]);
+  }));
+}
+function renderDomainSelect() {
+  $("o-domain").innerHTML = DOMAINS.map(d => `<option>${d}</option>`).join("");
+}
+function applyTemplate(t) {
+  editingId = null;
+  $("editorTitle").textContent = "選択肢を作る";
+  $("o-name").value = t.name;
+  $("o-domain").value = t.domain;
+  $("o-initialCost").value = t.initialCost;
+  $("o-monthlyCost").value = t.monthlyCost;
+  $("o-monthlyHours").value = t.monthlyHours;
+  $("o-effortYears").value = t.effortYears;
+  $("o-note").value = t.note;
+  t.scenarios.forEach((s, i) => {
+    $(`s${i}-prob`).value = s.prob; $(`s${i}-effect`).value = s.effect; $(`s${i}-years`).value = s.years;
+  });
+  renderEditorCalc();
+  toast("テンプレートを読み込みました（数字は自分用に直してね）");
+}
+function readEditor() {
+  return {
+    id: editingId || ("o" + Math.random().toString(36).slice(2, 9)),
+    name: $("o-name").value.trim(),
+    domain: $("o-domain").value,
+    note: $("o-note").value.trim(),
+    initialCost: Number($("o-initialCost").value) || 0,
+    monthlyCost: Number($("o-monthlyCost").value) || 0,
+    monthlyHours: Number($("o-monthlyHours").value) || 0,
+    effortYears: Number($("o-effortYears").value) || 0,
+    scenarios: [0,1,2].map(i => ({
+      label: ["悲観","中位","楽観"][i],
+      prob: Number($(`s${i}-prob`).value) || 0,
+      effect: Number($(`s${i}-effect`).value) || 0,
+      years: Number($(`s${i}-years`).value) || 0,
+    })),
+  };
+}
+function renderEditorCalc() {
+  const o = readEditor();
+  const probSum = o.scenarios.reduce((a, s) => a + s.prob, 0);
+  $("probWarn").textContent = probSum === 100 ? "" : `⚠ 確率の合計が ${probSum}% です（100%にしてください）`;
+  const m = calc(o, profile);
+  $("e-ev").textContent = fmtMan(m.ev, true);
+  $("e-ev").style.color = m.ev >= 0 ? "var(--ink)" : "var(--neg)";
+  $("e-verdict").innerHTML = verdictBadge(m.verdict);
+  $("e-perHour").textContent = fmtPerHour(m.perHour);
+  $("e-perYen").textContent = fmtX(m.perYen);
+  $("e-worst").textContent = fmtMan(m.worst, true);
+  $("e-breakeven").textContent = fmtPct(m.breakeven);
+  $("e-reasons").textContent = m.blockedBy.length ? "引っかかっている制約：" + m.blockedBy.join(" / ") : "";
+  renderBreakdown($("e-breakdown"), o, m);
+}
+function renderBreakdown(el, o, m) {
+  // シナリオ別の価値 ＋ コストを、符号つき横バーで
+  const rows = [
+    ...o.scenarios.map((s, i) => ({ label: `${s.label}（${s.prob}%）`, v: m.values[i] })),
+    { label: "総コスト（現価）", v: -m.costPV },
+  ];
+  const maxAbs = Math.max(1, ...rows.map(r => Math.abs(r.v)));
+  el.innerHTML = rows.map(r => {
+    const w = Math.abs(r.v) / maxAbs * 50; // 中央±50%
+    const left = r.v >= 0 ? 50 : 50 - w;
+    const color = r.v >= 0 ? "var(--pos)" : "var(--neg)";
+    return `<div class="bd-row"><span style="color:var(--ink-2);">${esc(r.label)}</span>
+      <div class="bd-track"><div style="position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--baseline);"></div>
+      <div class="bd-bar ${r.v < 0 ? "negv" : ""}" style="left:${left}%;width:${Math.max(w, 0.5)}%;background:${color};"></div></div>
+      <span class="num" style="text-align:right;">${fmtMan(r.v, true)}</span></div>`;
+  }).join("");
+}
+// エディタの全入力で即時再計算
+document.querySelectorAll("#tab-editor input, #tab-editor select").forEach(el =>
+  el.addEventListener("input", renderEditorCalc));
+
+$("saveOption").addEventListener("click", () => {
+  const o = readEditor();
+  if (!o.name) { toast("名前を入れてください"); $("o-name").focus(); return; }
+  const probSum = o.scenarios.reduce((a, s) => a + s.prob, 0);
+  if (probSum !== 100) { toast(`確率の合計が${probSum}%です。100%にしてください`); return; }
+  const idx = options.findIndex(x => x.id === o.id);
+  if (idx >= 0) options[idx] = o; else options.push(o);
+  persist();
+  editingId = null;
+  $("editorTitle").textContent = "選択肢を作る";
+  renderOptionList();
+  toast("保存しました。③俯瞰で並べて見てみよう");
+});
+$("clearEditor").addEventListener("click", () => {
+  editingId = null;
+  $("editorTitle").textContent = "選択肢を作る";
+  $("o-name").value = ""; $("o-note").value = "";
+  renderEditorCalc();
+});
+
+function renderOptionList() {
+  if (!options.length) { $("optionList").innerHTML = '<div class="empty">まだありません。テンプレートから1つ作ってみよう。</div>'; return; }
+  $("optionList").innerHTML = `<table><thead><tr><th>名前</th><th>ドメイン</th><th>期待値</th><th>判定</th><th></th></tr></thead><tbody>` +
+    options.map(o => {
+      const m = calc(o, profile);
+      return `<tr><td>${esc(o.name)}</td><td style="text-align:left;color:var(--muted);">${esc(o.domain)}</td>
+        <td class="num">${fmtMan(m.ev, true)}</td><td style="text-align:left;">${verdictBadge(m.verdict)}</td>
+        <td class="row-actions" style="text-align:right;">
+          <button class="ghost" data-edit="${o.id}">編集</button>
+          <button class="ghost" data-del="${o.id}">削除</button></td></tr>`;
+    }).join("") + "</tbody></table>";
+  $("optionList").querySelectorAll("[data-edit]").forEach(b => b.addEventListener("click", () => editOption(b.dataset.edit)));
+  $("optionList").querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => {
+    const o = options.find(x => x.id === b.dataset.del);
+    if (!confirm(`「${o.name}」を削除しますか？`)) return;
+    options = options.filter(x => x.id !== b.dataset.del);
+    comboChecked.delete(b.dataset.del);
+    persist(); renderOptionList(); toast("削除しました");
+  }));
+}
+function editOption(id) {
+  const o = options.find(x => x.id === id);
+  if (!o) return;
+  editingId = id;
+  $("editorTitle").textContent = `編集中：${o.name}`;
+  $("o-name").value = o.name; $("o-domain").value = o.domain; $("o-note").value = o.note || "";
+  $("o-initialCost").value = o.initialCost; $("o-monthlyCost").value = o.monthlyCost;
+  $("o-monthlyHours").value = o.monthlyHours; $("o-effortYears").value = o.effortYears;
+  o.scenarios.forEach((s, i) => {
+    $(`s${i}-prob`).value = s.prob; $(`s${i}-effect`).value = s.effect; $(`s${i}-years`).value = s.years;
+  });
+  renderEditorCalc();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ---------- ③ 俯瞰 ---------- */
+function renderOverview() {
+  renderOverviewTable();
+  renderScatter();
+  renderCombo();
+}
+function metricsAll() {
+  return options.map(o => ({ o, m: calc(o, profile) }));
+}
+function renderOverviewTable() {
+  const rows = metricsAll();
+  if (!rows.length) { $("overviewTable").innerHTML = '<div class="empty">選択肢がまだありません。②で作るか、①のサンプルをどうぞ。</div>'; return; }
+  const keys = [
+    { k: "ev", label: "期待値", get: r => r.m.ev, fmt: r => fmtMan(r.m.ev, true) },
+    { k: "perHour", label: "時間対効果", get: r => r.m.perHour ?? -Infinity, fmt: r => fmtPerHour(r.m.perHour) },
+    { k: "perYen", label: "資金対効果", get: r => r.m.perYen ?? -Infinity, fmt: r => fmtX(r.m.perYen) },
+    { k: "worst", label: "最悪ケース", get: r => r.m.worst, fmt: r => fmtMan(r.m.worst, true) },
+    { k: "breakeven", label: "損益分岐", get: r => r.m.breakeven, fmt: r => fmtPct(r.m.breakeven) },
+  ];
+  rows.sort((a, b) => {
+    const col = keys.find(x => x.k === sortKey) || keys[0];
+    return (col.get(b) - col.get(a)) * (sortDesc ? 1 : -1);
+  });
+  let html = `<table><thead><tr><th></th><th class="tl">名前</th>` +
+    keys.map(c => `<th class="sortable" data-k="${c.k}">${c.label}${sortKey === c.k ? (sortDesc ? " ↓" : " ↑") : ""}</th>`).join("") +
+    `<th>判定</th></tr></thead><tbody>`;
+  for (const r of rows) {
+    html += `<tr><td><input type="checkbox" data-combo="${r.o.id}" ${comboChecked.has(r.o.id) ? "checked" : ""}></td>
+      <td class="tl">${esc(r.o.name)}<br><span class="note">${esc(r.o.domain)}</span></td>` +
+      keys.map(c => `<td class="num">${c.fmt(r)}</td>`).join("") +
+      `<td style="text-align:left;">${verdictBadge(r.m.verdict)}${r.m.blockedBy.length ? `<br><span class="note">${esc(r.m.blockedBy.join("、"))}</span>` : ""}</td></tr>`;
+  }
+  html += "</tbody></table>";
+  $("overviewTable").innerHTML = html;
+  $("overviewTable").querySelectorAll("th.sortable").forEach(th => th.addEventListener("click", () => {
+    if (sortKey === th.dataset.k) sortDesc = !sortDesc; else { sortKey = th.dataset.k; sortDesc = true; }
+    renderOverviewTable();
+  }));
+  $("overviewTable").querySelectorAll("[data-combo]").forEach(cb => cb.addEventListener("change", () => {
+    if (cb.checked) comboChecked.add(cb.dataset.combo); else comboChecked.delete(cb.dataset.combo);
+    renderCombo();
+  }));
+}
+
+function niceTicks(min, max, n = 5) {
+  if (min === max) { min -= 1; max += 1; }
+  const span = max - min;
+  const step0 = span / n;
+  const mag = Math.pow(10, Math.floor(Math.log10(step0)));
+  const step = [1, 2, 5, 10].map(x => x * mag).find(x => x >= step0);
+  const ticks = [];
+  for (let v = Math.ceil(min / step) * step; v <= max + 1e-9; v += step) ticks.push(Math.round(v / step) * step);
+  return ticks;
+}
+function fmtAxis(v) { // 万円 → 短縮表記
+  if (v === 0) return "0";
+  if (Math.abs(v) >= 10000) return (v / 10000) + "億";
+  return v.toLocaleString() + "万";
+}
+const VERDICT_COLOR = { "有望": "var(--good)", "条件付き": "var(--warn)", "見送り": "var(--muted)" };
+
+function renderScatter() {
+  const svg = $("scatter");
+  const rows = metricsAll();
+  if (!rows.length) { svg.innerHTML = ""; return; }
+  const W = 760, H = 440, L = 70, R = 24, T = 20, B = 46;
+  const xs = rows.map(r => r.m.worst), ys = rows.map(r => r.m.ev);
+  let xmin = Math.min(0, ...xs), xmax = Math.max(0, ...xs);
+  let ymin = Math.min(0, ...ys), ymax = Math.max(0, ...ys);
+  const xpad = (xmax - xmin || 1) * 0.12, ypad = (ymax - ymin || 1) * 0.12;
+  xmin -= xpad; xmax += xpad; ymin -= ypad; ymax += ypad;
+  const X = v => L + (v - xmin) / (xmax - xmin) * (W - L - R);
+  const Y = v => T + (ymax - v) / (ymax - ymin) * (H - T - B);
+
+  let g = "";
+  // グリッド＆目盛り
+  for (const t of niceTicks(xmin, xmax)) {
+    g += `<line x1="${X(t)}" y1="${T}" x2="${X(t)}" y2="${H - B}" stroke="var(--grid)" stroke-width="1"/>`;
+    g += `<text x="${X(t)}" y="${H - B + 18}" text-anchor="middle" font-size="11" fill="var(--muted)">${fmtAxis(t)}</text>`;
+  }
+  for (const t of niceTicks(ymin, ymax)) {
+    g += `<line x1="${L}" y1="${Y(t)}" x2="${W - R}" y2="${Y(t)}" stroke="var(--grid)" stroke-width="1"/>`;
+    g += `<text x="${L - 8}" y="${Y(t) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmtAxis(t)}</text>`;
+  }
+  // ゼロ線（少しだけ濃く）
+  if (xmin < 0 && xmax > 0) g += `<line x1="${X(0)}" y1="${T}" x2="${X(0)}" y2="${H - B}" stroke="var(--baseline)" stroke-width="1.5"/>`;
+  if (ymin < 0 && ymax > 0) g += `<line x1="${L}" y1="${Y(0)}" x2="${W - R}" y2="${Y(0)}" stroke="var(--baseline)" stroke-width="1.5"/>`;
+  // 軸ラベル
+  g += `<text x="${(L + W - R) / 2}" y="${H - 6}" text-anchor="middle" font-size="11.5" fill="var(--muted)">最悪ケース（万円） →右ほど失うものが小さい</text>`;
+  g += `<text x="14" y="${(T + H - B) / 2}" text-anchor="middle" font-size="11.5" fill="var(--muted)" transform="rotate(-90 14 ${(T + H - B) / 2})">期待値（万円） ↑上ほど報われる</text>`;
+  g += `<text x="${W - R - 4}" y="${T + 14}" text-anchor="end" font-size="11.5" fill="var(--ink-2)">右上ほど張りやすい</text>`;
+
+  // 点（判定で色＋形。ラベル併記で色だけに頼らない）
+  for (const r of rows) {
+    const cx = X(r.m.worst), cy = Y(r.m.ev);
+    const c = VERDICT_COLOR[r.m.verdict];
+    let mark;
+    if (r.m.verdict === "条件付き") { // ひし形
+      mark = `<path d="M ${cx} ${cy - 8} L ${cx + 8} ${cy} L ${cx} ${cy + 8} L ${cx - 8} ${cy} Z" fill="${c}" stroke="var(--surface)" stroke-width="2"/>`;
+    } else if (r.m.verdict === "見送り") { // 白抜き丸
+      mark = `<circle cx="${cx}" cy="${cy}" r="6.5" fill="var(--surface)" stroke="${c}" stroke-width="2"/>`;
+    } else { // 塗り丸
+      mark = `<circle cx="${cx}" cy="${cy}" r="6.5" fill="${c}" stroke="var(--surface)" stroke-width="2"/>`;
+    }
+    const labelX = Math.min(cx + 11, W - R - 4);
+    g += `<g class="pt" data-id="${r.o.id}" style="cursor:pointer;">
+      <circle cx="${cx}" cy="${cy}" r="16" fill="transparent"/>${mark}
+      <text x="${labelX}" y="${cy + 4}" font-size="11.5" fill="var(--ink-2)" text-anchor="${labelX > W - 140 ? "end" : "start"}">${esc(r.o.name)}</text></g>`;
+  }
+  svg.innerHTML = g;
+
+  // ツールチップ
+  const tip = $("tooltip"), wrap = $("scatterWrap");
+  svg.querySelectorAll("g.pt").forEach(gp => {
+    gp.addEventListener("mousemove", e => {
+      const r = rows.find(x => x.o.id === gp.dataset.id);
+      if (!r) return;
+      tip.innerHTML = `<b>${esc(r.o.name)}</b><br>期待値 ${fmtMan(r.m.ev, true)}<br>最悪 ${fmtMan(r.m.worst, true)} / 分岐 ${fmtPct(r.m.breakeven)}<br>${r.m.verdict}${r.m.blockedBy.length ? "：" + esc(r.m.blockedBy.join("、")) : ""}`;
+      const box = wrap.getBoundingClientRect();
+      tip.style.left = Math.min(e.clientX - box.left + 14, box.width - 220) + "px";
+      tip.style.top = (e.clientY - box.top + 14) + "px";
+      tip.style.opacity = 1;
+    });
+    gp.addEventListener("mouseleave", () => { tip.style.opacity = 0; });
+    gp.addEventListener("click", () => { renderSenseSelect(gp.dataset.id); gotoTab("sense"); });
+  });
+}
+
+function renderCombo() {
+  const sel = options.filter(o => comboChecked.has(o.id));
+  if (!sel.length) { $("comboPanel").innerHTML = "テーブルで選択肢にチェックを入れると、ここに合計と判定が出ます。"; return; }
+  const ms = sel.map(o => ({ o, m: calc(o, profile) }));
+  const sumInit = sel.reduce((a, o) => a + o.initialCost, 0);
+  const sumMonthly = sel.reduce((a, o) => a + o.monthlyCost, 0);
+  const sumHours = sel.reduce((a, o) => a + o.monthlyHours, 0);
+  const sumEV = ms.reduce((a, x) => a + x.m.ev, 0);
+  const sumWorst = ms.reduce((a, x) => a + x.m.worst, 0);
+  const checks = [
+    { label: `一時金 ${fmtMan(sumInit)} / 上限 ${fmtMan(profile.lumpSumMax)}`, ok: sumInit <= profile.lumpSumMax },
+    { label: `月の資金 ${sumMonthly}万円 / 上限 ${profile.monthlyBudget}万円`, ok: sumMonthly <= profile.monthlyBudget },
+    { label: `月の時間 ${sumHours}h / 上限 ${profile.monthlyHours}h`, ok: sumHours <= profile.monthlyHours },
+    { label: `本数 ${sel.length}本 / 上限 ${profile.parallelMax}本`, ok: sel.length <= profile.parallelMax },
+    { label: `全部外したとき ${fmtMan(sumWorst, true)} / 許容 −${fmtMan(profile.maxLoss)}`, ok: sumWorst >= -profile.maxLoss },
+  ];
+  const allOk = checks.every(c => c.ok);
+  $("comboPanel").innerHTML = `
+    <p style="font-size:1rem;color:var(--ink);"><b>${sel.map(o => esc(o.name)).join(" ＋ ")}</b></p>
+    <p style="font-size:1.1rem;color:var(--ink);">合計期待値 <b class="num">${fmtMan(sumEV, true)}</b>
+    ${allOk ? '<span class="badge ok">● 同時にいける</span>' : '<span class="badge cond">◆ リソースが足りない</span>'}</p>
+    <ul style="margin:6px 0 0; padding-left:1.2em; font-size:.85rem; color:var(--ink-2);">` +
+    checks.map(c => `<li>${c.ok ? "✓" : "✗"} ${c.label}${c.ok ? "" : "　←ここが超過"}</li>`).join("") +
+    `</ul>
+    <p class="note" style="margin-top:6px;">※ 期待値の合計は選択肢が独立している前提の粗い足し算です。互いに影響する組合せ（例：独立×転職）は割り引いて見てください。</p>`;
+}
+
+/* ---------- ④ 感度 ---------- */
+let senseId = null;
+function renderSenseSelect(preferId) {
+  const selEl = $("senseSelect");
+  if (!options.length) {
+    selEl.innerHTML = ""; $("sensePanel").style.display = "none"; $("senseEmpty").style.display = "block";
+    return;
+  }
+  $("senseEmpty").style.display = "none";
+  selEl.innerHTML = options.map(o => `<option value="${o.id}">${esc(o.name)}</option>`).join("");
+  senseId = preferId && options.some(o => o.id === preferId) ? preferId : (senseId && options.some(o => o.id === senseId) ? senseId : options[0].id);
+  selEl.value = senseId;
+  initSenseSliders();
+}
+$("senseSelect").addEventListener("change", () => { senseId = $("senseSelect").value; initSenseSliders(); });
+
+function initSenseSliders() {
+  const o = options.find(x => x.id === senseId);
+  if (!o) return;
+  $("sensePanel").style.display = "block";
+  $("sl-p0").value = o.scenarios[0].prob;
+  $("sl-p2").value = o.scenarios[2].prob;
+  $("sl-scale").value = 100;
+  $("sl-rate").value = profile.discountRate;
+  renderSense();
+}
+["sl-p0", "sl-p2", "sl-scale", "sl-rate"].forEach(id => $(id).addEventListener("input", e => {
+  // p0 + p2 が100%を超えないよう、動かした方を優先して相方をクランプ
+  let p0 = Number($("sl-p0").value), p2 = Number($("sl-p2").value);
+  if (p0 + p2 > 100) {
+    if (e.target.id === "sl-p0") { p2 = 100 - p0; $("sl-p2").value = p2; }
+    else { p0 = 100 - p2; $("sl-p0").value = p0; }
+  }
+  renderSense();
+}));
+function renderSense() {
+  const o = options.find(x => x.id === senseId);
+  if (!o) return;
+  const p0 = Number($("sl-p0").value) / 100;
+  const p2 = Number($("sl-p2").value) / 100;
+  const p1 = Math.max(0, 1 - p0 - p2);
+  const scale = Number($("sl-scale").value) / 100;
+  const rate = Number($("sl-rate").value);
+  $("ov-p0").textContent = Math.round(p0 * 100) + "%";
+  $("ov-p2").textContent = Math.round(p2 * 100) + "%";
+  $("ov-p1").textContent = Math.round(p1 * 100) + "%";
+  $("ov-scale").textContent = Math.round(scale * 100) + "%";
+  $("ov-rate").textContent = rate + "%";
+
+  const m = calc(o, profile, { probs: [p0, p1, p2], scale, rate });
+  $("s-ev").textContent = fmtMan(m.ev, true);
+  $("s-ev").style.color = m.ev >= 0 ? "var(--ink)" : "var(--neg)";
+  $("s-verdict").innerHTML = verdictBadge(m.verdict);
+  $("s-perHour").textContent = fmtPerHour(m.perHour);
+  $("s-perYen").textContent = fmtX(m.perYen);
+  $("s-worst").textContent = fmtMan(m.worst, true);
+  $("s-breakeven").textContent = fmtPct(m.breakeven);
+
+  // メーター：現在の楽観確率 vs 損益分岐
+  const cur = p2 * 100, be = m.breakeven === null ? 0 : m.breakeven * 100;
+  $("meterFill").style.width = cur + "%";
+  $("meterFill").style.background = cur >= be ? "var(--accent)" : "var(--neg)";
+  $("meterMark").style.left = be + "%";
+  $("meterMarkLabel").style.left = Math.min(Math.max(be, 6), 94) + "%";
+  $("meterMarkLabel").textContent = `分岐 ${Math.round(be)}%`;
+}
+$("applySense").addEventListener("click", () => {
+  const o = options.find(x => x.id === senseId);
+  if (!o) return;
+  const p0 = Number($("sl-p0").value), p2 = Number($("sl-p2").value);
+  o.scenarios[0].prob = p0; o.scenarios[2].prob = p2; o.scenarios[1].prob = 100 - p0 - p2;
+  persist(); renderOptionList();
+  toast("確率を書き戻しました");
+});
+
+/* ---------- サンプル / 入出力 ---------- */
+$("loadSample").addEventListener("click", () => {
+  if (options.length && !confirm("サンプル3件を追加します。よろしいですか？")) return;
+  for (const t of [TEMPLATES[0], TEMPLATES[1], TEMPLATES[2]]) {
+    options.push({
+      id: "o" + Math.random().toString(36).slice(2, 9),
+      name: t.name, domain: t.domain, note: t.note,
+      initialCost: t.initialCost, monthlyCost: t.monthlyCost,
+      monthlyHours: t.monthlyHours, effortYears: t.effortYears,
+      scenarios: t.scenarios.map((s, i) => ({ label: ["悲観","中位","楽観"][i], ...s })),
+    });
+  }
+  persist(); renderOptionList();
+  gotoTab("overview");
+  toast("サンプルを入れました。地図を眺めてみよう");
+});
+
+$("exportJson").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify({ profile, options }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "期待値エクスプローラー.json";
+  document.body.appendChild(a); a.click(); a.remove();
+});
+$("importJson").addEventListener("click", () => $("importFile").click());
+$("importFile").addEventListener("change", async () => {
+  const f = $("importFile").files[0];
+  if (!f) return;
+  try {
+    const data = JSON.parse(await f.text());
+    if (data.profile) profile = Object.assign(loadProfile(), data.profile);
+    if (Array.isArray(data.options)) options = data.options;
+    persist(); renderProfileForm(); renderProfileTiles(); renderOptionList();
+    toast("インポートしました");
+  } catch { toast("読み込めませんでした（JSON形式を確認してください）"); }
+  $("importFile").value = "";
+});
+$("wipeAll").addEventListener("click", () => {
+  if (!confirm("前提と選択肢をすべて削除します。よろしいですか？")) return;
+  localStorage.removeItem(LS_PROFILE); localStorage.removeItem(LS_OPTIONS);
+  profile = loadProfile(); options = []; comboChecked.clear();
+  renderProfileForm(); renderProfileTiles(); renderOptionList();
+  toast("まっさらにしました");
+});
+
+/* ---------- 初期化 ---------- */
+renderProfileForm();
+renderProfileTiles();
+renderTemplateChips();
+renderDomainSelect();
+renderEditorCalc();
+renderOptionList();
+</script>
+</body>
+</html>
