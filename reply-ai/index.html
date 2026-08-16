@@ -244,7 +244,11 @@ function setupImagePicker(dropId, fileId, thumbsId, store) {
     for (const f of files) {
       if (!f.type.startsWith('image/')) continue;
       if (store.length >= 6) { $('error').textContent = 'スクショは最大6枚までです。'; break; }
-      store.push(await resizeImage(f, 1400));
+      try {
+        store.push(await resizeImage(f, 1400));
+      } catch {
+        $('error').textContent = `「${f.name}」を読み込めませんでした。対応していない画像形式の可能性があります(iPhoneのHEIC写真は、スクショではなく写真の場合に読めないことがあります)。`;
+      }
     }
     render();
   }
@@ -309,7 +313,13 @@ async function callClaude(key, system, schema, content) {
   if (data.stop_reason === 'refusal') throw new Error('この内容にはAIが回答できませんでした。入力内容を変えてお試しください。');
   const textBlock = data.content.find(b => b.type === 'text');
   if (!textBlock) throw new Error('AIから結果を取得できませんでした。もう一度お試しください。');
-  return JSON.parse(textBlock.text);
+  try {
+    return JSON.parse(textBlock.text);
+  } catch {
+    throw new Error(data.stop_reason === 'max_tokens'
+      ? '応答が長すぎて途中で切れました。スクショの枚数や会話の長さを減らしてもう一度お試しください。'
+      : 'AIの応答を解析できませんでした。もう一度お試しください。');
+  }
 }
 
 function imageBlocks(store) {
