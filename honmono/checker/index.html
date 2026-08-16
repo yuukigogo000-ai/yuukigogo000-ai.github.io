@@ -507,8 +507,32 @@ function bitmapToRGB(bmp, quarterTurns) {
   }
   return out;
 }
-async function thumbMismatch(file, thumbBytes) {
+/* JPEGバイト列からSOFの寸法だけを読む(デコード爆弾の事前検知用) */
+function jpegDims(bytes) {
+  if (bytes.length < 4 || bytes[0] !== 0xFF || bytes[1] !== 0xD8) return null;
+  let off = 2;
+  while (off + 9 <= bytes.length) {
+    if (bytes[off] !== 0xFF) break;
+    const m = bytes[off + 1];
+    if (m === 0xFF) { off++; continue; }
+    if (m === 0xD8 || m === 0x01 || (m >= 0xD0 && m <= 0xD7)) { off += 2; continue; }
+    if (m === 0xDA || m === 0xD9) break;
+    const len = (bytes[off + 2] << 8) | bytes[off + 3];
+    if (len < 2) break;
+    if ([0xC0,0xC1,0xC2,0xC3,0xC5,0xC6,0xC7,0xC9,0xCA,0xCB,0xCD,0xCE,0xCF].includes(m)) {
+      return { h: (bytes[off + 5] << 8) | bytes[off + 6], w: (bytes[off + 7] << 8) | bytes[off + 8] };
+    }
+    off += 2 + len;
+  }
+  return null;
+}
+
+async function thumbMismatch(file, thumbBytes, mainDims) {
   try {
+    // 解凍爆弾ガード: 宣言サイズが異常なものはデコードしない
+    const td = jpegDims(thumbBytes);
+    if (td && td.w * td.h > 4 * 1024 * 1024) return false;      // サムネイルが4MP超は異常
+    if (mainDims && mainDims.w * mainDims.h > 80 * 1024 * 1024) return false; // 本体80MP超は照合を諦める
     const [main, thumb] = await Promise.all([
       createImageBitmap(file),
       createImageBitmap(new Blob([thumbBytes], { type: 'image/jpeg' })),
@@ -695,7 +719,7 @@ async function analyze(file) {
   /* --- EXIFサムネイルと本体の照合 --- */
   if (parsed.thumb) {
     meta['埋め込みサムネイル'] = 'あり';
-    if (await thumbMismatch(file, parsed.thumb)) {
+    if (await thumbMismatch(file, parsed.thumb, dims)) {
       findings.push({
         level: 'warn',
         title: '埋め込みサムネイルと本体画像が一致しません',
