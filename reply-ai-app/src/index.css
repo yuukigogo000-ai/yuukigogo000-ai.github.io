@@ -1,0 +1,267 @@
+@import 'tailwindcss';
+
+/* =========================================================
+   デザイントークン
+   - 色は「意味」で持つ(canvas / surface / ink / line / brand)。
+   - ダークはトークンだけ差し替える。各コンポーネントに dark: を書かない。
+   ========================================================= */
+@theme {
+  --font-sans:
+    'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic UI', 'Noto Sans JP', system-ui,
+    -apple-system, 'Segoe UI', sans-serif;
+
+  --color-canvas: #f1f3f5;
+  --color-surface: #ffffff;
+  --color-surface-2: #f7f8fa;
+  --color-ink: #14181c;
+  --color-ink-muted: #6a7480;
+  --color-ink-faint: #98a1ab;
+  --color-line: #e2e6ea;
+  --color-line-strong: #cfd5db;
+
+  --color-brand: #0b8f47;
+  --color-brand-hover: #0a7f3f;
+  --color-brand-soft: #e9f5ee;
+  --color-on-brand: #ffffff;
+
+  --color-bubble: #b7e5a0;
+  --color-bubble-ink: #10231a;
+
+  --color-danger: #c0392f;
+  --color-danger-soft: #fdeceb;
+
+  --radius-card: 14px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-canvas: #0e1013;
+    --color-surface: #16181b;
+    --color-surface-2: #1d2024;
+    --color-ink: #e9ebed;
+    --color-ink-muted: #9aa2ab;
+    --color-ink-faint: #767e87;
+    --color-line: #292d33;
+    --color-line-strong: #3a4048;
+
+    --color-brand: #1ab863;
+    --color-brand-hover: #23c96f;
+    --color-brand-soft: #14261c;
+    --color-on-brand: #06210f;
+
+    --color-bubble: #2f6a3f;
+    --color-bubble-ink: #e7f4e9;
+
+    --color-danger: #ef6a5f;
+    --color-danger-soft: #2a1a19;
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    background: var(--color-canvas);
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 日本語のUIラベルは行間を詰めた方が締まって見える */
+  button,
+  label,
+  h1,
+  h2,
+  h3 {
+    line-height: 1.45;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+  }
+
+  textarea {
+    line-height: 1.7;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  ::placeholder {
+    color: var(--color-ink-faint);
+  }
+}
+
+@layer components {
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+  }
+
+  /* 送信プレビューの吹き出し(自分側=右・緑) */
+  .bubble {
+    background: var(--color-bubble);
+    color: var(--color-bubble-ink);
+    border-radius: 18px 18px 4px 18px;
+    padding: 9px 13px;
+    max-width: 88%;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-size: 15.5px;
+    line-height: 1.65;
+  }
+
+  .num {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--color-ink-muted);
+  }
+
+  .field {
+    width: 100%;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line-strong);
+    border-radius: 10px;
+    padding: 11px 12px;
+    font-size: 15.5px;
+  }
+
+  .field:focus {
+    border-color: var(--color-brand);
+    outline: none;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 18%, transparent);
+  }
+
+  textarea.field {
+    resize: vertical;
+  }
+
+  .label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--color-ink-muted);
+    margin-bottom: 6px;
+  }
+
+  /* チップ(ゴール・トーン選択) */
+  .chip input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .chip label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 13px;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 999px;
+    background: var(--color-surface);
+    color: var(--color-ink-muted);
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    transition:
+      background-color 0.12s ease,
+      color 0.12s ease,
+      border-color 0.12s ease;
+  }
+
+  .chip input:checked + label {
+    background: var(--color-brand);
+    border-color: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+
+  .chip input:focus-visible + label {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+    border: 0;
+    border-radius: 12px;
+    padding: 15px 16px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 0.12s ease;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-brand-hover);
+  }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
+  .btn-ghost {
+    border: 1px solid var(--color-line-strong);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.12s ease;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--color-ink-faint);
+  }
+}
+
+/* スケルトン(生成待ちの間だけ表示) */
+@keyframes shimmer {
+  0% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+
+.skeleton {
+  background: var(--color-surface-2);
+  border-radius: 8px;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
