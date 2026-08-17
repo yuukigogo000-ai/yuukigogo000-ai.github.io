@@ -5,6 +5,7 @@ import { InstallHint } from './components/InstallHint';
 import { ProfileTab } from './components/ProfileTab';
 import { ReplyTab } from './components/ReplyTab';
 import { SettingsSheet } from './components/SettingsSheet';
+import { UpdateBar } from './components/UpdateBar';
 import { ONBOARD_KEY, addAdopted, clearAdopted, getAdopted, loadKey, saveKey } from './lib/storage';
 
 export default function App() {
@@ -70,13 +71,8 @@ export default function App() {
       setError('コピーできませんでした。文面を長押し(または選択)して手動でコピーしてください。');
       return;
     }
-    let list = adopted;
-    let persisted = true;
-    for (const t of texts) {
-      const r = addAdopted(t);
-      list = r.list;
-      persisted = persisted && r.persisted;
-    }
+    // 保存できない端末でも、その回に採用した分がまとめて残るように1回で書く
+    const { list, persisted } = addAdopted(texts, adoptedPersisted ? undefined : adopted);
     setAdopted(list);
     setAdoptedPersisted(persisted);
     showToast(
@@ -192,6 +188,8 @@ export default function App() {
       </main>
 
       <InstallHint />
+
+      <UpdateBar />
 
       <SettingsSheet
         open={settingsOpen}

@@ -34,13 +34,25 @@ export function getAdopted(): string[] {
   }
 }
 
-/** 保存できたかどうかを呼び出し側に返す(「保存した」と嘘をつかないため) */
-export function addAdopted(text: string): { list: string[]; persisted: boolean } {
-  const t = String(text || '').trim();
-  if (!t) return { list: getAdopted(), persisted: true };
-  const a = getAdopted().filter((x) => x !== t);
-  a.push(t);
-  const next = a.slice(-ADOPTED_MAX);
+/**
+ * 採用した文を追記する。複数まとめて渡すこと。
+ * 1件ずつ呼ぶと、保存に失敗した端末で前の1件が毎回失われる(保存済みの内容を読み直すため)。
+ * 保存できたかどうかも返す(「保存した」と嘘をつかないため)。
+ */
+export function addAdopted(
+  texts: string | string[],
+  base?: string[],
+): { list: string[]; persisted: boolean } {
+  const items = (Array.isArray(texts) ? texts : [texts])
+    .map((t) => String(t || '').trim())
+    .filter(Boolean);
+  let list = base ?? getAdopted();
+  if (!items.length) return { list, persisted: true };
+  for (const t of items) {
+    list = list.filter((x) => x !== t);
+    list.push(t);
+  }
+  const next = list.slice(-ADOPTED_MAX);
   try {
     localStorage.setItem(ADOPTED_KEY, JSON.stringify(next));
     return { list: next, persisted: true };

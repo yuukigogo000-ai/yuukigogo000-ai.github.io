@@ -43,14 +43,18 @@ const profileResult = () => ({
   const page = await context.newPage();
   const consoleErrors = [];
   const pageErrors = [];
-  page.on('console', m => { if (m.type() === 'error') consoleErrors.push(m.text()); });
+  page.on('console', m => { if (m.type() === 'error') consoleErrors.push({ text: m.text(), url: m.location().url || '' }); });
   page.on('pageerror', e => pageErrors.push(String(e)));
 
   let mock = null;
   let lastBody = null;
+  let lastHeaders = null;
+  let lastUrl = null;
   let delayMs = 0;
   const apiHandler = async route => {
     lastBody = JSON.parse(route.request().postData());
+    lastHeaders = route.request().headers();
+    lastUrl = route.request().url();
     if (delayMs) await new Promise(r => setTimeout(r, delayMs));
     const r = mock ? mock(lastBody) : { status: 500, body: { error: { message: 'no mock configured' } } };
     await route.fulfill({ status: r.status, contentType: 'application/json', body: JSON.stringify(r.body) });
@@ -428,6 +432,84 @@ const profileResult = () => ({
   delayMs = 0;
   await page.evaluate(() => localStorage.removeItem('reply_ai_timeout_ms'));
 
+  // --- 22. Codex r2 指摘の回帰 ---
+  // 22a. APIキーは所定のヘッダだけに載り、URLや本文には出ない
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.fill('#conversation', '自分: ヘッダ検査\n相手: どうぞ');
+  mock = () => ({ status: 200, body: replyResult('H') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスH'));
+  check('22a. APIキーはx-api-keyヘッダで送る', lastHeaders['x-api-key'] === 'sk-ant-test-123', JSON.stringify(Object.keys(lastHeaders)));
+  check('22a2. 送り先URLが正しい', lastUrl === 'https://api.anthropic.com/v1/messages', lastUrl);
+  check('22a3. キーがURLに漏れない', !lastUrl.includes('sk-ant'), lastUrl);
+  check('22a4. キーが本文に漏れない', !JSON.stringify(lastBody).includes('sk-ant'));
+  check('22a5. 必須ヘッダが揃っている', lastHeaders['anthropic-version'] === '2023-06-01' &&
+        lastHeaders['anthropic-dangerous-direct-browser-access'] === 'true');
+
+  // 22b. AI応答のHTMLは「実行されない」だけでなく「要素として入らない」
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
+    situation: 'x', interest_level: 50,
+    replies: [{ bubbles: ['<b>太字</b><script>window.__xss2=1<\/script>'], why: '<i>理由' }, { bubbles: ['a'], why: 'b' }, { bubbles: ['c'], why: 'd' }],
+    advice: '<img src=x onerror="window.__xss2=2">アドバイスINJ' }) }] } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスINJ'));
+  const injected = await page.evaluate(() => ({
+    scripts: document.querySelectorAll('#replyResults script, #replyResults b, #replyAdvice img').length,
+    firstBubbleText: document.querySelector('#replyResults .bubble').textContent,
+    xss: window.__xss2,
+  }));
+  check('22b. HTMLが要素として注入されない', injected.scripts === 0, `nodes=${injected.scripts}`);
+  check('22b2. 文字としてそのまま表示される', injected.firstBubbleText.includes('<script>'), injected.firstBubbleText);
+  check('22b3. スクリプトも実行されない', injected.xss === undefined, String(injected.xss));
+
+  // 22c. 複数吹き出しのコピーは1回でまとめて採用履歴に入る(保存できない端末でも欠けない)
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.evaluate(() => {
+    localStorage.removeItem('reply_ai_adopted');
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'reply_ai_adopted') throw new Error('quota exceeded');
+      return orig.call(this, k, v);
+    };
+  });
+  await page.fill('#conversation', '自分: a\n相手: b');
+  mock = () => ({ status: 200, body: replyResult('M') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスM'));
+  await (await page.$$('#replyResults .card > button'))[0].click(); // 案A = 2吹き出し
+  await page.waitForTimeout(250);
+  await openDetails();
+  check('22c. 2吹き出しの採用が2件とも残る', (await page.textContent('#adoptedNote')).includes('2件'),
+        await page.textContent('#adoptedNote'));
+
+  // 22d. 更新は自動リロードではなくメッセージ方式(入力中に勝手に消えない)
+  const swText = await page.request.get(new URL('sw.js', BASE).href).then(r => r.text());
+  check('22d. SWはSKIP_WAITINGを待つ(自動リロードしない)', swText.includes('SKIP_WAITING'));
+  check('22d2. 更新バーのUIが同梱されている', (await page.content()).length > 0 &&
+        (await page.request.get(new URL('index.html', BASE).href).then(r => r.text())).includes('assets/'));
+
+  // 22e. Service Workerを実際に動かして検証(オフラインでも開く / APIはキャッシュしない)
+  const swCtx = await browser.newContext();
+  const swPage = await swCtx.newPage();
+  await swPage.goto(BASE);
+  await swPage.waitForSelector('#generate');
+  await swPage.evaluate(() => navigator.serviceWorker.ready.then(() => true));
+  await swPage.waitForTimeout(1500);
+  await swPage.evaluate(() => localStorage.setItem('reply_ai_key', 'sk-ant-offline-test'));
+  await swCtx.setOffline(true);
+  await swPage.reload();
+  const shellOk = await swPage.$('#generate');
+  check('22e. オフラインでもアプリの画面が開く(PWA)', shellOk !== null);
+  await swPage.fill('#conversation', '自分: a\n相手: b');
+  await swPage.click('#generate');
+  await swPage.waitForFunction(() => document.querySelector('#error').textContent.length > 0, null, { timeout: 15000 }).catch(() => {});
+  check('22e2. オフライン時にAPI応答をキャッシュから返さない',
+        (await swPage.textContent('#error')).length > 0 && !(await swPage.isVisible('#replyResults')),
+        await swPage.textContent('#error'));
+  await swCtx.close();
+
   // --- 14. localStorage永続化 ---
   await page.reload();
   await page.waitForSelector('#generate');
@@ -446,8 +528,11 @@ const profileResult = () => ({
   check('15. ネットワーク断→エラー表示+ボタン復活', (await page.textContent('#error')).length > 0 && !(await page.isDisabled('#generate')),
         await page.textContent('#error'));
 
-  check('X. コンソールエラーなし(想定内のfetch失敗以外)', consoleErrors.filter(e => !e.includes('Failed to load resource') && !e.includes('ERR_INTERNET')).length === 0,
-        consoleErrors.join(' | '));
+  const allowedConsole = e => e.url.includes('api.anthropic.com') &&
+        (e.text.includes('Failed to load resource') || e.text.includes('net::') || e.text.includes('ERR_'));
+  const unexpectedConsole = consoleErrors.filter(e => !allowedConsole(e));
+  check('X. コンソールエラーなし(Anthropic宛の意図的な通信失敗以外)', unexpectedConsole.length === 0,
+        unexpectedConsole.map(e => `${e.text} @${e.url}`).join(' | '));
   check('Y. 未捕捉例外なし', pageErrors.length === 0, pageErrors.join(' | '));
 
   await browser.close();
