@@ -7,7 +7,8 @@
     "build": "tsc -b --noEmit && vite build",
     "preview": "vite preview",
     "icons": "node gen_icons.mjs",
-    "test": "node tests/e2e.test.js"
+    "test": "node tests/e2e.test.js",
+    "pretest": "npm run build"
   },
   "author": "",
   "license": "ISC",
