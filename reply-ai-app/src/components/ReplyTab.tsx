@@ -116,7 +116,7 @@ export function ReplyTab({
     styleSample,
     split,
     imagesEpoch,
-    images.map((im) => im.data.length),
+    images.map((im) => im.id),
   ]);
 
   function cancelInFlight() {
@@ -125,6 +125,8 @@ export function ReplyTab({
     abortRef.current = null;
   }
   const [result, setResult] = useState<ReplyResult | null>(null);
+  /** その結果を作った時の入力指紋。今の入力と違えば、その結果は古い */
+  const [resultSig, setResultSig] = useState('');
   const [lastReplies, setLastReplies] = useState<string[]>([]);
 
   function loadSample(value: string) {
@@ -236,6 +238,7 @@ export function ReplyTab({
         throw new Error('提案が返ってきませんでした。もう一度お試しください。');
       }
       setResult({ ...res, replies });
+      setResultSig(sentInputs);
       // 生成が終わったら結果まで運ぶ(入力欄をスクロールし直させない)
       window.requestAnimationFrame(() =>
         document.getElementById('replyAnalysis')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
@@ -248,6 +251,10 @@ export function ReplyTab({
       );
     });
   }
+
+  // 表示中の提案が「今の入力に対するもの」でなくなったら、出しっぱなしにしない
+  const stale = result !== null && resultSig !== inputsRef.current;
+  const shown = stale ? null : result;
 
   return (
     <div id="tabReply" hidden={hidden} role="tabpanel" aria-labelledby="tabBtnReply">
@@ -394,36 +401,42 @@ export function ReplyTab({
         </div>
       )}
 
-      <div id="replyAnalysis" className="card mt-4 scroll-mt-20 p-4" hidden={!result}>
+      {stale && !busy && (
+        <p id="staleNote" className="mt-4 px-1 text-[12px] text-ink-muted">
+          入力が変わったので、前の提案は表示していません。もう一度「返信案を3つ作る」を押してください。
+        </p>
+      )}
+
+      <div id="replyAnalysis" className="card mt-4 scroll-mt-20 p-4" hidden={!shown}>
         <h2 className="mb-1.5 text-[12px] font-bold tracking-wide text-ink-muted">いまの状況</h2>
         <p id="situation" className="mb-3 text-[13.5px] leading-relaxed">
-          {result?.situation ?? ''}
+          {shown?.situation ?? ''}
         </p>
         <Meter
           barId="meterBar"
           pctId="meterPct"
           label="脈あり度"
-          value={result?.interest_level ?? 0}
+          value={shown?.interest_level ?? 0}
           suffix="%"
         />
       </div>
 
-      <h2 className="mt-4 mb-2 px-1 text-[12px] font-bold tracking-wide text-ink-muted" hidden={!result || busy}>
+      <h2 className="mt-4 mb-2 px-1 text-[12px] font-bold tracking-wide text-ink-muted" hidden={!shown || busy}>
         送信プレビュー(そのままコピーして送れます)
       </h2>
-      {result && result.replies.length < 3 && !busy && (
+      {shown && shown.replies.length < 3 && !busy && (
         <p id="shortfallNote" className="mb-2 px-1 text-[12px] text-ink-muted">
-          AIから{result.replies.length}案しか返りませんでした。「方向性を変えて別の3案」で出し直せます。
+          AIから{shown.replies.length}案しか返りませんでした。「方向性を変えて別の3案」で出し直せます。
         </p>
       )}
-      {result && !busy && split === 'multi' &&
-        result.replies.every((r) => normalizeBubbles(r).length === 1) && (
+      {shown && !busy && split === 'multi' &&
+        shown.replies.every((r) => normalizeBubbles(r).length === 1) && (
           <p id="splitNote" className="mb-2 px-1 text-[12px] text-ink-muted">
             「分けて送る」を選びましたが、AIは1通で返しました(この場面では分けない方が自然と判断されています)。
           </p>
         )}
-      <div id="replyResults" className="space-y-3" hidden={!result || busy}>
-        {(result?.replies ?? []).map((r, i) => (
+      <div id="replyResults" className="space-y-3" hidden={!shown || busy}>
+        {(shown?.replies ?? []).map((r, i) => (
           <ReplyCard
             key={i}
             index={i}
@@ -440,13 +453,13 @@ export function ReplyTab({
       <div
         id="replyAdvice"
         className="mt-3 rounded-xl border-l-[3px] border-brand bg-brand-soft px-4 py-3.5"
-        hidden={!result}
+        hidden={!shown}
       >
         <div className="flex items-center gap-1.5 text-[12px] font-bold text-ink-muted">
           <Compass size={14} strokeWidth={2} />
           次の一手
         </div>
-        <p className="mt-1 text-[13.5px] leading-relaxed">{result?.advice ?? ''}</p>
+        <p className="mt-1 text-[13.5px] leading-relaxed">{shown?.advice ?? ''}</p>
       </div>
 
       <div className="sticky bottom-0 z-30 -mx-4 mt-5 border-t border-line bg-canvas/90 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur">
@@ -462,7 +475,8 @@ export function ReplyTab({
         <button
           type="button"
           id="regenerate"
-          hidden={!result}
+          hidden={!shown}
+          aria-hidden={!shown}
           disabled={busy}
           className="btn-ghost mt-2 flex w-full items-center justify-center gap-1.5"
           onClick={() => void generate(true)}

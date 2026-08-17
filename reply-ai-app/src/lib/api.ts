@@ -45,9 +45,8 @@ export async function callClaude<T>(
   const onExternalAbort = () => controller.abort(new DOMException('canceled', 'AbortError'));
   external?.addEventListener('abort', onExternalAbort, { once: true });
 
-  let res: Response;
   try {
-    res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       signal: controller.signal,
       method: 'POST',
       headers: {
@@ -65,6 +64,30 @@ export async function callClaude<T>(
         messages: [{ role: 'user', content }],
       }),
     });
+
+    // 本文の受信もタイムアウト・中断の対象に含める(ヘッダだけ来て止まる場合があるため)
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.error?.message || `APIエラー (${res.status})`);
+    if (data.stop_reason === 'refusal') {
+      throw new Error('この内容にはAIが回答できませんでした。入力内容を変えてお試しください。');
+    }
+
+    const textBlock = (data.content as { type: string; text?: string }[] | undefined)?.find(
+      (b) => b.type === 'text',
+    );
+    if (!textBlock?.text) {
+      throw new Error('AIから結果を取得できませんでした。もう一度お試しください。');
+    }
+
+    try {
+      return JSON.parse(textBlock.text) as T;
+    } catch {
+      throw new Error(
+        data.stop_reason === 'max_tokens'
+          ? '応答が長すぎて途中で切れました。スクショの枚数や会話の長さを減らしてもう一度お試しください。'
+          : 'AIの応答を解析できませんでした。もう一度お試しください。',
+      );
+    }
   } catch (err) {
     if (external?.aborted) throw new CanceledError();
     if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
@@ -76,27 +99,6 @@ export async function callClaude<T>(
   } finally {
     window.clearTimeout(timer);
     external?.removeEventListener('abort', onExternalAbort);
-  }
-
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.error?.message || `APIエラー (${res.status})`);
-  if (data.stop_reason === 'refusal') {
-    throw new Error('この内容にはAIが回答できませんでした。入力内容を変えてお試しください。');
-  }
-
-  const textBlock = (data.content as { type: string; text?: string }[] | undefined)?.find(
-    (b) => b.type === 'text',
-  );
-  if (!textBlock?.text) throw new Error('AIから結果を取得できませんでした。もう一度お試しください。');
-
-  try {
-    return JSON.parse(textBlock.text) as T;
-  } catch {
-    throw new Error(
-      data.stop_reason === 'max_tokens'
-        ? '応答が長すぎて途中で切れました。スクショの枚数や会話の長さを減らしてもう一度お試しください。'
-        : 'AIの応答を解析できませんでした。もう一度お試しください。',
-    );
   }
 }
 

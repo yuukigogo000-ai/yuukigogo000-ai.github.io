@@ -683,6 +683,39 @@ const profileResult = () => ({
   await page.waitForFunction(() => document.querySelectorAll('#convThumbs .thumb').length === 2, null, { timeout: 5000 });
   check('24c2. 2枚とも最終的に取り込まれる', (await page.$$('#convThumbs .thumb')).length === 2);
 
+  // --- 25. Codex r5 指摘の回帰(生成後に入力が変わった場合) ---
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.fill('#conversation', '自分: 会話A\n相手: あ');
+  mock = () => ({ status: 200, body: replyResult('S1') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスS1'));
+  await page.fill('#conversation', '自分: 会話B(別の相手)\n相手: い');
+  await page.waitForTimeout(200);
+  check('25a. 入力を変えたら前の提案を表示し続けない', !(await page.isVisible('#replyResults')) && await page.isVisible('#staleNote'));
+  check('25a2. 古い提案を材料にした再生成もできない', !(await page.isVisible('#regenerate')));
+  // 作り直せば正常に戻る
+  mock = () => ({ status: 200, body: replyResult('S2') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスS2'));
+  check('25a3. 作り直せば表示が戻る', await page.isVisible('#replyResults') && !(await page.isVisible('#staleNote')));
+  // 画像の差し替えも「入力が変わった」として扱う(同じサイズでも取り違えない)
+  await page.setInputFiles('#convFile', [png]);
+  await page.waitForSelector('#convThumbs .thumb');
+  check('25b. スクショを足したら前の提案は表示しない', !(await page.isVisible('#replyResults')));
+
+  // 25c. プロフィール添削でも同じ
+  await page.click('#tabBtnProfile');
+  await page.fill('#basicInfo', '29歳 会社員 サウナ好き');
+  await page.click('label[for="pm2"]');
+  mock = () => ({ status: 200, body: profileResult() });
+  await page.click('#profGenerate');
+  await page.waitForSelector('#profResults .card');
+  await page.fill('#basicInfo', '31歳 教員 登山好き');
+  await page.waitForTimeout(200);
+  check('25c. 基本情報を変えたら前の診断結果を表示しない', !(await page.isVisible('#profResults')));
+  await page.click('#tabBtnReply');
+
   // --- 14. localStorage永続化 ---
   await page.reload();
   await page.waitForSelector('#generate');

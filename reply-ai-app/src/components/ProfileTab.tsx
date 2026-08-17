@@ -87,6 +87,7 @@ export function ProfileTab({
   const [targetInfo, setTargetInfo] = useState('');
   const [mode, setMode] = useState(MODES[0].value);
   const [result, setResult] = useState<ProfileResult | null>(null);
+  const [resultSig, setResultSig] = useState('');
   const [imagesBusy, setImagesBusy] = useState(false);
   const reqIdRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -96,7 +97,7 @@ export function ProfileTab({
     basicInfo,
     targetInfo,
     mode,
-    images.map((im) => im.data.length),
+    images.map((im) => im.id),
   ]);
 
   async function generate() {
@@ -162,11 +163,15 @@ export function ProfileTab({
         throw new Error('改善案が返ってきませんでした。もう一度お試しください。');
       }
       setResult({ ...res, improved_bios: bios });
+      setResultSig(sentInputs);
       window.requestAnimationFrame(() =>
         document.getElementById('profAnalysis')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
       );
     });
   }
+
+  const stale = result !== null && resultSig !== inputsRef.current;
+  const shown = stale ? null : result;
 
   return (
     <div id="tabProfile" hidden={hidden} role="tabpanel" aria-labelledby="tabBtnProfile">
@@ -232,38 +237,38 @@ export function ProfileTab({
         <Chips name="profMode" options={MODES} value={mode} onChange={setMode} ariaLabel="やってほしいこと" />
       </section>
 
-      <div id="profAnalysis" className="card mt-4 scroll-mt-20 p-4" hidden={!result}>
+      <div id="profAnalysis" className="card mt-4 scroll-mt-20 p-4" hidden={!shown}>
         <p id="profImpression" className="mb-3 text-[13.5px] leading-relaxed">
-          {result?.first_impression ?? ''}
+          {shown?.first_impression ?? ''}
         </p>
         <Meter
           barId="profMeterBar"
           pctId="profMeterPct"
           label="プロフ得点"
-          value={result?.score ?? 0}
+          value={shown?.score ?? 0}
           suffix="点"
         />
         <h3 className="mt-4 text-[12.5px] font-bold text-brand">良い点</h3>
         <ul id="profStrengths" className="mt-1 list-disc space-y-1 pl-5 text-[13.5px]">
-          {(result?.strengths ?? []).map((s, i) => (
+          {(shown?.strengths ?? []).map((s, i) => (
             <li key={i}>{s}</li>
           ))}
         </ul>
         <h3 className="mt-3 text-[12.5px] font-bold text-ink-muted">直すべき点</h3>
         <ul id="profWeaknesses" className="mt-1 list-disc space-y-1 pl-5 text-[13.5px]">
-          {(result?.weaknesses ?? []).map((s, i) => (
+          {(shown?.weaknesses ?? []).map((s, i) => (
             <li key={i}>{s}</li>
           ))}
         </ul>
       </div>
 
-      {result && result.improved_bios.length < 2 && !busy && (
+      {shown && shown.improved_bios.length < 2 && !busy && (
         <p id="bioShortfallNote" className="mt-3 px-1 text-[12px] text-ink-muted">
-          改善案が{result.improved_bios.length}件しか返りませんでした。もう一度実行すると2案出ることがあります。
+          改善案が{shown.improved_bios.length}件しか返りませんでした。もう一度実行すると2案出ることがあります。
         </p>
       )}
-      <div id="profResults" className="mt-3 space-y-3" hidden={!result || busy}>
-        {(result?.improved_bios ?? []).map((b, i) => (
+      <div id="profResults" className="mt-3 space-y-3" hidden={!shown || busy}>
+        {(shown?.improved_bios ?? []).map((b, i) => (
           <BioCard
             key={i}
             index={i}
@@ -281,13 +286,13 @@ export function ProfileTab({
       <div
         id="profPhotoAdvice"
         className="mt-3 rounded-xl border-l-[3px] border-brand bg-brand-soft px-4 py-3.5"
-        hidden={!result}
+        hidden={!shown}
       >
         <div className="flex items-center gap-1.5 text-[12px] font-bold text-ink-muted">
           <Camera size={14} strokeWidth={2} />
           写真アドバイス
         </div>
-        <p className="mt-1 text-[13.5px] leading-relaxed">{result?.photo_advice ?? ''}</p>
+        <p className="mt-1 text-[13.5px] leading-relaxed">{shown?.photo_advice ?? ''}</p>
       </div>
 
       <div className="sticky bottom-0 z-30 -mx-4 mt-5 border-t border-line bg-canvas/90 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur">

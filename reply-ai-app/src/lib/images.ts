@@ -1,6 +1,8 @@
 // スクショはブラウザ内で縮小してから送る(通信量とトークン代の節約)。
 
-export type PickedImage = { data: string; thumbUrl: string };
+export type PickedImage = { id: string; data: string; thumbUrl: string };
+
+let seq = 0;
 
 export const MAX_IMAGES = 6;
 
@@ -16,7 +18,8 @@ export function resizeImage(file: File, maxEdge: number): Promise<PickedImage> {
       canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
       const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-      resolve({ data: dataUrl.split(',')[1], thumbUrl: dataUrl });
+      seq += 1;
+      resolve({ id: `img-${seq}`, data: dataUrl.split(',')[1], thumbUrl: dataUrl });
     };
     img.onerror = () => {
       URL.revokeObjectURL(url);
