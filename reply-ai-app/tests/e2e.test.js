@@ -487,8 +487,10 @@ const profileResult = () => ({
   // 22d. 更新は自動リロードではなくメッセージ方式(入力中に勝手に消えない)
   const swText = await page.request.get(new URL('sw.js', BASE).href).then(r => r.text());
   check('22d. SWはSKIP_WAITINGを待つ(自動リロードしない)', swText.includes('SKIP_WAITING'));
-  check('22d2. 更新バーのUIが同梱されている', (await page.content()).length > 0 &&
-        (await page.request.get(new URL('index.html', BASE).href).then(r => r.text())).includes('assets/'));
+  const mainScript = await page.$eval('script[type=module][src]', el => el.getAttribute('src'));
+  const bundle = await page.request.get(new URL(mainScript, BASE).href).then(r => r.text());
+  check('22d2. 更新バーのUIが実際に同梱されている', bundle.includes('新しい版が公開されています'));
+  check('22d3. 初期状態では更新バーを出さない', await page.$('#updateBar') === null);
 
   // 22e. Service Workerを実際に動かして検証(オフラインでも開く / APIはキャッシュしない)
   const swCtx = await browser.newContext();
@@ -509,6 +511,107 @@ const profileResult = () => ({
         (await swPage.textContent('#error')).length > 0 && !(await swPage.isVisible('#replyResults')),
         await swPage.textContent('#error'));
   await swCtx.close();
+
+  // --- 23. Codex r3 指摘の回帰(競合・取りこぼし・約束の履行) ---
+  // 23a. 生成中に別のサンプルへ切り替えたら、古い応答で上書きされない
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.fill('#conversation', '自分: 古い会話\n相手: ふるい');
+  delayMs = 1200;
+  mock = () => ({ status: 200, body: replyResult('OLD') });
+  const slow = page.click('#generate');
+  await page.waitForTimeout(250);
+  await page.selectOption('#sampleSelect', '0'); // 実行中に別の会話へ
+  await slow;
+  await page.waitForTimeout(1500);
+  const advOld = await page.textContent('#replyAdvice');
+  check('23a. 実行中に会話を切り替えたら古い応答を表示しない',
+        !advOld.includes('アドバイスOLD') && !(await page.isVisible('#replyResults')), advOld);
+  delayMs = 0;
+
+  // 23b. スクショ読み込み中の生成は取りこぼさず、待つよう促す
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.fill('#conversation', '自分: a\n相手: b');
+  await page.route('**/*.png', r => r.continue());
+  await page.evaluate(() => {
+    // 画像デコードを意図的に遅くする
+    const orig = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+      set(v) {
+        setTimeout(() => orig.set.call(this, v), 700);
+      },
+      get() {
+        return orig.get.call(this);
+      },
+      configurable: true,
+    });
+  });
+  await page.setInputFiles('#convFile', [png]);
+  await page.waitForTimeout(120);
+  await page.click('#generate');
+  check('23b. 読み込み中の生成は待つよう促す', (await page.textContent('#error')).includes('読み込み中'),
+        await page.textContent('#error'));
+  await page.waitForSelector('#convThumbs .thumb');
+  check('23b2. 読み込みは完了してサムネが出る', (await page.$$('#convThumbs .thumb')).length === 1);
+
+  // 23c. 「分けて送る」を選んだのに1通で返ったら、そう伝える
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.fill('#conversation', '自分: a\n相手: b');
+  await page.click('label[for="b2"]');
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
+    situation: 's', interest_level: 60,
+    replies: [1,2,3].map(n => ({ bubbles: [`1通だけ${n}`], why: 'w' })), advice: 'アドバイスSPLIT' }) }] } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスSPLIT'));
+  check('23c. 分けて送る指定で1通のみなら注記を出す', await page.isVisible('#splitNote'));
+  await page.click('label[for="b0"]');
+
+  // 23d. APIキーは「記憶する」が入っていれば入力時点で保存される
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.click('#btnSettings');
+  await page.waitForSelector('#apiKey');
+  await page.fill('#apiKey', 'sk-ant-typed-only');
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('#apiKey', { state: 'detached' });
+  const storedKey = await page.evaluate(() => localStorage.getItem('reply_ai_key'));
+  check('23d. 生成前でもキーが保存される', storedKey === 'sk-ant-typed-only', String(storedKey));
+  await page.evaluate(() => localStorage.setItem('reply_ai_key', 'sk-ant-test-123'));
+
+  // 23e. プロフィール添削も、失敗時に前の結果を残さない / 改善案0件は明示エラー
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.click('#tabBtnProfile');
+  await page.fill('#basicInfo', '29歳 会社員 サウナ好き');
+  await page.click('label[for="pm2"]');
+  mock = () => ({ status: 200, body: profileResult() });
+  await page.click('#profGenerate');
+  await page.waitForSelector('#profResults .card');
+  mock = () => ({ status: 401, body: { error: { message: 'invalid x-api-key' } } });
+  await page.click('#profGenerate');
+  await page.waitForFunction(() => document.querySelector('#error').textContent.length > 0);
+  check('23e. 診断失敗後に前の結果が残らない', !(await page.isVisible('#profResults')));
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
+    score: 50, first_impression: 'x', strengths: ['a'], weaknesses: ['b'], improved_bios: [], photo_advice: 'p' }) }] } });
+  await page.click('#profGenerate');
+  await page.waitForFunction(() => document.querySelector('#error').textContent.includes('改善案が返って'));
+  check('23e2. 改善案0件は明示エラー', (await page.textContent('#error')).includes('改善案が返ってきませんでした'));
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
+    score: 50, first_impression: 'x', strengths: ['a'], weaknesses: ['b'],
+    improved_bios: [{ text: '1案だけ', why: 'w' }], photo_advice: 'p' }) }] } });
+  await page.click('#profGenerate');
+  await page.waitForSelector('#bioShortfallNote');
+  check('23e3. 改善案1件なら注記を出す', await page.isVisible('#bioShortfallNote'));
+  await page.click('#tabBtnReply');
+
+  // 23f. 採用履歴の表示は「記憶した件数」と「学習に使う件数」を区別する
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await openDetails();
+  check('23f. 学習に使う範囲を正しく書いている', (await page.textContent('#adoptedNote')).includes('直近8件') ||
+        (await page.textContent('#adoptedNote')).includes('0件'), await page.textContent('#adoptedNote'));
 
   // --- 14. localStorage永続化 ---
   await page.reload();

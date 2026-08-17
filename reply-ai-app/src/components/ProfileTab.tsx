@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Camera, Check, Copy } from 'lucide-react';
 import { AutoTextarea } from './AutoTextarea';
 import { Chips, type ChipOption } from './Chips';
@@ -87,6 +87,8 @@ export function ProfileTab({
   const [targetInfo, setTargetInfo] = useState('');
   const [mode, setMode] = useState(MODES[0].value);
   const [result, setResult] = useState<ProfileResult | null>(null);
+  const [imagesBusy, setImagesBusy] = useState(false);
+  const reqIdRef = useRef(0);
 
   async function generate() {
     const key = requireKey();
@@ -101,6 +103,12 @@ export function ProfileTab({
       setError('「自分の基本情報」を入力してください(改善案の材料になります)。');
       return;
     }
+    if (imagesBusy) {
+      setError('スクショを読み込み中です。少し待ってからもう一度押してください。');
+      return;
+    }
+    // 前回の診断結果は捨ててから始める(失敗時に別プロフィールの結果が残らないように)
+    setResult(null);
 
     const userPrompt =
       (images.length
@@ -115,9 +123,16 @@ export function ProfileTab({
 
     const content = [...imageBlocks(images), { type: 'text' as const, text: userPrompt }];
 
+    const reqId = ++reqIdRef.current;
+
     await run(STAGES, async () => {
       const res = await callClaude<ProfileResult>(key, PROFILE_SYSTEM, PROFILE_SCHEMA, content);
-      setResult(res);
+      if (reqId !== reqIdRef.current) return;
+      const bios = (res.improved_bios ?? []).filter((b) => String(b?.text || '').trim() !== '');
+      if (bios.length === 0) {
+        throw new Error('改善案が返ってきませんでした。もう一度お試しください。');
+      }
+      setResult({ ...res, improved_bios: bios });
       window.requestAnimationFrame(() =>
         document.getElementById('profAnalysis')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
       );
@@ -139,6 +154,7 @@ export function ProfileTab({
           images={images}
           setImages={setImages}
           onError={setError}
+          onBusyChange={setImagesBusy}
         />
 
         <div className="mt-4">
@@ -212,6 +228,11 @@ export function ProfileTab({
         </ul>
       </div>
 
+      {result && result.improved_bios.length < 2 && !busy && (
+        <p id="bioShortfallNote" className="mt-3 px-1 text-[12px] text-ink-muted">
+          改善案が{result.improved_bios.length}件しか返りませんでした。もう一度実行すると2案出ることがあります。
+        </p>
+      )}
       <div id="profResults" className="mt-3 space-y-3" hidden={!result || busy}>
         {(result?.improved_bios ?? []).map((b, i) => (
           <BioCard

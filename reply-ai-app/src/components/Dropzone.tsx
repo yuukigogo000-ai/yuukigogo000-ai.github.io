@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ImagePlus, X } from 'lucide-react';
 import { MAX_IMAGES, resizeImage, type PickedImage } from '../lib/images';
 
@@ -11,6 +11,8 @@ export function Dropzone({
   images,
   setImages,
   onError,
+  epoch = 0,
+  onBusyChange,
 }: {
   dropId: string;
   fileId: string;
@@ -20,27 +22,44 @@ export function Dropzone({
   images: PickedImage[];
   setImages: (fn: (prev: PickedImage[]) => PickedImage[]) => void;
   onError: (msg: string) => void;
+  /** 外部で画像を破棄したら +1 する。処理中の読み込み結果を捨てるための世代番号 */
+  epoch?: number;
+  onBusyChange?: (busy: boolean) => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const epochRef = useRef(epoch);
+
+  useEffect(() => {
+    epochRef.current = epoch;
+  }, [epoch]);
 
   async function addFiles(files: File[]) {
+    const myEpoch = epochRef.current;
     let count = images.length;
-    for (const f of files) {
-      if (!f.type.startsWith('image/')) continue;
-      if (count >= MAX_IMAGES) {
-        onError(`スクショは最大${MAX_IMAGES}枚までです。`);
-        break;
+    onBusyChange?.(true);
+    try {
+      for (const f of files) {
+        if (!f.type.startsWith('image/')) continue;
+        if (count >= MAX_IMAGES) {
+          onError(`スクショは最大${MAX_IMAGES}枚までです。`);
+          break;
+        }
+        try {
+          const im = await resizeImage(f, 1400);
+          // 読み込み中にサンプル読込などで破棄されたら、この結果は捨てる
+          if (epochRef.current !== myEpoch) return;
+          count++;
+          setImages((prev) => (prev.length >= MAX_IMAGES ? prev : [...prev, im]));
+        } catch {
+          if (epochRef.current !== myEpoch) return;
+          onError(
+            `「${f.name}」を読み込めませんでした。対応していない画像形式の可能性があります(iPhoneのHEIC写真は、スクショではなく写真の場合に読めないことがあります)。`,
+          );
+        }
       }
-      try {
-        const im = await resizeImage(f, 1400);
-        count++;
-        setImages((prev) => (prev.length >= MAX_IMAGES ? prev : [...prev, im]));
-      } catch {
-        onError(
-          `「${f.name}」を読み込めませんでした。対応していない画像形式の可能性があります(iPhoneのHEIC写真は、スクショではなく写真の場合に読めないことがあります)。`,
-        );
-      }
+    } finally {
+      onBusyChange?.(false);
     }
   }
 

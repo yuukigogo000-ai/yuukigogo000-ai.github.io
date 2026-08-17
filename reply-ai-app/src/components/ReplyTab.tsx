@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Compass, RefreshCw, Trash2 } from 'lucide-react';
 import { AutoTextarea } from './AutoTextarea';
 import { Chips, type ChipOption } from './Chips';
@@ -100,6 +100,10 @@ export function ReplyTab({
   const [styleSample, setStyleSample] = useState('');
   const [split, setSplit] = useState(SPLITS[0].value);
   const [sample, setSample] = useState('');
+  const [imagesEpoch, setImagesEpoch] = useState(0);
+  const [imagesBusy, setImagesBusy] = useState(false);
+  /** 送信ごとの通し番号。古い応答が新しい入力の結果として表示されるのを防ぐ */
+  const reqIdRef = useRef(0);
   const [result, setResult] = useState<ReplyResult | null>(null);
   const [lastReplies, setLastReplies] = useState<string[]>([]);
 
@@ -108,6 +112,8 @@ export function ReplyTab({
     const sm = SAMPLES[Number(value)];
     if (!sm) return;
     // サンプルは別の会話。前の会話のスクショ・結果・既出案を残すと混ざる
+    reqIdRef.current++; // 実行中の生成があれば、その結果は捨てる
+    setImagesEpoch((e) => e + 1);
     setImages([]);
     setResult(null);
     setLastReplies([]);
@@ -124,6 +130,10 @@ export function ReplyTab({
   async function generate(keepHistory: boolean) {
     const key = requireKey();
     if (!key) return;
+    if (imagesBusy) {
+      setError('スクショを読み込み中です。少し待ってからもう一度押してください。');
+      return;
+    }
     // 初回メッセージは「まだ会話がない」状態が正常。相手の情報か自分の文体があれば作れる
     const isFirstMessage = goal === GOALS[3].value;
     const hasSeed = conversation.trim() !== '' || images.length > 0;
@@ -175,8 +185,12 @@ export function ReplyTab({
 
     const content = [...imageBlocks(images), { type: 'text' as const, text: userPrompt }];
 
+    const reqId = ++reqIdRef.current;
+
     await run(STAGES, async () => {
       const res = await callClaude<ReplyResult>(key, REPLY_SYSTEM, REPLY_SCHEMA, content);
+      // 送信後に会話やサンプルが切り替わっていたら、この結果はもう別物なので捨てる
+      if (reqId !== reqIdRef.current) return;
       const replies = (res.replies ?? []).slice(0, 3).filter((r) => normalizeBubbles(r).length > 0);
       if (replies.length === 0) {
         throw new Error('提案が返ってきませんでした。もう一度お試しください。');
@@ -186,6 +200,7 @@ export function ReplyTab({
       window.requestAnimationFrame(() =>
         document.getElementById('replyAnalysis')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
       );
+      if (reqId !== reqIdRef.current) return;
       setLastReplies((prev) =>
         [...(keepHistory ? prev : []), ...replies.map((r) => normalizeBubbles(r).join('\n'))].slice(
           -9,
@@ -207,6 +222,8 @@ export function ReplyTab({
           images={images}
           setImages={setImages}
           onError={setError}
+          epoch={imagesEpoch}
+          onBusyChange={setImagesBusy}
         />
 
         <div className="mt-4">
@@ -305,7 +322,7 @@ export function ReplyTab({
           {adopted.length ? (
             <>
               <span>
-            コピーした返信 {adopted.length}件を文体学習に使用中
+            コピーした返信 {adopted.length}件を記憶(直近8件を文体学習に使用)
             {adoptedPersisted ? '' : '(この端末では保存できないため今回のみ)'}
           </span>
               <button
@@ -359,6 +376,12 @@ export function ReplyTab({
           AIから{result.replies.length}案しか返りませんでした。「方向性を変えて別の3案」で出し直せます。
         </p>
       )}
+      {result && !busy && split === 'multi' &&
+        result.replies.every((r) => normalizeBubbles(r).length === 1) && (
+          <p id="splitNote" className="mb-2 px-1 text-[12px] text-ink-muted">
+            「分けて送る」を選びましたが、AIは1通で返しました(この場面では分けない方が自然と判断されています)。
+          </p>
+        )}
       <div id="replyResults" className="space-y-3" hidden={!result || busy}>
         {(result?.replies ?? []).map((r, i) => (
           <ReplyCard

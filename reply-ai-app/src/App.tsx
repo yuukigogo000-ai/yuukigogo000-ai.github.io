@@ -19,6 +19,9 @@ export default function App() {
   const [toast, setToast] = useState('');
   const [adopted, setAdopted] = useState<string[]>(getAdopted);
   const [adoptedPersisted, setAdoptedPersisted] = useState(true);
+  // 連続コピーで取りこぼさないよう、採用履歴は ref を正とする(state は表示用)
+  const adoptedRef = useRef<string[]>(adopted);
+  const adoptedPersistedRef = useRef(true);
   const [showFirstRun, setShowFirstRun] = useState(() => {
     try {
       return localStorage.getItem(ONBOARD_KEY) !== '1';
@@ -72,7 +75,12 @@ export default function App() {
       return;
     }
     // 保存できない端末でも、その回に採用した分がまとめて残るように1回で書く
-    const { list, persisted } = addAdopted(texts, adoptedPersisted ? undefined : adopted);
+    const { list, persisted } = addAdopted(
+      texts,
+      adoptedPersistedRef.current ? undefined : adoptedRef.current,
+    );
+    adoptedRef.current = list;
+    adoptedPersistedRef.current = persisted;
     setAdopted(list);
     setAdoptedPersisted(persisted);
     showToast(
@@ -173,6 +181,8 @@ export default function App() {
           onAdopt={onAdopt}
           onClearAdopted={() => {
             clearAdopted();
+            adoptedRef.current = [];
+            adoptedPersistedRef.current = true;
             setAdopted([]);
             setAdoptedPersisted(true);
           }}
@@ -195,7 +205,11 @@ export default function App() {
         open={settingsOpen}
         onOpenChange={setSettingsOpen}
         apiKey={apiKey}
-        setApiKey={setApiKey}
+        setApiKey={(v) => {
+          setApiKey(v);
+          // 「記憶する」が入っているなら、生成を待たずにその場で保存する
+          if (remember) saveKey(v.trim(), true);
+        }}
         remember={remember}
         setRemember={(v) => {
           setRemember(v);
