@@ -170,12 +170,13 @@ const profileResult = () => ({
   check('13e. 強み/弱みリスト', (await page.$$('#profStrengths li')).length === 2 && (await page.$$('#profWeaknesses li')).length === 3);
   check('13f. bio改善案2枚', (await page.$$('#profResults .card')).length === 2);
   check('13g. 写真アドバイス表示', (await page.textContent('#profPhotoAdvice')).includes('写真アドバイステスト'));
-  check('13h. プロフ用プロンプト送信', lastBody.system.includes('プロフィール'));
+  check('13h. プロフ用プロンプト送信', JSON.stringify(lastBody.system).includes('プロフィール'));
+  check('13i. システムプロンプトにキャッシュ指定', Array.isArray(lastBody.system) && lastBody.system[0].cache_control?.type === 'ephemeral');
 
   // --- 16. サンプル会話ローダー ---
   await page.click('#tabBtnReply');
   const optCount = await page.$$eval('#sampleSelect option', o => o.length);
-  check('16a. サンプル7件が選択肢に出る', optCount === 8, `options=${optCount}`);
+  check('16a. サンプル8件が選択肢に出る', optCount === 9, `options=${optCount}`);
   await page.selectOption('#sampleSelect', '1'); // ②カフェ・デートに誘う
   check('16b. 会話が自動入力', (await page.inputValue('#conversation')).includes('中目黒'));
   check('16c. プロフィールが自動入力', (await page.inputValue('#partnerProfile')).includes('看護師'));
@@ -191,8 +192,9 @@ const profileResult = () => ({
   // --- 17. 吹き出し分割・採用学習・新ゴール ---
   await page.click('#tabBtnReply');
   const optCount2 = await page.$$eval('#sampleSelect option', o => o.length);
-  check('17a. サンプル7件に増加', optCount2 === 8, `options=${optCount2}`);
-  check('17b. 新ゴール(日程調整/前日/お礼)が存在', await page.$('#g5') && await page.$('#g6') && await page.$('#g7'));
+  check('17a. サンプル8件に増加', optCount2 === 9, `options=${optCount2}`);
+  check('17b. 新ゴール(日程調整/前日/お礼/LINE交換)が存在', await page.$('#g5') && await page.$('#g6') && await page.$('#g7') && await page.$('#g8'));
+  check('17b2. 指示書に実データ既定値セクション', JSON.stringify(lastBody.system).includes('本物の文体'));
   await page.evaluate(() => localStorage.removeItem('reply_ai_adopted'));
   await page.selectOption('#sampleSelect', '5'); // ⑥日程調整
   check('17c. サンプル⑥でゴール日程調整に切替', await page.isChecked('#g5'));
