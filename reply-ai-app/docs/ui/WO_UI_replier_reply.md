@@ -50,8 +50,8 @@
 | (a) 交通整理前 | RIZZ 02, Flair 02, UpTalk 02 | 入口1つ・設定は畳む / 下タブは採らない(この画面は1本の流れ) |
 | (b) 見本指示前 | Flair 02 | 結果は「会話の文脈→候補→次の一手」の順に積む |
 | (c) トークン抽出時 | Stitch Zen Precision | M3ロール・型スケール・4/8/full の角丸 |
-| (d) 実装 領域ごと | (実装時に追記) | |
-| (e) 横並び前 | (作成時に追記) | |
+| (d) 実装 領域ごと | Flair 02(結果の積み方)/ Stitch B(入力サマリ1行・タップでコピー) | 結果が出たら入力を畳む・カードタップでコピーを採用 / 「残り回数」表示はやめた |
+| (e) 横並び前 | Stitch A・B(見本) | 見本と同じ順序・同じ緑・同じ角丸で並ぶことを確認。コピーの大ボタンは見本より1つ多い(見送り) |
 
 ## 3. 見本
 
@@ -110,4 +110,28 @@ G0基準線(済) → G3トークン → G4実装 → G5 uicheck --baseline GREEN
 
 ## 11. 完了報告
 
-(G8で記入)
+```
+WO: UI-Replier-返信提案   結果: 機械検査は完了 / 発注者の一言(G6)待ち
+基準線: 2026-08-17T16:18Z   検査: 2026-08-17T16:51Z   uicheck: GREEN   既存テスト: 緑 135/135
+| 指標 | before | after | 目標 |
+| input_font_small (HARD) | 5 | 0 | 0 |
+| tap<44 | 7 | 0 | 0 |
+| contrast_low | 11 | 0 | 0 |
+| distinct_font_sizes | 9 | 4 | ≤5 |
+| distinct_radii | 8 | 3 | ≤3 |
+| distinct_text_colors | 4 | 3 | — |
+| css_raw_hex_outside_root | 43 | 3 | 0(未達・下記) |
+| css_font_size_decl_distinct | 15 | 8 | — |
+| css_radius_decl_distinct | 12 | 5 | — |
+横並び画像: scratchpad/shots5/compare_input.png・compare_result.png(見本 | 実装、iphone/light)
+状態スクショ: uicheck out(android-s/iphone × light/dark)。?state= フックは未実装(見送り)
+発注者の一言: 未回答   実機: 未
+Codex(工程7): r7で2件指摘(折りたたみが開けると分からない・タップ22px)→修正→r8 PASS
+```
+
+### 見送り(次WOへ)
+1. `css_raw_hex_outside_root = 3`: 残りは Tailwind のリセットが出す `#000` `#0000` 等で、こちらのコードの生値ではない。消すにはリセットの上書きが要るため見送り
+2. `?state=empty|error|...` の再現フック: 未実装。状態のスクショは実操作で撮っている
+3. 見本3案の生成: 今回はA(入力)とB(結果)の2案。競合3案は次WO
+4. refs 51枚のうち実際に見たのは4枚。残りは未確認
+5. プロフィール添削タブは同じトークンに乗っただけで、交通整理は未実施(別WO)

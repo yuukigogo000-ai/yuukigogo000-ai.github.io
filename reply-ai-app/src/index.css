@@ -162,6 +162,33 @@
     color: var(--color-ink-muted);
   }
 
+  /* 折りたたみ行: 開けることが分かる印(山形)と48pxのタップ領域 */
+  .disclosure {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 48px;
+    cursor: pointer;
+    list-style: none;
+    font-size: var(--text-sub);
+    font-weight: 600;
+    color: var(--color-ink-muted);
+  }
+
+  .disclosure::-webkit-details-marker {
+    display: none;
+  }
+
+  .disclosure .chev {
+    flex-shrink: 0;
+    transition: transform 0.15s ease;
+  }
+
+  details[open] > .disclosure .chev {
+    transform: rotate(180deg);
+  }
+
   /* 丸い形(チップ・バッジ・トースト)。角丸は 4 / 8 / pill の3種だけ */
   .pill {
     border-radius: 9999px;

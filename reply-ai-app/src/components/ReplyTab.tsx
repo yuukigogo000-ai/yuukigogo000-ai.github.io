@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Compass, RefreshCw, Trash2 } from 'lucide-react';
+import { ChevronDown, Compass, RefreshCw, Trash2 } from 'lucide-react';
 import { AutoTextarea } from './AutoTextarea';
 import { Chips, type ChipOption } from './Chips';
 import { Dropzone } from './Dropzone';
@@ -344,9 +344,12 @@ export function ReplyTab({
       </section>
 
       <details id="goalSettings" className="card mt-3 px-4 py-2">
-        <summary className="flex min-h-12 cursor-pointer items-center text-sub font-bold text-ink-muted">
-          今回の狙い: {GOALS.find((g) => g.value === goal)?.label} ・ 文体:{' '}
-          {TONES.find((t) => t.value === tone)?.label}
+        <summary className="disclosure">
+          <span className="truncate">
+            今回の狙い: {GOALS.find((g) => g.value === goal)?.label} ・ 文体:{' '}
+            {TONES.find((t) => t.value === tone)?.label}
+          </span>
+          <ChevronDown className="chev" size={18} strokeWidth={2} aria-hidden="true" />
         </summary>
         <div className="pb-2">
           <h2 className="mt-2 mb-2 text-label font-bold tracking-wide text-ink-muted">ゴール</h2>
@@ -367,8 +370,9 @@ export function ReplyTab({
       </details>
 
       <details id="advancedSettings" className="card mt-3 px-4 py-3.5">
-        <summary className="cursor-pointer text-sub font-bold text-ink-muted">
-          詳細設定(追加の指示・文体サンプル)
+        <summary className="disclosure">
+          <span>詳細設定(追加の指示・文体サンプル)</span>
+          <ChevronDown className="chev" size={18} strokeWidth={2} aria-hidden="true" />
         </summary>
         <div className="mt-4">
           <label className="label" htmlFor="extra">

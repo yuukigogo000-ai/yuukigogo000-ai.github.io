@@ -767,6 +767,20 @@ const profileResult = () => ({
   check('25c. 基本情報を変えたら前の診断結果を表示しない', !(await page.isVisible('#profResults')));
   await page.click('#tabBtnReply');
 
+  // --- 26. 折りたたみ行は開けると分かり、48pxでタップできる(Codex r7) ---
+  await page.reload();
+  await page.waitForSelector('#generate');
+  const disc = await page.$$eval('#tabReply summary.disclosure', els => els.map(e => {
+    const r = e.getBoundingClientRect();
+    return { h: Math.round(r.height), chev: !!e.querySelector('.chev') };
+  }));
+  check('26a. 折りたたみ行に山形の印がある', disc.length >= 2 && disc.every(d => d.chev), JSON.stringify(disc));
+  check('26b. 折りたたみ行のタップ領域が48px以上', disc.every(d => d.h >= 48), JSON.stringify(disc));
+  await page.click('#goalSettings summary');
+  check('26c. クリックでゴールが開く', await page.isVisible('label[for="g2"]'));
+  await page.click('#goalSettings summary');
+  check('26d. もう一度クリックで閉じる', !(await page.isVisible('label[for="g2"]')));
+
   // --- 14. localStorage永続化 ---
   await page.reload();
   await page.waitForSelector('#generate');
