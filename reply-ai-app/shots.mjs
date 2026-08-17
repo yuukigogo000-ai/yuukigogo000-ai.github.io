@@ -55,6 +55,7 @@ async function shoot(name, colorScheme) {
   await page.reload();
   await page.waitForSelector('#generate');
   await page.selectOption('#sampleSelect', '1');
+  await page.waitForTimeout(400); // チップの色の切り替えが終わってから撮る
   await page.screenshot({ path: `${OUT}/${name}-1-input.png`, fullPage: true });
 
   await page.click('#generate');
