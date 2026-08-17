@@ -145,6 +145,52 @@ const AI_PATTERNS = [
   { re: /pika ?labs|pika\.art/i,           name: 'Pika' },
   { re: /lumalabs|dream ?machine/i,        name: 'Luma Dream Machine' },
   { re: /hailuo|minimax.?video/i,          name: 'Hailuo (MiniMax)' },
+  // 汎用の自己申告(素材サイトのタイトル・キーワード等に多い)
+  { re: /generative[\s\-_]?ai\b/i,                                    name: '「Generative AI」表記' },
+  { re: /\bai[\s\-_]?generated\b|\bgenerated (?:by|with|using) (?:an? )?ai\b/i, name: '「AI generated」表記' },
+  { re: /生成AI|AI生成|AIで生成|AIイラスト/,                              name: '「生成AI」表記(日本語)' },
+];
+
+/* ストック素材サイトの痕跡(プロフィール写真として使われていれば流用・架空人物のサイン) */
+const STOCK_PATTERNS = [
+  { re: /adobe ?stock|stock\.adobe\.com/i, name: 'Adobe Stock' },
+  { re: /shutterstock/i,                    name: 'Shutterstock' },
+  { re: /getty ?images|gettyimages/i,       name: 'Getty Images' },
+  { re: /\bistock(photo)?\b/i,             name: 'iStock' },
+  { re: /depositphotos/i,                   name: 'Depositphotos' },
+  { re: /\b123rf\b/i,                      name: '123RF' },
+  { re: /dreamstime/i,                      name: 'Dreamstime' },
+  { re: /\balamy\b/i,                      name: 'Alamy' },
+  { re: /\bpixta\b/i,                      name: 'PIXTA' },
+  { re: /photo-?ac\b|photoac/i,             name: '写真AC' },
+  { re: /\bfreepik\b/i,                    name: 'Freepik' },
+  { re: /\benvato\b/i,                     name: 'Envato' },
+  { re: /vecteezy/i,                        name: 'Vecteezy' },
+  { re: /\bpexels\b/i,                     name: 'Pexels' },
+  { re: /\bunsplash\b/i,                   name: 'Unsplash' },
+  { re: /\bpixabay\b/i,                    name: 'Pixabay' },
+];
+function matchStock(text) {
+  const hits = [];
+  for (const p of STOCK_PATTERNS) if (p.re.test(text)) hits.push(p.name);
+  return [...new Set(hits)];
+}
+
+/* XMPから主要フィールドを取り出す(属性形式と rdf:li 形式の両方に対応) */
+function xmpField(xmp, tag) {
+  const attr = xmp.match(new RegExp(tag + '="([^"]{1,400})"'));
+  if (attr) return attr[1];
+  const el = xmp.match(new RegExp('<' + tag + '[^>]*>([\\s\\S]{0,4000}?)</' + tag + '>'));
+  if (!el) return '';
+  const inner = el[1];
+  const items = [...inner.matchAll(/<rdf:li[^>]*>([^<]{1,400})<\/rdf:li>/g)].map(m => m[1].trim()).filter(Boolean);
+  if (items.length) return items.join(', ');
+  return inner.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+const XMP_FIELDS = [
+  ['dc:title', 'タイトル (XMP)'], ['dc:description', '説明 (XMP)'], ['dc:subject', 'キーワード (XMP)'],
+  ['dc:creator', '作者 (XMP)'], ['dc:rights', '権利表記 (XMP)'], ['photoshop:Credit', 'クレジット (XMP)'],
+  ['xmpRights:WebStatement', '権利URL (XMP)'], ['plus:ImageSupplierName', '供給元 (XMP)'],
 ];
 
 /* 生成AIの定番出力サイズ(両辺一致で弱い手がかりとする) */
@@ -585,6 +631,7 @@ async function analyze(file) {
   const exif = parsed.exif || {};
   const xmp = parsed.xmp || '';
   const aiHits = new Set();
+  const stockHits = new Set();
 
   /* --- C2PA --- */
   const hasC2PA = (parsed.c2paPayloads || []).length > 0;
@@ -627,8 +674,17 @@ async function analyze(file) {
     if (tool) {
       meta['作成ツール (XMP CreatorTool)'] = tool.trim();
       matchAI(tool).forEach(g => aiHits.add(g));
+      matchStock(tool).forEach(sname => stockHits.add(sname));
+    }
+    for (const [tag, label] of XMP_FIELDS) {
+      const v = xmpField(xmp, tag);
+      if (!v) continue;
+      meta[label] = v.slice(0, 300);
+      matchAI(v).forEach(g => aiHits.add(g + '(' + label.replace(' (XMP)', '') + ')'));
+      matchStock(v).forEach(sname => stockHits.add(sname));
     }
     matchAI(xmp).forEach(g => aiHits.add(g));
+    matchStock(xmp).forEach(sname => stockHits.add(sname));
   }
 
   /* --- PNGテキストチャンク(Stable Diffusion系の定番) --- */
@@ -660,6 +716,7 @@ async function analyze(file) {
   for (const [k, v] of Object.entries(exif)) meta[k] = v;
   const software = exif['ソフトウェア (Software)'] || '';
   matchAI(software).forEach(g => aiHits.add(g));
+  matchStock([software, exif['作者 (Artist)'] || '', exif['著作権 (Copyright)'] || ''].join(' ')).forEach(sname => stockHits.add(sname));
   const hasCameraExif = !!(exif['メーカー (Make)'] || exif['機種 (Model)'] || exif['撮影日時 (DateTimeOriginal)']);
   if (hasCameraExif && aiHits.size === 0) {
     findings.push({
@@ -674,6 +731,7 @@ async function analyze(file) {
   for (const c of (parsed.comments || [])) {
     meta['JPEGコメント'] = c.slice(0, 200);
     matchAI(c).forEach(g => aiHits.add(g));
+    matchStock(c).forEach(sname => stockHits.add(sname));
   }
 
   /* --- 画像サイズと生成AI定番サイズの照合 --- */
@@ -694,11 +752,25 @@ async function analyze(file) {
     }
   }
 
+  /* --- ストック素材サイト由来 --- */
+  const stockList = [...stockHits];
+  if (stockList.length) {
+    findings.push({
+      level: 'warn',
+      title: `ストック素材サイト由来の画像です(${stockList.join(', ')})`,
+      detail: '素材サイトで配布されている画像の痕跡がメタデータにあります。SNS・マッチングアプリの「本人写真」としてこの画像が使われている場合、他人の素材の流用または架空の人物である可能性が高くなります。素材サイトで同じ画像を探し、「生成AI」ラベルの有無も確認してください(下の逆画像検索が有効です)。',
+    });
+    meta['ストック素材の痕跡'] = stockList.join(', ');
+  }
+
   /* --- 画像の経緯(どう保存されてきたか)の推定 --- */
   const traceNotes = [];
   if (format === 'JPEG') {
     if (parsed.hasJFIF && Object.keys(exif).length === 0 && !xmp && !hasC2PA) {
       traceNotes.push('EXIF・XMPが存在せず、メタデータを保持しないソフトで再保存されています(SNS・メッセージアプリ経由の典型)');
+    }
+    if ((parsed.segments || []).some(sg => /EXIF/i.test(sg)) && !hasCameraExif) {
+      traceNotes.push('EXIFブロックはあるがカメラ機種・撮影日時が含まれていません(編集ソフト・配信システムからの書き出し、または撮影情報を除去済み。生成AIの出力にもよく見られる形)');
     }
     if (parsed.sof && parsed.sof.progressive) {
       traceNotes.push('プログレッシブJPEG — Web/SNS配信用に再圧縮された画像によく見られる形式');
@@ -761,7 +833,7 @@ async function analyze(file) {
   meta['ファイルサイズ'] = (bytes.length / 1024).toFixed(1) + ' KB';
   if ((parsed.segments || []).length) meta['検出セグメント'] = parsed.segments.join(', ');
 
-  const verdict = aiList.length ? 'ai' : hasC2PA ? 'c2pa' : hasCameraExif ? 'camera' : aiSizeHit ? 'weak' : 'unknown';
+  const verdict = aiList.length ? 'ai' : hasC2PA ? 'c2pa' : stockList.length ? 'stock' : hasCameraExif ? 'camera' : aiSizeHit ? 'weak' : 'unknown';
   return { format, findings, meta, xmp, verdict, hasC2PA };
 }
 
@@ -848,6 +920,8 @@ const VERDICTS = {
              body: '来歴データが埋め込まれています。編集履歴・作成ツールの詳細は公式の検証ツールで確認できます。' },
   camera:  { cls: 'ok',   icon: '📷', title: 'カメラ撮影の痕跡があります',
              body: 'カメラ機種や撮影日時のメタデータが残っており、実写である可能性を高めます(偽装可能な点には注意)。' },
+  stock:   { cls: 'warn', icon: '🗂️', title: 'ストック素材サイト由来の画像です',
+             body: '素材サイトで配布されている画像の痕跡があります。実在アカウントの「本人写真」としては不自然で、流用または架空人物の疑いがあります。AI生成かどうかは素材サイト上の「生成AI」ラベルや、下の実験的な画素判定も参考にしてください。' },
   weak:    { cls: 'warn', icon: '🟡', title: 'AI生成を疑う手がかりがあります(弱)',
              body: '決定的な証拠はありませんが、注意すべき特徴が見つかりました。詳細は下のシグナル一覧を確認し、逆画像検索や元データの入手で追加検証してください。' },
   unknown: { cls: 'warn', icon: '❓', title: '判定材料がありません',
