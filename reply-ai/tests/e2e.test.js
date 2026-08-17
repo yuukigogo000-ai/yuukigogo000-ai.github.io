@@ -172,6 +172,22 @@ const profileResult = () => ({
   check('13g. 写真アドバイス表示', (await page.textContent('#profPhotoAdvice')).includes('写真アドバイステスト'));
   check('13h. プロフ用プロンプト送信', lastBody.system.includes('プロフィール'));
 
+  // --- 16. サンプル会話ローダー ---
+  await page.click('#tabBtnReply');
+  const optCount = await page.$$eval('#sampleSelect option', o => o.length);
+  check('16a. サンプル5件が選択肢に出る', optCount === 6, `options=${optCount}`);
+  await page.selectOption('#sampleSelect', '1'); // ②カフェ・デートに誘う
+  check('16b. 会話が自動入力', (await page.inputValue('#conversation')).includes('中目黒'));
+  check('16c. プロフィールが自動入力', (await page.inputValue('#partnerProfile')).includes('看護師'));
+  check('16d. 文体サンプルが自動入力', (await page.inputValue('#styleSample')).length > 0);
+  check('16e. ゴールが「デートに誘う」に切替', await page.isChecked('#g2'));
+  await page.selectOption('#sampleSelect', '3'); // ④初回メッセージ(会話空)
+  check('16f. 初回メッセ例は会話欄が空+ゴール初回', (await page.inputValue('#conversation')) === '' && await page.isChecked('#g4'));
+  mock = () => ({ status: 200, body: replyResult('S') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスS'));
+  check('16g. 会話空でも文体サンプル+プロフで生成できる', JSON.stringify(lastBody.messages).includes('ラーメンなら任せて'));
+
   // --- 14. localStorage永続化 ---
   await page.reload();
   await page.waitForTimeout(300);
