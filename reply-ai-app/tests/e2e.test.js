@@ -266,6 +266,7 @@ const profileResult = () => ({
   const manJson = man.ok() ? await man.json() : {};
   check('18a. manifest配信', man.ok() && manJson.display === 'standalone' && manJson.start_url === '/reply-ai/', JSON.stringify(manJson).slice(0, 120));
   check('18b. manifestにmaskableアイコン', (manJson.icons || []).some(i => i.purpose === 'maskable'));
+  check('18b2. manifestの表示名がReplier', manJson.short_name === 'Replier', manJson.short_name);
   check('18c. Service Worker配信', (await page.request.get(new URL('sw.js', BASE).href)).ok());
   check('18d. アイコン画像配信', (await page.request.get(new URL('icons/icon-512.png', BASE).href)).ok()
         && (await page.request.get(new URL('icons/apple-touch-icon.png', BASE).href)).ok());
@@ -318,6 +319,22 @@ const profileResult = () => ({
   const lightBg = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
   const lightLum = (lightBg.match(/\d+/g) || [0, 0, 0]).slice(0, 3).reduce((a, b) => a + Number(b), 0) / 3;
   check('19k. ライトモードで背景が明るい', lightLum > 200, lightBg);
+
+  // --- 20. 名称・吹き出しの分け方 ---
+  check('20a. ヘッダーがReplier', (await page.textContent('header h1')).trim() === 'Replier');
+  check('20b. 吹き出しの分け方を選べる', await page.$('#b0') && await page.$('#b1') && await page.$('#b2'));
+  check('20c. 指示書に「全部同じ通数にしない」ルール', JSON.stringify(lastBody.system).includes('全部同じにしない'));
+  check('20d. 既定はおまかせ', await page.isChecked('#b0'));
+  await page.click('label[for="b1"]'); // 1通にまとめる
+  mock = () => ({ status: 200, body: replyResult('U') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスU'));
+  check('20e. 選択がプロンプトに反映', JSON.stringify(lastBody.messages).includes('吹き出しの分け方') &&
+        JSON.stringify(lastBody.messages).includes('1通にまとめる'));
+  const singleCounts = await page.$$eval('#replyResults .card', cs => cs.map(c => c.querySelectorAll('.bubble').length));
+  check('20f. 1通指定ならAIが分けて返しても1吹き出しに丸める', JSON.stringify(singleCounts) === '[1,1,1]', JSON.stringify(singleCounts));
+  check('20g. まとめた本文は改行で連結される', (await page.textContent('#replyResults .card .bubble')).includes('二通目A-U'));
+  await page.click('label[for="b0"]');
 
   // --- 14. localStorage永続化 ---
   await page.reload();

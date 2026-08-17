@@ -46,6 +46,19 @@ const TONES: ChipOption[] = [
   { id: 't3', value: 'ユーモアがあって遊び心のある', label: 'ユーモア' },
 ];
 
+/** 吹き出しの分け方。場によって正解が違う(アプリ内は1通・LINEは連投が普通)ので人が選べるようにする */
+const SPLITS: ChipOption[] = [
+  { id: 'b0', value: 'auto', label: 'おまかせ' },
+  { id: 'b1', value: 'single', label: '1通にまとめる' },
+  { id: 'b2', value: 'multi', label: '分けて送る' },
+];
+
+const SPLIT_PROMPT: Record<string, string> = {
+  auto: '会話の場(LINEかアプリ内か)と相手の吹き出し数から判断する',
+  single: '3案とも1通にまとめる(bubblesは必ず1要素だけにする)',
+  multi: '2〜3通に分ける案を中心にする。ただし3案すべてを同じ通数にはしない',
+};
+
 const STAGES = ['会話を読み取っています', '文体を分析しています', '返信案を作っています'];
 
 /** bubbles(新) と text(旧) の両方を受ける */
@@ -83,6 +96,7 @@ export function ReplyTab({
   const [tone, setTone] = useState(TONES[0].value);
   const [extra, setExtra] = useState('');
   const [styleSample, setStyleSample] = useState('');
+  const [split, setSplit] = useState(SPLITS[0].value);
   const [sample, setSample] = useState('');
   const [result, setResult] = useState<ReplyResult | null>(null);
   const [lastReplies, setLastReplies] = useState<string[]>([]);
@@ -131,6 +145,7 @@ export function ReplyTab({
       (conversation.trim() ? `## 会話(テキスト)\n${conversation.trim()}\n\n` : '\n') +
       `## 今回のゴール\n${goal}\n\n` +
       `## トーン\n${toneText}\n` +
+      `\n## 吹き出しの分け方\n${SPLIT_PROMPT[split]}\n` +
       (extra.trim() ? `\n## ユーザーからの追加指示(最優先で従う)\n${extra.trim()}\n` : '');
 
     if (history.length) {
@@ -225,6 +240,16 @@ export function ReplyTab({
         <Chips name="goal" options={GOALS} value={goal} onChange={setGoal} ariaLabel="今回のゴール" />
         <h2 className="mt-5 mb-3 text-[13px] font-bold tracking-wide text-ink-muted">トーン</h2>
         <Chips name="tone" options={TONES} value={tone} onChange={setTone} ariaLabel="トーン" />
+        <h2 className="mt-5 mb-3 text-[13px] font-bold tracking-wide text-ink-muted">
+          吹き出しの分け方
+        </h2>
+        <Chips
+          name="split"
+          options={SPLITS}
+          value={split}
+          onChange={setSplit}
+          ariaLabel="吹き出しの分け方"
+        />
       </section>
 
       <details className="card mt-3 px-4 py-3.5">
@@ -311,7 +336,10 @@ export function ReplyTab({
           <ReplyCard
             key={i}
             index={i}
-            bubbles={normalizeBubbles(r)}
+            bubbles={
+              // 「1通にまとめる」を選んだら、AIが分けてきても必ず1通にする
+              split === 'single' ? [normalizeBubbles(r).join('\n')] : normalizeBubbles(r)
+            }
             why={r.why}
             onCopy={onAdopt}
           />

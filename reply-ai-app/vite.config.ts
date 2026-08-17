@@ -14,8 +14,8 @@ export default defineConfig({
       includeAssets: ['icons/apple-touch-icon.png', 'icons/favicon.svg'],
       manifest: {
         id: '/reply-ai/',
-        name: 'アポ取りAI',
-        short_name: 'アポ取りAI',
+        name: 'Replier — 返信コーチ',
+        short_name: 'Replier',
         description: 'LINE・マッチングアプリの会話から、あなたの文体のまま返信を提案する会話コーチ',
         lang: 'ja',
         start_url: '/reply-ai/',

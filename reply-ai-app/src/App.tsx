@@ -80,7 +80,7 @@ export default function App() {
     <div className="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col px-4 pb-6">
       <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between border-b border-line bg-canvas/90 px-4 py-3 backdrop-blur">
         <div>
-          <h1 className="text-[16px] font-bold tracking-tight">アポ取りAI</h1>
+          <h1 className="text-[16px] font-bold tracking-tight">Replier</h1>
           <p className="text-[11.5px] text-ink-muted">あなたの文体のまま、次の一通を作る</p>
         </div>
         <button

@@ -1,4 +1,4 @@
-# アポ取りAI — 事業計画メモ & MVP
+# Replier(リプライア)— 事業計画メモ & MVP
 
 > 📐 **設計図・機能マップ・使い方は [DESIGN.md](DESIGN.md)**、競合調査(Rizz / YourMove AI)は [RESEARCH.md](RESEARCH.md) を参照。本書は事業背景のメモ。
 
