@@ -29,6 +29,7 @@ export function Dropzone({
   const fileRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const epochRef = useRef(epoch);
+  const pendingRef = useRef(0);
 
   useEffect(() => {
     epochRef.current = epoch;
@@ -37,6 +38,7 @@ export function Dropzone({
   async function addFiles(files: File[]) {
     const myEpoch = epochRef.current;
     let count = images.length;
+    pendingRef.current += 1;
     onBusyChange?.(true);
     try {
       for (const f of files) {
@@ -59,7 +61,11 @@ export function Dropzone({
         }
       }
     } finally {
-      onBusyChange?.(false);
+      pendingRef.current -= 1;
+      if (pendingRef.current <= 0) {
+        pendingRef.current = 0;
+        onBusyChange?.(false);
+      }
     }
   }
 

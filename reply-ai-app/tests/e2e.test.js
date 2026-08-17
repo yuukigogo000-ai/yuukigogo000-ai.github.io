@@ -486,7 +486,10 @@ const profileResult = () => ({
 
   // 22d. 更新は自動リロードではなくメッセージ方式(入力中に勝手に消えない)
   const swText = await page.request.get(new URL('sw.js', BASE).href).then(r => r.text());
-  check('22d. SWはSKIP_WAITINGを待つ(自動リロードしない)', swText.includes('SKIP_WAITING'));
+  const skipCalls = (swText.match(/skipWaiting\(\)/g) || []).length;
+  const skipInMessage = /addEventListener\(\s*["']message["'][\s\S]{0,300}?skipWaiting\(\)/.test(swText);
+  check('22d. skipWaitingはmessage受信時だけ(勝手にリロードしない)',
+        swText.includes('SKIP_WAITING') && skipCalls === 1 && skipInMessage, `calls=${skipCalls} inMessage=${skipInMessage}`);
   const mainScript = await page.$eval('script[type=module][src]', el => el.getAttribute('src'));
   const bundle = await page.request.get(new URL(mainScript, BASE).href).then(r => r.text());
   check('22d2. 更新バーのUIが実際に同梱されている', bundle.includes('新しい版が公開されています'));
@@ -500,6 +503,15 @@ const profileResult = () => ({
   await swPage.evaluate(() => navigator.serviceWorker.ready.then(() => true));
   await swPage.waitForTimeout(1500);
   await swPage.evaluate(() => localStorage.setItem('reply_ai_key', 'sk-ant-offline-test'));
+  // 先に成功応答を1回通す(これがキャッシュされていないことを後で確かめる)
+  await swPage.route('https://api.anthropic.com/**', r => r.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify(replyResult('SW')) }));
+  await swPage.reload();
+  await swPage.fill('#conversation', '自分: a\n相手: b');
+  await swPage.click('#generate');
+  await swPage.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスSW'), null, { timeout: 15000 });
+  check('22e0. SW有効でも通常どおり生成できる', await swPage.isVisible('#replyResults'));
+  await swPage.unroute('https://api.anthropic.com/**');
   await swCtx.setOffline(true);
   await swPage.reload();
   const shellOk = await swPage.$('#generate');
@@ -612,6 +624,64 @@ const profileResult = () => ({
   await openDetails();
   check('23f. 学習に使う範囲を正しく書いている', (await page.textContent('#adoptedNote')).includes('直近8件') ||
         (await page.textContent('#adoptedNote')).includes('0件'), await page.textContent('#adoptedNote'));
+
+  // --- 24. Codex r4 指摘の回帰(入力変更中の応答・中断・同時読み込み) ---
+  // 24a. 生成中に会話を書き換えたら、古い応答を新しい入力の結果として出さない
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.fill('#conversation', '自分: 会話A\n相手: あ');
+  delayMs = 1200;
+  mock = () => ({ status: 200, body: replyResult('EDIT') });
+  const editRun = page.click('#generate');
+  await page.waitForTimeout(250);
+  await page.fill('#conversation', '自分: 会話B(書き換えた)\n相手: い');
+  await editRun;
+  await page.waitForTimeout(1400);
+  check('24a. 入力を書き換えたら古い応答を採用しない',
+        !(await page.isVisible('#replyResults')) && (await page.textContent('#error')).includes('入力が変わった'),
+        await page.textContent('#error'));
+  delayMs = 0;
+
+  // 24b. 生成中にサンプルへ切り替えたら、待たされずにすぐ次を作れる(中断されている)
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.evaluate(() => localStorage.setItem('reply_ai_timeout_ms', '60000'));
+  await page.fill('#conversation', '自分: 長い処理\n相手: う');
+  delayMs = 4000;
+  const stalled = page.click('#generate');
+  await page.waitForTimeout(300);
+  await page.selectOption('#sampleSelect', '0');
+  await page.waitForFunction(() => !document.querySelector('#generate').disabled, null, { timeout: 3000 });
+  check('24b. 切り替えたら実行中の生成を打ち切ってボタンが戻る', !(await page.isDisabled('#generate')));
+  check('24b2. 打ち切りをエラーとして表示しない', (await page.textContent('#error')) === '', await page.textContent('#error'));
+  delayMs = 0;
+  await stalled.catch(() => {});
+  await page.evaluate(() => localStorage.removeItem('reply_ai_timeout_ms'));
+
+  // 24c. 画像を2回に分けて追加しても、1回目の完了で「読み込み終わり」にしない
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.evaluate(() => {
+    const orig = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+    let n = 0;
+    Object.defineProperty(HTMLImageElement.prototype, 'src', {
+      set(v) {
+        n += 1;
+        setTimeout(() => orig.set.call(this, v), n === 1 ? 200 : 900);
+      },
+      get() { return orig.get.call(this); },
+      configurable: true,
+    });
+  });
+  await page.fill('#conversation', '自分: a\n相手: b');
+  await page.setInputFiles('#convFile', [png]);
+  await page.setInputFiles('#convFile', [png]);
+  await page.waitForTimeout(400);
+  await page.click('#generate');
+  check('24c. 2枚目の読み込み中は生成させない', (await page.textContent('#error')).includes('読み込み中'),
+        await page.textContent('#error'));
+  await page.waitForFunction(() => document.querySelectorAll('#convThumbs .thumb').length === 2, null, { timeout: 5000 });
+  check('24c2. 2枚とも最終的に取り込まれる', (await page.$$('#convThumbs .thumb')).length === 2);
 
   // --- 14. localStorage永続化 ---
   await page.reload();

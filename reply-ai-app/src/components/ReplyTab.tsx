@@ -5,7 +5,7 @@ import { Chips, type ChipOption } from './Chips';
 import { Dropzone } from './Dropzone';
 import { Meter } from './Meter';
 import { ReplyCard } from './ReplyCard';
-import { callClaude, type ReplyResult } from '../lib/api';
+import { CanceledError, callClaude, type ReplyResult } from '../lib/api';
 import { imageBlocks, type PickedImage } from '../lib/images';
 import { REPLY_SCHEMA, REPLY_SYSTEM } from '../lib/prompts';
 import { SAMPLES } from '../lib/samples';
@@ -104,6 +104,26 @@ export function ReplyTab({
   const [imagesBusy, setImagesBusy] = useState(false);
   /** 送信ごとの通し番号。古い応答が新しい入力の結果として表示されるのを防ぐ */
   const reqIdRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+  /** 送信内容の指紋。応答が返った時点で入力が変わっていたら、その結果は使わない */
+  const inputsRef = useRef('');
+  inputsRef.current = JSON.stringify([
+    conversation,
+    partnerProfile,
+    goal,
+    tone,
+    extra,
+    styleSample,
+    split,
+    imagesEpoch,
+    images.map((im) => im.data.length),
+  ]);
+
+  function cancelInFlight() {
+    reqIdRef.current++;
+    abortRef.current?.abort();
+    abortRef.current = null;
+  }
   const [result, setResult] = useState<ReplyResult | null>(null);
   const [lastReplies, setLastReplies] = useState<string[]>([]);
 
@@ -112,7 +132,7 @@ export function ReplyTab({
     const sm = SAMPLES[Number(value)];
     if (!sm) return;
     // サンプルは別の会話。前の会話のスクショ・結果・既出案を残すと混ざる
-    reqIdRef.current++; // 実行中の生成があれば、その結果は捨てる
+    cancelInFlight(); // 実行中の生成は打ち切る(待ち続けてボタンが戻らないのを防ぐ)
     setImagesEpoch((e) => e + 1);
     setImages([]);
     setResult(null);
@@ -185,12 +205,32 @@ export function ReplyTab({
 
     const content = [...imageBlocks(images), { type: 'text' as const, text: userPrompt }];
 
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     const reqId = ++reqIdRef.current;
+    const sentInputs = inputsRef.current;
 
     await run(STAGES, async () => {
-      const res = await callClaude<ReplyResult>(key, REPLY_SYSTEM, REPLY_SCHEMA, content);
+      let res: ReplyResult;
+      try {
+        res = await callClaude<ReplyResult>(
+          key,
+          REPLY_SYSTEM,
+          REPLY_SCHEMA,
+          content,
+          controller.signal,
+        );
+      } catch (err) {
+        if (err instanceof CanceledError) return; // 本人が入力を変えた等。エラー表示はしない
+        throw err;
+      }
       // 送信後に会話やサンプルが切り替わっていたら、この結果はもう別物なので捨てる
       if (reqId !== reqIdRef.current) return;
+      if (sentInputs !== inputsRef.current) {
+        setError('入力が変わったので、前回の結果は使いませんでした。もう一度作成してください。');
+        return;
+      }
       const replies = (res.replies ?? []).slice(0, 3).filter((r) => normalizeBubbles(r).length > 0);
       if (replies.length === 0) {
         throw new Error('提案が返ってきませんでした。もう一度お試しください。');

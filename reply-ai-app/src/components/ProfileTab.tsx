@@ -4,7 +4,7 @@ import { AutoTextarea } from './AutoTextarea';
 import { Chips, type ChipOption } from './Chips';
 import { Dropzone } from './Dropzone';
 import { Meter } from './Meter';
-import { callClaude, type ProfileResult } from '../lib/api';
+import { CanceledError, callClaude, type ProfileResult } from '../lib/api';
 import { copyText } from '../lib/clipboard';
 import { imageBlocks, type PickedImage } from '../lib/images';
 import { PROFILE_SCHEMA, PROFILE_SYSTEM } from '../lib/prompts';
@@ -89,6 +89,15 @@ export function ProfileTab({
   const [result, setResult] = useState<ProfileResult | null>(null);
   const [imagesBusy, setImagesBusy] = useState(false);
   const reqIdRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
+  const inputsRef = useRef('');
+  inputsRef.current = JSON.stringify([
+    bioText,
+    basicInfo,
+    targetInfo,
+    mode,
+    images.map((im) => im.data.length),
+  ]);
 
   async function generate() {
     const key = requireKey();
@@ -123,11 +132,31 @@ export function ProfileTab({
 
     const content = [...imageBlocks(images), { type: 'text' as const, text: userPrompt }];
 
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     const reqId = ++reqIdRef.current;
+    const sentInputs = inputsRef.current;
 
     await run(STAGES, async () => {
-      const res = await callClaude<ProfileResult>(key, PROFILE_SYSTEM, PROFILE_SCHEMA, content);
+      let res: ProfileResult;
+      try {
+        res = await callClaude<ProfileResult>(
+          key,
+          PROFILE_SYSTEM,
+          PROFILE_SCHEMA,
+          content,
+          controller.signal,
+        );
+      } catch (err) {
+        if (err instanceof CanceledError) return;
+        throw err;
+      }
       if (reqId !== reqIdRef.current) return;
+      if (sentInputs !== inputsRef.current) {
+        setError('入力が変わったので、前回の診断結果は使いませんでした。もう一度実行してください。');
+        return;
+      }
       const bios = (res.improved_bios ?? []).filter((b) => String(b?.text || '').trim() !== '');
       if (bios.length === 0) {
         throw new Error('改善案が返ってきませんでした。もう一度お試しください。');

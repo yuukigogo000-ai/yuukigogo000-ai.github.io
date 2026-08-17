@@ -19,16 +19,36 @@ function timeoutMs(): number {
   return DEFAULT_TIMEOUT_MS;
 }
 
+/** 呼び出し側が意図的に打ち切った場合。エラーとしては表示しない */
+export class CanceledError extends Error {
+  constructor() {
+    super('canceled');
+    this.name = 'CanceledError';
+  }
+}
+
 export async function callClaude<T>(
   key: string,
   system: string,
   schema: unknown,
   content: ContentBlock[],
+  external?: AbortSignal,
 ): Promise<T> {
+  if (external?.aborted) throw new CanceledError();
+
+  // 入力が変わった時などに呼び出し側から止められるようにする(止めないとボタンが待たされ続ける)
+  const controller = new AbortController();
+  const timer = window.setTimeout(
+    () => controller.abort(new DOMException('timeout', 'TimeoutError')),
+    timeoutMs(),
+  );
+  const onExternalAbort = () => controller.abort(new DOMException('canceled', 'AbortError'));
+  external?.addEventListener('abort', onExternalAbort, { once: true });
+
   let res: Response;
   try {
     res = await fetch('https://api.anthropic.com/v1/messages', {
-      signal: AbortSignal.timeout(timeoutMs()),
+      signal: controller.signal,
       method: 'POST',
       headers: {
         'content-type': 'application/json',
@@ -46,12 +66,16 @@ export async function callClaude<T>(
       }),
     });
   } catch (err) {
+    if (external?.aborted) throw new CanceledError();
     if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
       throw new Error(
         '応答がありませんでした(時間切れ)。通信環境を確認して、もう一度お試しください。',
       );
     }
     throw err;
+  } finally {
+    window.clearTimeout(timer);
+    external?.removeEventListener('abort', onExternalAbort);
   }
 
   const data = await res.json();
