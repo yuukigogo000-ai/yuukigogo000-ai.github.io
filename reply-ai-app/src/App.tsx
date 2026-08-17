@@ -17,6 +17,7 @@ export default function App() {
   const [stage, setStage] = useState('');
   const [toast, setToast] = useState('');
   const [adopted, setAdopted] = useState<string[]>(getAdopted);
+  const [adoptedPersisted, setAdoptedPersisted] = useState(true);
   const [showFirstRun, setShowFirstRun] = useState(() => {
     try {
       return localStorage.getItem(ONBOARD_KEY) !== '1';
@@ -64,11 +65,27 @@ export default function App() {
     }
   }
 
-  function onAdopt(texts: string[]) {
-    let next = adopted;
-    for (const t of texts) next = addAdopted(t);
-    setAdopted(next);
-    showToast(texts.length > 1 ? 'コピーしました(改行区切り)' : 'コピーしました');
+  function onAdopt(texts: string[], copied: boolean) {
+    if (!copied) {
+      setError('コピーできませんでした。文面を長押し(または選択)して手動でコピーしてください。');
+      return;
+    }
+    let list = adopted;
+    let persisted = true;
+    for (const t of texts) {
+      const r = addAdopted(t);
+      list = r.list;
+      persisted = persisted && r.persisted;
+    }
+    setAdopted(list);
+    setAdoptedPersisted(persisted);
+    showToast(
+      persisted
+        ? texts.length > 1
+          ? 'コピーしました(改行区切り)'
+          : 'コピーしました'
+        : 'コピーしました(履歴は保存できませんでした)',
+    );
   }
 
   const tabBtn = (active: boolean) =>
@@ -156,10 +173,12 @@ export default function App() {
           requireKey={requireKey}
           setError={setError}
           adopted={adopted}
+          adoptedPersisted={adoptedPersisted}
           onAdopt={onAdopt}
           onClearAdopted={() => {
             clearAdopted();
             setAdopted([]);
+            setAdoptedPersisted(true);
           }}
         />
         <ProfileTab

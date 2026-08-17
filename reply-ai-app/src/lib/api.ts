@@ -6,6 +6,18 @@ export type ContentBlock =
   | { type: 'image'; source: { type: 'base64'; media_type: 'image/jpeg'; data: string } };
 
 const MODEL = 'claude-opus-5';
+const DEFAULT_TIMEOUT_MS = 120_000;
+
+/** 通常は120秒。テスト時のみ localStorage 'reply_ai_timeout_ms' で短くできる */
+function timeoutMs(): number {
+  try {
+    const v = Number(localStorage.getItem('reply_ai_timeout_ms'));
+    if (Number.isFinite(v) && v > 0) return v;
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_TIMEOUT_MS;
+}
 
 export async function callClaude<T>(
   key: string,
@@ -13,23 +25,34 @@ export async function callClaude<T>(
   schema: unknown,
   content: ContentBlock[],
 ): Promise<T> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json',
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-    },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 16000,
-      output_config: { format: { type: 'json_schema', schema } },
-      // 指示書は毎回同じなのでキャッシュさせる(5分以内の連続利用で入力トークン代が下がる)
-      system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
-      messages: [{ role: 'user', content }],
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      signal: AbortSignal.timeout(timeoutMs()),
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 16000,
+        output_config: { format: { type: 'json_schema', schema } },
+        // 指示書は毎回同じなのでキャッシュさせる(5分以内の連続利用で入力トークン代が下がる)
+        system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+        messages: [{ role: 'user', content }],
+      }),
+    });
+  } catch (err) {
+    if (err instanceof DOMException && (err.name === 'TimeoutError' || err.name === 'AbortError')) {
+      throw new Error(
+        '応答がありませんでした(時間切れ)。通信環境を確認して、もう一度お試しください。',
+      );
+    }
+    throw err;
+  }
 
   const data = await res.json();
   if (!res.ok) throw new Error(data?.error?.message || `APIエラー (${res.status})`);

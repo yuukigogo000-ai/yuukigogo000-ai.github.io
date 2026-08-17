@@ -189,8 +189,10 @@ const profileResult = () => ({
   check('13h. プロフ用プロンプト送信', JSON.stringify(lastBody.system).includes('プロフィール'));
   check('13i. システムプロンプトにキャッシュ指定', Array.isArray(lastBody.system) && lastBody.system[0].cache_control?.type === 'ephemeral');
 
-  // --- 16. サンプル会話ローダー ---
-  await page.click('#tabBtnReply');
+  // --- 16. サンプル会話ローダー(前のテストの画像を持ち越さない状態で) ---
+  await page.reload();
+  await page.waitForSelector('#generate');
+  check('16z. リロードでスクショが残らない', (await page.$$('#convThumbs .thumb')).length === 0);
   const optCount = await page.$$eval('#sampleSelect option', o => o.length);
   check('16a. サンプル8件が選択肢に出る', optCount === 9, `options=${optCount}`);
   await page.selectOption('#sampleSelect', '1'); // ②カフェ・デートに誘う
@@ -203,7 +205,8 @@ const profileResult = () => ({
   mock = () => ({ status: 200, body: replyResult('S') });
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスS'));
-  check('16g. 会話空でも文体サンプル+プロフで生成できる', JSON.stringify(lastBody.messages).includes('ラーメンなら任せて'));
+  check('16g. 会話ゼロの初回メッセージでも生成できる(スクショ無しのきれいな状態で)',
+        JSON.stringify(lastBody.messages).includes('ラーメンなら任せて') && (await page.$$('#convThumbs .thumb')).length === 0);
 
   // --- 17. 吹き出し分割・採用学習・新ゴール ---
   const optCount2 = await page.$$eval('#sampleSelect option', o => o.length);
@@ -335,6 +338,95 @@ const profileResult = () => ({
   check('20f. 1通指定ならAIが分けて返しても1吹き出しに丸める', JSON.stringify(singleCounts) === '[1,1,1]', JSON.stringify(singleCounts));
   check('20g. まとめた本文は改行で連結される', (await page.textContent('#replyResults .card .bubble')).includes('二通目A-U'));
   await page.click('label[for="b0"]');
+
+  // --- 21. Codex r1 指摘の回帰(コピー失敗・保存失敗・古い結果・タイムアウト) ---
+  // 21a. 新規生成が失敗したら、前の会話の結果を残さない
+  mock = () => ({ status: 200, body: replyResult('R1') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスR1'));
+  await page.fill('#conversation', '自分: 別の会話\n相手: べつべつ');
+  mock = () => ({ status: 401, body: { error: { message: 'invalid x-api-key' } } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#error').textContent.length > 0);
+  check('21a. 生成失敗後に前の会話の結果が残らない', !(await page.isVisible('#replyResults')) && !(await page.isVisible('#regenerate')));
+
+  // 21b. サンプルを読み込んだらスクショと結果を捨てる
+  mock = () => ({ status: 200, body: replyResult('R2') });
+  await page.setInputFiles('#convFile', [png]);
+  await page.waitForSelector('#convThumbs .thumb');
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスR2'));
+  await page.selectOption('#sampleSelect', '0');
+  check('21b. サンプル読込でスクショと結果を捨てる',
+        (await page.$$('#convThumbs .thumb')).length === 0 && !(await page.isVisible('#replyResults')));
+
+  // 21c. 3案未満でも壊れない(注記を出す)
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
+    situation: 's', interest_level: 50, replies: [{ bubbles: ['1案だけ'], why: 'w' }], advice: 'アドバイスFEW' }) }] } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスFEW'));
+  check('21c. 3案未満は注記つきで表示', (await page.$$('#replyResults .card')).length === 1 && await page.isVisible('#shortfallNote'));
+
+  // 21d. 0案は明示エラー(空の結果を出さない)
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
+    situation: 's', interest_level: 50, replies: [], advice: 'から' }) }] } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#error').textContent.includes('提案が返って'));
+  check('21d. 0案は明示エラー', (await page.textContent('#error')).includes('提案が返ってきませんでした'));
+
+  // 21e. コピーに失敗したら成功と偽らない・採用履歴に入れない
+  await page.evaluate(() => {
+    localStorage.removeItem('reply_ai_adopted');
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: { writeText: () => Promise.reject(new Error('denied')) },
+    });
+    document.execCommand = () => false;
+  });
+  mock = () => ({ status: 200, body: replyResult('R3') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスR3'));
+  await (await page.$$('#replyResults .card > button'))[0].click();
+  await page.waitForFunction(() => document.querySelector('#error').textContent.includes('コピー'));
+  const afterFail = await page.evaluate(() => localStorage.getItem('reply_ai_adopted'));
+  check('21e. コピー失敗→エラー表示+採用履歴に入れない', afterFail === null, String(afterFail));
+  check('21e2. コピー失敗時にトーストで成功と言わない', !(await page.isVisible('#toast')));
+
+  // 21f. 採用履歴が保存できない端末で「保存した」と言わない
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.evaluate(() => {
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === 'reply_ai_adopted') throw new Error('quota exceeded');
+      return orig.call(this, k, v);
+    };
+  });
+  await page.fill('#conversation', '自分: a\n相手: b');
+  mock = () => ({ status: 200, body: replyResult('R4') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスR4'));
+  await (await page.$$('#replyResults .card > button'))[0].click();
+  await page.waitForTimeout(250);
+  check('21f. 保存できない時はトーストで正直に伝える', (await page.textContent('#toast')).includes('保存できませんでした'),
+        await page.textContent('#toast'));
+  await openDetails();
+  check('21f2. 採用履歴の表示も「今回のみ」と断る', (await page.textContent('#adoptedNote')).includes('今回のみ'));
+
+  // 21g. 応答が返ってこない場合にUIが詰まない(タイムアウト)
+  await page.reload();
+  await page.waitForSelector('#generate');
+  await page.evaluate(() => localStorage.setItem('reply_ai_timeout_ms', '400'));
+  await page.fill('#conversation', '自分: a\n相手: b');
+  delayMs = 3000;
+  mock = () => ({ status: 200, body: replyResult('R5') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#error').textContent.length > 0, null, { timeout: 8000 });
+  check('21g. 無応答はタイムアウトでエラー+ボタン復活',
+        (await page.textContent('#error')).includes('時間切れ') && !(await page.isDisabled('#generate')),
+        await page.textContent('#error'));
+  delayMs = 0;
+  await page.evaluate(() => localStorage.removeItem('reply_ai_timeout_ms'));
 
   // --- 14. localStorage永続化 ---
   await page.reload();

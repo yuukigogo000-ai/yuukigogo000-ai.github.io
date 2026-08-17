@@ -76,6 +76,7 @@ export function ReplyTab({
   requireKey,
   setError,
   adopted,
+  adoptedPersisted,
   onAdopt,
   onClearAdopted,
 }: {
@@ -86,7 +87,8 @@ export function ReplyTab({
   requireKey: () => string | null;
   setError: (msg: string) => void;
   adopted: string[];
-  onAdopt: (texts: string[]) => void;
+  adoptedPersisted: boolean;
+  onAdopt: (texts: string[], copied: boolean) => void;
   onClearAdopted: () => void;
 }) {
   const [images, setImages] = useState<PickedImage[]>([]);
@@ -105,6 +107,10 @@ export function ReplyTab({
     setSample(value);
     const sm = SAMPLES[Number(value)];
     if (!sm) return;
+    // サンプルは別の会話。前の会話のスクショ・結果・既出案を残すと混ざる
+    setImages([]);
+    setResult(null);
+    setLastReplies([]);
     setConversation(sm.conversation);
     setPartnerProfile(sm.profile);
     setStyleSample(sm.style);
@@ -118,12 +124,23 @@ export function ReplyTab({
   async function generate(keepHistory: boolean) {
     const key = requireKey();
     if (!key) return;
-    if (!conversation.trim() && images.length === 0) {
-      setError('トーク画面のスクショを追加するか、やり取りを貼り付けてください。');
+    // 初回メッセージは「まだ会話がない」状態が正常。相手の情報か自分の文体があれば作れる
+    const isFirstMessage = goal === GOALS[3].value;
+    const hasSeed = conversation.trim() !== '' || images.length > 0;
+    if (!hasSeed && !(isFirstMessage && (partnerProfile.trim() || styleSample.trim()))) {
+      setError(
+        isFirstMessage
+          ? '相手のプロフィール(または自分の文体サンプル)を入れてください。初回メッセージはそこから作ります。'
+          : 'トーク画面のスクショを追加するか、やり取りを貼り付けてください。',
+      );
       return;
     }
     const history = keepHistory ? lastReplies : [];
-    if (!keepHistory) setLastReplies([]);
+    if (!keepHistory) {
+      // 新規生成は前回の結果を捨ててから始める(失敗時に別の会話の案が残らないように)
+      setResult(null);
+      setLastReplies([]);
+    }
 
     const toneText =
       tone === 'auto'
@@ -160,7 +177,10 @@ export function ReplyTab({
 
     await run(STAGES, async () => {
       const res = await callClaude<ReplyResult>(key, REPLY_SYSTEM, REPLY_SCHEMA, content);
-      const replies = (res.replies ?? []).slice(0, 3);
+      const replies = (res.replies ?? []).slice(0, 3).filter((r) => normalizeBubbles(r).length > 0);
+      if (replies.length === 0) {
+        throw new Error('提案が返ってきませんでした。もう一度お試しください。');
+      }
       setResult({ ...res, replies });
       // 生成が終わったら結果まで運ぶ(入力欄をスクロールし直させない)
       window.requestAnimationFrame(() =>
@@ -284,7 +304,10 @@ export function ReplyTab({
         <p id="adoptedNote" className="mt-3 flex items-center gap-2 text-[12px] text-ink-muted">
           {adopted.length ? (
             <>
-              <span>コピーした返信 {adopted.length}件を文体学習に使用中</span>
+              <span>
+            コピーした返信 {adopted.length}件を文体学習に使用中
+            {adoptedPersisted ? '' : '(この端末では保存できないため今回のみ)'}
+          </span>
               <button
                 type="button"
                 onClick={onClearAdopted}
@@ -331,6 +354,11 @@ export function ReplyTab({
       <h2 className="mt-4 mb-2 px-1 text-[12px] font-bold tracking-wide text-ink-muted" hidden={!result || busy}>
         送信プレビュー(そのままコピーして送れます)
       </h2>
+      {result && result.replies.length < 3 && !busy && (
+        <p id="shortfallNote" className="mb-2 px-1 text-[12px] text-ink-muted">
+          AIから{result.replies.length}案しか返りませんでした。「方向性を変えて別の3案」で出し直せます。
+        </p>
+      )}
       <div id="replyResults" className="space-y-3" hidden={!result || busy}>
         {(result?.replies ?? []).map((r, i) => (
           <ReplyCard

@@ -34,18 +34,19 @@ export function getAdopted(): string[] {
   }
 }
 
-export function addAdopted(text: string): string[] {
+/** 保存できたかどうかを呼び出し側に返す(「保存した」と嘘をつかないため) */
+export function addAdopted(text: string): { list: string[]; persisted: boolean } {
   const t = String(text || '').trim();
-  if (!t) return getAdopted();
+  if (!t) return { list: getAdopted(), persisted: true };
   const a = getAdopted().filter((x) => x !== t);
   a.push(t);
   const next = a.slice(-ADOPTED_MAX);
   try {
     localStorage.setItem(ADOPTED_KEY, JSON.stringify(next));
+    return { list: next, persisted: true };
   } catch {
-    /* ignore */
+    return { list: next, persisted: false };
   }
-  return next;
 }
 
 export function clearAdopted() {

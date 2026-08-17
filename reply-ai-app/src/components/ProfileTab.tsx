@@ -5,6 +5,7 @@ import { Chips, type ChipOption } from './Chips';
 import { Dropzone } from './Dropzone';
 import { Meter } from './Meter';
 import { callClaude, type ProfileResult } from '../lib/api';
+import { copyText } from '../lib/clipboard';
 import { imageBlocks, type PickedImage } from '../lib/images';
 import { PROFILE_SCHEMA, PROFILE_SYSTEM } from '../lib/prompts';
 import type { Runner } from '../lib/types';
@@ -16,7 +17,17 @@ const MODES: ChipOption[] = [
 
 const STAGES = ['プロフィールを読み取っています', '女性側の目線で採点しています', '改善案を作っています'];
 
-function BioCard({ index, text, why }: { index: number; text: string; why: string }) {
+function BioCard({
+  index,
+  text,
+  why,
+  onCopyFailed,
+}: {
+  index: number;
+  text: string;
+  why: string;
+  onCopyFailed: () => void;
+}) {
   const [copied, setCopied] = useState(false);
   return (
     <article className="card p-3.5">
@@ -29,9 +40,14 @@ function BioCard({ index, text, why }: { index: number; text: string; why: strin
         type="button"
         className="btn-ghost mt-3 flex w-full items-center justify-center gap-1.5"
         onClick={() => {
-          void navigator.clipboard?.writeText(text);
-          setCopied(true);
-          window.setTimeout(() => setCopied(false), 1600);
+          void copyText(text).then((ok) => {
+            if (!ok) {
+              onCopyFailed();
+              return;
+            }
+            setCopied(true);
+            window.setTimeout(() => setCopied(false), 1600);
+          });
         }}
       >
         {copied ? (
@@ -198,7 +214,17 @@ export function ProfileTab({
 
       <div id="profResults" className="mt-3 space-y-3" hidden={!result || busy}>
         {(result?.improved_bios ?? []).map((b, i) => (
-          <BioCard key={i} index={i} text={b.text} why={b.why} />
+          <BioCard
+            key={i}
+            index={i}
+            text={b.text}
+            why={b.why}
+            onCopyFailed={() =>
+              setError(
+                'コピーできませんでした。文面を長押し(または選択)して手動でコピーしてください。',
+              )
+            }
+          />
         ))}
       </div>
 

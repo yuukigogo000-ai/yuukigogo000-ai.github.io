@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { copyText } from '../lib/clipboard';
 
 /** 1案 = LINEに送ったときの見え方(吹き出し1〜3通)+ なぜ効くか + コピー */
 export function ReplyCard({
@@ -11,15 +12,16 @@ export function ReplyCard({
   index: number;
   bubbles: string[];
   why: string;
-  onCopy: (texts: string[]) => void;
+  onCopy: (texts: string[], copied: boolean) => void;
 }) {
   const [copiedAll, setCopiedAll] = useState(false);
   const [copiedOne, setCopiedOne] = useState<number | null>(null);
   const split = bubbles.length > 1;
 
-  function copy(texts: string[], one: number | null) {
-    void navigator.clipboard?.writeText(texts.join('\n'));
-    onCopy(texts);
+  async function copy(texts: string[], one: number | null) {
+    const ok = await copyText(texts.join('\n'));
+    onCopy(texts, ok);
+    if (!ok) return;
     if (one === null) {
       setCopiedAll(true);
       window.setTimeout(() => setCopiedAll(false), 1600);
@@ -46,7 +48,7 @@ export function ReplyCard({
             {split && (
               <button
                 type="button"
-                onClick={() => copy([b], i)}
+                onClick={() => void copy([b], i)}
                 aria-label={`${i + 1}通目をコピー`}
                 className="shrink-0 rounded-md p-1.5 text-ink-faint transition-colors hover:bg-surface-2 hover:text-ink-muted"
               >
@@ -68,7 +70,7 @@ export function ReplyCard({
 
       <button
         type="button"
-        onClick={() => copy(bubbles, null)}
+        onClick={() => void copy(bubbles, null)}
         className="btn-ghost mt-3 flex w-full items-center justify-center gap-1.5"
       >
         {copiedAll ? (
