@@ -1,0 +1,17 @@
+{
+  "name": "パチスロ帝国 〜ホール経営シミュレーション〜",
+  "short_name": "パチスロ帝国",
+  "description": "出玉設定のジレンマを核にしたパチンコホール経営シミュレーション。実機の試打もできる。目指せ純資産1億円!",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "theme_color": "#0d0a1a",
+  "background_color": "#0d0a1a",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -1,0 +1,1862 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0d0a1a">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<title>パチスロ帝国 〜ホール経営シミュレーション〜</title>
+<style>
+  :root {
+    --bg: #0d0a1a;
+    --panel: #1a1430;
+    --panel2: #241b42;
+    --border: #3d2f6b;
+    --text: #efeaff;
+    --sub: #a99cd6;
+    --gold: #ffc93c;
+    --neon: #ff3ea5;
+    --cyan: #35e0ff;
+    --green: #4ade80;
+    --red: #ff6b6b;
+    --loss: #ff8a5c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    line-height: 1.55;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 12px 14px 90px; }
+  h1 {
+    font-size: 1.35rem; margin: 8px 0 2px; letter-spacing: .05em;
+    background: linear-gradient(90deg, var(--gold), var(--neon), var(--cyan));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .tagline { color: var(--sub); font-size: .8rem; margin: 0 0 10px; }
+
+  /* ステータスバー */
+  .statusbar {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(108px, 1fr));
+    gap: 8px; margin-bottom: 12px;
+  }
+  .stat {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 10px;
+  }
+  .stat .label { font-size: .7rem; color: var(--sub); }
+  .stat .value { font-size: 1.0rem; font-weight: 700; }
+  .stat .value.money { color: var(--gold); }
+  .stat .value.rep { color: var(--cyan); }
+  .stat .value.special { color: var(--neon); }
+  .stat .value.debt { color: var(--loss); }
+
+  /* タブ */
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tab {
+    flex: 1; min-width: 90px; padding: 9px 4px; text-align: center; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--sub); font-size: .85rem; font-weight: 600; user-select: none;
+  }
+  .tab.active { background: var(--panel2); color: var(--text); border-color: var(--neon); }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+    padding: 12px; margin-bottom: 10px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: .95rem; color: var(--gold); }
+  .note { color: var(--sub); font-size: .78rem; }
+
+  /* 台カード */
+  .machine {
+    display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    background: var(--panel2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px; margin-bottom: 8px;
+  }
+  .machine .icon { font-size: 1.6rem; }
+  .machine .minfo { flex: 1; min-width: 150px; }
+  .machine .mname { font-weight: 700; font-size: .9rem; }
+  .machine .mname .newtag {
+    background: var(--neon); color: #fff; font-size: .62rem; border-radius: 4px;
+    padding: 1px 5px; margin-left: 6px; vertical-align: middle;
+  }
+  .machine .msub { font-size: .72rem; color: var(--sub); }
+  .machine .mspec { font-size: .68rem; color: var(--cyan); }
+  .machine .mbadge { font-size: .68rem; color: var(--gold); }
+  .machine .mstats { font-size: .75rem; min-width: 130px; }
+  .popbar { height: 6px; background: #0006; border-radius: 3px; overflow: hidden; margin-top: 3px; width: 120px; }
+  .popbar > div { height: 100%; background: linear-gradient(90deg, var(--cyan), var(--neon)); }
+
+  select, button {
+    font-family: inherit; font-size: .85rem; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--panel); color: var(--text);
+    padding: 7px 10px; cursor: pointer;
+  }
+  select:focus, button:focus { outline: 2px solid var(--neon); }
+  button.primary {
+    background: linear-gradient(135deg, var(--neon), #b3186f); border: 0; color: #fff; font-weight: 700;
+  }
+  button.buy { background: linear-gradient(135deg, #2563eb, #1e40af); border: 0; color: #fff; font-weight: 600; }
+  button.trial { background: linear-gradient(135deg, #0e7490, #155e75); border: 0; color: #fff; font-weight: 600; }
+  button.danger { background: #47203a; color: var(--red); }
+  button:disabled { opacity: .45; cursor: default; }
+
+  /* 営業開始ボタン(固定) */
+  .daybar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    background: #0d0a1aee; border-top: 1px solid var(--border);
+    padding: 10px 14px; display: flex; gap: 10px; justify-content: center; align-items: center;
+    backdrop-filter: blur(6px);
+  }
+  .daybar button.primary { font-size: 1rem; padding: 12px 34px; border-radius: 999px; }
+  .daybar .daynote { font-size: .75rem; color: var(--sub); max-width: 320px; }
+  .daybar .daynote b { color: var(--neon); }
+
+  /* 帳簿テーブル */
+  table { border-collapse: collapse; width: 100%; font-size: .78rem; }
+  th, td { border-bottom: 1px solid var(--border); padding: 5px 6px; text-align: right; white-space: nowrap; }
+  th { color: var(--sub); font-weight: 600; }
+  td:first-child, th:first-child { text-align: left; }
+  .pos { color: var(--green); } .neg { color: var(--red); }
+  .tablewrap { overflow-x: auto; }
+
+  /* 損益グラフ */
+  #chartWrap { position: relative; margin-bottom: 12px; }
+  #chartWrap svg { width: 100%; height: auto; display: block; }
+  .chart-tip {
+    position: absolute; pointer-events: none; background: #0e0a20f2; color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px; padding: 4px 8px;
+    font-size: .72rem; white-space: nowrap; transform: translate(-50%, -110%);
+    display: none; z-index: 5;
+  }
+  .chart-legend { font-size: .72rem; color: var(--sub); margin-top: 2px; }
+  .chart-legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 2px; vertical-align: -1px; margin: 0 3px 0 8px; }
+
+  /* ヒートバー */
+  .heatbar { height: 10px; background: #0006; border-radius: 5px; overflow: hidden; margin: 6px 0; }
+  .heatbar > div { height: 100%; background: linear-gradient(90deg, var(--gold), var(--red)); transition: width .3s; }
+
+  /* モーダル */
+  .modal-bg {
+    display: none; position: fixed; inset: 0; background: #000a; z-index: 100;
+    align-items: center; justify-content: center; padding: 16px;
+  }
+  .modal-bg.show { display: flex; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--neon); border-radius: 14px;
+    max-width: 460px; width: 100%; max-height: 86vh; overflow-y: auto; padding: 18px;
+  }
+  .modal h2 { margin: 0 0 8px; font-size: 1.1rem; color: var(--gold); }
+  .result-row { display: flex; justify-content: space-between; font-size: .88rem; padding: 3px 0; }
+  .result-row.total { border-top: 1px solid var(--border); margin-top: 6px; padding-top: 8px; font-weight: 700; }
+  .result-row .dim { color: var(--sub); font-size: .78rem; }
+  .eventmsg {
+    background: #2b1a3d; border-left: 3px solid var(--neon); border-radius: 6px;
+    padding: 8px 10px; font-size: .82rem; margin: 8px 0;
+  }
+  .machine-result { font-size: .75rem; color: var(--sub); margin-top: 8px; }
+  .machine-result div { display: flex; justify-content: space-between; padding: 2px 0; }
+  .weekreport { border-top: 1px dashed var(--border); margin-top: 10px; padding-top: 8px; }
+  .weekreport h4 { margin: 0 0 4px; font-size: .85rem; color: var(--cyan); }
+
+  .rowbtns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+
+  /* 実績 */
+  .achitem { display: flex; gap: 8px; align-items: center; padding: 5px 0; font-size: .8rem; border-bottom: 1px solid #ffffff10; }
+  .achitem .aicon { font-size: 1.1rem; }
+  .achitem.locked { opacity: .38; filter: grayscale(1); }
+  .achitem .adesc { color: var(--sub); font-size: .7rem; }
+
+  /* トースト */
+  #toasts { position: fixed; right: 12px; bottom: 76px; z-index: 200; display: flex; flex-direction: column; gap: 6px; }
+  .toast {
+    background: linear-gradient(135deg, #2b1a3d, #1a1430); border: 1px solid var(--gold);
+    color: var(--text); border-radius: 10px; padding: 9px 14px; font-size: .8rem;
+    box-shadow: 0 4px 20px #000a; animation: toastin .3s ease;
+  }
+  @keyframes toastin { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* ===== 試打ミニゲーム ===== */
+  .trial-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .trial-stats { display: flex; gap: 10px; flex-wrap: wrap; font-size: .75rem; color: var(--sub); margin: 8px 0; }
+  .trial-stats b { color: var(--text); }
+  .trial-banner {
+    min-height: 30px; text-align: center; font-weight: 800; font-size: 1.02rem;
+    color: var(--gold); margin: 6px 0;
+  }
+  .trial-banner.win { animation: bannerflash .5s ease infinite alternate; }
+  @keyframes bannerflash { from { text-shadow: 0 0 6px var(--gold); } to { text-shadow: 0 0 18px var(--neon); color: #fff; } }
+
+  /* スロット */
+  .slot-frame {
+    background: linear-gradient(180deg, #2a2050, #16112e); border: 2px solid var(--border);
+    border-radius: 12px; padding: 14px; text-align: center;
+  }
+  .reels { display: flex; gap: 8px; justify-content: center; margin: 8px 0; }
+  .reel {
+    width: 74px; height: 74px; background: #fdf9ee; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem; font-weight: 800; color: #222; border: 3px solid #c9b26a;
+    overflow: hidden;
+  }
+  .reel.spinning { animation: reelblur .12s linear infinite; }
+  @keyframes reelblur { from { box-shadow: inset 0 8px 10px #0003; } to { box-shadow: inset 0 -8px 10px #0003; } }
+  .lamp {
+    width: 26px; height: 26px; border-radius: 50%; margin: 0 auto 6px;
+    background: #3a2f22; border: 2px solid #6b5a3a; transition: all .2s;
+  }
+  .lamp.lit { background: var(--gold); box-shadow: 0 0 18px var(--gold), 0 0 40px var(--gold); animation: lampblink .35s ease infinite alternate; }
+  @keyframes lampblink { from { box-shadow: 0 0 10px var(--gold); } to { box-shadow: 0 0 26px var(--gold), 0 0 48px var(--neon); } }
+  .slot-btns { display: flex; gap: 8px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+  .stopbtn { min-width: 60px; background: #7f1d1d; border: 0; color: #fff; font-weight: 700; }
+
+  /* パチンコ */
+  .pachi-frame {
+    background: linear-gradient(180deg, #113049, #0c1c30); border: 2px solid var(--border);
+    border-radius: 12px; padding: 14px; text-align: center;
+  }
+  .digits { display: flex; gap: 8px; justify-content: center; margin: 10px 0; }
+  .digit {
+    width: 62px; height: 78px; background: #05070f; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2.4rem; font-weight: 900; color: var(--cyan);
+    border: 2px solid #2b4a6b; font-variant-numeric: tabular-nums;
+  }
+  .digit.spinning { color: #7ab; animation: digitflick .08s linear infinite; }
+  @keyframes digitflick { 50% { opacity: .55; } }
+  .digit.hit { color: var(--gold); border-color: var(--gold); box-shadow: 0 0 14px var(--gold); }
+  .reach-label { min-height: 22px; font-weight: 800; color: var(--neon); font-size: .95rem; }
+  .reach-label.on { animation: bannerflash .4s ease infinite alternate; }
+  .pachi-btns { display: flex; gap: 8px; justify-content: center; align-items: center; margin-top: 10px; flex-wrap: wrap; }
+  .autolabel { font-size: .78rem; color: var(--sub); display: flex; align-items: center; gap: 4px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎰 パチスロ帝国</h1>
+  <p class="tagline">〜 ホール経営シミュレーション 〜 目指せ純資産1億円!</p>
+
+  <div class="statusbar">
+    <div class="stat"><div class="label">📅 営業日</div><div class="value" id="stDay">1日目</div></div>
+    <div class="stat"><div class="label">💰 資金</div><div class="value money" id="stMoney">¥0</div></div>
+    <div class="stat"><div class="label">⭐ 評判</div><div class="value rep" id="stRep">50</div></div>
+    <div class="stat"><div class="label">🫂 常連</div><div class="value" id="stRegs">0人</div></div>
+    <div class="stat"><div class="label">🎰 台数</div><div class="value" id="stMachines">0 / 10</div></div>
+    <div class="stat"><div class="label">🏦 借入</div><div class="value debt" id="stDebt">なし</div></div>
+    <div class="stat"><div class="label">🏆 純資産</div><div class="value special" id="stAssets">¥0</div></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="hall">🏢 ホール</div>
+    <div class="tab" data-tab="shop">🛒 新台購入</div>
+    <div class="tab" data-tab="mgmt">👔 経営</div>
+    <div class="tab" data-tab="ledger">📒 帳簿</div>
+  </div>
+
+  <!-- ホール -->
+  <div class="panel active" id="panel-hall">
+    <div class="card">
+      <h3>設置中の台</h3>
+      <p class="note">出玉設定を調整しよう。<b>設定1〜2</b>は荒稼ぎできるが評判が下がり、続けると<b>行政指導</b>のリスクも。<b>設定5〜6</b>は常連が育つが<b>プロ(ハイエナ)</b>に狙われる。全台一律より「出す台・回収する台」のメリハリが勝負。同じ機種を並べると<b>シマ効果</b>で人気アップ、週替わりの<b>ブーム</b>機種は集客1.4倍。</p>
+      <div id="hallList"></div>
+    </div>
+  </div>
+
+  <!-- 新台購入 -->
+  <div class="panel" id="panel-shop">
+    <div class="card">
+      <h3>メーカーカタログ</h3>
+      <p class="note">新台は導入から5日間「新台効果」で人気1.4倍。同一機種を複数並べるとシマ効果(+6%/台、最大+30%)。売却額は購入価格の45%。導入直後は「新装開店フェア」(経営タブ)で告知すると効果大。</p>
+      <div id="shopList"></div>
+    </div>
+  </div>
+
+  <!-- 経営 -->
+  <div class="panel" id="panel-mgmt">
+    <div class="card">
+      <h3>👥 スタッフ</h3>
+      <p class="note">台8台につきスタッフ1人が必要。不足すると接客が回らず評判が下がり、常連も育たない。日給 ¥13,000/人。</p>
+      <div class="result-row"><span>現在のスタッフ</span><b id="staffCount">2人</b></div>
+      <div class="result-row"><span>必要人数</span><b id="staffNeed">1人</b></div>
+      <div class="rowbtns">
+        <button id="btnHire" class="buy">雇用する (+1人)</button>
+        <button id="btnFire" class="danger">解雇する (−1人)</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>📣 広告 (翌営業日に効果)</h3>
+      <div class="rowbtns" id="adButtons"></div>
+      <p class="note" id="adCurrent"></p>
+    </div>
+    <div class="card">
+      <h3>🎊 新装開店フェア</h3>
+      <p class="note">新台導入から2日以内に開催可能(費用¥300,000・7日に1回まで)。翌営業日の客数1.5倍+評判UP。新台入替とセットで使うのが定石。</p>
+      <div class="rowbtns"><button id="btnGrand" class="buy"></button></div>
+    </div>
+    <div class="card">
+      <h3>🏗️ 店舗拡張</h3>
+      <div class="result-row"><span>現在の最大設置数</span><b id="capNow">10台</b></div>
+      <div class="rowbtns">
+        <button id="btnExpand" class="buy"></button>
+      </div>
+      <p class="note">拡張すると家賃・光熱費も増える。台数を活かせる資金力があるうちに。</p>
+    </div>
+    <div class="card">
+      <h3>🏦 銀行融資</h3>
+      <div class="result-row"><span>借入残高</span><b id="debtNow">¥0</b></div>
+      <div class="result-row"><span>借入可能枠 (台資産×70%+200万)</span><b id="creditNow">¥0</b></div>
+      <div class="result-row"><span>金利</span><b>0.25% / 日 (経費に計上)</b></div>
+      <div class="rowbtns">
+        <button id="btnBorrow" class="buy">借りる (+100万)</button>
+        <button id="btnRepay">返済する (−100万)</button>
+      </div>
+      <p class="note">攻めの拡大に使えるが、利息は毎日重くのしかかる。純資産(資金+台資産−借金)1億円がクリア条件なので借りっぱなしでは勝てない。資金ショート時は枠が残っていれば自動で緊急融資される。</p>
+    </div>
+    <div class="card">
+      <h3>💱 交換率ポリシー</h3>
+      <div class="rowbtns" id="rateButtons"></div>
+      <p class="note" id="rateNote"></p>
+    </div>
+    <div class="card">
+      <h3>🚨 行政・組合の目</h3>
+      <div class="heatbar"><div id="heatFill" style="width:0%"></div></div>
+      <p class="note" id="heatNote"></p>
+    </div>
+    <div class="card">
+      <h3>🏅 実績</h3>
+      <div id="achList"></div>
+    </div>
+    <div class="card">
+      <h3>💾 データ</h3>
+      <div class="rowbtns">
+        <button id="btnSave">セーブ</button>
+        <button id="btnReset" class="danger">最初からやり直す</button>
+      </div>
+      <p class="note">営業終了ごとに自動セーブもされます(このブラウザ内)。</p>
+    </div>
+  </div>
+
+  <!-- 帳簿 -->
+  <div class="panel" id="panel-ledger">
+    <div class="card">
+      <h3>純利益の推移 (直近30営業日)</h3>
+      <div id="chartWrap"></div>
+      <div class="chart-legend">基線より上=黒字<span class="sw" style="background:var(--cyan)"></span>黒字 / 下=赤字<span class="sw" style="background:var(--loss)"></span>赤字 (詳細は下表)</div>
+    </div>
+    <div class="card">
+      <h3>営業成績</h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>日</th><th>客数</th><th>一般/常連/プロ</th><th>売上</th><th>出玉(払出)</th><th>経費</th><th>純利益</th><th>備考</th></tr></thead>
+          <tbody id="ledgerBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 営業開始バー -->
+<div class="daybar">
+  <div class="daynote" id="dayNote"></div>
+  <button class="primary" id="btnOpen">🔔 営業開始</button>
+</div>
+
+<div id="toasts"></div>
+
+<!-- モーダル -->
+<div class="modal-bg" id="modalBg">
+  <div class="modal" id="modalBox"></div>
+</div>
+
+<script>
+"use strict";
+// ============================================================
+//  パチスロ帝国 - ホール経営シミュレーション v3 (深化版)
+//  設計: DESIGN.md 参照
+// ============================================================
+
+const SAVE_KEY = "pachi-teikoku-save-v1";
+const GOAL_ASSETS = 100000000; // 純資産1億円でクリア
+const MAX_CAP = 60;            // 店舗拡張の上限台数
+
+// ---- 難易度 ----
+const DIFFS = {
+  easy:   { label:"のんびり", money:13000000, rentMul:0.75, proMul:0.5, heatMul:0.7, fillMul:1.05 },
+  normal: { label:"標準",     money:10000000, rentMul:1.0,  proMul:1.0, heatMul:1.0, fillMul:1.0 },
+  hard:   { label:"修羅",     money:6500000,  rentMul:1.35, proMul:1.6, heatMul:1.5, fillMul:0.97 },
+};
+
+// ---- 台カタログ(架空機種) ----
+const CATALOG = [
+  { id:"p1", type:"P", name:"P海のメルヘン 甘デジ",   price: 400000, pop: 50, decay: 0.8, desc:"癒し系の定番。年配客に強い",
+    spec:{ denom:99,  rushPct:0.50, firstBalls:300, rushBalls:600,  label:"甘デジ 1/99・RUSH継続50%" } },
+  { id:"p2", type:"P", name:"CR大江戸花火絵巻",       price: 520000, pop: 60, decay: 1.0, desc:"爆音花火演出が人気",
+    spec:{ denom:199, rushPct:0.55, firstBalls:450, rushBalls:900,  label:"ライトミドル 1/199・RUSH55%" } },
+  { id:"p3", type:"P", name:"P戦国プリンセス廻",      price: 700000, pop: 75, decay: 1.3, desc:"若年層に刺さるキャラ機",
+    spec:{ denom:199, rushPct:0.60, firstBalls:450, rushBalls:900,  label:"ライトミドル 1/199・RUSH60%" } },
+  { id:"p4", type:"P", name:"P新世紀インパクト",      price: 950000, pop: 92, decay: 1.5, desc:"版権最強クラスの集客力",
+    spec:{ denom:319, rushPct:0.70, firstBalls:450, rushBalls:1500, label:"ミドル 1/319・RUSH70%" } },
+  { id:"p5", type:"P", name:"P究極神威ゴッドラッシュ", price:1250000, pop:108, decay: 1.8, desc:"超高継続RUSH搭載の話題作",
+    spec:{ denom:319, rushPct:0.80, firstBalls:450, rushBalls:1500, label:"ミドル 1/319・RUSH80%" } },
+  { id:"s1", type:"S", name:"Sラッキーピエロ",        price: 450000, pop: 62, decay: 0.4, desc:"安定人気の完全告知機。枯れない",
+    spec:{ big1:273, big6:134, reg1:439, reg6:163, bigPay:252, regPay:96,  label:"Aタイプ・完全告知ランプ" } },
+  { id:"s2", type:"S", name:"S押忍!漢気番長",         price: 620000, pop: 72, decay: 1.1, desc:"出玉トリガーの伝統芸",
+    spec:{ big1:299, big6:155, reg1:500, reg6:200, bigPay:300, regPay:100, label:"AT機・番長ボーナス搭載" } },
+  { id:"s3", type:"S", name:"S忍烈伝〜朧の章〜",      price: 820000, pop: 86, decay: 1.4, desc:"継続率モノの金字塔",
+    spec:{ big1:399, big6:199, reg1:600, reg6:300, bigPay:350, regPay:120, label:"AT機・継続率タイプ" } },
+  { id:"s4", type:"S", name:"S黄金神話クロニクル",    price:1100000, pop:100, decay: 1.6, desc:"一撃万枚の夢がある",
+    spec:{ big1:450, big6:220, reg1:650, reg6:320, bigPay:400, regPay:130, label:"AT機・一撃性能特化" } },
+  { id:"s5", type:"S", name:"スマスロ蛇眼の傭兵",     price:1450000, pop:118, decay: 2.0, desc:"最新スマスロ。導入日は行列必至",
+    spec:{ big1:400, big6:180, reg1:600, reg6:280, bigPay:450, regPay:150, label:"スマスロ・高純増AT" } },
+];
+
+// 設定ごとの店側粗利率(売上に対する取り分の期待値)
+const MARGIN = { 1: 0.25, 2: 0.21, 3: 0.16, 4: 0.11, 5: 0.05, 6: -0.02 };
+
+// 広告プラン (flat=固定集客, pct=規模比例の集客率ブースト)
+const ADS = [
+  { id:"none",  name:"広告なし",       cost: 0,      flat: 0,  pct: 0    },
+  { id:"flyer", name:"チラシ配布",     cost: 30000,  flat: 12, pct: 0.04 },
+  { id:"sns",   name:"SNSキャンペーン", cost: 80000,  flat: 30, pct: 0.08 },
+  { id:"tv",    name:"ローカルTV CM",  cost: 250000, flat: 75, pct: 0.15 },
+];
+
+// 週替わりトレンド
+const TRENDS = [
+  { name:"レトロ海物語ブーム", ids:["p1","p2"] },
+  { name:"キャラ機ブーム",     ids:["p3"] },
+  { name:"アニメ版権ブーム",   ids:["p4","p5"] },
+  { name:"ジャグ連フィーバー", ids:["s1"] },
+  { name:"6号機AT再評価",     ids:["s2","s3"] },
+  { name:"スマスロブーム",     ids:["s4","s5"] },
+  { name:"ブームなし",         ids:[] },
+];
+
+// ============================================================
+//  イベント130種
+//  運イベント80種: 毎日50%でどれか1つ(重みw抽選)
+//  数値依存イベント50種: 状態条件を満たすと確率pで発生(cd=クールダウン日数)
+//  効果キー: cust=客数倍率, rep=評判, cost=臨時支出, gain=臨時収入,
+//            margin=粗利率補正, regs=常連増減, heat=ヒート増減
+// ============================================================
+const LUCK_EVENTS = [
+  // --- 天気・季節 (12) ---
+  { w:9, msg:"☔ 大雨。客足が遠のいた…", cust:0.75 },
+  { w:3, msg:"🌀 台風接近。街から人が消えた…", cust:0.6 },
+  { w:8, msg:"🌞 快晴の行楽日和。ふらっと立ち寄る客が増えた", cust:1.15 },
+  { w:6, msg:"🥵 猛暑日。涼みがてらの客で賑わう", cust:1.12 },
+  { w:3, msg:"❄️ 大雪。開店前の雪かきから一日が始まった…", cust:0.65, cost:20000 },
+  { w:5, msg:"🤧 花粉が大量飛散。マスク姿の客もまばら", cust:0.92 },
+  { w:6, msg:"🍃 心地よい涼風。散歩ついでの客がふらり", cust:1.08 },
+  { w:6, msg:"🌸 春の陽気に誘われて人通りが多い", cust:1.1 },
+  { w:5, msg:"🌫️ どんよりした曇り空。なんとなく客足も重い", cust:0.95 },
+  { w:4, msg:"🌈 店の真上に虹が!なんとなく縁起がいい", rep:1 },
+  { w:6, msg:"🌦️ 小雨のパチ屋日和。雨宿り客が打ち始める", cust:1.06 },
+  { w:5, msg:"🍂 木枯らし吹く寒い日。暖かい店内に客が吸い込まれる", cust:1.05 },
+  // --- メディア・世間 (10) ---
+  { w:5, msg:"📰 パチンコ攻略誌に優良店として掲載された!", rep:4 },
+  { w:5, msg:"📱 パチンコ系配信者が来店、動画がプチバズり", rep:2, cust:1.05 },
+  { w:4, msg:"📺 地元テレビの街ブラ番組に店が映り込んだ", rep:3 },
+  { w:4, msg:"🗯️ 根も葉もないデマがSNSで拡散…", rep:-3 },
+  { w:4, msg:"🗞️ 業界紙の「地域の注目店」特集に載った", rep:2 },
+  { w:3, msg:"🕶️ 芸能人がお忍びで来店したという噂が流れる", cust:1.15 },
+  { w:4, msg:"📉 新聞に業界縮小の記事。なんとなく世間の風が冷たい", cust:0.93 },
+  { w:4, msg:"📺 ワイドショーでパチンコ特集(悪い方)。逆風だ…", cust:0.88, rep:-1 },
+  { w:4, msg:"🤳 客の出玉写真が拡散して軽くバズった", cust:1.1 },
+  { w:4, msg:"⭐ 口コミサイトに星1レビューを書かれた…", rep:-2 },
+  // --- 客ドラマ (16) ---
+  { w:5, msg:"🎉 常連客が万枚達成!SNSで話題に!", rep:3, cust:1.1 },
+  { w:4, msg:"🔰 ビギナーズラックの大学生が友達を連れて再来店", regs:2 },
+  { w:3, msg:"💍 初デートがウチだったという夫婦が記念来店", rep:1 },
+  { w:4, msg:"🍺 泥酔客が暴れて警察沙汰に…", rep:-2, cost:50000 },
+  { w:4, msg:"👊 台パンで液晶が破損!修理送りに", cost:120000 },
+  { w:4, msg:"🚌 遠方からの遠征打ちの団体さんが来店", cust:1.12 },
+  { w:3, msg:"👴 「昔ここでデートした」と老夫婦がしみじみ来店", rep:1 },
+  { w:4, msg:"😤 クレーマーがカウンターで長時間ゴネた…", rep:-1 },
+  { w:3, msg:"📦 常連さんが引っ越しの挨拶に。もう来られないらしい", regs:-3 },
+  { w:5, msg:"🍻 会社帰りのサラリーマン集団がドッと来店", cust:1.08 },
+  { w:4, msg:"🎓 大学サークルの打ち上げ帰り組が流れてきた", cust:1.07 },
+  { w:3, msg:"🔮 地元の占い師が「今日はギャンブル吉日」と発信", cust:1.1 },
+  { w:3, msg:"👛 落とし物の財布を警察に届けたら持ち主が感激", rep:2 },
+  { w:4, msg:"🚗 迷惑駐車で近隣からクレーム…", cost:30000, rep:-1 },
+  { w:4, msg:"💢 大負けした客が「二度と来るか!」と捨て台詞", regs:-1 },
+  { w:4, msg:"👶 子連れ客を丁寧に案内したら感謝の口コミが", rep:2 },
+  // --- 機械・設備 (12) ---
+  { w:6, msg:"🔧 台が1台故障!修理費が発生…", cost:80000 },
+  { w:3, msg:"🌡️ エアコンが故障!緊急修理を呼んだ", cost:150000, cust:0.95 },
+  { w:4, msg:"🚽 トイレ詰まり発生。業者を呼んだ", cost:40000 },
+  { w:4, msg:"💡 駐車場の照明が切れていた", cost:20000 },
+  { w:4, msg:"🏧 両替機トラブルでカウンターに行列が…", rep:-1 },
+  { w:4, msg:"🧮 計数機が故障、手作業で対応した", cost:60000 },
+  { w:4, msg:"🌃 看板のネオンが一部消えて「パ◯スロ帝国」に", cost:50000 },
+  { w:3, msg:"✨ メダル研磨が絶好調。ピカピカのメダルが好評", rep:1 },
+  { w:3, msg:"🧹 清掃業者が神仕事。店内がピカピカに", rep:1, cost:30000 },
+  { w:3, msg:"🎵 音響の調子が良く、店内BGMがノリノリ", cust:1.03 },
+  { w:3, msg:"💡 データランプの誤表示で「出てる風」の島が誕生", cust:1.08 },
+  { w:3, msg:"🌧️ 天井から雨漏り!バケツで応急処置", cost:100000, rep:-1 },
+  // --- ライバル・業界 (10) ---
+  { w:4, msg:"🏪 近隣にライバル店がオープン。客を取られた…", cust:0.85, rep:-2 },
+  { w:4, msg:"😈 ライバル店が回収営業でやらかしたらしい。こっちに客が流れる", cust:1.15, rep:1 },
+  { w:3, msg:"🔩 ライバル店の看板機種が故障続きとの噂", cust:1.08 },
+  { w:4, msg:"🎊 ライバル店が新装開店。今日は分が悪い", cust:0.88 },
+  { w:3, msg:"📮 組合費の値上げ通知が届いた", cost:50000 },
+  { w:3, msg:"🎁 メーカー営業が粗品と販促グッズを置いていった", gain:20000 },
+  { w:3, msg:"🕵️ ライバル店の店長らしき人物が偵察に来ていた" },
+  { w:3, msg:"🚚 中古台業者の高価買取キャンペーンで倉庫を整理", gain:100000 },
+  { w:3, msg:"🏛️ 業界団体の視察。緊張したが好評価だった", rep:1 },
+  { w:3, msg:"❓ 客に換金所の場所を聞かれた(答えられないやつ)" },
+  // --- 街・イベント (10) ---
+  { w:4, msg:"🏮 駅前で祭り開催!人通りが段違い", cust:1.2 },
+  { w:3, msg:"🎤 近くのホールでコンサート。帰り客が流れてきた", cust:1.12 },
+  { w:3, msg:"🎫 商店街のスタンプラリーに参加してみた", cost:30000, cust:1.05 },
+  { w:6, msg:"💰 給料日直後。財布の紐がゆるい客だらけ", cust:1.15 },
+  { w:5, msg:"📅 年金支給日。朝から常連世代の姿が多い", cust:1.12 },
+  { w:6, msg:"🪫 月末。世間の財布が寒い…", cust:0.88 },
+  { w:4, msg:"🚧 近隣の工事の騒音がうるさい", cust:0.92 },
+  { w:4, msg:"🚜 道路工事で駐車場に入りづらい", cust:0.9 },
+  { w:3, msg:"🎰 宝くじ売場に行列。街のギャンブル気運が高い", cust:1.06 },
+  { w:3, msg:"🎆 花火大会の帰り客がドッと流れ込んできた", cust:1.1 },
+  // --- 従業員 (8) ---
+  { w:4, msg:"😱 バイトが無断欠勤!現場は大混乱", cust:0.97, rep:-1 },
+  { w:4, msg:"💁 スタッフの神対応が口コミで話題に", rep:2 },
+  { w:3, msg:"🫢 新人がドル箱をぶちまけた。拾うのが大変だった", cost:10000 },
+  { w:3, msg:"🎂 スタッフの誕生日。店の空気がほんわか良い", cust:1.03 },
+  { w:3, msg:"🤝 ベテランスタッフに引き抜きの話が…慰留ボーナスを支給", cost:80000 },
+  { w:3, msg:"🏅 スタッフが接客コンテストで入賞!士気UP", rep:1 },
+  { w:3, msg:"🤧 店長(あなた)が風邪気味。今日はなんとか乗り切ろう" },
+  { w:3, msg:"🧹 清掃のおばちゃんが常連客の人気者になっている", regs:1 },
+  // --- 珍事件 (2) ---
+  { w:2, msg:"🐈 猫が店に迷い込んだ。「看板猫」としてSNSで人気に", rep:3, cust:1.05 },
+  { w:2, msg:"🛸 UFO目撃の噂で街がざわつく(営業には関係ない)" },
+];
+const LUCK_DAILY_P = 0.5;
+
+const COND_EVENTS = [
+  // --- 評判トリガー (8) ---
+  { id:"r1", cd:30, p:0.5,  when:(s,x)=>s.rep>=90, msg:"🏆 「地域一番店」として商工会から表彰された!", rep:2, gain:100000 },
+  { id:"r2", cd:10, p:0.35, when:(s,x)=>s.rep>=80, msg:"🚗 評判を聞きつけて他県ナンバーの車がちらほら", cust:1.1 },
+  { id:"r3", cd:7,  p:0.4,  when:(s,x)=>s.rep<=25, msg:"🙅 「あの店はやめとけ」が駅前の合言葉になっている…", cust:0.85 },
+  { id:"r4", cd:12, p:0.4,  when:(s,x)=>s.rep<=15, msg:"🏚️ 「あそこ潰れるらしい」と廃業の噂まで…", regs:-4, rep:-1 },
+  { id:"r5", cd:14, p:0.35, when:(s,x)=>s.rep>=70&&x.weekend, msg:"👨‍👩‍👧 週末の憩いの場として家族連れにも認知されてきた", rep:1, regs:2 },
+  { id:"r6", cd:14, p:0.5,  when:(s,x)=>s.rep<=40&&x.tokubi, msg:"🦗 特日なのに店内は静か。信頼を失った代償…", cust:0.9 },
+  { id:"r7", cd:8,  p:0.35, when:(s,x)=>s.rep>=85, msg:"🤝 常連が「いい店だから」と友人を連れてきてくれた", regs:4 },
+  { id:"r8", cd:14, p:0.4,  when:(s,x)=>s.rep<45&&s.regulars>20, msg:"😢 常連が「最近評判悪いけど頑張れよ」と差し入れをくれた", rep:1 },
+  // --- 資金トリガー (6) ---
+  { id:"m1", cd:30, p:0.4,  when:(s,x)=>s.money>=30000000, msg:"🏦 銀行の支店長がわざわざ挨拶に来た。信用は金なり", rep:1 },
+  { id:"m2", cd:45, p:0.5,  when:(s,x)=>s.money>=50000000, msg:"🧾 税務調査が入った。帳簿は無事だったが対応費用が…", cost:300000 },
+  { id:"m3", cd:7,  p:0.5,  when:(s,x)=>s.money<=500000&&s.debt===0, msg:"😰 資金繰りが苦しい。今夜も眠れそうにない…" },
+  { id:"m4", cd:30, p:0.4,  when:(s,x)=>s.money>=20000000, msg:"🎗️ 商店会から寄付のお願い。地域の顔として快諾した", cost:100000, rep:2 },
+  { id:"m5", cd:10, p:0.4,  when:(s,x)=>s.money<=1000000&&s.debt>0, msg:"📞 取引業者から支払いを心配する電話が…", rep:-1 },
+  { id:"m6", cd:60, p:0.5,  when:(s,x)=>s.money>=80000000, msg:"👑 「億り人オーナー」として業界で噂になっている", rep:2 },
+  // --- 借金トリガー (6) ---
+  { id:"d1", cd:14, p:0.4,  when:(s,x)=>s.debt>=10000000, msg:"🏦 銀行から経営状況のヒアリング。誠実に対応した" },
+  { id:"d2", cd:14, p:0.4,  when:(s,x)=>s.debt>=20000000, msg:"☎️ 銀行からの電話が増えてきた。視線が痛い", rep:-1 },
+  { id:"d3", cd:20, p:0.4,  when:(s,x)=>s.debt>=30000000, msg:"📑 借入管理手数料の請求が届いた", cost:50000 },
+  { id:"d4", cd:20, p:0.4,  when:(s,x)=>s.debt>0&&s.money>=s.debt*2, msg:"💡 銀行員が「今が完済の好機ですよ」とアドバイス" },
+  { id:"d5", cd:10, p:0.5,  when:(s,x)=>s.debt>=creditLimit()*0.9, msg:"🥶 融資枠が限界間近。綱渡りの経営だ…", rep:-1 },
+  { id:"d6", cd:30, p:0.4,  when:(s,x)=>s.debt>=40000000, msg:"🗞️ 「借金頼みの拡大路線」と業界紙に書かれた", rep:-2 },
+  // --- ヒートトリガー (4) ---
+  { id:"h1", cd:7,  p:0.5,  when:(s,x)=>s.heat>=6, msg:"🕵️ 覆面調査員らしき人物が店内をメモしながら回っていた…" },
+  { id:"h2", cd:10, p:0.5,  when:(s,x)=>s.heat>=9, msg:"📣 組合から呼び出され厳重注意。反省の意を示した", cost:100000, heat:-2 },
+  { id:"h3", cd:20, p:0.35, when:(s,x)=>s.heat<=1&&x.avgSet>=3.5, msg:"🎖️ 組合の会合で「模範的な営業」と褒められた", rep:1 },
+  { id:"h4", cd:14, p:0.5,  when:(s,x)=>s.heat>=4&&x.tokubi, msg:"👁️ 特日の店内に監視の目が光っている気がする…" },
+  // --- 常連トリガー (6) ---
+  { id:"g1", cd:20, p:0.4,  when:(s,x)=>s.regulars>=30, msg:"🍵 常連会が自然発生。開店前の挨拶が名物になってきた", rep:2 },
+  { id:"g2", cd:10, p:0.35, when:(s,x)=>s.regulars>=60, msg:"📢 常連の口コミが新規客を呼んでいる", cust:1.1, regs:3 },
+  { id:"g3", cd:30, p:0.5,  when:(s,x)=>s.regulars>=100, msg:"🎊 常連たちが勝手に「創業祭」を企画してくれた!", rep:3, cust:1.15 },
+  { id:"g4", cd:14, p:0.4,  when:(s,x)=>s.regulars<=3&&s.day>=15, msg:"🌵 顔なじみのいない店内はどこか寂しい…", rep:-1 },
+  { id:"g5", cd:7,  p:0.45, when:(s,x)=>s.regulars>=40&&x.avgSet<2.8, msg:"🤨 常連たちが「最近渋くない?」とザワつき始めた", regs:-3 },
+  { id:"g6", cd:14, p:0.4,  when:(s,x)=>s.regulars>=50&&x.tokubi, msg:"🌅 特日は常連総出。開店前から行列ができた", cust:1.1 },
+  // --- 台・設備トリガー (8) ---
+  { id:"k1", cd:30, p:0.4,  when:(s,x)=>x.n>=30, msg:"🗺️ 「大型店」として地図アプリの表示が格上げされた", cust:1.05, rep:1 },
+  { id:"k2", cd:45, p:0.5,  when:(s,x)=>x.n>=60, msg:"📰 地域最大級ホールとして新聞の経済面に載った!", cust:1.1, rep:2 },
+  { id:"k3", cd:20, p:0.4,  when:(s,x)=>x.maxIsland>=5, msg:"🏝️ 名物シマが完成。「あの機種といえばウチ」と言われ始めた", rep:2 },
+  { id:"k4", cd:10, p:0.4,  when:(s,x)=>x.n>0&&x.avgPop<30, msg:"🦕 「台が古いんだよなあ」という口コミを見てしまった", rep:-2 },
+  { id:"k5", cd:14, p:0.5,  when:(s,x)=>x.newCount>=3, msg:"🆕 新台ラッシュに客がざわめいている", cust:1.12 },
+  { id:"k6", cd:30, p:0.4,  when:(s,x)=>s.cap>=60&&x.n>=60, msg:"💯 満台フル稼働。壮観な眺めだ", rep:1 },
+  { id:"k7", cd:7,  p:0.3,  when:(s,x)=>x.n>0&&(!x.hasP||!x.hasS), msg:"🤷 「パチンコもスロットも両方欲しい」と帰る客が…", cust:0.95 },
+  { id:"k8", cd:10, p:0.35, when:(s,x)=>x.maxPop>=110, msg:"🌟 看板機種目当ての客が開店前から並んでいる", cust:1.08 },
+  // --- 設定トリガー (6) ---
+  { id:"t1", cd:14, p:0.4,  when:(s,x)=>x.avgSet>=5, msg:"🫨 「あの店出しすぎだろ」と同業者に心配されている" },
+  { id:"t2", cd:10, p:0.4,  when:(s,x)=>x.avgSet>=4.5&&!x.tokubi, msg:"😲 平日から全力放出。客がどよめいている", cust:1.1 },
+  { id:"t3", cd:7,  p:0.5,  when:(s,x)=>x.highCount>=10, msg:"📱 プロ集団のグループチャットで高設定情報が共有されたらしい", margin:-0.01 },
+  { id:"t4", cd:7,  p:0.45, when:(s,x)=>x.avgSet<=1.5, msg:"🧊 ベタピン営業に気づいた客から冷たい視線が…", rep:-2 },
+  { id:"t5", cd:20, p:0.35, when:(s,x)=>x.allSame&&x.n>=10, msg:"🎲 「全台同一設定」の狂気の営業が逆に話題に", cust:1.05 },
+  { id:"t6", cd:14, p:0.4,  when:(s,x)=>x.avgSet>=4&&s.rate==="low", msg:"🍶 低換金なのに大盤振る舞い。「通好みの店」と評判に", regs:3 },
+  // --- 節目トリガー (6) ---
+  { id:"n1", cd:99999, p:1,   when:(s,x)=>s.day===10,  msg:"🌸 開店10日目。取引先から祝いの花輪が届いた", rep:1 },
+  { id:"n2", cd:99999, p:1,   when:(s,x)=>s.day===50,  msg:"📖 50日目。地元誌が「新店のその後」を取材に来た", rep:2 },
+  { id:"n3", cd:99999, p:1,   when:(s,x)=>s.day===100, msg:"🎉 営業100日目!記念セレモニーを開催した", rep:2, cust:1.1 },
+  { id:"n4", cd:25, p:0.5,  when:(s,x)=>s.day>0&&s.day%30===0, msg:"📦 月次棚卸しで備品のロスが発覚…", cost:50000 },
+  { id:"n5", cd:45, p:0.4,  when:(s,x)=>s.cleared, msg:"🎓 成功事例として業界セミナーに登壇。講演料を頂いた", gain:200000 },
+  { id:"n6", cd:30, p:0.4,  when:(s,x)=>s.day>=150&&!s.cleared, msg:"📈 銀行員に「そろそろ大台を狙いましょう」と発破をかけられた" },
+];
+
+// 実績
+const ACHIEVEMENTS = [
+  { id:"first-day",  icon:"🔔", name:"開店初日",       desc:"初めて営業した" },
+  { id:"million",    icon:"💴", name:"日給100万",      desc:"1日の純利益が100万円を超えた" },
+  { id:"rep90",      icon:"🌟", name:"地域の優良店",   desc:"評判が90を超えた" },
+  { id:"reg50",      icon:"🫂", name:"常連の店",       desc:"常連客が50人を超えた" },
+  { id:"m20",        icon:"🏬", name:"中堅ホール",     desc:"設置台数20台に到達" },
+  { id:"m60",        icon:"🏯", name:"巨艦店",         desc:"設置台数60台(最大)に到達" },
+  { id:"d30",        icon:"📆", name:"1ヶ月経営",      desc:"30日間営業を続けた" },
+  { id:"tokubi-god", icon:"🔥", name:"特日の神",       desc:"特日を平均設定5以上で営業した" },
+  { id:"shidou",     icon:"🚨", name:"お上の世話",     desc:"行政指導を受けてしまった…" },
+  { id:"loan-clear", icon:"🏦", name:"信用第一",       desc:"1,000万円以上の借金を完済した" },
+  { id:"asset30m",   icon:"📈", name:"軌道に乗る",     desc:"純資産3,000万円を達成" },
+  { id:"asset100m",  icon:"👑", name:"パチスロ帝国",   desc:"純資産1億円を達成(クリア!)" },
+  { id:"trial-hit",  icon:"🎯", name:"初当たり体験",   desc:"試打で大当り/ボーナスを引いた" },
+  { id:"trial-10",   icon:"💥", name:"事故連発生",     desc:"試打で10連チャン or BIG10回を達成" },
+  { id:"trial-5k",   icon:"🗼", name:"ドル箱タワー",   desc:"試打で差玉+5,000 or 差枚+2,000を達成" },
+];
+
+const $ = id => document.getElementById(id);
+const yen = n => "¥" + Math.round(n).toLocaleString("ja-JP");
+const rand = (a, b) => a + Math.random() * (b - a);
+
+// ---- ゲーム状態 ----
+let state = null;
+
+function newGame(diff) {
+  diff = DIFFS[diff] ? diff : "normal";
+  return {
+    day: 1,
+    diff: diff,
+    money: DIFFS[diff].money,
+    rep: 50,
+    regulars: 8,
+    heat: 0,
+    debt: 0,
+    maxDebt: 0,
+    rate: "normal",     // 交換率: normal=等価 / low=低換金
+    trend: null,
+    grandOpen: false,
+    lastGrand: -99,
+    cap: 10,
+    staff: 2,
+    ad: "none",
+    machines: [
+      makeMachine("p1"),
+      makeMachine("s1"),
+    ],
+    history: [],
+    ach: [],
+    evCd: {},
+    cleared: false,
+    clearDay: null,
+    uid: 1000,
+  };
+}
+
+function makeMachine(catalogId) {
+  const c = CATALOG.find(m => m.id === catalogId);
+  return {
+    uid: null,
+    cid: c.id,
+    pop: c.pop,
+    setting: 3,
+    boughtDay: null,
+    lastNet: null,
+    lastCust: null,
+  };
+}
+
+function catalogOf(m) { return CATALOG.find(c => c.id === m.cid); }
+function machineValue(m) { return Math.round(catalogOf(m).price * 0.45); }
+function machineAssets() { return state.machines.reduce((s, m) => s + machineValue(m), 0); }
+function totalAssets() { return state.money + machineAssets() - state.debt; }
+function creditLimit() { return Math.round(machineAssets() * 0.7) + 2000000; }
+function isTokubi(day) { return String(day).includes("7"); }
+function isWeekend(day) { const w = day % 7; return w === 6 || w === 0; }
+function staffNeeded() { return Math.max(1, Math.ceil(state.machines.length / 8)); }
+
+function islandBonus(cid) {
+  const n = state.machines.filter(x => x.cid === cid).length;
+  return 1 + Math.min(0.06 * (n - 1), 0.3);
+}
+function trendMult(cid) {
+  return state.trend && state.trend.ids.includes(cid) ? 1.4 : 1;
+}
+function effectivePop(m) {
+  const isNew = state.day - (m.boughtDay ?? -99) < 5;
+  return m.pop * (isNew ? 1.4 : 1) * (1 + (m.setting - 3) * 0.05) * islandBonus(m.cid) * trendMult(m.cid);
+}
+
+// ============================================================
+//  実績
+// ============================================================
+function hasAch(id) { return state.ach.includes(id); }
+function grantAch(id) {
+  if (hasAch(id)) return;
+  const a = ACHIEVEMENTS.find(x => x.id === id);
+  if (!a) return;
+  state.ach.push(id);
+  save(true);
+  toast(`${a.icon} 実績解除「${a.name}」`);
+  renderAch();
+}
+function toast(msg) {
+  const d = document.createElement("div");
+  d.className = "toast";
+  d.textContent = msg;
+  $("toasts").appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+
+// ============================================================
+//  1日の営業シミュレーション
+// ============================================================
+function simulateDay() {
+  const s = state;
+  const D = DIFFS[s.diff] || DIFFS.normal;
+  const notes = [];
+
+  // --- トレンド更新(7日ごと) ---
+  if (!s.trend || s.day % 7 === 1) {
+    const t = TRENDS[Math.floor(Math.random() * TRENDS.length)];
+    s.trend = { name: t.name, ids: t.ids.slice() };
+    notes.push(t.ids.length
+      ? `📈 今週の街は「${t.name}」!該当機種の人気1.4倍`
+      : "📉 今週は特にブームなし。地力の勝負。");
+  }
+
+  const tokubi = isTokubi(s.day);
+  const weekend = isWeekend(s.day);
+
+  // --- 設定集計 ---
+  const n = s.machines.length;
+  const avgSet = n ? s.machines.reduce((a, m) => a + m.setting, 0) / n : 3;
+  const highList = s.machines.filter(m => m.setting >= 5);
+
+  // --- イベント(運80種+数値依存50種) ---
+  let custMult = 1, repDelta = 0, extraCost = 0, marginDelta = 0, eventGain = 0;
+  const applyEv = e => {
+    notes.push(e.msg);
+    if (e.cust) custMult *= e.cust;
+    repDelta += e.rep ?? 0;
+    extraCost += e.cost ?? 0;
+    eventGain += e.gain ?? 0;
+    marginDelta += e.margin ?? 0;
+    if (e.regs) s.regulars = Math.max(0, s.regulars + e.regs);
+    if (e.heat) s.heat = Math.max(0, s.heat + e.heat);
+  };
+  // 運イベント: 1日1回、50%で重み抽選
+  if (Math.random() < LUCK_DAILY_P) {
+    const totalW = LUCK_EVENTS.reduce((a, e) => a + e.w, 0);
+    let r = Math.random() * totalW;
+    for (const e of LUCK_EVENTS) { r -= e.w; if (r < 0) { applyEv(e); break; } }
+  }
+  // 数値依存イベント: 条件を満たすものから1日最大1つ
+  {
+    if (!s.evCd) s.evCd = {};
+    const x = {
+      n, avgSet, tokubi, weekend,
+      highCount: highList.length,
+      avgPop: n ? s.machines.reduce((a, m) => a + m.pop, 0) / n : 0,
+      maxPop: s.machines.reduce((a, m) => Math.max(a, m.pop), 0),
+      maxIsland: (() => { const c = {}; let mx = 0; for (const m of s.machines) { c[m.cid] = (c[m.cid] || 0) + 1; mx = Math.max(mx, c[m.cid]); } return mx; })(),
+      newCount: s.machines.filter(m => m.boughtDay !== null && s.day - m.boughtDay < 5).length,
+      hasP: s.machines.some(m => catalogOf(m).type === "P"),
+      hasS: s.machines.some(m => catalogOf(m).type === "S"),
+      allSame: n > 0 && s.machines.every(m => m.setting === s.machines[0].setting),
+    };
+    const elig = COND_EVENTS.filter(e => s.day - (s.evCd[e.id] ?? -1e9) >= (e.cd ?? 7) && e.when(s, x));
+    const fired = elig.filter(e => Math.random() < (e.p ?? 0.4));
+    if (fired.length) {
+      const e = fired[Math.floor(Math.random() * fired.length)];
+      s.evCd[e.id] = s.day;
+      applyEv(e);
+    }
+  }
+
+  if (tokubi) { custMult *= 1.7; notes.push("🔥 本日は特日(7のつく日)!開店前から行列が!"); }
+  else if (weekend) { custMult *= 1.3; notes.push("📅 週末で客足は上々。"); }
+
+  // --- 新装開店フェア ---
+  const grandToday = s.grandOpen;
+  if (grandToday) {
+    s.grandOpen = false;
+    custMult *= 1.5; repDelta += 2;
+    notes.push("🎊 新装開店フェア開催!普段来ない客まで大挙来店!");
+  }
+
+  // --- 行政・組合ヒート(回収営業の監視) ---
+  if (n && avgSet < 2.6) s.heat += (2.6 - avgSet) * 2.2 * D.heatMul;
+  else s.heat = Math.max(0, s.heat * 0.65 - 0.2);
+  if (s.heat > 8 && Math.random() < 0.25) {
+    extraCost += 500000; repDelta -= 8; s.heat = 2;
+    notes.push("🚨 行政指導が入った!罰金¥500,000、悪評が広がり評判ダウン…");
+    grantAch("shidou");
+  } else if (s.heat > 5) {
+    notes.push("⚠️ 渋い営業が続き、組合・行政の目が厳しくなっている…(指導リスク上昇中)");
+  }
+
+  // --- 客層別の来店数 ---
+  // 集客力: 台の実効人気(新台効果・トレンド・シマ・設定込み)の平均が
+  // 来店客数の絶対値を動かす。古い台を放置した店には客は来ない。
+  const capacity = n * 20;
+  const totalW = s.machines.reduce((sum, m) => sum + effectivePop(m), 0) || 1;
+  // 集客力 = 素の台人気の平均(ボロ台を並べた店に客は来ない)+ 新台の話題性
+  const avgPopRaw = n ? s.machines.reduce((a, m) => a + m.pop, 0) / n : 0;
+  const newCountA = s.machines.filter(m => m.boughtDay !== null && s.day - m.boughtDay < 5).length;
+  const attract = Math.min(1.25, Math.max(0.65,
+    0.55 + (avgPopRaw / 65) * 0.45 + Math.min(0.12, newCountA * 0.03)));
+  const fillRate = (0.10 + (s.rep / 100) * 0.66) * attract * (D.fillMul || 1);
+  const rateMod = s.rate === "low" ? 0.88 : 1;
+
+  // 広告: 固定分+店舗規模に比例する分
+  const ad = ADS.find(a => a.id === s.ad);
+  const adBoost = ad.flat + capacity * fillRate * ad.pct;
+
+  let casual = (capacity * fillRate * custMult + adBoost) * rand(0.9, 1.1);
+
+  const need = staffNeeded();
+  const staffOK = s.staff >= need;
+  if (!staffOK) {
+    casual *= 0.85; repDelta -= 2;
+    notes.push("⚠️ スタッフ不足で店内が回らず、客が苛立っている…");
+  }
+
+  let regs = Math.round(s.regulars * (tokubi ? 0.9 : 0.65) * (s.rate === "low" ? 0.95 : 1) * rand(0.9, 1.05));
+  let pros = highList.length
+    ? Math.round(Math.min(highList.length * 3 * D.proMul * (tokubi ? 1.5 : 1), capacity * 0.15) * rand(0.8, 1.2))
+    : 0;
+  if (pros > 0) notes.push(`🕶️ 高設定の匂いを嗅ぎつけたプロが${pros}人来店。彼らは勝ちにだけ来る…`);
+  // 特日・新装開店は立ち回り客で収容+15%まで詰め込める
+  const capMax = Math.round(capacity * ((tokubi || grandToday) ? 1.15 : 1));
+  regs = Math.min(regs, capMax);
+  casual = Math.floor(Math.max(0, Math.min(casual, capMax - regs - pros)) * rateMod);
+  const customers = n ? casual + regs + pros : 0;
+
+  // --- 台ごとの売上・粗利 ---
+  const highW = highList.reduce((sum, m) => sum + effectivePop(m), 0) || 1;
+  const rateBonus = s.rate === "low" ? 0.025 : 0;
+  let sales = 0, gross = 0;
+  // 特日に渋い店では客が期待外れと悟って早帰り→打ち込みが浅くなる
+  const tokubiGap = (tokubi && avgSet < 3.5) ? 0.7 : 1;
+  for (const m of s.machines) {
+    const c = catalogOf(m);
+    const w = effectivePop(m) / totalW;
+    const nCas = casual * w;
+    const nReg = regs * w;
+    const nPro = m.setting >= 5 ? pros * (effectivePop(m) / highW) : 0;
+    // 台の鮮度: 人気が枯れた台は座られても打ち込まれない
+    const qual = 0.75 + 0.25 * Math.min(1, m.pop / 80);
+    const spend = (c.type === "P" ? 30000 : 36000) * qual * tokubiGap * rand(0.8, 1.2);
+    const margin = MARGIN[m.setting] + rateBonus + marginDelta + rand(-0.09, 0.09);
+    const mSales = nCas * spend + nReg * spend * 1.35 + nPro * 45000;
+    const mGross = (nCas * spend + nReg * spend * 1.35) * margin + nPro * 45000 * (margin - 0.16);
+    sales += mSales;
+    gross += mGross;
+    m.lastNet = Math.round(mGross);
+    m.lastCust = Math.round(nCas + nReg + nPro);
+    m.pop = Math.max(15, m.pop - c.decay * rand(0.7, 1.3));
+  }
+  const payout = sales - gross;
+
+  // --- 経費 ---
+  const rent = Math.round((30000 + s.cap * 2500) * D.rentMul);
+  const wages = s.staff * 13000;
+  const utility = n * 2500;
+  const interest = Math.round(s.debt * 0.0025);
+  const expenses = rent + wages + utility + ad.cost + extraCost + interest;
+  if (extraCost > 0) notes.push(`💸 臨時支出 ${yen(extraCost)}`);
+
+  const net = gross - expenses + eventGain;
+  s.money += Math.round(net);
+
+  // --- 常連プールの増減 ---
+  if (n) {
+    // 特日に応えた日・新装開店の日は新規客が固定客になりやすい
+    let convMult = 1;
+    if (tokubi && avgSet >= 4.5) convMult = 2;
+    else if (tokubi && avgSet >= 4) convMult = 1.5;
+    if (grandToday) convMult *= 2;
+    convMult *= 1 + ad.pct * 3; // 広告で来た新規客が気に入れば固定客に
+    if (avgSet >= 3.4 && staffOK) s.regulars += (casual * 0.025 + 0.5) * convMult;
+    else if (avgSet < 2.5) s.regulars *= 0.94;
+    if (tokubi && avgSet < 3) { s.regulars *= 0.85; }
+    else if (tokubi && avgSet < 3.5) { s.regulars *= 0.95; }
+    if (s.rep < 35) s.regulars *= 0.97;
+    s.regulars = Math.max(0, Math.min(capacity * 0.5, s.regulars));
+  }
+
+  // --- 評判の増減 ---
+  if (n) {
+    let d = (avgSet - 3) * 1.4;
+    if (tokubi) {
+      // 特日は客の期待値が高い: 「普段通り」ですら減点される
+      if (avgSet >= 4.5) { d += 5; notes.push("🤩 特日に全力放出!伝説の一日として語り草に!"); }
+      else if (avgSet >= 4) { d += 4; notes.push("😊 特日にしっかり出した!客は大満足、評判が上がった!"); }
+      else if (avgSet >= 3.5) { /* 及第点: 加点も減点もなし */ }
+      else if (avgSet >= 3) { d -= 1; notes.push("😕 特日なのに普段通りの営業…期待して来た客はしらけ気味。"); }
+      else { d -= 6; notes.push("😡 特日なのに回収営業…客が激怒、評判ガタ落ち!"); }
+    }
+    repDelta += d;
+  }
+  s.rep = Math.max(1, Math.min(100, s.rep + repDelta + rand(-0.5, 0.5)));
+
+  s.ad = "none";
+
+  // --- 資金ショート時の緊急融資 ---
+  if (s.money < 0) {
+    const need2 = -s.money + 200000;
+    if (s.debt + need2 <= creditLimit()) {
+      s.debt += need2;
+      s.maxDebt = Math.max(s.maxDebt, s.debt);
+      s.money += need2;
+      notes.push(`🏦 資金ショート!銀行から緊急融資 ${yen(need2)} を受けた(金利0.25%/日)。借金地獄に注意…`);
+    }
+  }
+
+  // --- 記録 ---
+  const rec = {
+    day: s.day, cust: customers, cas: casual, reg: regs, pro: pros,
+    sales: Math.round(sales), payout: Math.round(payout),
+    exp: Math.round(expenses), net: Math.round(net), interest,
+    note: tokubi ? "特日" : (weekend ? "週末" : ""),
+  };
+  s.history.unshift(rec);
+  if (s.history.length > 60) s.history.pop();
+
+  s.day++;
+
+  // --- 実績チェック ---
+  grantAch("first-day");
+  if (rec.net >= 1000000) grantAch("million");
+  if (s.rep >= 90) grantAch("rep90");
+  if (s.regulars >= 50) grantAch("reg50");
+  if (s.machines.length >= 20) grantAch("m20");
+  if (s.machines.length >= 60) grantAch("m60");
+  if (rec.day >= 30) grantAch("d30");
+  if (tokubi && avgSet >= 5) grantAch("tokubi-god");
+  if (s.debt === 0 && s.maxDebt >= 10000000) grantAch("loan-clear");
+  if (totalAssets() >= 30000000) grantAch("asset30m");
+  if (totalAssets() >= GOAL_ASSETS) grantAch("asset100m");
+  if (!s.cleared && totalAssets() >= GOAL_ASSETS) { s.cleared = true; s.clearDay = rec.day; }
+
+  save(true);
+  return { rec, notes };
+}
+
+function clearRank(d) { return d <= 65 ? "S" : d <= 85 ? "A" : d <= 120 ? "B" : "C"; }
+
+// ---- 週次レポート ----
+function weeklyReport(rec) {
+  if (rec.day % 7 !== 0 || state.history.length < 7) return "";
+  const wk = state.history.slice(0, 7);
+  const total = wk.reduce((a, r) => a + r.net, 0);
+  const avgCust = Math.round(wk.reduce((a, r) => a + r.cust, 0) / 7);
+  const advice = [];
+  const avgSet = state.machines.length
+    ? state.machines.reduce((a, m) => a + m.setting, 0) / state.machines.length : 3;
+  const avgPop = state.machines.length
+    ? state.machines.reduce((a, m) => a + m.pop, 0) / state.machines.length : 0;
+  if (state.rep < 40) advice.push("評判が危険水域。設定を上げて信頼回復を。");
+  else if (state.rep > 85 && avgSet > 4) advice.push("評判は十分高い。設定を少し落として回収しても客はすぐには離れない。");
+  if (state.heat > 5) advice.push("行政の目が厳しい。数日は設定を開けてほとぼりを冷まそう。");
+  if (state.debt > 0 && state.debt > totalAssets() * 0.5) advice.push("借金が資産に対して重い。利息が経営を蝕む前に返済を。");
+  if (avgPop < 40 && state.machines.length) advice.push("台の人気が枯れてきている。新台入替+新装開店フェアで話題を作ろう。");
+  if (state.regulars < state.machines.length * 3 && avgSet < 3.4)
+    advice.push("常連が育っていない。平均設定3.4以上を保つ日を作ると固定客が増える。");
+  if (state.cap < MAX_CAP && state.machines.length >= state.cap && state.money > expandCost() + 2000000)
+    advice.push("満台状態で資金にも余裕あり。店舗拡張のチャンス。");
+  if (!advice.length) advice.push("経営は順調。この調子で!");
+  return `<div class="weekreport">
+    <h4>📋 週次レポート (${rec.day - 6}〜${rec.day}日目)</h4>
+    <div class="result-row"><span>週間純利益</span><b class="${total >= 0 ? "pos" : "neg"}">${total >= 0 ? "+" : ""}${yen(total)}</b></div>
+    <div class="result-row"><span>平均客数</span><b>${avgCust}人/日</b></div>
+    <div class="result-row"><span>常連客</span><b>${Math.round(state.regulars)}人</b></div>
+    <div class="eventmsg">💡 ${advice.join("<br>💡 ")}</div>
+  </div>`;
+}
+
+// ============================================================
+//  UI (経営画面)
+// ============================================================
+function renderStatus() {
+  $("stDay").textContent = state.day + "日目" + (isTokubi(state.day) ? " 🔥特日" : isWeekend(state.day) ? " 📅週末" : "");
+  $("stMoney").textContent = yen(state.money);
+  $("stRep").textContent = Math.round(state.rep) + " / 100";
+  $("stRegs").textContent = Math.round(state.regulars) + "人";
+  $("stMachines").textContent = state.machines.length + " / " + state.cap;
+  $("stDebt").textContent = state.debt > 0 ? yen(state.debt) : "なし";
+  $("stAssets").textContent = yen(totalAssets());
+  const tk = isTokubi(state.day);
+  const trendTxt = state.trend && state.trend.ids.length ? `今週:「${state.trend.name}」` : "";
+  $("dayNote").innerHTML = (tk
+    ? "本日は<b>特日</b>!高設定にすれば評判急上昇、渋くすると大炎上… "
+    : "設定と経営を整えたら営業開始!(7のつく日は特日) ") + trendTxt;
+}
+
+function renderHall() {
+  const wrap = $("hallList");
+  if (!state.machines.length) {
+    wrap.innerHTML = "<p class='note'>台がありません!「新台購入」タブから台を導入しよう。</p>";
+    return;
+  }
+  wrap.innerHTML = "";
+  state.machines.forEach((m, idx) => {
+    const c = catalogOf(m);
+    const isNew = state.day - (m.boughtDay ?? -99) < 5;
+    const div = document.createElement("div");
+    div.className = "machine";
+    const lastTxt = m.lastNet === null ? "―" :
+      `<span class="${m.lastNet >= 0 ? "pos" : "neg"}">${m.lastNet >= 0 ? "+" : ""}${yen(m.lastNet)}</span> (客${m.lastCust}人)`;
+    const isl = islandBonus(c.id);
+    const badges = [
+      trendMult(c.id) > 1 ? "📈ブーム中" : "",
+      isl > 1 ? `🏝️シマ+${Math.round((isl - 1) * 100)}%` : "",
+      m.setting >= 5 ? "🕶️プロ警戒" : "",
+    ].filter(Boolean).join(" ");
+    div.innerHTML = `
+      <div class="icon">${c.type === "P" ? "🎯" : "🎰"}</div>
+      <div class="minfo">
+        <div class="mname">${c.name}${isNew ? '<span class="newtag">NEW</span>' : ""}</div>
+        <div class="msub">${c.desc}</div>
+        <div class="mspec">${c.spec.label}</div>
+        ${badges ? `<div class="mbadge">${badges}</div>` : ""}
+        <div class="msub">人気 ${Math.round(m.pop)}<div class="popbar"><div style="width:${Math.min(100, m.pop / 1.2)}%"></div></div></div>
+      </div>
+      <div class="mstats">前日収支: ${lastTxt}<br>売却額: ${yen(machineValue(m))}</div>
+    `;
+    const sel = document.createElement("select");
+    for (let v = 1; v <= 6; v++) {
+      const o = document.createElement("option");
+      o.value = v; o.textContent = "設定" + v;
+      if (m.setting === v) o.selected = true;
+      sel.appendChild(o);
+    }
+    sel.addEventListener("change", () => { if (isDead()) return; m.setting = Number(sel.value); save(); renderHall(); });
+    const trialBtn = document.createElement("button");
+    trialBtn.className = "trial"; trialBtn.textContent = "🕹️試打";
+    trialBtn.addEventListener("click", () => openTrial(c, m.setting));
+    const sellBtn = document.createElement("button");
+    sellBtn.className = "danger"; sellBtn.textContent = "売却";
+    sellBtn.addEventListener("click", () => {
+      if (isDead()) return;
+      if (!confirm(`${c.name} を ${yen(machineValue(m))} で売却しますか?`)) return;
+      state.money += machineValue(m);
+      state.machines.splice(idx, 1);
+      save(); renderAll();
+    });
+    div.appendChild(sel);
+    div.appendChild(trialBtn);
+    div.appendChild(sellBtn);
+    wrap.appendChild(div);
+  });
+}
+
+function renderShop() {
+  const wrap = $("shopList");
+  wrap.innerHTML = "";
+  for (const c of CATALOG) {
+    const owned = state.machines.filter(m => m.cid === c.id).length;
+    const div = document.createElement("div");
+    div.className = "machine";
+    const badges = [
+      trendMult(c.id) > 1 ? "📈ブーム中" : "",
+      owned ? `設置中×${owned}` : "",
+    ].filter(Boolean).join(" ");
+    div.innerHTML = `
+      <div class="icon">${c.type === "P" ? "🎯" : "🎰"}</div>
+      <div class="minfo">
+        <div class="mname">${c.name}</div>
+        <div class="msub">${c.desc}</div>
+        <div class="mspec">${c.spec.label}</div>
+        ${badges ? `<div class="mbadge">${badges}</div>` : ""}
+        <div class="msub">集客力 ${c.pop} ・ 人気低下 ${c.decay <= 0.8 ? "遅い" : c.decay <= 1.4 ? "普通" : "速い"}</div>
+      </div>
+      <div class="mstats">${yen(c.price)}</div>
+    `;
+    const trialBtn = document.createElement("button");
+    trialBtn.className = "trial"; trialBtn.textContent = "🕹️試打";
+    trialBtn.addEventListener("click", () => openTrial(c, 3));
+    const btn = document.createElement("button");
+    btn.className = "buy"; btn.textContent = "導入する";
+    const full = state.machines.length >= state.cap;
+    const poor = state.money < c.price;
+    btn.disabled = full || poor;
+    if (full) btn.textContent = "設置枠なし";
+    else if (poor) btn.textContent = "資金不足";
+    btn.addEventListener("click", () => {
+      if (isDead()) return;
+      if (state.money < c.price || state.machines.length >= state.cap) return;
+      state.money -= c.price;
+      const m = makeMachine(c.id);
+      m.uid = ++state.uid;
+      m.boughtDay = state.day;
+      state.machines.push(m);
+      save(); renderAll();
+    });
+    div.appendChild(trialBtn);
+    div.appendChild(btn);
+    wrap.appendChild(div);
+  }
+}
+
+function expandCost() { return 2000000 + (state.cap - 10) * 300000; }
+
+function renderMgmt() {
+  $("staffCount").textContent = state.staff + "人 (日給計 " + yen(state.staff * 13000) + ")";
+  const need = staffNeeded();
+  $("staffNeed").textContent = need + "人" + (state.staff < need ? " ⚠️不足中!" : " ✅");
+  $("btnFire").disabled = state.staff <= 1;
+  $("capNow").textContent = state.cap + "台" + (state.cap >= MAX_CAP ? " (最大)" : "");
+  if (state.cap >= MAX_CAP) {
+    $("btnExpand").textContent = "拡張上限に到達";
+    $("btnExpand").disabled = true;
+  } else {
+    $("btnExpand").textContent = `+5台 拡張する (${yen(expandCost())})`;
+    $("btnExpand").disabled = state.money < expandCost();
+  }
+
+  // 広告
+  const adWrap = $("adButtons");
+  adWrap.innerHTML = "";
+  for (const a of ADS) {
+    const b = document.createElement("button");
+    b.textContent = a.name + (a.cost ? ` (${yen(a.cost)})` : "");
+    if (state.ad === a.id) { b.className = "primary"; }
+    b.addEventListener("click", () => { if (isDead()) return; state.ad = a.id; save(); renderMgmt(); });
+    adWrap.appendChild(b);
+  }
+  const cur = ADS.find(a => a.id === state.ad);
+  $("adCurrent").textContent = cur.id === "none"
+    ? "広告は未設定。設定すると次の営業日の客数が増える(固定分+店舗規模に比例する分。費用はその日の経費に計上)。"
+    : `本日の広告: ${cur.name} → 客数 +${cur.flat}人 + 集客率${Math.round(cur.pct * 100)}%ブースト`;
+
+  // 新装開店
+  const recentBuy = state.machines.some(m => m.boughtDay !== null && state.day - m.boughtDay <= 1);
+  const cooldownOK = state.day - state.lastGrand >= 7;
+  const grandBtn = $("btnGrand");
+  if (state.grandOpen) { grandBtn.textContent = "開催予約済み(次の営業日)"; grandBtn.disabled = true; }
+  else if (!recentBuy) { grandBtn.textContent = "新台導入直後のみ開催可"; grandBtn.disabled = true; }
+  else if (!cooldownOK) { grandBtn.textContent = `あと${7 - (state.day - state.lastGrand)}日で開催可能`; grandBtn.disabled = true; }
+  else if (state.money < 300000) { grandBtn.textContent = "資金不足 (¥300,000)"; grandBtn.disabled = true; }
+  else { grandBtn.textContent = "フェアを開催する (¥300,000)"; grandBtn.disabled = false; }
+
+  // 融資
+  $("debtNow").textContent = yen(state.debt);
+  $("creditNow").textContent = yen(creditLimit());
+  $("btnBorrow").disabled = state.debt + 1000000 > creditLimit();
+  $("btnRepay").disabled = state.debt <= 0 || state.money < Math.min(1000000, state.debt);
+
+  // 交換率
+  const rateWrap = $("rateButtons");
+  rateWrap.innerHTML = "";
+  [["normal", "等価交換"], ["low", "低換金 (5.6枚)"]].forEach(([id, label]) => {
+    const b = document.createElement("button");
+    b.textContent = label;
+    if (state.rate === id) b.className = "primary";
+    b.addEventListener("click", () => { if (isDead()) return; state.rate = id; save(); renderMgmt(); });
+    rateWrap.appendChild(b);
+  });
+  $("rateNote").textContent = state.rate === "normal"
+    ? "等価交換: 客ウケが良く集客に有利。ただし店の取り分は薄い。"
+    : "低換金: 全設定の粗利+2.5pt。ただしフリの客が約12%減り、常連の足もわずかに遠のく。";
+
+  // ヒート
+  const heatPct = Math.min(100, state.heat / 12 * 100);
+  $("heatFill").style.width = heatPct + "%";
+  $("heatNote").textContent = state.heat > 8
+    ? "🚨 危険!いつ行政指導(罰金50万+評判-8)が入ってもおかしくない。数日設定を開けて沈静化を。"
+    : state.heat > 5
+    ? "⚠️ 警戒レベル。渋い営業(平均設定2.6未満)を続けるとゲージが上がっていく。"
+    : "平常。平均設定2.6未満の営業を続けるとゲージが上昇し、指導リスクが高まる。";
+
+  renderAch();
+}
+
+function renderAch() {
+  const wrap = $("achList");
+  if (!wrap) return;
+  wrap.innerHTML = "";
+  for (const a of ACHIEVEMENTS) {
+    const got = hasAch(a.id);
+    const d = document.createElement("div");
+    d.className = "achitem" + (got ? "" : " locked");
+    d.innerHTML = `<span class="aicon">${a.icon}</span><span><b>${a.name}</b><div class="adesc">${a.desc}</div></span>`;
+    wrap.appendChild(d);
+  }
+}
+
+// ---- 損益グラフ (単一系列・正負を基線の上下+色で表現) ----
+function renderChart() {
+  const wrap = $("chartWrap");
+  const data = state.history.slice(0, 30).reverse();
+  if (!data.length) {
+    wrap.innerHTML = "<p class='note'>営業を始めるとここに損益グラフが表示されます。</p>";
+    return;
+  }
+  const W = 660, H = 190, mL = 52, mR = 8, mT = 10, mB = 22;
+  const pw = W - mL - mR, ph = H - mT - mB;
+  let max = Math.max(0, ...data.map(d => d.net));
+  let min = Math.min(0, ...data.map(d => d.net));
+  if (max === min) { max = 1; }
+  const span = max - min;
+  const y = v => mT + (max - v) / span * ph;
+  const bw = Math.max(3, pw / data.length - 2);
+  const fmtMan = v => (v / 10000 >= 100 || v / 10000 <= -100)
+    ? Math.round(v / 10000).toLocaleString("ja-JP") + "万"
+    : (Math.round(v / 1000) / 10) + "万";
+
+  let bars = "";
+  data.forEach((d, i) => {
+    const x = mL + i * (pw / data.length) + 1;
+    const y0 = y(0), yv = y(d.net);
+    const top = Math.min(y0, yv), h = Math.max(2, Math.abs(y0 - yv));
+    const color = d.net >= 0 ? "var(--cyan)" : "var(--loss)";
+    bars += `<rect data-i="${i}" x="${x.toFixed(1)}" y="${top.toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="2" fill="${color}"></rect>`;
+  });
+
+  wrap.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="直近${data.length}日の純利益推移">
+      <line x1="${mL}" y1="${y(0)}" x2="${W - mR}" y2="${y(0)}" stroke="#a99cd6" stroke-width="1.2"></line>
+      ${max > 0 ? `<line x1="${mL}" y1="${y(max)}" x2="${W - mR}" y2="${y(max)}" stroke="#3d2f6b" stroke-width="1" stroke-dasharray="3 3"></line>
+      <text x="${mL - 6}" y="${y(max) + 4}" text-anchor="end" font-size="10" fill="#a99cd6">${fmtMan(max)}</text>` : ""}
+      ${min < 0 ? `<line x1="${mL}" y1="${y(min)}" x2="${W - mR}" y2="${y(min)}" stroke="#3d2f6b" stroke-width="1" stroke-dasharray="3 3"></line>
+      <text x="${mL - 6}" y="${y(min) + 4}" text-anchor="end" font-size="10" fill="#a99cd6">${fmtMan(min)}</text>` : ""}
+      <text x="${mL - 6}" y="${y(0) + 4}" text-anchor="end" font-size="10" fill="#a99cd6">0</text>
+      <text x="${mL}" y="${H - 6}" font-size="10" fill="#a99cd6">${data[0].day}日目</text>
+      <text x="${W - mR}" y="${H - 6}" text-anchor="end" font-size="10" fill="#a99cd6">${data[data.length - 1].day}日目</text>
+      ${bars}
+    </svg>
+    <div class="chart-tip" id="chartTip"></div>`;
+
+  const tip = $("chartTip");
+  const svg = wrap.querySelector("svg");
+  svg.addEventListener("mousemove", e => {
+    const t = e.target;
+    if (t.tagName !== "rect") { tip.style.display = "none"; return; }
+    const d = data[Number(t.dataset.i)];
+    tip.textContent = `${d.day}日目: ${d.net >= 0 ? "+" : ""}${yen(d.net)}`;
+    const box = wrap.getBoundingClientRect();
+    tip.style.left = (e.clientX - box.left) + "px";
+    tip.style.top = (e.clientY - box.top) + "px";
+    tip.style.display = "block";
+  });
+  svg.addEventListener("mouseleave", () => { tip.style.display = "none"; });
+}
+
+function renderLedger() {
+  renderChart();
+  const tb = $("ledgerBody");
+  tb.innerHTML = "";
+  if (!state.history.length) {
+    tb.innerHTML = "<tr><td colspan='8' style='text-align:center;color:var(--sub)'>まだ営業記録がありません</td></tr>";
+    return;
+  }
+  for (const r of state.history) {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.day}日目</td><td>${r.cust}人</td>
+      <td>${r.cas ?? "-"} / ${r.reg ?? "-"} / ${r.pro ?? "-"}</td>
+      <td>${yen(r.sales)}</td><td>${yen(r.payout)}</td><td>${yen(r.exp)}</td>
+      <td class="${r.net >= 0 ? "pos" : "neg"}">${r.net >= 0 ? "+" : ""}${yen(r.net)}</td>
+      <td>${r.note || ""}</td>`;
+    tb.appendChild(tr);
+  }
+}
+
+function renderAll() {
+  renderStatus(); renderHall(); renderShop(); renderMgmt(); renderLedger();
+}
+
+// ---- 倒産判定: 倒産後はリセット以外の操作を受け付けない ----
+function isDead() { return state && state.money < 0; }
+function showBankruptModal() {
+  showModal(`<h2>💀 倒産</h2>
+    <p style="font-size:.88rem">資金が尽き、融資枠も限界です。${state.day - 1}日間の経営、お疲れさまでした。</p>
+    <div class="rowbtns"><button class="danger" onclick="doReset()">最初からやり直す</button></div>`);
+}
+
+// ---- モーダル ----
+let trialCleanup = null;
+function showModal(html) {
+  if (trialCleanup) { trialCleanup(); trialCleanup = null; }
+  $("modalBox").innerHTML = html;
+  $("modalBg").classList.add("show");
+}
+function closeModal() {
+  if (trialCleanup) { trialCleanup(); trialCleanup = null; }
+  // 倒産後はモーダルを閉じられない(リセットのみ)。doResetはstateを先に差し替えるので通る
+  if (isDead()) { showBankruptModal(); return; }
+  $("modalBg").classList.remove("show");
+  renderAll();
+}
+$("modalBg").addEventListener("click", e => { if (e.target === $("modalBg")) closeModal(); });
+window.closeModal = closeModal;
+
+function showDayResult(result) {
+  const { rec, notes } = result;
+  const evHtml = notes.map(n => `<div class="eventmsg">${n}</div>`).join("");
+  const perMachine = state.machines
+    .slice().sort((a, b) => (b.lastNet ?? 0) - (a.lastNet ?? 0))
+    .map(m => {
+      const c = catalogOf(m);
+      const v = m.lastNet ?? 0;
+      return `<div><span>${c.name} [設定${m.setting}]</span><span class="${v >= 0 ? "pos" : "neg"}">${v >= 0 ? "+" : ""}${yen(v)}</span></div>`;
+    }).join("");
+
+  let endHtml = "";
+  if (state.money < 0) {
+    endHtml = `<div class="eventmsg" style="border-color:var(--red)">💀 <b>倒産…</b> 資金が尽き、融資枠も限界。${rec.day}日間の経営、お疲れさまでした。</div>
+      <button class="danger" onclick="doReset()">最初からやり直す</button>`;
+  } else if (state.cleared && state.clearDay === rec.day) {
+    const rank = clearRank(rec.day);
+    endHtml = `<div class="eventmsg" style="border-color:var(--gold)">👑 <b>祝・純資産1億円達成!!</b> ${rec.day}日目にしてあなたの店は地域No.1ホールとなった!<br>
+      <b style="font-size:1.3rem;color:var(--gold)">クリア評価: ${rank}ランク</b> (S:65日以内 / A:85日 / B:120日)<br>このまま帝国を広げ続けてもOK!</div>`;
+  }
+
+  showModal(`
+    <h2>📊 ${rec.day}日目 営業結果 ${rec.note ? "〈" + rec.note + "〉" : ""}</h2>
+    ${evHtml}
+    <div class="result-row"><span>🧑‍🤝‍🧑 来店客数</span><b>${rec.cust}人</b></div>
+    <div class="result-row"><span class="dim">└ 一般 / 常連 / プロ</span><span class="dim">${rec.cas} / ${rec.reg} / ${rec.pro}人</span></div>
+    <div class="result-row"><span>💵 総売上(打ち込み)</span><b>${yen(rec.sales)}</b></div>
+    <div class="result-row"><span>🎁 出玉払出</span><b>−${yen(rec.payout)}</b></div>
+    <div class="result-row"><span>🏢 経費${rec.interest ? " (利息" + yen(rec.interest) + "含む)" : ""}</span><b>−${yen(rec.exp)}</b></div>
+    <div class="result-row total"><span>本日の純利益</span><b class="${rec.net >= 0 ? "pos" : "neg"}">${rec.net >= 0 ? "+" : ""}${yen(rec.net)}</b></div>
+    <div class="machine-result"><b>台別収支(店側):</b>${perMachine}</div>
+    ${weeklyReport(rec)}
+    ${endHtml}
+    ${state.money >= 0 ? '<div class="rowbtns"><button class="primary" onclick="closeModal()">閉じる</button></div>' : ""}
+  `);
+}
+
+// ============================================================
+//  試打ミニゲーム (営業収支には影響しない)
+// ============================================================
+function openTrial(c, setting) {
+  if (c.type === "S") openSlotTrial(c, setting);
+  else openPachiTrial(c, setting);
+}
+
+// ---- スロット試打 ----
+const SLOT_SYMBOLS = ["7️⃣", "🍇", "🍒", "🅱️", "🔔", "🃏"];
+function slotDenom(a1, a6, setting) { return a1 + (a6 - a1) * (setting - 1) / 5; }
+
+function openSlotTrial(c, initSetting) {
+  const t = {
+    setting: initSetting,
+    credits: 500, diff: 0, games: 0, bb: 0, rb: 0,
+    spinning: false, stopped: [true, true, true],
+    flag: "none", final: [], timers: [],
+  };
+  showModal(`
+    <h2>🎰 ${c.name}</h2>
+    <div class="trial-head">
+      <span class="note">${c.spec.label}</span>
+      <label class="autolabel">試打設定
+        <select id="trSet">${[1,2,3,4,5,6].map(v => `<option value="${v}" ${v===initSetting?"selected":""}>設定${v}</option>`).join("")}</select>
+      </label>
+    </div>
+    <div class="slot-frame">
+      <div class="lamp" id="trLamp"></div>
+      <div class="reels">
+        <div class="reel" id="reel0">7️⃣</div>
+        <div class="reel" id="reel1">🍇</div>
+        <div class="reel" id="reel2">🔔</div>
+      </div>
+      <div class="slot-btns">
+        <button class="primary" id="trLever">🕹️ レバーON (3枚)</button>
+        <button class="stopbtn" id="stop0" disabled>STOP</button>
+        <button class="stopbtn" id="stop1" disabled>STOP</button>
+        <button class="stopbtn" id="stop2" disabled>STOP</button>
+      </div>
+    </div>
+    <div class="trial-banner" id="trBanner"></div>
+    <div class="trial-stats">
+      <span>💳 <b id="tCredits">500</b>枚</span>
+      <span>🎮 <b id="tGames">0</b>G</span>
+      <span style="color:var(--gold)">BIG <b id="tBB">0</b></span>
+      <span>REG <b id="tRB">0</b></span>
+      <span>差枚 <b id="tDiff">0</b></span>
+    </div>
+    <p class="note">試打なので営業収支には影響しません。メダルが尽きたら無料で補充できます。</p>
+    <div class="rowbtns">
+      <button id="trRefill">メダル補充 (+500)</button>
+      <button class="danger" onclick="closeModal()">試打を終える</button>
+    </div>
+  `);
+
+  const lamp = $("trLamp"), banner = $("trBanner");
+  const reels = [ $("reel0"), $("reel1"), $("reel2") ];
+  const stops = [ $("stop0"), $("stop1"), $("stop2") ];
+
+  function updateStats() {
+    $("tCredits").textContent = t.credits;
+    $("tGames").textContent = t.games;
+    $("tBB").textContent = t.bb;
+    $("tRB").textContent = t.rb;
+    $("tDiff").textContent = (t.diff >= 0 ? "+" : "") + t.diff;
+  }
+
+  function rollFlag() {
+    const st = t.setting;
+    const pBig = 1 / slotDenom(c.spec.big1, c.spec.big6, st);
+    const pReg = 1 / slotDenom(c.spec.reg1, c.spec.reg6, st);
+    const r = Math.random();
+    if (r < pBig) return "big";
+    if (r < pBig + pReg) return "reg";
+    if (r < pBig + pReg + 1 / 6.5) return "grape";
+    if (r < pBig + pReg + 1 / 6.5 + 1 / 33) return "cherry";
+    if (r < pBig + pReg + 1 / 6.5 + 1 / 33 + 1 / 7.3) return "replay";
+    return "none";
+  }
+  function finalSymbols(flag) {
+    switch (flag) {
+      case "big":    return ["7️⃣","7️⃣","7️⃣"];
+      case "reg":    return ["🅱️","🅱️","🅱️"];
+      case "grape":  return ["🍇","🍇","🍇"];
+      case "cherry": return ["🍒","🔔","🃏"];
+      case "replay": return ["🃏","🃏","🃏"];
+      default: {
+        const a = SLOT_SYMBOLS[Math.floor(rand(1, 6))];
+        let b = SLOT_SYMBOLS[Math.floor(rand(0, 6))];
+        let d = SLOT_SYMBOLS[Math.floor(rand(0, 6))];
+        if (a === b && b === d) d = SLOT_SYMBOLS[(SLOT_SYMBOLS.indexOf(d) + 1) % 6];
+        return [a, b, d];
+      }
+    }
+  }
+
+  function lever() {
+    if (t.spinning || t.credits < 3) return;
+    t.credits -= 3; t.diff -= 3; t.games++;
+    t.flag = rollFlag();
+    t.final = finalSymbols(t.flag);
+    t.spinning = true; t.stopped = [false, false, false];
+    lamp.classList.remove("lit");
+    banner.textContent = ""; banner.classList.remove("win");
+    reels.forEach((r, i) => {
+      r.classList.add("spinning");
+      const timer = setInterval(() => {
+        r.textContent = SLOT_SYMBOLS[Math.floor(Math.random() * 6)];
+      }, 70);
+      t.timers[i] = timer;
+      stops[i].disabled = false;
+    });
+    $("trLever").disabled = true;
+    updateStats();
+  }
+
+  function stopReel(i) {
+    if (t.stopped[i]) return;
+    t.stopped[i] = true;
+    clearInterval(t.timers[i]);
+    reels[i].classList.remove("spinning");
+    reels[i].textContent = t.final[i];
+    stops[i].disabled = true;
+    if (t.stopped.every(Boolean)) resolve();
+  }
+
+  function resolve() {
+    t.spinning = false;
+    $("trLever").disabled = false;
+    let pay = 0, msg = "";
+    switch (t.flag) {
+      case "big":    pay = c.spec.bigPay; t.bb++; msg = `🎉 BIG BONUS! +${pay}枚`; break;
+      case "reg":    pay = c.spec.regPay; t.rb++; msg = `✨ REG BONUS +${pay}枚`; break;
+      case "grape":  pay = 8;  msg = "🍇 +8枚"; break;
+      case "cherry": pay = 2;  msg = "🍒 +2枚"; break;
+      case "replay": pay = 3;  msg = "🃏 リプレイ"; break;
+    }
+    if (t.flag === "big" || t.flag === "reg") {
+      lamp.classList.add("lit");
+      banner.classList.add("win");
+      grantAch("trial-hit");
+      if (t.bb >= 10) grantAch("trial-10");
+    }
+    t.credits += pay; t.diff += pay;
+    if (t.diff >= 2000) grantAch("trial-5k");
+    banner.textContent = msg;
+    updateStats();
+  }
+
+  $("trLever").addEventListener("click", lever);
+  stops.forEach((b, i) => b.addEventListener("click", () => stopReel(i)));
+  $("trSet").addEventListener("change", e => { t.setting = Number(e.target.value); });
+  $("trRefill").addEventListener("click", () => { t.credits += 500; updateStats(); });
+
+  trialCleanup = () => { t.timers.forEach(x => clearInterval(x)); };
+}
+
+// ---- パチンコ試打 ----
+function openPachiTrial(c, initSetting) {
+  const t = {
+    setting: initSetting,
+    balls: 1000, startBalls: 1000, spins: 0, hits: 0, maxRen: 0,
+    busy: false, auto: false, autoTimer: null, timers: [],
+  };
+  showModal(`
+    <h2>🎯 ${c.name}</h2>
+    <div class="trial-head">
+      <span class="note">${c.spec.label}</span>
+      <label class="autolabel">釘(設定)
+        <select id="trSet">${[1,2,3,4,5,6].map(v => `<option value="${v}" ${v===initSetting?"selected":""}>設定${v}</option>`).join("")}</select>
+      </label>
+    </div>
+    <div class="pachi-frame">
+      <div class="reach-label" id="pReach"></div>
+      <div class="digits">
+        <div class="digit" id="dg0">7</div>
+        <div class="digit" id="dg1">7</div>
+        <div class="digit" id="dg2">7</div>
+      </div>
+      <div class="pachi-btns">
+        <button class="primary" id="pSpin">🎯 回す</button>
+        <label class="autolabel"><input type="checkbox" id="pAuto"> オート</label>
+      </div>
+    </div>
+    <div class="trial-banner" id="pBanner"></div>
+    <div class="trial-stats">
+      <span>🔴 持ち玉 <b id="pBalls">1000</b></span>
+      <span>🔄 <b id="pSpins">0</b>回転</span>
+      <span style="color:var(--gold)">当り <b id="pHits">0</b></span>
+      <span>最高 <b id="pMaxRen">0</b>連</span>
+      <span>差玉 <b id="pDiff">0</b></span>
+    </div>
+    <p class="note">試打なので営業収支には影響しません。玉が尽きたら無料で補充できます。設定(釘)が良いほど玉持ちが良くなります。</p>
+    <div class="rowbtns">
+      <button id="pRefill">玉補充 (+1000)</button>
+      <button class="danger" onclick="closeModal()">試打を終える</button>
+    </div>
+  `);
+
+  const digits = [ $("dg0"), $("dg1"), $("dg2") ];
+  const banner = $("pBanner"), reach = $("pReach");
+
+  function updateStats() {
+    $("pBalls").textContent = t.balls;
+    $("pSpins").textContent = t.spins;
+    $("pHits").textContent = t.hits;
+    $("pMaxRen").textContent = t.maxRen;
+    const diff = t.balls - t.startBalls;
+    $("pDiff").textContent = (diff >= 0 ? "+" : "") + diff;
+    if (diff >= 5000) grantAch("trial-5k");
+  }
+  function later(fn, ms) { const id = setTimeout(fn, ms); t.timers.push(id); return id; }
+  function spinCost() { return Math.max(2, Math.round(5.5 - t.setting * 0.5)); }
+
+  function setDigit(el, v, cls) {
+    el.textContent = v;
+    el.classList.remove("spinning");
+    if (cls) el.classList.add(cls);
+  }
+
+  function spin() {
+    if (t.busy) return;
+    const cost = spinCost();
+    if (t.balls < cost) { banner.textContent = "玉切れ!補充してください"; t.busy = false; return; }
+    t.busy = true;
+    t.balls -= cost; t.spins++;
+    banner.textContent = ""; banner.classList.remove("win");
+    reach.textContent = ""; reach.classList.remove("on");
+    digits.forEach(d => { d.classList.remove("hit"); d.classList.add("spinning"); });
+    const spinAnim = setInterval(() => {
+      digits.forEach(d => { if (d.classList.contains("spinning")) d.textContent = Math.floor(Math.random() * 10); });
+    }, 80);
+    t.timers.push(spinAnim);
+
+    const win = Math.random() < 1 / c.spec.denom;
+    const isReach = win || Math.random() < 1 / 12;
+    const n = Math.floor(Math.random() * 10);
+    let mid;
+    if (win) mid = n;
+    else { mid = (n + 1 + Math.floor(Math.random() * 8)) % 10; }
+    const L = n, R = isReach ? n : (n + 1 + Math.floor(Math.random() * 8)) % 10;
+
+    later(() => setDigit(digits[0], L), 400);
+    later(() => {
+      setDigit(digits[2], R);
+      if (isReach) { reach.textContent = "リーチ!!"; reach.classList.add("on"); }
+    }, 800);
+    later(() => {
+      clearInterval(spinAnim);
+      setDigit(digits[1], win ? mid : (isReach ? mid : Math.floor(Math.random() * 10)));
+      if (!win && !isReach && digits[0].textContent === digits[1].textContent && digits[1].textContent === digits[2].textContent) {
+        digits[1].textContent = (Number(digits[1].textContent) + 1) % 10;
+      }
+      reach.classList.remove("on");
+      if (win) hitSequence();
+      else { reach.textContent = ""; t.busy = false; updateStats(); }
+    }, isReach ? 2000 : 1200);
+    updateStats();
+  }
+
+  function hitSequence() {
+    t.hits++;
+    let ren = 1;
+    digits.forEach(d => d.classList.add("hit"));
+    grantAch("trial-hit");
+    t.balls += c.spec.firstBalls;
+    banner.textContent = `🎊 大当り!! +${c.spec.firstBalls}玉`;
+    banner.classList.add("win");
+    reach.textContent = "RUSH突入!?";
+    updateStats();
+    function rushStep() {
+      later(() => {
+        if (Math.random() < c.spec.rushPct) {
+          ren++;
+          t.balls += c.spec.rushBalls;
+          banner.textContent = `🔥 RUSH ${ren}連!! +${c.spec.rushBalls}玉`;
+          reach.textContent = "継続!";
+          if (ren >= 10) grantAch("trial-10");
+          updateStats();
+          rushStep();
+        } else {
+          banner.textContent = `RUSH終了 (${ren}連 / +${(c.spec.firstBalls + (ren - 1) * c.spec.rushBalls).toLocaleString()}玉)`;
+          reach.textContent = "";
+          t.maxRen = Math.max(t.maxRen, ren);
+          digits.forEach(d => d.classList.remove("hit"));
+          t.busy = false;
+          updateStats();
+        }
+      }, 850);
+    }
+    rushStep();
+  }
+
+  $("pSpin").addEventListener("click", spin);
+  $("pAuto").addEventListener("change", e => {
+    t.auto = e.target.checked;
+    if (t.auto) {
+      t.autoTimer = setInterval(() => { if (!t.busy) spin(); }, 500);
+    } else {
+      clearInterval(t.autoTimer); t.autoTimer = null;
+    }
+  });
+  $("trSet").addEventListener("change", e => { t.setting = Number(e.target.value); });
+  $("pRefill").addEventListener("click", () => { t.balls += 1000; t.startBalls += 1000; updateStats(); });
+
+  trialCleanup = () => {
+    t.timers.forEach(x => { clearTimeout(x); clearInterval(x); });
+    if (t.autoTimer) clearInterval(t.autoTimer);
+  };
+}
+
+// ============================================================
+//  保存/読込
+// ============================================================
+function save(silent) {
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+  if (!silent) renderStatus();
+}
+// セーブデータの無害化: 型崩れ・範囲外・不正ID・HTML注入をすべて補正/除去する。
+// (手動編集・旧バージョン・破損への防御。ここを通った値だけがゲームに入る)
+function sanitizeState(s) {
+  const num = (v, def, min, max) => {
+    v = Number(v);
+    if (!Number.isFinite(v)) v = def;
+    return Math.min(max, Math.max(min, v));
+  };
+  s.day = Math.floor(num(s.day, 1, 1, 1000000));
+  s.money = Math.round(num(s.money, 0, -1e13, 1e13));
+  s.rep = num(s.rep, 50, 1, 100);
+  s.regulars = num(s.regulars, 0, 0, 100000);
+  s.heat = num(s.heat, 0, 0, 200);
+  s.debt = Math.round(num(s.debt, 0, 0, 1e12));
+  s.maxDebt = Math.round(num(s.maxDebt, 0, 0, 1e12));
+  s.cap = Math.floor(num(s.cap, 10, 10, MAX_CAP));
+  s.staff = Math.floor(num(s.staff, 2, 1, 200));
+  s.uid = Math.floor(num(s.uid, 1000, 0, 1e9));
+  s.lastGrand = Math.floor(num(s.lastGrand, -99, -99, 1000000));
+  s.diff = DIFFS[s.diff] ? s.diff : "normal";
+  s.rate = s.rate === "low" ? "low" : "normal";
+  s.ad = ADS.some(a => a.id === s.ad) ? s.ad : "none";
+  s.grandOpen = s.grandOpen === true;
+  s.cleared = s.cleared === true;
+  s.clearDay = Number.isFinite(Number(s.clearDay)) && s.clearDay !== null
+    ? Math.floor(Number(s.clearDay)) : null;
+  // 台: 実在機種のみ・値をクランプ・上限台数まで
+  s.machines = (Array.isArray(s.machines) ? s.machines : [])
+    .filter(m => m && typeof m === "object" && CATALOG.some(c => c.id === m.cid))
+    .slice(0, MAX_CAP)
+    .map(m => {
+      const c = CATALOG.find(x => x.id === m.cid);
+      return {
+        uid: Math.floor(num(m.uid, 0, 0, 1e9)),
+        cid: c.id,
+        pop: num(m.pop, c.pop, 15, 300),
+        setting: Math.floor(num(m.setting, 3, 1, 6)),
+        boughtDay: Number.isFinite(Number(m.boughtDay)) && m.boughtDay !== null
+          ? Math.floor(Number(m.boughtDay)) : null,
+        lastNet: Number.isFinite(Number(m.lastNet)) && m.lastNet !== null ? Math.round(Number(m.lastNet)) : null,
+        lastCust: Number.isFinite(Number(m.lastCust)) && m.lastCust !== null ? Math.round(Number(m.lastCust)) : null,
+      };
+    });
+  // トレンド: 既知の名前だけ許可(表示はinnerHTML経由のため必須)
+  if (s.trend && typeof s.trend === "object") {
+    const t = TRENDS.find(x => x.name === s.trend.name);
+    s.trend = t ? { name: t.name, ids: t.ids.slice() } : null;
+  } else s.trend = null;
+  // 実績/イベントCD: 既知IDのみ
+  s.ach = (Array.isArray(s.ach) ? s.ach : []).filter(id => ACHIEVEMENTS.some(a => a.id === id));
+  const cd = {};
+  if (s.evCd && typeof s.evCd === "object" && !Array.isArray(s.evCd)) {
+    for (const e of COND_EVENTS) {
+      if (Number.isFinite(Number(s.evCd[e.id]))) cd[e.id] = Math.floor(Number(s.evCd[e.id]));
+    }
+  }
+  s.evCd = cd;
+  // 帳簿: 数値フィールドを再構築、noteは既知の値だけ(innerHTML表示のため)
+  s.history = (Array.isArray(s.history) ? s.history : [])
+    .filter(r => r && typeof r === "object")
+    .slice(0, 60)
+    .map(r => ({
+      day: Math.floor(num(r.day, 0, 0, 1000000)),
+      cust: Math.round(num(r.cust, 0, 0, 1e6)),
+      cas: Math.round(num(r.cas, 0, 0, 1e6)),
+      reg: Math.round(num(r.reg, 0, 0, 1e6)),
+      pro: Math.round(num(r.pro, 0, 0, 1e6)),
+      sales: Math.round(num(r.sales, 0, -1e13, 1e13)),
+      payout: Math.round(num(r.payout, 0, -1e13, 1e13)),
+      exp: Math.round(num(r.exp, 0, 0, 1e13)),
+      net: Math.round(num(r.net, 0, -1e13, 1e13)),
+      interest: Math.round(num(r.interest, 0, 0, 1e12)),
+      note: (r.note === "特日" || r.note === "週末") ? r.note : "",
+    }));
+  return s;
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (!s || typeof s !== "object" || !Array.isArray(s.machines)) return null;
+      return sanitizeState(s);
+    }
+  } catch (e) {}
+  return null;
+}
+function doReset() {
+  localStorage.removeItem(SAVE_KEY);
+  state = newGame("normal");
+  closeModal();
+  renderAll();
+  showTutorial();
+}
+window.doReset = doReset;
+function startGame(diff) {
+  state = newGame(diff);
+  save(true);
+  closeModal();
+  renderAll();
+  toast(`難易度「${DIFFS[diff].label}」で開店!`);
+}
+window.startGame = startGame;
+
+function showTutorial() {
+  showModal(`
+    <h2>🎰 パチスロ帝国へようこそ!</h2>
+    <p style="font-size:.88rem">あなたは小さなパチンコホールの新米オーナー。<b style="color:var(--neon)">純資産1億円</b> の地域No.1ホールを目指そう!</p>
+    <div class="eventmsg">🎯 <b>設定のメリハリがすべて</b><br>渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出す台」と「回収する台」を作り分けろ!</div>
+    <div class="eventmsg">🔥 <b>7のつく日は特日</b>/📈 <b>週替わりブーム</b>/🏝️ <b>シマ効果</b><br>特日は高設定で評判爆上げ。ブーム機種は集客1.4倍。同一機種を並べればシマ効果。</div>
+    <div class="eventmsg">🏦 <b>銀行融資で攻めるか、堅実に行くか</b><br>借金で一気に拡大もできるが利息は毎日重くのしかかる。クリア条件は「純資産」(借金は差し引き)。</div>
+    <div class="eventmsg">🕹️ <b>実機を試打できる!</b><br>どの台も「試打」で実際に打てる。設定ごとの出方を体感して経営に活かそう。</div>
+    <p style="font-size:.85rem"><b>難易度を選んで開店:</b></p>
+    <div class="rowbtns">
+      <button class="buy" onclick="startGame('easy')">のんびり (資金1,300万)</button>
+      <button class="primary" onclick="startGame('normal')">標準 (資金1,000万)</button>
+      <button class="danger" onclick="startGame('hard')">修羅 (資金650万・家賃増・プロ多)</button>
+    </div>
+  `);
+}
+
+// ---- イベントバインド ----
+document.querySelectorAll(".tab").forEach(t => {
+  t.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
+    t.classList.add("active");
+    $("panel-" + t.dataset.tab).classList.add("active");
+  });
+});
+
+$("btnOpen").addEventListener("click", () => {
+  if (isDead()) { showBankruptModal(); return; }
+  // 結果モーダル表示中の再クリック(Enter連打等)で日が進むのを防ぐ
+  if ($("modalBg").classList.contains("show")) return;
+  if (state.machines.length === 0) {
+    showModal(`<h2>⚠️ 台がありません</h2><p style="font-size:.88rem">台が1台もないと営業できません。「新台購入」タブから台を導入してください。</p>
+      <div class="rowbtns"><button class="primary" onclick="closeModal()">わかった</button></div>`);
+    return;
+  }
+  const result = simulateDay();
+  renderAll();
+  showDayResult(result);
+});
+
+$("btnHire").addEventListener("click", () => { if (isDead()) return; state.staff++; save(); renderMgmt(); });
+$("btnFire").addEventListener("click", () => { if (isDead()) return; if (state.staff > 1) { state.staff--; save(); renderMgmt(); } });
+$("btnExpand").addEventListener("click", () => {
+  if (isDead()) return;
+  const cost = expandCost();
+  if (state.money < cost || state.cap >= MAX_CAP) return;
+  state.money -= cost;
+  state.cap += 5;
+  save(); renderAll();
+});
+$("btnGrand").addEventListener("click", () => {
+  if (isDead()) return;
+  const recentBuy = state.machines.some(m => m.boughtDay !== null && state.day - m.boughtDay <= 1);
+  if (state.grandOpen || !recentBuy || state.day - state.lastGrand < 7 || state.money < 300000) return;
+  state.money -= 300000;
+  state.grandOpen = true;
+  state.lastGrand = state.day;
+  save(); renderAll();
+  toast("🎊 新装開店フェアを予約!次の営業日に開催");
+});
+$("btnBorrow").addEventListener("click", () => {
+  if (isDead()) return;
+  if (state.debt + 1000000 > creditLimit()) return;
+  state.debt += 1000000;
+  state.maxDebt = Math.max(state.maxDebt, state.debt);
+  state.money += 1000000;
+  save(); renderAll();
+});
+$("btnRepay").addEventListener("click", () => {
+  if (isDead()) return;
+  const amount = Math.min(1000000, state.debt, state.money);
+  if (amount <= 0) return;
+  state.debt -= amount;
+  state.money -= amount;
+  if (state.debt === 0 && state.maxDebt >= 10000000) grantAch("loan-clear");
+  save(); renderAll();
+});
+$("btnSave").addEventListener("click", () => { save(); alert("セーブしました!"); });
+$("btnReset").addEventListener("click", () => {
+  if (confirm("本当に最初からやり直しますか?セーブデータは消えます。")) doReset();
+});
+
+// ---- PWA: Service Worker登録 (http(s)配信時のみ。file://やElectronでは何もしない) ----
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
+  navigator.serviceWorker.register("./sw.js").catch(() => {});
+}
+
+// ---- 起動 ----
+const loaded = load();
+if (loaded && Array.isArray(loaded.machines)) {
+  state = loaded;
+  renderAll();
+  if (isDead()) showBankruptModal();
+} else {
+  state = newGame("normal");
+  renderAll();
+  showTutorial();
+}
+</script>
+</body>
+</html>
