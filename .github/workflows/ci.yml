@@ -14,7 +14,7 @@ on:
 
 jobs:
   replier:
-    name: Replier(ビルド・E2E 131項目・公開物の鮮度)
+    name: Replier(ビルド・E2E・公開物の鮮度)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
