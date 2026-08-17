@@ -1,60 +1,57 @@
-@import 'tailwindcss';
+@import 'tailwindcss' source(none);
+@source '../src/**/*.{ts,tsx}';
+@source '../index.html';
+@import './tokens.css';
 
 /* =========================================================
-   デザイントークン
-   - 色は「意味」で持つ(canvas / surface / ink / line / brand)。
-   - ダークはトークンだけ差し替える。各コンポーネントに dark: を書かない。
+   デザイントークン(UI_PLAYBOOK G3)
+   出所: Google Stitch「Zen Precision」(シード #2d5a4c)→ M3公式ロールを tokens.css で自動生成
+   ここでは「役割名」だけを定義する。コンポーネント側に生値を書かない。
+   文字階層 4段 / 角丸 3種 / 余白は 4の倍数。
    ========================================================= */
 @theme {
   --font-sans:
     'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic UI', 'Noto Sans JP', system-ui,
     -apple-system, 'Segoe UI', sans-serif;
 
-  --color-canvas: #f1f3f5;
-  --color-surface: #ffffff;
-  --color-surface-2: #f7f8fa;
-  --color-ink: #14181c;
-  --color-ink-muted: #6a7480;
-  --color-ink-faint: #98a1ab;
-  --color-line: #e2e6ea;
-  --color-line-strong: #cfd5db;
+  /* 面と文字(M3ロールへの別名) */
+  --color-canvas: var(--md-surface-container-low);
+  --color-surface: var(--md-surface);
+  --color-surface-2: var(--md-surface-container);
+  --color-ink: var(--md-on-surface);
+  --color-ink-muted: var(--md-on-surface-variant);
+  --color-line: var(--md-outline-variant);
+  --color-line-strong: var(--md-outline);
 
-  --color-brand: #0b8f47;
-  --color-brand-hover: #0a7f3f;
-  --color-brand-soft: #e9f5ee;
-  --color-on-brand: #ffffff;
+  /* 主色 */
+  --color-brand: var(--md-primary);
+  --color-on-brand: var(--md-on-primary);
+  --color-brand-soft: var(--md-secondary-container);
+  --color-on-brand-soft: var(--md-on-secondary-container);
 
-  --color-bubble: #b7e5a0;
-  --color-bubble-ink: #10231a;
+  /* 送信プレビューの吹き出し(自分側) */
+  --color-bubble: var(--md-primary);
+  --color-bubble-ink: var(--md-on-primary);
 
-  --color-danger: #c0392f;
-  --color-danger-soft: #fdeceb;
+  /* 異常系 */
+  --color-scrim: var(--md-inverse-surface);
+  --color-danger: var(--md-error);
+  --color-danger-soft: var(--md-error-container);
+  --color-on-danger-soft: var(--md-on-error-container);
 
-  --radius-card: 14px;
-}
+  /* 文字階層(M3 型スケール) */
+  --text-title: 22px;
+  --text-title--line-height: 28px;
+  --text-body: 16px;
+  --text-body--line-height: 24px;
+  --text-sub: 14px;
+  --text-sub--line-height: 22px;
+  --text-label: 12px;
+  --text-label--line-height: 16px;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-canvas: #0e1013;
-    --color-surface: #16181b;
-    --color-surface-2: #1d2024;
-    --color-ink: #e9ebed;
-    --color-ink-muted: #9aa2ab;
-    --color-ink-faint: #767e87;
-    --color-line: #292d33;
-    --color-line-strong: #3a4048;
-
-    --color-brand: #1ab863;
-    --color-brand-hover: #23c96f;
-    --color-brand-soft: #14261c;
-    --color-on-brand: #06210f;
-
-    --color-bubble: #2f6a3f;
-    --color-bubble-ink: #e7f4e9;
-
-    --color-danger: #ef6a5f;
-    --color-danger-soft: #2a1a19;
-  }
+  /* 角丸(3種のみ) */
+  --radius-sm: 4px;
+  --radius-md: 8px;
 }
 
 @layer base {
@@ -68,13 +65,12 @@
     background: var(--color-canvas);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-size: 16px;
+    font-size: var(--text-body);
     line-height: 1.7;
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* 日本語のUIラベルは行間を詰めた方が締まって見える */
   button,
   label,
   h1,
@@ -88,12 +84,14 @@
   select,
   button {
     font-family: inherit;
-    font-size: inherit;
     color: inherit;
   }
 
-  textarea {
-    line-height: 1.7;
+  /* iOSで焦点時に拡大されないよう、入力の文字は16px以上(HARD条件) */
+  input,
+  textarea,
+  select {
+    font-size: var(--text-body);
   }
 
   :focus-visible {
@@ -102,7 +100,8 @@
   }
 
   ::placeholder {
-    color: var(--color-ink-faint);
+    color: var(--color-ink-muted);
+    opacity: 0.75;
   }
 }
 
@@ -110,24 +109,24 @@
   .card {
     background: var(--color-surface);
     border: 1px solid var(--color-line);
-    border-radius: var(--radius-card);
+    border-radius: var(--radius-md);
   }
 
-  /* 送信プレビューの吹き出し(自分側=右・緑) */
+  /* 送信プレビューの吹き出し(右寄せ・自分の発言) */
   .bubble {
     background: var(--color-bubble);
     color: var(--color-bubble-ink);
-    border-radius: 18px 18px 4px 18px;
-    padding: 9px 13px;
+    border-radius: var(--radius-md) var(--radius-md) var(--radius-sm) var(--radius-md);
+    padding: 10px 14px;
     max-width: 88%;
     white-space: pre-wrap;
     word-break: break-word;
-    font-size: 15.5px;
-    line-height: 1.65;
+    font-size: var(--text-body);
+    line-height: 1.6;
   }
 
   .num {
-    font-size: 12px;
+    font-size: var(--text-label);
     font-weight: 700;
     letter-spacing: 0.04em;
     color: var(--color-ink-muted);
@@ -137,15 +136,16 @@
     width: 100%;
     background: var(--color-surface);
     border: 1px solid var(--color-line-strong);
-    border-radius: 10px;
-    padding: 11px 12px;
-    font-size: 15.5px;
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    min-height: 48px;
+    font-size: var(--text-body);
   }
 
   .field:focus {
     border-color: var(--color-brand);
     outline: none;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 18%, transparent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand) 25%, transparent);
   }
 
   textarea.field {
@@ -153,14 +153,21 @@
   }
 
   .label {
-    display: block;
-    font-size: 13px;
+    display: flex;
+    align-items: flex-end;
+    min-height: 44px;
+    padding-bottom: 4px;
+    font-size: var(--text-label);
     font-weight: 600;
     color: var(--color-ink-muted);
-    margin-bottom: 6px;
   }
 
-  /* チップ(ゴール・トーン選択) */
+  /* 丸い形(チップ・バッジ・トースト)。角丸は 4 / 8 / pill の3種だけ */
+  .pill {
+    border-radius: 9999px;
+  }
+
+  /* チップ(ゴール・トーン・分け方) — タップ48px */
   .chip input {
     position: absolute;
     opacity: 0;
@@ -171,13 +178,14 @@
   .chip label {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 8px 13px;
+    justify-content: center;
+    min-height: 48px;
+    padding: 0 16px;
     border: 1px solid var(--color-line-strong);
-    border-radius: 999px;
+    border-radius: 9999px;
     background: var(--color-surface);
     color: var(--color-ink-muted);
-    font-size: 13.5px;
+    font-size: var(--text-sub);
     font-weight: 600;
     cursor: pointer;
     user-select: none;
@@ -200,19 +208,20 @@
 
   .btn-primary {
     width: 100%;
+    min-height: 56px;
     background: var(--color-brand);
     color: var(--color-on-brand);
     border: 0;
-    border-radius: 12px;
-    padding: 15px 16px;
-    font-size: 16px;
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    font-size: var(--text-body);
     font-weight: 700;
     cursor: pointer;
-    transition: background-color 0.12s ease;
+    transition: opacity 0.12s ease;
   }
 
   .btn-primary:hover:not(:disabled) {
-    background: var(--color-brand-hover);
+    opacity: 0.92;
   }
 
   .btn-primary:disabled {
@@ -221,38 +230,53 @@
   }
 
   .btn-ghost {
+    min-height: 48px;
     border: 1px solid var(--color-line-strong);
     background: var(--color-surface);
     color: var(--color-ink);
-    border-radius: 10px;
-    padding: 9px 12px;
-    font-size: 13.5px;
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    font-size: var(--text-sub);
     font-weight: 600;
     cursor: pointer;
     transition: border-color 0.12s ease;
   }
 
   .btn-ghost:hover {
-    border-color: var(--color-ink-faint);
+    border-color: var(--color-ink-muted);
+  }
+
+  /* アイコンだけのボタン(見た目は小さくても48pxのヒット領域を持たせる) */
+  .btn-icon {
+    display: grid;
+    place-items: center;
+    min-width: 48px;
+    min-height: 48px;
+    border: 0;
+    background: none;
+    color: var(--color-ink-muted);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+  }
+
+  .btn-icon:hover {
+    background: var(--color-surface-2);
   }
 }
 
-/* スケルトン(生成待ちの間だけ表示) */
 @keyframes shimmer {
-  0% {
+  0%,
+  100% {
     opacity: 0.55;
   }
   50% {
     opacity: 1;
   }
-  100% {
-    opacity: 0.55;
-  }
 }
 
 .skeleton {
   background: var(--color-surface-2);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   animation: shimmer 1.4s ease-in-out infinite;
 }
 

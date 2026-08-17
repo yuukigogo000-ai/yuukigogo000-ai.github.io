@@ -1,0 +1,253 @@
+{
+  "name": "honmono",
+  "path": "/honmono/",
+  "state": null,
+  "at": "2026-08-17T13-25-51-109Z",
+  "mutate": false,
+  "fixed_conditions": {
+    "viewports": [
+      "android-s 360x800",
+      "iphone 390x844"
+    ],
+    "schemes": [
+      "light",
+      "dark"
+    ],
+    "TAP_MIN": 44,
+    "INPUT_FONT_MIN": 16
+  },
+  "hard": {
+    "console_errors": 0,
+    "overflow_x": false,
+    "input_font_small": 0,
+    "external_font": false,
+    "uses_100vh": false
+  },
+  "metric": {
+    "tap_small": 6,
+    "contrast_low": 0,
+    "distinct_font_sizes": 12,
+    "distinct_radii": 2,
+    "distinct_text_colors": 4,
+    "distinct_bg_colors": 2,
+    "css_raw_hex_outside_root": 1,
+    "css_font_size_decl_distinct": 18,
+    "css_radius_decl_distinct": 4
+  },
+  "info": {
+    "uses_safe_area": false,
+    "uses_dvh": false,
+    "viewport_fit_cover": false,
+    "has_manifest": false,
+    "registers_sw_in_html": false,
+    "sw_registered": false,
+    "contrast_unknown": 0,
+    "interactive_count": 10,
+    "title": "HONMONO — 実在性を証明するツール群"
+  },
+  "runs": [
+    {
+      "viewport": "android-s",
+      "scheme": "light",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "android-s_light.png",
+      "tap_small": [
+        {
+          "el": "a.brand \"HONMONO実在性証明プロジェクト\"",
+          "w": 222,
+          "h": 29
+        },
+        {
+          "el": "a \"来歴チェッカー\"",
+          "w": 73,
+          "h": 23
+        },
+        {
+          "el": "a \"実在証明バッジ\"",
+          "w": 86,
+          "h": 23
+        },
+        {
+          "el": "a \"AIアカウント鑑定\"",
+          "w": 90,
+          "h": 23
+        },
+        {
+          "el": "a \"実在クリエイター名鑑\"",
+          "w": 113,
+          "h": 23
+        },
+        {
+          "el": "a \"説明書\"",
+          "w": 41,
+          "h": 23
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 12,
+      "distinct_radii": 2,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 2,
+      "contrast_low": [],
+      "contrast_unknown": 0,
+      "interactive_count": 10,
+      "title": "HONMONO — 実在性を証明するツール群",
+      "sw_registered": false
+    },
+    {
+      "viewport": "android-s",
+      "scheme": "dark",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "android-s_dark.png",
+      "tap_small": [
+        {
+          "el": "a.brand \"HONMONO実在性証明プロジェクト\"",
+          "w": 222,
+          "h": 29
+        },
+        {
+          "el": "a \"来歴チェッカー\"",
+          "w": 73,
+          "h": 23
+        },
+        {
+          "el": "a \"実在証明バッジ\"",
+          "w": 86,
+          "h": 23
+        },
+        {
+          "el": "a \"AIアカウント鑑定\"",
+          "w": 90,
+          "h": 23
+        },
+        {
+          "el": "a \"実在クリエイター名鑑\"",
+          "w": 113,
+          "h": 23
+        },
+        {
+          "el": "a \"説明書\"",
+          "w": 41,
+          "h": 23
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 12,
+      "distinct_radii": 2,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 2,
+      "contrast_low": [],
+      "contrast_unknown": 0,
+      "interactive_count": 10,
+      "title": "HONMONO — 実在性を証明するツール群",
+      "sw_registered": false
+    },
+    {
+      "viewport": "iphone",
+      "scheme": "light",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "iphone_light.png",
+      "tap_small": [
+        {
+          "el": "a.brand \"HONMONO実在性証明プロジェクト\"",
+          "w": 222,
+          "h": 29
+        },
+        {
+          "el": "a \"来歴チェッカー\"",
+          "w": 73,
+          "h": 23
+        },
+        {
+          "el": "a \"実在証明バッジ\"",
+          "w": 86,
+          "h": 23
+        },
+        {
+          "el": "a \"AIアカウント鑑定\"",
+          "w": 90,
+          "h": 23
+        },
+        {
+          "el": "a \"実在クリエイター名鑑\"",
+          "w": 113,
+          "h": 23
+        },
+        {
+          "el": "a \"説明書\"",
+          "w": 41,
+          "h": 23
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 12,
+      "distinct_radii": 2,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 2,
+      "contrast_low": [],
+      "contrast_unknown": 0,
+      "interactive_count": 10,
+      "title": "HONMONO — 実在性を証明するツール群",
+      "sw_registered": false
+    },
+    {
+      "viewport": "iphone",
+      "scheme": "dark",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "iphone_dark.png",
+      "tap_small": [
+        {
+          "el": "a.brand \"HONMONO実在性証明プロジェクト\"",
+          "w": 222,
+          "h": 29
+        },
+        {
+          "el": "a \"来歴チェッカー\"",
+          "w": 73,
+          "h": 23
+        },
+        {
+          "el": "a \"実在証明バッジ\"",
+          "w": 86,
+          "h": 23
+        },
+        {
+          "el": "a \"AIアカウント鑑定\"",
+          "w": 90,
+          "h": 23
+        },
+        {
+          "el": "a \"実在クリエイター名鑑\"",
+          "w": 113,
+          "h": 23
+        },
+        {
+          "el": "a \"説明書\"",
+          "w": 41,
+          "h": 23
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 12,
+      "distinct_radii": 2,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 2,
+      "contrast_low": [],
+      "contrast_unknown": 0,
+      "interactive_count": 10,
+      "title": "HONMONO — 実在性を証明するツール群",
+      "sw_registered": false
+    }
+  ],
+  "verdict": "BASELINE",
+  "regressions": [],
+  "hard_fails": []
+}

@@ -32,11 +32,16 @@ export function ReplyCard({
   }
 
   return (
-    <article className="card p-3.5">
+    <article
+      className="card cursor-pointer p-4"
+      onClick={() => void copy(bubbles, null)}
+      role="group"
+      aria-label={`案 ${index + 1}(タップでコピー)`}
+    >
       <div className="num flex items-center gap-2">
         <span>案 {index + 1}</span>
         {split && (
-          <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-semibold text-ink-muted">
+          <span className="pill bg-surface-2 px-2 py-0.5 text-label font-semibold text-ink-muted">
             {bubbles.length}通に分けて送る
           </span>
         )}
@@ -48,9 +53,12 @@ export function ReplyCard({
             {split && (
               <button
                 type="button"
-                onClick={() => void copy([b], i)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void copy([b], i);
+                }}
                 aria-label={`${i + 1}通目をコピー`}
-                className="shrink-0 rounded-md p-1.5 text-ink-faint transition-colors hover:bg-surface-2 hover:text-ink-muted"
+                className="btn-icon shrink-0"
               >
                 {copiedOne === i ? (
                   <Check size={14} strokeWidth={2.5} className="text-brand" />
@@ -64,13 +72,16 @@ export function ReplyCard({
         ))}
       </div>
 
-      <p className="mt-3 border-l-2 border-line pl-2.5 text-[12.5px] leading-relaxed text-ink-muted">
+      <p className="mt-3 border-l-2 border-line pl-2.5 text-label leading-relaxed text-ink-muted">
         {why}
       </p>
 
       <button
         type="button"
-        onClick={() => void copy(bubbles, null)}
+        onClick={(e) => {
+          e.stopPropagation();
+          void copy(bubbles, null);
+        }}
         className="btn-ghost mt-3 flex w-full items-center justify-center gap-1.5"
       >
         {copiedAll ? (

@@ -40,42 +40,17 @@
 <!-- ============ セットリスト ============ -->
 <section id="tab-setlist" role="tabpanel" aria-labelledby="tabbtn-setlist">
 
-  <div class="setlist-bar card">
+  <!-- 上部: セトリの切替と「その他」だけ(操作は ⋯ に畳む) -->
+  <div class="sl-head">
     <select id="setlistSelect" aria-label="セットリスト選択"></select>
-    <div class="setlist-bar-actions">
-      <button id="newSetlistBtn" class="ghost" title="新しいセットリスト">＋ 新規</button>
-      <button id="dupSetlistBtn" class="ghost" title="このセットリストを複製">複製</button>
-      <button id="renameSetlistBtn" class="ghost" title="名前を変更">名前変更</button>
-      <button id="deleteSetlistBtn" class="ghost danger" title="このセットリストを削除">削除</button>
-    </div>
-    <div class="setlist-bar-actions">
-      <button id="undoBtn" class="ghost" title="元に戻す (Ctrl+Z)">↶</button>
-      <button id="redoBtn" class="ghost" title="やり直す (Ctrl+Y)">↷</button>
-      <button id="shareBtn" class="accent">共有</button>
-      <button id="printBtn" class="ghost">ステージシート印刷</button>
-    </div>
+    <button id="moreBtn" class="icon-btn icon-btn-lg" title="その他の操作" aria-haspopup="dialog">⋯</button>
   </div>
 
-  <div class="time-panel card">
-    <div class="time-inputs">
-      <label>持ち時間
-        <span class="input-suffix"><input type="number" id="targetMin" min="0" max="600" inputmode="numeric">分</span>
-      </label>
-      <label>曲間の転換
-        <span class="input-suffix"><input type="number" id="gapSec" min="0" max="600" inputmode="numeric">秒</span>
-      </label>
-      <label>MC 1回あたり
-        <span class="input-suffix"><input type="number" id="mcSec" min="0" max="1800" inputmode="numeric">秒</span>
-      </label>
-    </div>
-    <div class="time-readout">
-      <div class="time-total"><span class="time-total-label">合計</span><span id="totalTime" class="time-total-value">0:00</span></div>
-      <div id="timeDiff" class="time-diff"></div>
-    </div>
-    <div class="time-bar" aria-hidden="true"><div id="timeBarFill" class="time-bar-fill"></div></div>
-    <p id="timeBreakdown" class="note"></p>
-  </div>
+  <!-- 主役: 曲リスト -->
+  <ol id="songList" class="song-list" aria-label="曲リスト"></ol>
+  <p id="emptyHint" class="empty-hint" hidden>まだ曲がありません。下の「＋ 曲を追加」から始めましょう。</p>
 
+  <!-- 分析(曲リストの下) -->
   <div class="energy-card card">
     <div class="card-head">
       <h2>エナジーフロー</h2>
@@ -104,10 +79,58 @@
     <div id="plannerBody" class="planner-body"></div>
   </details>
 
-  <ol id="songList" class="song-list" aria-label="曲リスト"></ol>
-  <p id="emptyHint" class="empty-hint" hidden>まだ曲がありません。「＋ 曲を追加」から始めましょう。</p>
+  <!-- 下部固定バー: 合計・残り・主操作(親指の届く位置に常駐) -->
+  <div class="bottom-bar" id="bottomBar">
+    <div class="time-bar" aria-hidden="true"><div id="timeBarFill" class="time-bar-fill"></div></div>
+    <div class="bottom-bar-inner">
+      <button id="timeSummaryBtn" class="bb-time" aria-haspopup="dialog" title="持ち時間・転換・MC を設定">
+        <span class="bb-total"><span class="time-total-label">合計</span><span id="totalTime" class="time-total-value">0:00</span></span>
+        <span id="timeDiff" class="time-diff"></span>
+      </button>
+      <button id="addSongBtn" class="primary bb-add">＋ 曲を追加</button>
+    </div>
+  </div>
 
-  <button id="addSongBtn" class="primary big">＋ 曲を追加</button>
+  <!-- その他の操作 -->
+  <dialog id="moreDialog" aria-label="セットリストの操作">
+    <h2>セットリストの操作</h2>
+    <div class="menu-list">
+      <button id="newSetlistBtn" class="menu-item" title="新しいセットリスト">＋ 新規</button>
+      <button id="dupSetlistBtn" class="menu-item" title="このセットリストを複製">複製</button>
+      <button id="renameSetlistBtn" class="menu-item" title="名前を変更">名前を変更</button>
+      <button id="shareBtn" class="menu-item">共有</button>
+      <button id="printBtn" class="menu-item">ステージシート印刷</button>
+      <button id="undoBtn" class="menu-item" title="元に戻す (Ctrl+Z)">↶ 元に戻す</button>
+      <button id="redoBtn" class="menu-item" title="やり直す (Ctrl+Y)">↷ やり直す</button>
+      <button id="deleteSetlistBtn" class="menu-item danger" title="このセットリストを削除">削除</button>
+    </div>
+    <div class="dialog-actions"><button id="moreCloseBtn" class="ghost">閉じる</button></div>
+  </dialog>
+
+  <!-- 持ち時間の設定 -->
+  <dialog id="timeDialog" aria-label="持ち時間の設定">
+    <h2>持ち時間の設定</h2>
+    <div class="time-inputs">
+      <label>持ち時間
+        <span class="input-suffix"><input type="number" id="targetMin" min="0" max="600" inputmode="numeric">分</span>
+      </label>
+      <label>曲間の転換
+        <span class="input-suffix"><input type="number" id="gapSec" min="0" max="600" inputmode="numeric">秒</span>
+      </label>
+      <label>MC 1回あたり
+        <span class="input-suffix"><input type="number" id="mcSec" min="0" max="1800" inputmode="numeric">秒</span>
+      </label>
+    </div>
+    <p id="timeBreakdown" class="note"></p>
+    <div class="dialog-actions"><button id="timeCloseBtn" class="primary">閉じる</button></div>
+  </dialog>
+
+  <!-- 曲の操作(行の ⋯) -->
+  <dialog id="rowMenu" aria-label="曲の操作">
+    <h2 id="rowMenuTitle">曲の操作</h2>
+    <div class="menu-list" id="rowMenuList"></div>
+    <div class="dialog-actions"><button id="rowMenuClose" class="ghost">閉じる</button></div>
+  </dialog>
 </section>
 
 <!-- ============ ライブラリ ============ -->

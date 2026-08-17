@@ -85,15 +85,15 @@ export function Dropzone({
           setDragging(false);
           void addFiles([...e.dataTransfer.files]);
         }}
-        className={`flex w-full flex-col items-center gap-1 rounded-xl border border-dashed px-4 py-7 text-center transition-colors ${
+        className={`flex w-full flex-col items-center gap-1 rounded-md border border-dashed px-4 py-7 text-center transition-colors ${
           dragging
             ? 'border-brand bg-brand-soft'
             : 'border-line-strong bg-surface-2 hover:border-ink-faint'
         }`}
       >
         <ImagePlus size={22} strokeWidth={1.6} className="text-brand" aria-hidden="true" />
-        <span className="mt-1 text-[15px] font-bold">{title}</span>
-        <span className="text-[12.5px] text-ink-muted">{hint}</span>
+        <span className="mt-1 text-body font-bold">{title}</span>
+        <span className="text-label text-ink-muted">{hint}</span>
       </button>
 
       <input
@@ -115,15 +115,17 @@ export function Dropzone({
             <img
               src={im.thumbUrl}
               alt={`スクショ ${i + 1}`}
-              className="h-[76px] rounded-lg border border-line"
+              className="h-[76px] rounded-md border border-line"
             />
             <button
               type="button"
               aria-label={`スクショ ${i + 1} を削除`}
               onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
-              className="del absolute -top-1.5 -right-1.5 grid h-[22px] w-[22px] place-items-center rounded-full bg-ink text-canvas"
+              className="del absolute -top-3 -right-3 grid h-11 w-11 place-items-center text-ink"
             >
-              <X size={13} strokeWidth={2.5} />
+              <span className="grid h-6 w-6 place-items-center pill bg-ink text-canvas">
+                <X size={14} strokeWidth={2.5} />
+              </span>
             </button>
           </div>
         ))}

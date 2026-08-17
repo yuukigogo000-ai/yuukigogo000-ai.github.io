@@ -44,6 +44,8 @@ function selectTab(name) {
   if (name === "library") renderLibrary();
   if (name === "practice") refreshPracticeTab();
   if (name === "live") refreshLiveTab();
+  // 下部固定バーはセトリタブだけ。その分の余白も同じ条件で付け外しする
+  document.body.classList.toggle("with-bottom-bar", name === "setlist");
 }
 
 // ---------- 汎用部品 ----------
@@ -124,6 +126,55 @@ function renderSetlistSelect() {
     tpl.replaceChildren(...TEMPLATES.map((t) => new Option(t.name, t.id)));
   }
   tpl.value = activeSetlist().template || "";
+}
+
+function bindMenus() {
+  // 上部「⋯」= セットリストの操作(新規・複製・名前変更・共有・印刷・undo/redo・削除)
+  const more = $("moreDialog");
+  $("moreBtn").addEventListener("click", () => more.showModal());
+  $("moreCloseBtn").addEventListener("click", () => more.close());
+  // メニュー内のボタンを押したらメニューは閉じる(操作自体は各 bind* が処理する)。
+  // 閉じたあと必ず ⋯ ボタンへフォーカスを戻す — 戻さないと「閉じたダイアログの中のボタン」に
+  // フォーカスが残り、document がフォーカスを失って navigator.clipboard.writeText() が
+  // 解決しないまま止まる(共有リンクのコピーが無反応になる)。2026-08-17 実測。
+  more.querySelectorAll(".menu-item").forEach((b) => {
+    b.addEventListener("click", () => {
+      more.close();
+      $("moreBtn").focus();
+    });
+  });
+
+  // 下部バーの「合計」= 持ち時間の設定
+  const timeDlg = $("timeDialog");
+  $("timeSummaryBtn").addEventListener("click", () => timeDlg.showModal());
+  $("timeCloseBtn").addEventListener("click", () => timeDlg.close());
+
+  // 曲行の「⋯」
+  $("rowMenuClose").addEventListener("click", () => $("rowMenu").close());
+
+  // 状態の再現フック(検査用。未知の値は無視 = 本番動作に影響しない)
+  applyStateHook();
+}
+
+function applyStateHook() {
+  const state = new URLSearchParams(location.search).get("state");
+  if (!state) return;
+  const sl = activeSetlist();
+  if (!sl) return;
+  if (state === "empty") {
+    sl.items = [];
+  } else if (state === "long") {
+    const base = sl.items.slice();
+    while (sl.items.length < 30 && base.length) {
+      sl.items = sl.items.concat(base.map((it) => ({ ...it, id: uid() })));
+    }
+    sl.items = sl.items.slice(0, 30);
+  } else if (state === "over") {
+    sl.targetMin = 5;
+  } else {
+    return; // 未知の値は無視
+  }
+  renderAll();
 }
 
 function bindSetlistBar() {
@@ -248,6 +299,51 @@ function bindTimeInputs() {
 
 // ---------- セトリの曲リスト ----------
 
+function songMetaText(song) {
+  // 見本B: メタは「♩=182 ・ Key E ・ レギュラー ・ 3:20」の1行に畳む(チップを並べない)
+  const parts = [];
+  if (song.bpm) parts.push(`♪=${song.bpm}`);
+  if (song.key) parts.push(`Key ${song.key}`);
+  if (song.tuning) parts.push(song.tuning);
+  if (song.sec) parts.push(fmtTime(song.sec));
+  if (song.gear.length) parts.push(`✔${song.gear.length}`);
+  return parts.join(" ・ ");
+}
+
+function openRowMenu(i, item, song, total) {
+  const list = $("rowMenuList");
+  $("rowMenuTitle").textContent = song.title;
+  const mk = (label, title, fn, cls = "") => {
+    const b = document.createElement("button");
+    b.className = "menu-item " + cls;
+    b.textContent = label;
+    b.title = title;
+    b.addEventListener("click", () => { $("rowMenu").close(); fn(); });
+    return b;
+  };
+  const up = mk("↑ 上へ", "上へ", () => moveItem(i, -1));
+  const down = mk("↓ 下へ", "下へ", () => moveItem(i, +1));
+  up.disabled = i === 0;
+  down.disabled = i === total - 1;
+  const items = [up, down];
+  if (song.bpm) {
+    items.push(mk(`♪=${song.bpm} でメトロノーム`, "この BPM でメトロノームを開く", () => {
+      metronomeLoadSong(song.title, song.bpm);
+      selectTab("metronome");
+    }));
+  }
+  items.push(mk(item.mc ? "この曲のあとの MC を外す" : "この曲のあとに MC を入れる", "MC の入り切り", () => {
+    pushUndo();
+    item.mc = !item.mc;
+    save();
+    renderAll();
+  }, "chip-mc-action"));
+  items.push(mk("曲を編集", "曲を編集(全セトリに反映)", () => openSongDialog({ mode: "edit", songId: song.id })));
+  items.push(mk("セトリから外す", "セトリから外す(曲はライブラリに残る)", () => removeItem(item.id), "danger"));
+  list.replaceChildren(...items);
+  $("rowMenu").showModal();
+}
+
 function renderItems() {
   const sl = activeSetlist();
   const entries = entriesOf(sl);
@@ -274,38 +370,22 @@ function renderItems() {
       const title = document.createElement("div");
       title.className = "song-title";
       title.textContent = song.title;
+
       const meta = document.createElement("div");
       meta.className = "song-meta";
-      if (song.bpm) {
-        const b = document.createElement("button");
-        b.className = "chip chip-bpm";
-        b.textContent = `♩=${song.bpm}`;
-        b.title = "この BPM でメトロノームを開く";
-        b.addEventListener("click", () => {
-          metronomeLoadSong(song.title, song.bpm);
-          selectTab("metronome");
-        });
-        meta.appendChild(b);
-      }
-      if (song.key) meta.appendChild(chip(`Key ${song.key}`));
-      if (song.tuning) meta.appendChild(chip(song.tuning));
-      if (song.sec) meta.appendChild(chip(fmtTime(song.sec)));
-      meta.appendChild(energyDots(song.energy));
-      if (song.gear.length) meta.appendChild(chip(`✔${song.gear.length}`, "chip chip-gear"));
+      const metaText = document.createElement("span");
+      metaText.className = "song-meta-text";
+      metaText.textContent = songMetaText(song);
+      meta.appendChild(metaText);
 
-      // MCトグル(この曲のあとにMC)
-      const mcBtn = document.createElement("button");
-      mcBtn.className = "chip chip-mc" + (item.mc ? " on" : "");
-      mcBtn.textContent = "MC";
-      mcBtn.title = item.mc ? "この曲のあとの MC を外す" : "この曲のあとに MC を入れる";
-      mcBtn.setAttribute("aria-pressed", String(item.mc));
-      mcBtn.addEventListener("click", () => {
-        pushUndo();
-        item.mc = !item.mc;
-        save();
-        renderAll();
-      });
-      meta.appendChild(mcBtn);
+      // MC は表示だけ(入り切りは行の ⋯ メニュー)。見本B に合わせて小さいピル1個
+      if (item.mc) {
+        const mcTag = document.createElement("span");
+        mcTag.className = "chip chip-mc on";
+        mcTag.textContent = "MC";
+        mcTag.title = "この曲のあとに MC";
+        meta.appendChild(mcTag);
+      }
 
       main.append(title, meta);
       if (song.memo) {
@@ -317,20 +397,9 @@ function renderItems() {
 
       const actions = document.createElement("div");
       actions.className = "song-actions";
-      const row1 = document.createElement("div");
-      row1.className = "row2";
-      const up = iconBtn("↑", "上へ", () => moveItem(i, -1));
-      const down = iconBtn("↓", "下へ", () => moveItem(i, +1));
-      up.disabled = i === 0;
-      down.disabled = i === entries.length - 1;
-      row1.append(up, down);
-      const row2 = document.createElement("div");
-      row2.className = "row2";
-      row2.append(
-        iconBtn("✎", "曲を編集(全セトリに反映)", () => openSongDialog({ mode: "edit", songId: song.id })),
-        iconBtn("×", "セトリから外す(曲はライブラリに残る)", () => removeItem(item.id), "danger")
+      actions.appendChild(
+        iconBtn("⋯", `${song.title} の操作`, () => openRowMenu(i, item, song, entries.length))
       );
-      actions.append(row1, row2);
 
       li.append(handle, num, main, actions);
       setupDrag(li, handle);
@@ -1176,6 +1245,7 @@ function init() {
     btn.addEventListener("click", () => selectTab(btn.dataset.tab));
   });
 
+  bindMenus();
   bindTimeInputs();
   bindSongDialog();
   bindPicker();

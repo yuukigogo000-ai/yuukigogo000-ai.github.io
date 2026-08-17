@@ -1,0 +1,493 @@
+{
+  "name": "replier",
+  "path": "/reply-ai/",
+  "state": null,
+  "at": "2026-08-17T16-18-28-474Z",
+  "mutate": false,
+  "fixed_conditions": {
+    "viewports": [
+      "android-s 360x800",
+      "iphone 390x844"
+    ],
+    "schemes": [
+      "light",
+      "dark"
+    ],
+    "TAP_MIN": 44,
+    "INPUT_FONT_MIN": 16
+  },
+  "hard": {
+    "console_errors": 0,
+    "overflow_x": false,
+    "input_font_small": 5,
+    "external_font": false,
+    "uses_100vh": false
+  },
+  "metric": {
+    "tap_small": 7,
+    "contrast_low": 11,
+    "distinct_font_sizes": 9,
+    "distinct_radii": 8,
+    "distinct_text_colors": 4,
+    "distinct_bg_colors": 4,
+    "css_raw_hex_outside_root": 43,
+    "css_font_size_decl_distinct": 15,
+    "css_radius_decl_distinct": 12
+  },
+  "info": {
+    "uses_safe_area": true,
+    "uses_dvh": true,
+    "viewport_fit_cover": true,
+    "has_manifest": true,
+    "registers_sw_in_html": false,
+    "sw_registered": true,
+    "contrast_unknown": 0,
+    "interactive_count": 14,
+    "title": "Replier — LINE・マッチングアプリの返信コーチ"
+  },
+  "runs": [
+    {
+      "viewport": "android-s",
+      "scheme": "light",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "android-s_light.png",
+      "tap_small": [
+        {
+          "el": "button#btnSettings.grid.h-9 \"設定\"",
+          "w": 36,
+          "h": 36
+        },
+        {
+          "el": "button#tabBtnReply.flex-1.rounded-[9px] \"返信提案\"",
+          "w": 158,
+          "h": 36
+        },
+        {
+          "el": "button#tabBtnProfile.flex-1.rounded-[9px] \"プロフィール添削\"",
+          "w": 158,
+          "h": 36
+        },
+        {
+          "el": "button.-mt-1.shrink-0 \"案内を閉じる\"",
+          "w": 24,
+          "h": 24
+        },
+        {
+          "el": "button.btn-ghost.mt-2 \"設定でキーを登録する\"",
+          "w": 143,
+          "h": 40
+        },
+        {
+          "el": "summary.cursor-pointer.text-[13px] \"詳細設定(追加の指示・文体サンプル)\"",
+          "w": 294,
+          "h": 22
+        },
+        {
+          "el": "button.shrink-0.text-ink-faint \"この案内を閉じる\"",
+          "w": 15,
+          "h": 15
+        }
+      ],
+      "input_font_small": [
+        {
+          "el": "textarea#conversation.field.resize-none",
+          "fontSize": 15.5
+        },
+        {
+          "el": "input#partnerProfile.field",
+          "fontSize": 15.5
+        },
+        {
+          "el": "select#sampleSelect.field \"選ぶと会話・プロフィール・文体・ゴールが自動で入ります① 序\"",
+          "fontSize": 15.5
+        },
+        {
+          "el": "input#extra.field",
+          "fontSize": 15.5
+        },
+        {
+          "el": "textarea#styleSample.field.resize-none",
+          "fontSize": 15.5
+        }
+      ],
+      "overflow_x": false,
+      "distinct_font_sizes": 9,
+      "distinct_radii": 8,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 4,
+      "contrast_low": [
+        {
+          "el": "p.text-[11.5px].text-ink-muted \"あなたの文体のまま、次の一通を作る\"",
+          "ratio": 4.27,
+          "need": 4.5,
+          "fontSize": 11.5
+        },
+        {
+          "el": "button#tabBtnProfile.flex-1.rounded-[9px] \"プロフィール添削\"",
+          "ratio": 4.47,
+          "need": 4.5,
+          "fontSize": 13.5
+        },
+        {
+          "el": "span.mt-0.5.grid \"1\"",
+          "ratio": 3.73,
+          "need": 4.5,
+          "fontSize": 11
+        },
+        {
+          "el": "span.mt-0.5.grid \"2\"",
+          "ratio": 3.73,
+          "need": 4.5,
+          "fontSize": 11
+        },
+        {
+          "el": "span.mt-0.5.grid \"3\"",
+          "ratio": 3.73,
+          "need": 4.5,
+          "fontSize": 11
+        },
+        {
+          "el": "span.text-[12.5px].text-ink-muted \"LINE・Pairs・Tinderなど / 最大6枚 / 右\"",
+          "ratio": 4.47,
+          "need": 4.5,
+          "fontSize": 12.5
+        },
+        {
+          "el": "label \"会話を盛り上げる\"",
+          "ratio": 4.17,
+          "need": 4.5,
+          "fontSize": 13.5
+        },
+        {
+          "el": "label \"自分の文体に合わせる\"",
+          "ratio": 4.17,
+          "need": 4.5,
+          "fontSize": 13.5
+        },
+        {
+          "el": "label \"おまかせ\"",
+          "ratio": 4.17,
+          "need": 4.5,
+          "fontSize": 13.5
+        },
+        {
+          "el": "button#generate.btn-primary \"返信案を3つ作る\"",
+          "ratio": 4.17,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "p.flex-1 \"ホーム画面に追加すると、アプリとして全画面で開けます。ブラウ\"",
+          "ratio": 4.47,
+          "need": 4.5,
+          "fontSize": 12.5
+        }
+      ],
+      "contrast_unknown": 0,
+      "interactive_count": 14,
+      "title": "Replier — LINE・マッチングアプリの返信コーチ",
+      "sw_registered": true
+    },
+    {
+      "viewport": "android-s",
+      "scheme": "dark",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "android-s_dark.png",
+      "tap_small": [
+        {
+          "el": "button#btnSettings.grid.h-9 \"設定\"",
+          "w": 36,
+          "h": 36
+        },
+        {
+          "el": "button#tabBtnReply.flex-1.rounded-[9px] \"返信提案\"",
+          "w": 158,
+          "h": 36
+        },
+        {
+          "el": "button#tabBtnProfile.flex-1.rounded-[9px] \"プロフィール添削\"",
+          "w": 158,
+          "h": 36
+        },
+        {
+          "el": "button.-mt-1.shrink-0 \"案内を閉じる\"",
+          "w": 24,
+          "h": 24
+        },
+        {
+          "el": "button.btn-ghost.mt-2 \"設定でキーを登録する\"",
+          "w": 143,
+          "h": 40
+        },
+        {
+          "el": "summary.cursor-pointer.text-[13px] \"詳細設定(追加の指示・文体サンプル)\"",
+          "w": 294,
+          "h": 22
+        },
+        {
+          "el": "button.shrink-0.text-ink-faint \"この案内を閉じる\"",
+          "w": 15,
+          "h": 15
+        }
+      ],
+      "input_font_small": [
+        {
+          "el": "textarea#conversation.field.resize-none",
+          "fontSize": 15.5
+        },
+        {
+          "el": "input#partnerProfile.field",
+          "fontSize": 15.5
+        },
+        {
+          "el": "select#sampleSelect.field \"選ぶと会話・プロフィール・文体・ゴールが自動で入ります① 序\"",
+          "fontSize": 15.5
+        },
+        {
+          "el": "input#extra.field",
+          "fontSize": 15.5
+        },
+        {
+          "el": "textarea#styleSample.field.resize-none",
+          "fontSize": 15.5
+        }
+      ],
+      "overflow_x": false,
+      "distinct_font_sizes": 9,
+      "distinct_radii": 8,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 4,
+      "contrast_low": [],
+      "contrast_unknown": 0,
+      "interactive_count": 14,
+      "title": "Replier — LINE・マッチングアプリの返信コーチ",
+      "sw_registered": true
+    },
+    {
+      "viewport": "iphone",
+      "scheme": "light",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "iphone_light.png",
+      "tap_small": [
+        {
+          "el": "button#btnSettings.grid.h-9 \"設定\"",
+          "w": 36,
+          "h": 36
+        },
+        {
+          "el": "button#tabBtnReply.flex-1.rounded-[9px] \"返信提案\"",
+          "w": 173,
+          "h": 36
+        },
+        {
+          "el": "button#tabBtnProfile.flex-1.rounded-[9px] \"プロフィール添削\"",
+          "w": 173,
+          "h": 36
+        },
+        {
+          "el": "button.-mt-1.shrink-0 \"案内を閉じる\"",
+          "w": 24,
+          "h": 24
+        },
+        {
+          "el": "button.btn-ghost.mt-2 \"設定でキーを登録する\"",
+          "w": 143,
+          "h": 40
+        },
+        {
+          "el": "summary.cursor-pointer.text-[13px] \"詳細設定(追加の指示・文体サンプル)\"",
+          "w": 324,
+          "h": 22
+        },
+        {
+          "el": "button.shrink-0.text-ink-faint \"この案内を閉じる\"",
+          "w": 15,
+          "h": 15
+        }
+      ],
+      "input_font_small": [
+        {
+          "el": "textarea#conversation.field.resize-none",
+          "fontSize": 15.5
+        },
+        {
+          "el": "input#partnerProfile.field",
+          "fontSize": 15.5
+        },
+        {
+          "el": "select#sampleSelect.field \"選ぶと会話・プロフィール・文体・ゴールが自動で入ります① 序\"",
+          "fontSize": 15.5
+        },
+        {
+          "el": "input#extra.field",
+          "fontSize": 15.5
+        },
+        {
+          "el": "textarea#styleSample.field.resize-none",
+          "fontSize": 15.5
+        }
+      ],
+      "overflow_x": false,
+      "distinct_font_sizes": 9,
+      "distinct_radii": 8,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 4,
+      "contrast_low": [
+        {
+          "el": "p.text-[11.5px].text-ink-muted \"あなたの文体のまま、次の一通を作る\"",
+          "ratio": 4.27,
+          "need": 4.5,
+          "fontSize": 11.5
+        },
+        {
+          "el": "button#tabBtnProfile.flex-1.rounded-[9px] \"プロフィール添削\"",
+          "ratio": 4.47,
+          "need": 4.5,
+          "fontSize": 13.5
+        },
+        {
+          "el": "span.mt-0.5.grid \"1\"",
+          "ratio": 3.73,
+          "need": 4.5,
+          "fontSize": 11
+        },
+        {
+          "el": "span.mt-0.5.grid \"2\"",
+          "ratio": 3.73,
+          "need": 4.5,
+          "fontSize": 11
+        },
+        {
+          "el": "span.mt-0.5.grid \"3\"",
+          "ratio": 3.73,
+          "need": 4.5,
+          "fontSize": 11
+        },
+        {
+          "el": "span.text-[12.5px].text-ink-muted \"LINE・Pairs・Tinderなど / 最大6枚 / 右\"",
+          "ratio": 4.47,
+          "need": 4.5,
+          "fontSize": 12.5
+        },
+        {
+          "el": "label \"会話を盛り上げる\"",
+          "ratio": 4.17,
+          "need": 4.5,
+          "fontSize": 13.5
+        },
+        {
+          "el": "label \"自分の文体に合わせる\"",
+          "ratio": 4.17,
+          "need": 4.5,
+          "fontSize": 13.5
+        },
+        {
+          "el": "label \"おまかせ\"",
+          "ratio": 4.17,
+          "need": 4.5,
+          "fontSize": 13.5
+        },
+        {
+          "el": "button#generate.btn-primary \"返信案を3つ作る\"",
+          "ratio": 4.17,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "p.flex-1 \"ホーム画面に追加すると、アプリとして全画面で開けます。ブラウ\"",
+          "ratio": 4.47,
+          "need": 4.5,
+          "fontSize": 12.5
+        }
+      ],
+      "contrast_unknown": 0,
+      "interactive_count": 14,
+      "title": "Replier — LINE・マッチングアプリの返信コーチ",
+      "sw_registered": true
+    },
+    {
+      "viewport": "iphone",
+      "scheme": "dark",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "iphone_dark.png",
+      "tap_small": [
+        {
+          "el": "button#btnSettings.grid.h-9 \"設定\"",
+          "w": 36,
+          "h": 36
+        },
+        {
+          "el": "button#tabBtnReply.flex-1.rounded-[9px] \"返信提案\"",
+          "w": 173,
+          "h": 36
+        },
+        {
+          "el": "button#tabBtnProfile.flex-1.rounded-[9px] \"プロフィール添削\"",
+          "w": 173,
+          "h": 36
+        },
+        {
+          "el": "button.-mt-1.shrink-0 \"案内を閉じる\"",
+          "w": 24,
+          "h": 24
+        },
+        {
+          "el": "button.btn-ghost.mt-2 \"設定でキーを登録する\"",
+          "w": 143,
+          "h": 40
+        },
+        {
+          "el": "summary.cursor-pointer.text-[13px] \"詳細設定(追加の指示・文体サンプル)\"",
+          "w": 324,
+          "h": 22
+        },
+        {
+          "el": "button.shrink-0.text-ink-faint \"この案内を閉じる\"",
+          "w": 15,
+          "h": 15
+        }
+      ],
+      "input_font_small": [
+        {
+          "el": "textarea#conversation.field.resize-none",
+          "fontSize": 15.5
+        },
+        {
+          "el": "input#partnerProfile.field",
+          "fontSize": 15.5
+        },
+        {
+          "el": "select#sampleSelect.field \"選ぶと会話・プロフィール・文体・ゴールが自動で入ります① 序\"",
+          "fontSize": 15.5
+        },
+        {
+          "el": "input#extra.field",
+          "fontSize": 15.5
+        },
+        {
+          "el": "textarea#styleSample.field.resize-none",
+          "fontSize": 15.5
+        }
+      ],
+      "overflow_x": false,
+      "distinct_font_sizes": 9,
+      "distinct_radii": 8,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 4,
+      "contrast_low": [],
+      "contrast_unknown": 0,
+      "interactive_count": 14,
+      "title": "Replier — LINE・マッチングアプリの返信コーチ",
+      "sw_registered": true
+    }
+  ],
+  "verdict": "BASELINE(硬い規則に違反あり)",
+  "regressions": [],
+  "hard_fails": [
+    "input_font_small=5"
+  ]
+}

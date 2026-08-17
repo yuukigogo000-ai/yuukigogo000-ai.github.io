@@ -29,7 +29,7 @@ export function UpdateBar() {
       role="status"
       className="fixed inset-x-0 bottom-0 z-40 mx-auto flex w-full max-w-[560px] items-center justify-between gap-3 border-t border-line bg-surface px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))]"
     >
-      <span className="text-[13px]">新しい版が公開されています</span>
+      <span className="text-sub">新しい版が公開されています</span>
       <button
         type="button"
         className="btn-ghost flex items-center gap-1.5"

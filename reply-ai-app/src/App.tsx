@@ -93,29 +93,29 @@ export default function App() {
   }
 
   const tabBtn = (active: boolean) =>
-    `flex-1 rounded-[9px] px-3 py-2 text-[13.5px] font-bold transition-colors ${
-      active ? 'bg-surface text-ink shadow-[0_1px_2px_rgba(0,0,0,.07)]' : 'text-ink-muted'
+    `flex-1 min-h-12 rounded-sm px-3 text-sub font-bold transition-colors ${
+      active ? 'bg-surface text-ink' : 'text-ink-muted'
     }`;
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-[560px] flex-col px-4 pb-6">
-      <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between border-b border-line bg-canvas/90 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-30 -mx-4 flex items-center justify-between border-b border-line bg-canvas px-4 py-2">
         <div>
-          <h1 className="text-[16px] font-bold tracking-tight">Replier</h1>
-          <p className="text-[11.5px] text-ink-muted">あなたの文体のまま、次の一通を作る</p>
+          <h1 className="text-title font-bold tracking-tight">Replier</h1>
+          <p className="text-label text-ink-muted">あなたの文体のまま、次の一通を作る</p>
         </div>
         <button
           type="button"
           id="btnSettings"
           aria-label="設定"
           onClick={() => setSettingsOpen(true)}
-          className="grid h-9 w-9 place-items-center rounded-lg text-ink-muted hover:bg-surface-2"
+          className="btn-icon"
         >
-          <Settings size={19} strokeWidth={1.8} />
+          <Settings size={20} strokeWidth={1.8} />
         </button>
       </header>
 
-      <div role="tablist" aria-label="機能" className="mt-3 flex gap-1 rounded-xl bg-surface-2 p-1">
+      <div role="tablist" aria-label="機能" className="mt-3 flex gap-1 rounded-md bg-surface-2 p-1">
         <button
           type="button"
           id="tabBtnReply"
@@ -150,7 +150,7 @@ export default function App() {
         id="error"
         role="alert"
         hidden={!error}
-        className="mt-3 flex items-start gap-2 rounded-xl border border-danger/35 bg-danger-soft px-3.5 py-3 text-[13px] leading-relaxed text-danger"
+        className="mt-3 flex items-start gap-2 rounded-md border border-danger bg-danger-soft px-4 py-3 text-sub leading-relaxed text-on-danger-soft"
       >
         {error ? <AlertCircle size={16} strokeWidth={2} className="mt-0.5 shrink-0" /> : null}
         {error}
@@ -221,7 +221,7 @@ export default function App() {
         id="toast"
         role="status"
         hidden={!toast}
-        className="pointer-events-none fixed inset-x-0 bottom-24 z-40 mx-auto w-fit rounded-full bg-ink px-4 py-2 text-[13px] font-semibold text-canvas"
+        className="pointer-events-none fixed inset-x-0 bottom-24 z-40 mx-auto w-fit pill bg-ink px-4 py-2 text-sub font-semibold text-canvas"
       >
         {toast}
       </div>

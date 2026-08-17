@@ -61,10 +61,25 @@ const profileResult = () => ({
   };
   await page.route('https://api.anthropic.com/**', apiHandler);
 
-  const openDetails = () => page.evaluate(() => {
-    const d = document.querySelector('#tabReply details');
-    if (d) d.open = true;
-  });
+  // 結果が出ていると入力は1行に畳まれる。触る前に「変更」を押す(実際の操作と同じ)
+  const openInputs = async () => {
+    if (await page.isVisible('#editInputs')) await page.click('#editInputs');
+  };
+  // ゴール・トーン・分け方は「今回の狙い」の中に畳まれている
+  const openGoals = async () => {
+    await openInputs();
+    await page.evaluate(() => {
+      const d = document.querySelector('#goalSettings');
+      if (d) d.open = true;
+    });
+  };
+  const openDetails = async () => {
+    await openInputs();
+    await page.evaluate(() => {
+      const d = document.querySelector('#advancedSettings');
+      if (d) d.open = true;
+    });
+  };
 
   await page.goto(BASE);
   await page.waitForSelector('#generate');
@@ -85,6 +100,7 @@ const profileResult = () => ({
   check('3b. 会話未入力→エラー表示', (await page.textContent('#error')).includes('貼り付け'));
 
   // --- 4. 正常系(テキスト会話) ---
+  await openInputs();
   await page.fill('#conversation', '自分: テストやで\n相手: いいね〜');
   mock = () => ({ status: 200, body: replyResult('1') });
   await page.click('#generate');
@@ -107,8 +123,10 @@ const profileResult = () => ({
   check('5a. 再生成: 既出案リスト送信', msgStr.includes('既に提示済みの案') && msgStr.includes('返信案A-1'));
 
   // --- 6. 文体サンプルがプロンプトに入るか ---
-  await page.click('#tabReply summary');
+  await openInputs();
+  await page.click('#advancedSettings summary');
   check('6a. 詳細設定がsummaryクリックで開く', await page.isVisible('#styleSample'));
+  await openInputs();
   await page.fill('#styleSample', 'おつかれ〜今日どうだった');
   mock = () => ({ status: 200, body: replyResult('3') });
   await page.click('#generate');
@@ -137,10 +155,12 @@ const profileResult = () => ({
 
   // --- 10. 画像アップロード ---
   const png = { name: 's.png', mimeType: 'image/png', buffer: PNG_1x1 };
+  await openInputs();
   await page.setInputFiles('#convFile', [png]);
   await page.waitForSelector('#convThumbs .thumb');
   check('10a. サムネイル表示', (await page.$$('#convThumbs .thumb')).length === 1);
   // 7枚追加 → 上限エラー
+  await openInputs();
   await page.setInputFiles('#convFile', Array(7).fill(png));
   await page.waitForTimeout(500);
   check('10b. 6枚上限で停止+エラー', (await page.$$('#convThumbs .thumb')).length === 6 &&
@@ -158,6 +178,7 @@ const profileResult = () => ({
 
   // --- 11. 壊れた画像ファイル ---
   const before = pageErrors.length + consoleErrors.length;
+  await openInputs();
   await page.setInputFiles('#convFile', [{ name: 'evil.png', mimeType: 'image/png', buffer: Buffer.from('this is not an image at all') }]);
   await page.waitForTimeout(800);
   const errText = await page.textContent('#error');
@@ -199,11 +220,13 @@ const profileResult = () => ({
   check('16z. リロードでスクショが残らない', (await page.$$('#convThumbs .thumb')).length === 0);
   const optCount = await page.$$eval('#sampleSelect option', o => o.length);
   check('16a. サンプル8件が選択肢に出る', optCount === 9, `options=${optCount}`);
+  await openInputs();
   await page.selectOption('#sampleSelect', '1'); // ②カフェ・デートに誘う
   check('16b. 会話が自動入力', (await page.inputValue('#conversation')).includes('中目黒'));
   check('16c. プロフィールが自動入力', (await page.inputValue('#partnerProfile')).includes('看護師'));
   check('16d. 文体サンプルが自動入力', (await page.inputValue('#styleSample')).length > 0);
   check('16e. ゴールが「デートに誘う」に切替', await page.isChecked('#g2'));
+  await openInputs();
   await page.selectOption('#sampleSelect', '3'); // ④初回メッセージ(会話空)
   check('16f. 初回メッセ例は会話欄が空+ゴール初回', (await page.inputValue('#conversation')) === '' && await page.isChecked('#g4'));
   mock = () => ({ status: 200, body: replyResult('S') });
@@ -220,7 +243,9 @@ const profileResult = () => ({
   await page.evaluate(() => localStorage.removeItem('reply_ai_adopted'));
   await page.reload();
   await page.waitForSelector('#generate');
+  await openInputs();
   await page.fill('#conversation', '自分: テストやで\n相手: いいね〜');
+  await openInputs();
   await page.selectOption('#sampleSelect', '5'); // ⑥日程調整
   check('17c. サンプル⑥でゴール日程調整に切替', await page.isChecked('#g5'));
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -332,6 +357,7 @@ const profileResult = () => ({
   check('20b. 吹き出しの分け方を選べる', await page.$('#b0') && await page.$('#b1') && await page.$('#b2'));
   check('20c. 指示書に「全部同じ通数にしない」ルール', JSON.stringify(lastBody.system).includes('全部同じにしない'));
   check('20d. 既定はおまかせ', await page.isChecked('#b0'));
+  await openGoals();
   await page.click('label[for="b1"]'); // 1通にまとめる
   mock = () => ({ status: 200, body: replyResult('U') });
   await page.click('#generate');
@@ -341,6 +367,7 @@ const profileResult = () => ({
   const singleCounts = await page.$$eval('#replyResults .card', cs => cs.map(c => c.querySelectorAll('.bubble').length));
   check('20f. 1通指定ならAIが分けて返しても1吹き出しに丸める', JSON.stringify(singleCounts) === '[1,1,1]', JSON.stringify(singleCounts));
   check('20g. まとめた本文は改行で連結される', (await page.textContent('#replyResults .card .bubble')).includes('二通目A-U'));
+  await openGoals();
   await page.click('label[for="b0"]');
 
   // --- 21. Codex r1 指摘の回帰(コピー失敗・保存失敗・古い結果・タイムアウト) ---
@@ -348,6 +375,7 @@ const profileResult = () => ({
   mock = () => ({ status: 200, body: replyResult('R1') });
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスR1'));
+  await openInputs();
   await page.fill('#conversation', '自分: 別の会話\n相手: べつべつ');
   mock = () => ({ status: 401, body: { error: { message: 'invalid x-api-key' } } });
   await page.click('#generate');
@@ -356,10 +384,12 @@ const profileResult = () => ({
 
   // 21b. サンプルを読み込んだらスクショと結果を捨てる
   mock = () => ({ status: 200, body: replyResult('R2') });
+  await openInputs();
   await page.setInputFiles('#convFile', [png]);
   await page.waitForSelector('#convThumbs .thumb');
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスR2'));
+  await openInputs();
   await page.selectOption('#sampleSelect', '0');
   check('21b. サンプル読込でスクショと結果を捨てる',
         (await page.$$('#convThumbs .thumb')).length === 0 && !(await page.isVisible('#replyResults')));
@@ -406,6 +436,7 @@ const profileResult = () => ({
       return orig.call(this, k, v);
     };
   });
+  await openInputs();
   await page.fill('#conversation', '自分: a\n相手: b');
   mock = () => ({ status: 200, body: replyResult('R4') });
   await page.click('#generate');
@@ -421,6 +452,7 @@ const profileResult = () => ({
   await page.reload();
   await page.waitForSelector('#generate');
   await page.evaluate(() => localStorage.setItem('reply_ai_timeout_ms', '400'));
+  await openInputs();
   await page.fill('#conversation', '自分: a\n相手: b');
   delayMs = 3000;
   mock = () => ({ status: 200, body: replyResult('R5') });
@@ -436,6 +468,7 @@ const profileResult = () => ({
   // 22a. APIキーは所定のヘッダだけに載り、URLや本文には出ない
   await page.reload();
   await page.waitForSelector('#generate');
+  await openInputs();
   await page.fill('#conversation', '自分: ヘッダ検査\n相手: どうぞ');
   mock = () => ({ status: 200, body: replyResult('H') });
   await page.click('#generate');
@@ -474,6 +507,7 @@ const profileResult = () => ({
       return orig.call(this, k, v);
     };
   });
+  await openInputs();
   await page.fill('#conversation', '自分: a\n相手: b');
   mock = () => ({ status: 200, body: replyResult('M') });
   await page.click('#generate');
@@ -528,11 +562,13 @@ const profileResult = () => ({
   // 23a. 生成中に別のサンプルへ切り替えたら、古い応答で上書きされない
   await page.reload();
   await page.waitForSelector('#generate');
+  await openInputs();
   await page.fill('#conversation', '自分: 古い会話\n相手: ふるい');
   delayMs = 1200;
   mock = () => ({ status: 200, body: replyResult('OLD') });
   const slow = page.click('#generate');
   await page.waitForTimeout(250);
+  await openInputs();
   await page.selectOption('#sampleSelect', '0'); // 実行中に別の会話へ
   await slow;
   await page.waitForTimeout(1500);
@@ -544,6 +580,7 @@ const profileResult = () => ({
   // 23b. スクショ読み込み中の生成は取りこぼさず、待つよう促す
   await page.reload();
   await page.waitForSelector('#generate');
+  await openInputs();
   await page.fill('#conversation', '自分: a\n相手: b');
   await page.route('**/*.png', r => r.continue());
   await page.evaluate(() => {
@@ -559,6 +596,7 @@ const profileResult = () => ({
       configurable: true,
     });
   });
+  await openInputs();
   await page.setInputFiles('#convFile', [png]);
   await page.waitForTimeout(120);
   await page.click('#generate');
@@ -570,7 +608,9 @@ const profileResult = () => ({
   // 23c. 「分けて送る」を選んだのに1通で返ったら、そう伝える
   await page.reload();
   await page.waitForSelector('#generate');
+  await openInputs();
   await page.fill('#conversation', '自分: a\n相手: b');
+  await openGoals();
   await page.click('label[for="b2"]');
   mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
     situation: 's', interest_level: 60,
@@ -578,6 +618,7 @@ const profileResult = () => ({
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスSPLIT'));
   check('23c. 分けて送る指定で1通のみなら注記を出す', await page.isVisible('#splitNote'));
+  await openGoals();
   await page.click('label[for="b0"]');
 
   // 23d. APIキーは「記憶する」が入っていれば入力時点で保存される
@@ -629,11 +670,13 @@ const profileResult = () => ({
   // 24a. 生成中に会話を書き換えたら、古い応答を新しい入力の結果として出さない
   await page.reload();
   await page.waitForSelector('#generate');
+  await openInputs();
   await page.fill('#conversation', '自分: 会話A\n相手: あ');
   delayMs = 1200;
   mock = () => ({ status: 200, body: replyResult('EDIT') });
   const editRun = page.click('#generate');
   await page.waitForTimeout(250);
+  await openInputs();
   await page.fill('#conversation', '自分: 会話B(書き換えた)\n相手: い');
   await editRun;
   await page.waitForTimeout(1400);
@@ -646,10 +689,12 @@ const profileResult = () => ({
   await page.reload();
   await page.waitForSelector('#generate');
   await page.evaluate(() => localStorage.setItem('reply_ai_timeout_ms', '60000'));
+  await openInputs();
   await page.fill('#conversation', '自分: 長い処理\n相手: う');
   delayMs = 4000;
   const stalled = page.click('#generate');
   await page.waitForTimeout(300);
+  await openInputs();
   await page.selectOption('#sampleSelect', '0');
   await page.waitForFunction(() => !document.querySelector('#generate').disabled, null, { timeout: 3000 });
   check('24b. 切り替えたら実行中の生成を打ち切ってボタンが戻る', !(await page.isDisabled('#generate')));
@@ -673,8 +718,11 @@ const profileResult = () => ({
       configurable: true,
     });
   });
+  await openInputs();
   await page.fill('#conversation', '自分: a\n相手: b');
+  await openInputs();
   await page.setInputFiles('#convFile', [png]);
+  await openInputs();
   await page.setInputFiles('#convFile', [png]);
   await page.waitForTimeout(400);
   await page.click('#generate');
@@ -686,10 +734,12 @@ const profileResult = () => ({
   // --- 25. Codex r5 指摘の回帰(生成後に入力が変わった場合) ---
   await page.reload();
   await page.waitForSelector('#generate');
+  await openInputs();
   await page.fill('#conversation', '自分: 会話A\n相手: あ');
   mock = () => ({ status: 200, body: replyResult('S1') });
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスS1'));
+  await openInputs();
   await page.fill('#conversation', '自分: 会話B(別の相手)\n相手: い');
   await page.waitForTimeout(200);
   check('25a. 入力を変えたら前の提案を表示し続けない', !(await page.isVisible('#replyResults')) && await page.isVisible('#staleNote'));
@@ -700,6 +750,7 @@ const profileResult = () => ({
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスS2'));
   check('25a3. 作り直せば表示が戻る', await page.isVisible('#replyResults') && !(await page.isVisible('#staleNote')));
   // 画像の差し替えも「入力が変わった」として扱う(同じサイズでも取り違えない)
+  await openInputs();
   await page.setInputFiles('#convFile', [png]);
   await page.waitForSelector('#convThumbs .thumb');
   check('25b. スクショを足したら前の提案は表示しない', !(await page.isVisible('#replyResults')));
@@ -728,6 +779,7 @@ const profileResult = () => ({
   // --- 15. ネットワーク断 ---
   await page.unroute('https://api.anthropic.com/**');
   await page.route('https://api.anthropic.com/**', route => route.abort('internetdisconnected'));
+  await openInputs();
   await page.fill('#conversation', '自分: a\n相手: b');
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#error').textContent.length > 0, null, { timeout: 5000 }).catch(() => {});

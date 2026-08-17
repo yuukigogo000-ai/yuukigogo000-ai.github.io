@@ -100,6 +100,7 @@ export function ReplyTab({
   const [styleSample, setStyleSample] = useState('');
   const [split, setSplit] = useState(SPLITS[0].value);
   const [sample, setSample] = useState('');
+  const [editing, setEditing] = useState(false);
   const [imagesEpoch, setImagesEpoch] = useState(0);
   const [imagesBusy, setImagesBusy] = useState(false);
   /** 送信ごとの通し番号。古い応答が新しい入力の結果として表示されるのを防ぐ */
@@ -212,6 +213,7 @@ export function ReplyTab({
     abortRef.current = controller;
     const reqId = ++reqIdRef.current;
     const sentInputs = inputsRef.current;
+    setEditing(false); // 生成したら入力は畳んで結果に集中させる
 
     await run(STAGES, async () => {
       let res: ReplyResult;
@@ -255,11 +257,33 @@ export function ReplyTab({
   // 表示中の提案が「今の入力に対するもの」でなくなったら、出しっぱなしにしない
   const stale = result !== null && resultSig !== inputsRef.current;
   const shown = stale ? null : result;
+  // 結果が出ている間、入力は1行のサマリに畳む(見本B)
+  const collapsed = shown !== null && !editing;
 
   return (
     <div id="tabReply" hidden={hidden} role="tabpanel" aria-labelledby="tabBtnReply">
+      <div
+        id="inputSummary"
+        hidden={!collapsed}
+        className="card flex items-center justify-between gap-3 px-4 py-2"
+      >
+        <span className="truncate text-sub text-ink-muted">
+          {images.length ? `スクショ${images.length}枚` : 'テキストの会話'} ・ 狙い:{' '}
+          {GOALS.find((g) => g.value === goal)?.label}
+        </span>
+        <button
+          type="button"
+          id="editInputs"
+          className="btn-ghost shrink-0 px-4"
+          onClick={() => setEditing(true)}
+        >
+          変更
+        </button>
+      </div>
+
+      <div id="inputArea" hidden={collapsed}>
       <section className="card p-4">
-        <h2 className="mb-3 text-[13px] font-bold tracking-wide text-ink-muted">会話を読み込む</h2>
+        <h2 className="mb-3 text-sub font-bold tracking-wide text-ink-muted">会話を読み込む</h2>
         <Dropzone
           dropId="convDrop"
           fileId="convFile"
@@ -319,25 +343,31 @@ export function ReplyTab({
         </div>
       </section>
 
-      <section className="card mt-3 p-4">
-        <h2 className="mb-3 text-[13px] font-bold tracking-wide text-ink-muted">今回のゴール</h2>
-        <Chips name="goal" options={GOALS} value={goal} onChange={setGoal} ariaLabel="今回のゴール" />
-        <h2 className="mt-5 mb-3 text-[13px] font-bold tracking-wide text-ink-muted">トーン</h2>
-        <Chips name="tone" options={TONES} value={tone} onChange={setTone} ariaLabel="トーン" />
-        <h2 className="mt-5 mb-3 text-[13px] font-bold tracking-wide text-ink-muted">
-          吹き出しの分け方
-        </h2>
-        <Chips
-          name="split"
-          options={SPLITS}
-          value={split}
-          onChange={setSplit}
-          ariaLabel="吹き出しの分け方"
-        />
-      </section>
+      <details id="goalSettings" className="card mt-3 px-4 py-2">
+        <summary className="flex min-h-12 cursor-pointer items-center text-sub font-bold text-ink-muted">
+          今回の狙い: {GOALS.find((g) => g.value === goal)?.label} ・ 文体:{' '}
+          {TONES.find((t) => t.value === tone)?.label}
+        </summary>
+        <div className="pb-2">
+          <h2 className="mt-2 mb-2 text-label font-bold tracking-wide text-ink-muted">ゴール</h2>
+          <Chips name="goal" options={GOALS} value={goal} onChange={setGoal} ariaLabel="今回のゴール" />
+          <h2 className="mt-4 mb-2 text-label font-bold tracking-wide text-ink-muted">トーン</h2>
+          <Chips name="tone" options={TONES} value={tone} onChange={setTone} ariaLabel="トーン" />
+          <h2 className="mt-4 mb-2 text-label font-bold tracking-wide text-ink-muted">
+            吹き出しの分け方
+          </h2>
+          <Chips
+            name="split"
+            options={SPLITS}
+            value={split}
+            onChange={setSplit}
+            ariaLabel="吹き出しの分け方"
+          />
+        </div>
+      </details>
 
-      <details className="card mt-3 px-4 py-3.5">
-        <summary className="cursor-pointer text-[13px] font-bold text-ink-muted">
+      <details id="advancedSettings" className="card mt-3 px-4 py-3.5">
+        <summary className="cursor-pointer text-sub font-bold text-ink-muted">
           詳細設定(追加の指示・文体サンプル)
         </summary>
         <div className="mt-4">
@@ -365,7 +395,7 @@ export function ReplyTab({
             onChange={setStyleSample}
           />
         </div>
-        <p id="adoptedNote" className="mt-3 flex items-center gap-2 text-[12px] text-ink-muted">
+        <p id="adoptedNote" className="mt-3 flex items-center gap-2 text-label text-ink-muted">
           {adopted.length ? (
             <>
               <span>
@@ -375,7 +405,7 @@ export function ReplyTab({
               <button
                 type="button"
                 onClick={onClearAdopted}
-                className="inline-flex items-center gap-1 text-ink-faint underline underline-offset-2"
+                className="inline-flex items-center gap-1 text-ink-muted underline underline-offset-2"
               >
                 <Trash2 size={12} strokeWidth={2} />
                 消す
@@ -388,6 +418,7 @@ export function ReplyTab({
           )}
         </p>
       </details>
+      </div>
 
       {busy && (
         <div className="mt-4 space-y-3" aria-hidden="true">
@@ -402,14 +433,14 @@ export function ReplyTab({
       )}
 
       {stale && !busy && (
-        <p id="staleNote" className="mt-4 px-1 text-[12px] text-ink-muted">
+        <p id="staleNote" className="mt-4 px-1 text-label text-ink-muted">
           入力が変わったので、前の提案は表示していません。もう一度「返信案を3つ作る」を押してください。
         </p>
       )}
 
       <div id="replyAnalysis" className="card mt-4 scroll-mt-20 p-4" hidden={!shown}>
-        <h2 className="mb-1.5 text-[12px] font-bold tracking-wide text-ink-muted">いまの状況</h2>
-        <p id="situation" className="mb-3 text-[13.5px] leading-relaxed">
+        <h2 className="mb-1.5 text-label font-bold tracking-wide text-ink-muted">いまの状況</h2>
+        <p id="situation" className="mb-3 text-sub leading-relaxed">
           {shown?.situation ?? ''}
         </p>
         <Meter
@@ -421,17 +452,18 @@ export function ReplyTab({
         />
       </div>
 
-      <h2 className="mt-4 mb-2 px-1 text-[12px] font-bold tracking-wide text-ink-muted" hidden={!shown || busy}>
-        送信プレビュー(そのままコピーして送れます)
-      </h2>
+      <div className="mt-4 mb-2 px-1" hidden={!shown || busy}>
+        <h2 className="text-label font-bold tracking-wide text-ink-muted">送信プレビュー</h2>
+        <p className="text-label text-ink-muted">カードをタップするとコピーできます</p>
+      </div>
       {shown && shown.replies.length < 3 && !busy && (
-        <p id="shortfallNote" className="mb-2 px-1 text-[12px] text-ink-muted">
+        <p id="shortfallNote" className="mb-2 px-1 text-label text-ink-muted">
           AIから{shown.replies.length}案しか返りませんでした。「方向性を変えて別の3案」で出し直せます。
         </p>
       )}
       {shown && !busy && split === 'multi' &&
         shown.replies.every((r) => normalizeBubbles(r).length === 1) && (
-          <p id="splitNote" className="mb-2 px-1 text-[12px] text-ink-muted">
+          <p id="splitNote" className="mb-2 px-1 text-label text-ink-muted">
             「分けて送る」を選びましたが、AIは1通で返しました(この場面では分けない方が自然と判断されています)。
           </p>
         )}
@@ -452,17 +484,17 @@ export function ReplyTab({
 
       <div
         id="replyAdvice"
-        className="mt-3 rounded-xl border-l-[3px] border-brand bg-brand-soft px-4 py-3.5"
+        className="mt-3 rounded-md border-l-[3px] border-brand bg-brand-soft px-4 py-3.5"
         hidden={!shown}
       >
-        <div className="flex items-center gap-1.5 text-[12px] font-bold text-ink-muted">
+        <div className="flex items-center gap-1.5 text-label font-bold text-ink-muted">
           <Compass size={14} strokeWidth={2} />
           次の一手
         </div>
-        <p className="mt-1 text-[13.5px] leading-relaxed">{shown?.advice ?? ''}</p>
+        <p className="mt-1 text-sub leading-relaxed">{shown?.advice ?? ''}</p>
       </div>
 
-      <div className="sticky bottom-0 z-30 -mx-4 mt-5 border-t border-line bg-canvas/90 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur">
+      <div className="sticky bottom-0 z-30 -mx-4 mt-5 border-t border-line bg-canvas px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
         <button
           type="button"
           id="generate"

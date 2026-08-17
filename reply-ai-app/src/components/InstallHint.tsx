@@ -23,7 +23,7 @@ export function InstallHint() {
   return (
     <div
       id="installHint"
-      className="card mt-3 flex items-start gap-3 bg-surface-2 px-3.5 py-3 text-[12.5px] leading-relaxed text-ink-muted"
+      className="card mt-3 flex items-start gap-3 bg-surface-2 px-3.5 py-3 text-label leading-relaxed text-ink-muted"
     >
       <Smartphone size={16} strokeWidth={1.8} className="mt-0.5 shrink-0 text-brand" />
       <p className="flex-1">
@@ -33,7 +33,7 @@ export function InstallHint() {
       <button
         type="button"
         aria-label="この案内を閉じる"
-        className="shrink-0 text-ink-faint"
+        className="btn-icon -my-3 -mr-3 shrink-0"
         onClick={() => {
           try {
             localStorage.setItem(INSTALL_HINT_KEY, '1');

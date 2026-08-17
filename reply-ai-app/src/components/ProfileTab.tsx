@@ -32,8 +32,8 @@ function BioCard({
   return (
     <article className="card p-3.5">
       <div className="num">改善案 {index + 1}</div>
-      <p className="mt-2 text-[14.5px] leading-relaxed whitespace-pre-wrap">{text}</p>
-      <p className="mt-3 border-l-2 border-line pl-2.5 text-[12.5px] leading-relaxed text-ink-muted">
+      <p className="mt-2 text-body leading-relaxed whitespace-pre-wrap">{text}</p>
+      <p className="mt-3 border-l-2 border-line pl-2.5 text-label leading-relaxed text-ink-muted">
         {why}
       </p>
       <button
@@ -176,7 +176,7 @@ export function ProfileTab({
   return (
     <div id="tabProfile" hidden={hidden} role="tabpanel" aria-labelledby="tabBtnProfile">
       <section className="card p-4">
-        <h2 className="mb-3 text-[13px] font-bold tracking-wide text-ink-muted">
+        <h2 className="mb-3 text-sub font-bold tracking-wide text-ink-muted">
           自分のプロフィールを読み込む
         </h2>
         <Dropzone
@@ -233,12 +233,12 @@ export function ProfileTab({
       </section>
 
       <section className="card mt-3 p-4">
-        <h2 className="mb-3 text-[13px] font-bold tracking-wide text-ink-muted">やってほしいこと</h2>
+        <h2 className="mb-3 text-sub font-bold tracking-wide text-ink-muted">やってほしいこと</h2>
         <Chips name="profMode" options={MODES} value={mode} onChange={setMode} ariaLabel="やってほしいこと" />
       </section>
 
       <div id="profAnalysis" className="card mt-4 scroll-mt-20 p-4" hidden={!shown}>
-        <p id="profImpression" className="mb-3 text-[13.5px] leading-relaxed">
+        <p id="profImpression" className="mb-3 text-sub leading-relaxed">
           {shown?.first_impression ?? ''}
         </p>
         <Meter
@@ -248,14 +248,14 @@ export function ProfileTab({
           value={shown?.score ?? 0}
           suffix="点"
         />
-        <h3 className="mt-4 text-[12.5px] font-bold text-brand">良い点</h3>
-        <ul id="profStrengths" className="mt-1 list-disc space-y-1 pl-5 text-[13.5px]">
+        <h3 className="mt-4 text-label font-bold text-brand">良い点</h3>
+        <ul id="profStrengths" className="mt-1 list-disc space-y-1 pl-5 text-sub">
           {(shown?.strengths ?? []).map((s, i) => (
             <li key={i}>{s}</li>
           ))}
         </ul>
-        <h3 className="mt-3 text-[12.5px] font-bold text-ink-muted">直すべき点</h3>
-        <ul id="profWeaknesses" className="mt-1 list-disc space-y-1 pl-5 text-[13.5px]">
+        <h3 className="mt-3 text-label font-bold text-ink-muted">直すべき点</h3>
+        <ul id="profWeaknesses" className="mt-1 list-disc space-y-1 pl-5 text-sub">
           {(shown?.weaknesses ?? []).map((s, i) => (
             <li key={i}>{s}</li>
           ))}
@@ -263,7 +263,7 @@ export function ProfileTab({
       </div>
 
       {shown && shown.improved_bios.length < 2 && !busy && (
-        <p id="bioShortfallNote" className="mt-3 px-1 text-[12px] text-ink-muted">
+        <p id="bioShortfallNote" className="mt-3 px-1 text-label text-ink-muted">
           改善案が{shown.improved_bios.length}件しか返りませんでした。もう一度実行すると2案出ることがあります。
         </p>
       )}
@@ -285,17 +285,17 @@ export function ProfileTab({
 
       <div
         id="profPhotoAdvice"
-        className="mt-3 rounded-xl border-l-[3px] border-brand bg-brand-soft px-4 py-3.5"
+        className="mt-3 rounded-md border-l-[3px] border-brand bg-brand-soft px-4 py-3.5"
         hidden={!shown}
       >
-        <div className="flex items-center gap-1.5 text-[12px] font-bold text-ink-muted">
+        <div className="flex items-center gap-1.5 text-label font-bold text-ink-muted">
           <Camera size={14} strokeWidth={2} />
           写真アドバイス
         </div>
-        <p className="mt-1 text-[13.5px] leading-relaxed">{shown?.photo_advice ?? ''}</p>
+        <p className="mt-1 text-sub leading-relaxed">{shown?.photo_advice ?? ''}</p>
       </div>
 
-      <div className="sticky bottom-0 z-30 -mx-4 mt-5 border-t border-line bg-canvas/90 px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] backdrop-blur">
+      <div className="sticky bottom-0 z-30 -mx-4 mt-5 border-t border-line bg-canvas px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))]">
         <button
           type="button"
           id="profGenerate"
