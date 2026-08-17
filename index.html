@@ -41,7 +41,7 @@
 </div>
 
 <fieldset>
-  <legend>1. 楽天APIキー（このページ内だけで使用・送信されません）</legend>
+  <legend>1. 楽天APIキー（ブラウザから楽天APIへ直接送られます・当サイトのサーバーには送られません）</legend>
   <div class="row">
     <div>
       <label for="appId">applicationId（アプリID・UUID形式）</label>
@@ -238,5 +238,8 @@ $("download").addEventListener("click", () => {
   document.body.appendChild(a); a.click(); a.remove();
 });
 </script>
+<footer style="margin-top:32px;padding-top:12px;border-top:1px solid #ddd;font-size:.85rem;opacity:.75">
+  <a href="./privacy.html">プライバシーポリシー</a>
+</footer>
 </body>
 </html>

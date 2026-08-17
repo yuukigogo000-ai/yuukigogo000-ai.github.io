@@ -99,6 +99,17 @@ export function SettingsSheet({
               <p className="mt-1.5">
                 LINEはLINEヤフー株式会社の登録商標です。本アプリは同社およびマッチングアプリ各社とは関係ありません。
               </p>
+              <p className="mt-1.5">
+                <a
+                  id="privacyLink"
+                  className="text-brand underline underline-offset-2"
+                  href="../privacy.html"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  プライバシーポリシー
+                </a>
+              </p>
             </section>
           </div>
         </Dialog.Content>

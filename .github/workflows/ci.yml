@@ -1,0 +1,101 @@
+name: CI
+
+# 目的: 公開前に人間の記憶に頼らず機械が止める。
+#   1. Replier がビルドできて E2E が全通するか
+#   2. 公開ディレクトリ reply-ai/ がソースの再ビルド結果と一致するか
+#      (ソースを直して再ビルドを忘れると、サイトには古い版が出たままになる)
+#   3. 素の JS(セトリズム/パチスロ帝国/HONMONO)に構文エラーがないか
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  replier:
+    name: Replier(ビルド・E2E 131項目・公開物の鮮度)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: reply-ai-app/package-lock.json
+
+      - name: 依存の取得
+        working-directory: reply-ai-app
+        run: npm ci
+
+      - name: Chromium の取得
+        working-directory: reply-ai-app
+        run: npx playwright install --with-deps chromium
+
+      # tests/e2e.test.js は http://localhost:8778/reply-ai/ を実ブラウザで開く。
+      # ビルドは npm test の pretest で走るので、サーバは先に立てておいてよい
+      # (http.server は要求のたびにディスクを読むため、後から差し替わった出力も配信される)。
+      - name: 静的サーバを立てて E2E
+        working-directory: reply-ai-app
+        run: |
+          python3 -m http.server 8778 --directory .. &
+          SERVER_PID=$!
+          for i in $(seq 1 30); do
+            curl -sf -o /dev/null http://localhost:8778/reply-ai/ && break
+            sleep 1
+          done
+          npm test
+          kill $SERVER_PID
+
+      - name: 公開ディレクトリ reply-ai/ が最新か
+        run: |
+          if [ -n "$(git status --porcelain -- reply-ai)" ]; then
+            echo "::error::reply-ai/ が reply-ai-app/ の再ビルド結果と一致しません。ソースを直して再ビルドせずに push すると、公開サイトは古い版のままになります。reply-ai-app/ で npm run build を実行し、出た差分をコミットしてください。"
+            git status --porcelain -- reply-ai
+            git diff --stat -- reply-ai
+            exit 1
+          fi
+          echo "OK: 公開物はソースと一致している"
+
+  static-js:
+    name: 素のJS(構文検査)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # ⚠ ここで `node --check <file>` を使ってはいけない。
+      # ES モジュール(import/export を含むファイル)だと Node は構文エラーがあっても
+      # 終了コード 0 を返す = 何を入れても緑になる無意味な検査になる(2026-08-17 実測)。
+      # stdin + --input-type=module なら実際に落ちる。下の自己テストがそれを毎回確かめる。
+      - name: 検査器が壊れたコードを落とせることの確認
+        run: |
+          printf 'export const a = 1;\nfunction broken( {\n' > /tmp/broken.js
+          if node --input-type=module --check < /tmp/broken.js > /dev/null 2>&1; then
+            echo "::error::構文検査が壊れたコードを通しました。この検査は無効です(常に緑)。"
+            exit 1
+          fi
+          echo "OK: 壊れたコードを検出できる"
+
+      - name: 構文検査(band / pachinko / honmono)
+        run: |
+          fail=0
+          files=$(find band pachinko honmono -name '*.js' \
+            -not -path '*/vendor/*' -not -path '*/node_modules/*' -not -path '*/desktop/*' | sort)
+          for f in $files; do
+            if node --input-type=module --check < "$f" > /dev/null 2>&1; then
+              echo "  OK  $f"
+            else
+              echo "  NG  $f"
+              node --input-type=module --check < "$f" 2>&1 | tail -5
+              fail=1
+            fi
+          done
+          if [ "$fail" != 0 ]; then
+            echo "::error::構文エラーのあるファイルがあります。"
+            exit 1
+          fi

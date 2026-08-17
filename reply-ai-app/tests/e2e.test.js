@@ -1,8 +1,38 @@
 // アポ取りAI 破壊的検証(実ブラウザ + モックAPI)
 // 実行: npm run build && python3 -m http.server 8778 (リポジトリのルート) && npm test
 import { chromium } from 'playwright';
+import { readFileSync } from 'fs';
 
 const BASE = process.env.BASE_URL || 'http://localhost:8778/reply-ai/';
+
+// 番人: 配信されているのが「いま作ったビルド」かどうかを最初に確かめる。
+// 別のクローンで起動しっぱなしのサーバが同じポートを掴んでいると、
+// 直したはずのコードではなく古い別ツリーのバンドルを検査して全部緑になる(2026-08-17 実際に発生)。
+async function assertServingFreshBuild() {
+  const bundleOf = (html) => (html.match(/assets\/index-[A-Za-z0-9_-]+\.js/) || [])[0];
+  const localBundle = bundleOf(readFileSync(new URL('../../reply-ai/index.html', import.meta.url), 'utf8'));
+  if (!localBundle) {
+    console.error('FATAL: reply-ai/index.html からバンドル名を読めない。先に npm run build を実行すること。');
+    process.exit(1);
+  }
+  let servedBundle;
+  try {
+    servedBundle = bundleOf(await (await fetch(new URL('index.html', BASE))).text());
+  } catch (e) {
+    console.error(`FATAL: ${BASE} に接続できない。リポジトリのルートを配信するサーバを起動すること。 ${e.message}`);
+    process.exit(1);
+  }
+  if (localBundle !== servedBundle) {
+    console.error(
+      `FATAL: 配信中のアプリがビルド結果と違う。テストは古い版を検査してしまう。\n` +
+      `  ビルド結果: ${localBundle}\n  配信中    : ${servedBundle}\n` +
+      `  → 別のディレクトリを配信しているサーバが ${new URL(BASE).port} 番を掴んでいる可能性がある。` +
+      ` そのサーバを止めるか、BASE_URL で別ポートを指定すること。`
+    );
+    process.exit(1);
+  }
+}
+await assertServingFreshBuild();
 const PNG_1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
 const results = [];
 const check = (name, cond, extra = '') => results.push({ name, pass: !!cond, extra: String(extra).slice(0, 160) });
@@ -74,6 +104,15 @@ const profileResult = () => ({
   await page.click('#generate');
   check('2a. キー未入力→エラー表示', (await page.textContent('#error')).includes('APIキー'));
   check('2b. キー未入力なら設定シートが自動で開く', await page.isVisible('#apiKey'));
+
+  // 送信先の説明(プライバシーポリシー)へ到達できること。
+  // 会話とスクショを外部APIへ送るアプリなので、この導線が消えたら公開状態として不備になる
+  check('2c. 設定シートにプライバシーポリシーへのリンクがある', await page.isVisible('#privacyLink'));
+  check(
+    '2c2. リンク先が公開中のポリシーを指している',
+    (await page.getAttribute('#privacyLink', 'href')) === '../privacy.html',
+    await page.getAttribute('#privacyLink', 'href'),
+  );
 
   // --- 3. キーあり・会話なし ---
   await page.fill('#apiKey', 'sk-ant-test-123');
