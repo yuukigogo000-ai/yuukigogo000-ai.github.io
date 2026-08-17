@@ -12,9 +12,9 @@ const replyResult = (tag) => ({
         situation: `状況分析${tag}`,
         interest_level: 72,
         replies: [
-          { text: `返信案A-${tag}`, why: '理由1' },
-          { text: `返信案B-${tag}`, why: '理由2' },
-          { text: `返信案C-${tag}`, why: '理由3' },
+          { bubbles: [`返信案A-${tag}`, `二通目A-${tag}`], why: '理由1' },
+          { bubbles: [`返信案B-${tag}`], why: '理由2' },
+          { bubbles: [`返信案C-${tag}`], why: '理由3' },
         ],
         advice: `アドバイス${tag}`,
       }) },
@@ -146,7 +146,7 @@ const profileResult = () => ({
   // --- 12. XSS: AI応答に悪意あるHTML ---
   mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
     situation: '<img src=x onerror="window.__xss=1">', interest_level: 50,
-    replies: [{ text: '<script>window.__xss=2<\/script>案', why: '<b onclick=1>理由' }, { text: 'a', why: 'b' }, { text: 'c', why: 'd' }],
+    replies: [{ bubbles: ['<script>window.__xss=2<\/script>案'], why: '<b onclick=1>理由' }, { bubbles: ['a'], why: 'b' }, { bubbles: ['c'], why: 'd' }],
     advice: '<svg onload="window.__xss=3">' }) }] } });
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#situation').textContent.includes('img'));
@@ -175,7 +175,7 @@ const profileResult = () => ({
   // --- 16. サンプル会話ローダー ---
   await page.click('#tabBtnReply');
   const optCount = await page.$$eval('#sampleSelect option', o => o.length);
-  check('16a. サンプル5件が選択肢に出る', optCount === 6, `options=${optCount}`);
+  check('16a. サンプル7件が選択肢に出る', optCount === 8, `options=${optCount}`);
   await page.selectOption('#sampleSelect', '1'); // ②カフェ・デートに誘う
   check('16b. 会話が自動入力', (await page.inputValue('#conversation')).includes('中目黒'));
   check('16c. プロフィールが自動入力', (await page.inputValue('#partnerProfile')).includes('看護師'));
@@ -187,6 +187,51 @@ const profileResult = () => ({
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスS'));
   check('16g. 会話空でも文体サンプル+プロフで生成できる', JSON.stringify(lastBody.messages).includes('ラーメンなら任せて'));
+
+  // --- 17. 吹き出し分割・採用学習・新ゴール ---
+  await page.click('#tabBtnReply');
+  const optCount2 = await page.$$eval('#sampleSelect option', o => o.length);
+  check('17a. サンプル7件に増加', optCount2 === 8, `options=${optCount2}`);
+  check('17b. 新ゴール(日程調整/前日/お礼)が存在', await page.$('#g5') && await page.$('#g6') && await page.$('#g7'));
+  await page.evaluate(() => localStorage.removeItem('reply_ai_adopted'));
+  await page.selectOption('#sampleSelect', '5'); // ⑥日程調整
+  check('17c. サンプル⑥でゴール日程調整に切替', await page.isChecked('#g5'));
+  await page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
+  mock = () => ({ status: 200, body: replyResult('B') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスB'));
+  const bubbleCounts = await page.$$eval('#replyResults .card', cs => cs.map(c => c.querySelectorAll('.bubble').length));
+  check('17d. 案Aは2吹き出し・B/Cは1吹き出しで描画', JSON.stringify(bubbleCounts) === '[2,1,1]', JSON.stringify(bubbleCounts));
+  check('17e. 2通案には「2通に分けて送る」表示', (await page.textContent('#replyResults .card .num')).includes('2通'));
+  check('17f. 送信スキーマがbubbles', JSON.stringify(lastBody.output_config.format.schema).includes('"bubbles"'));
+  check('17g. 採用履歴0件のときプロンプトに含まれない', !JSON.stringify(lastBody.messages).includes('過去に採用した返信'));
+  // 案Bのコピー → 採用履歴に入る
+  const copyBtns = await page.$$('#replyResults .card > button');
+  await copyBtns[1].click();
+  await page.waitForTimeout(200);
+  const adopted = await page.evaluate(() => JSON.parse(localStorage.getItem('reply_ai_adopted') || '[]'));
+  check('17h. コピーで採用履歴に保存', adopted.length === 1 && adopted[0] === '返信案B-B', JSON.stringify(adopted));
+  check('17i. 採用履歴の件数表示', (await page.textContent('#adoptedNote')).includes('1件'));
+  // 次の生成でプロンプトに載る
+  mock = () => ({ status: 200, body: replyResult('C') });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスC'));
+  check('17j. 次回生成のプロンプトに採用履歴が載る', JSON.stringify(lastBody.messages).includes('過去に採用した返信') && JSON.stringify(lastBody.messages).includes('返信案B-B'));
+  // 再生成の既出案は吹き出しを結合した文字列
+  mock = () => ({ status: 200, body: replyResult('D') });
+  await page.click('#regenerate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスD'));
+  check('17k. 既出案は吹き出し結合で送信', JSON.stringify(lastBody.messages).includes('二通目A-C'));
+  // クリア
+  await page.click('#adoptedNote a');
+  const cleared = await page.evaluate(() => localStorage.getItem('reply_ai_adopted'));
+  check('17l. 採用履歴クリアできる', cleared === null);
+  // 旧形式(text)の応答でも壊れない(後方互換)
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ situation: 's', interest_level: 40,
+    replies: [{ text: '旧形式1', why: 'w' }, { text: '旧形式2', why: 'w' }, { text: '旧形式3', why: 'w' }], advice: 'アドバイスOLD' }) }] } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスOLD'));
+  check('17m. 旧形式(text)応答でも3案描画', (await page.$$('#replyResults .card')).length === 3 && (await page.textContent('#replyResults')).includes('旧形式1'));
 
   // --- 14. localStorage永続化 ---
   await page.reload();

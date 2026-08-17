@@ -36,6 +36,11 @@
   .card .num { font-size: .75rem; font-weight: 700; color: #e8506b; }
   .card .reply { font-size: 1rem; white-space: pre-wrap; margin: 4px 0 8px; }
   .card .why { font-size: .8rem; color: #888; margin-bottom: 8px; }
+  .bubbles { margin: 6px 0 8px; display: flex; flex-direction: column; gap: 6px; }
+  .bubbleRow { display: flex; align-items: flex-end; gap: 8px; }
+  .bubble { flex: 1; background: #8fe38a33; border: 1px solid #8fe38a66; border-radius: 14px 14px 4px 14px;
+    padding: 8px 12px; font-size: 1rem; white-space: pre-wrap; }
+  .card button.mini { font-size: .72rem; padding: 4px 8px; white-space: nowrap; }
   .card button { font-size: .8rem; padding: 6px 12px; border: 1px solid #8886; background: none;
     color: inherit; border-radius: 6px; cursor: pointer; }
   .analysisBox { border: 1px solid #8885; border-radius: 10px; padding: 12px 14px; margin: 12px 0; display: none; }
@@ -116,6 +121,9 @@
     <input type="radio" name="goal" id="g2" value="自然な流れでデート(食事やカフェ)に誘う"><label for="g2">🎯 デートに誘う</label>
     <input type="radio" name="goal" id="g3" value="返信が来なくなりかけているので、重くならずに会話を復活させる"><label for="g3">既読スルー対策</label>
     <input type="radio" name="goal" id="g4" value="マッチ直後の初回メッセージで返信率を最大化する"><label for="g4">初回メッセージ</label>
+    <input type="radio" name="goal" id="g5" value="デートの誘いにOKをもらえたので、日程・時間・場所をスムーズに確定させる"><label for="g5">📅 日程調整</label>
+    <input type="radio" name="goal" id="g6" value="デートの前日〜当日。リマインドや軽い一言で当日を盛り上げ、ドタキャンされない空気を作る"><label for="g6">デート前日・当日</label>
+    <input type="radio" name="goal" id="g7" value="デート後のお礼と、重くならずに次に繋げる一言"><label for="g7">デート後お礼</label>
   </div>
   <div class="chips">
     <input type="radio" name="tone" id="t0" value="auto" checked><label for="t0">✨ 自分の文体に合わせる</label>
@@ -129,6 +137,7 @@
   <textarea id="styleSample" style="min-height:70px;" placeholder="友達とのLINEなど、普段の自分が送った文をいくつか貼ると文体再現の精度が上がります
 例: まじか笑 それは行くしかないでしょ
 　　おつかれ〜 今日どうだった?"></textarea>
+  <p class="note" id="adoptedNote" style="margin:4px 0 0;"></p>
 </fieldset>
 
 <button class="primary" id="generate">返信案を3つ提案してもらう</button>
@@ -296,6 +305,31 @@ const SAMPLES = [
 自分 22:52: 普通くらいw ハイボールばっか飲んでる
 相手 22:53: 私もハイボール派〜🥃 一緒だ笑
 相手 22:54: 明日休みだから今日夜更かししちゃう笑`
+  },
+  {
+    label: "⑥ 誘いにOKもらった直後・日程調整(高脈・日程調整)",
+    goal: "g5",
+    profile: "26歳 メーカー事務 カレー屋巡り・ヨガ 土日休み",
+    style: "了解〜\nそれで大丈夫!\nおけ、じゃあそれで\n笑",
+    conversation:
+`自分: そういえば前言ってた神保町のカレー、今度一緒に行きません?笑
+相手: 行きたいです!!神保町のカレー気になってたので嬉しい🍛
+自分: おお、よかった笑 いつなら空いてます?
+相手: 来週なら土日どっちも大丈夫ですよ〜 〇〇さんは?
+自分: 俺も土日いけます!
+相手: じゃあどうしましょう?お昼とか?`
+  },
+  {
+    label: "⑦ 初デート後・その夜のお礼(高脈・デート後お礼)",
+    goal: "g7",
+    profile: "27歳 保険営業 韓国料理・サウナ・映画 話すのが好き",
+    style: "今日ありがと〜\nまじで楽しかったわ\nそれなw\nまた行こ",
+    conversation:
+`相手 21:12: 今日はありがとうございました!!無事帰れました〜
+相手 21:12: サムギョプサル美味しすぎましたね🥩 まだお腹いっぱいw
+自分 21:20: おつかれ!無事でよかった 俺もまだ腹パンパンw
+相手 21:21: あそこ絶対また行きたい笑 てか〇〇さん思ってたより全然喋る人でびっくりしました笑
+相手 21:22: 映画の話とかもっと聞きたかったな〜`
   }
 ];
 
@@ -452,10 +486,10 @@ const REPLY_SCHEMA = {
       items: {
         type: "object",
         properties: {
-          text: { type: "string", description: "そのまま送れる返信文。本人が打ったようにしか見えない自然な文" },
+          bubbles: { type: "array", items: { type: "string" }, description: "送信する吹き出し(メッセージ)を送る順に。1〜3個。LINEでは短い吹き出しを2〜3連投するのが自然な場面が多い。各要素はそのまま送れる文" },
           why:  { type: "string", description: "この返信が効く理由(1文・簡潔に)" }
         },
-        required: ["text", "why"],
+        required: ["bubbles", "why"],
         additionalProperties: false
       }
     },
@@ -496,6 +530,18 @@ const REPLY_SYSTEM = `あなたは日本のマッチングアプリの会話に�
 悪い例: 「ぜひ今度、一緒にカフェに行きましょう!いつがご都合よろしいですか?」
 良い例: 「そこ気になってたんで今度一緒に行きません?笑」
 
+# 吹き出しの分け方(bubbles)
+- リアルなLINEは1段落にまとめず、短い吹き出しを2〜3連投することが多い(例:「おつかれw」→「立ち飲みどこ行ったの」)。LINE移行後(スクショがLINE画面、会話に時刻・スタンプ・既読がある等)は連投を積極的に使う。マッチングアプリ内のメッセージは1通にまとめる傾向なので基本1吹き出し
+- 3案のうち1案以上は吹き出し数を変えて、テンポの違いを出す
+- 相手が1吹き出しで返してくるタイプなら、こちらも1〜2吹き出しに抑える(連投しすぎは圧になる)
+
+# LINEっぽさの細部
+- 文末に「。」を付けない(本人が付ける人なら本人に合わせる)。「!」の連打はしない
+- 相手が「おやすみ〜」「またね」など会話を締めに来ている時は、長文で引き止めず、短い一言(+スタンプ)で気持ちよく終わらせる案を含める。スタンプが最適な場面はadviceで「ここは短文+スタンプでOK」と伝える
+- 深夜帯(23時以降)は短め・軽め。「寝落ちする前に一言」のテンションで
+- 相手のプロフィールの年齢帯を参考に語彙を微調整する(20代前半は「w」「〜」が多く「!」が少なめ、30代は「笑」「!」寄り)。ただし本人の文体が分かる場合は本人優先
+- 相手の1通の長さを超えない。相手が長文なら少し長めでよいが、それでも本人の文体を崩さない
+
 # 3案の作り分け
 毎回、方向性の違う3案にする(例: ①共感+自己開示で深める ②軽いツッコミ/ユーモア ③一歩踏み込む・動かす)。ゴールが「デートに誘う」の場合は、少なくとも2案は会話に出た話題(店・食べ物・趣味)に紐づけた具体的で軽い誘いにする。相手のノリが良ければ曜日まで踏み込む案を1つ入れる。
 
@@ -503,6 +549,11 @@ const REPLY_SYSTEM = `あなたは日本のマッチングアプリの会話に�
 - 会話の文脈から誘う(唐突な「今度ご飯行きましょう」はNG)
 - 最初は軽く(「行こうよ」「行きません?」)。相手が乗ってから日程を詰める
 - 断られた・流された直後に誘い直さない
+
+# 日程調整・デート前後(ゴールに応じて)
+- 日程調整: 候補を2つ提示して選ばせる(「土曜の夜か日曜の昼どっちが空いてる?」)。店・場所はこちらが決めて提案する(「〇〇の近くにいい店あるからそこどう?」)。時間・場所・待ち合わせを1通ずつ確定させ、詰問調にしない。決まったら「じゃあ土曜19時に〇〇駅で!楽しみにしてる」で締める
+- デート前日・当日: リマインドは軽く一言(「明日よろしく〜」「〇〇駅の改札出たとこいるね」)。天気や服装の話題は自然。「楽しみ」は1回でいい、言い過ぎない
+- デート後お礼: その日のうちに、具体的に楽しかった点を1つ挙げてお礼(「今日ありがとう、あのカレー当たりだったな」)。次の誘いは会話中に出た話題に絡めて軽く(「今度言ってたサウナ行こ」)。重い告白調・長文の感想文はNG
 
 # 誠実さ(絶対)
 - 嘘の自己紹介・経歴・年齢の詐称は提案しない
@@ -532,10 +583,12 @@ async function runReply() {
   const partnerProfile = $('partnerProfile').value.trim();
   const extra = $('extra').value.trim();
   const styleSample = $('styleSample').value.trim();
+  const adopted = getAdopted();
 
   let userPrompt =
     `## 相手のプロフィール\n${partnerProfile || '(情報なし)'}\n\n` +
     (styleSample ? `## 本人の普段の文体サンプル(文体抽出の最優先材料にすること)\n${styleSample}\n\n` : '') +
+    (adopted.length ? `## 本人が過去に採用した返信(文体・テンポの参考。内容や話題は流用しない)\n${adopted.slice(-8).map(t => '- ' + t).join('\n')}\n\n` : '') +
     (convImages.length ? `## 会話(添付スクショ${convImages.length}枚を時系列順に読み取ること)\n` : '') +
     (conversation ? `## 会話(テキスト)\n${conversation}\n\n` : '\n') +
     `## 今回のゴール\n${goal}\n\n` +
@@ -553,7 +606,7 @@ async function runReply() {
   await withSpinner([$('generate'), $('regenerate')], async () => {
     const result = await callClaude(key, REPLY_SYSTEM, REPLY_SCHEMA, content);
     renderReplyResult(result);
-    lastReplies = lastReplies.concat(result.replies.map(r => r.text)).slice(-9);
+    lastReplies = lastReplies.concat(result.replies.map(r => joinBubbles(r))).slice(-9);
     $('regenerate').style.display = 'block';
   });
 }
@@ -566,7 +619,7 @@ function renderReplyResult(result) {
   $('replyAnalysis').style.display = 'block';
 
   $('replyResults').innerHTML = '';
-  result.replies.forEach((r, i) => $('replyResults').appendChild(makeCard(`案 ${i + 1}`, r.text, r.why)));
+  result.replies.forEach((r, i) => $('replyResults').appendChild(makeBubbleCard(`案 ${i + 1}`, normalizeBubbles(r), r.why)));
 
   $('replyAdvice').textContent = '🧭 ' + result.advice;
   $('replyAdvice').style.display = 'block';
@@ -677,6 +730,70 @@ function renderProfileResult(result) {
   $('profPhotoAdvice').textContent = '📷 写真アドバイス: ' + result.photo_advice;
   $('profPhotoAdvice').style.display = 'block';
   $('profAnalysis').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* ---------- 採用履歴(本人が📋コピーした返信をブラウザに記憶→文体学習に使う) ---------- */
+const ADOPTED_KEY = 'reply_ai_adopted';
+function getAdopted() {
+  try { const a = JSON.parse(localStorage.getItem(ADOPTED_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+  catch { return []; }
+}
+function addAdopted(text) {
+  const t = String(text || '').trim(); if (!t) return;
+  const a = getAdopted().filter(x => x !== t); a.push(t);
+  localStorage.setItem(ADOPTED_KEY, JSON.stringify(a.slice(-30)));
+  renderAdoptedNote();
+}
+function renderAdoptedNote() {
+  const n = getAdopted().length;
+  const el = $('adoptedNote');
+  el.innerHTML = '';
+  if (!n) { el.textContent = '📋コピーした返信は「本人が採用した文」としてこのブラウザに記憶され、次回から文体学習に使われます(0件)'; return; }
+  el.append(`✨ 採用履歴 ${n}件を文体学習に使用中 `);
+  const clr = document.createElement('a'); clr.href = '#'; clr.textContent = '[クリア]';
+  clr.addEventListener('click', (e) => { e.preventDefault(); localStorage.removeItem(ADOPTED_KEY); renderAdoptedNote(); });
+  el.appendChild(clr);
+}
+renderAdoptedNote();
+
+function normalizeBubbles(r) {
+  const b = Array.isArray(r.bubbles) ? r.bubbles.map(x => String(x).trim()).filter(Boolean) : [];
+  if (b.length) return b.slice(0, 3);
+  return [String(r.text || '').trim()].filter(Boolean);
+}
+function joinBubbles(r) { return normalizeBubbles(r).join('\n'); }
+
+function makeBubbleCard(label, bubbles, why) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  const num = document.createElement('div'); num.className = 'num';
+  num.textContent = label + (bubbles.length > 1 ? `(${bubbles.length}通に分けて送る)` : '');
+  card.appendChild(num);
+  const list = document.createElement('div'); list.className = 'bubbles';
+  bubbles.forEach((b, i) => {
+    const row = document.createElement('div'); row.className = 'bubbleRow';
+    const txt = document.createElement('div'); txt.className = 'bubble'; txt.textContent = b;
+    row.appendChild(txt);
+    if (bubbles.length > 1) {
+      const bb = document.createElement('button'); bb.className = 'mini'; bb.textContent = `${i + 1}通目をコピー`;
+      bb.addEventListener('click', () => { navigator.clipboard.writeText(b); addAdopted(b); bb.textContent = '✅'; setTimeout(() => { bb.textContent = `${i + 1}通目をコピー`; }, 1500); });
+      row.appendChild(bb);
+    }
+    list.appendChild(row);
+  });
+  card.appendChild(list);
+  const whyEl = document.createElement('div'); whyEl.className = 'why'; whyEl.textContent = '💡 ' + why;
+  card.appendChild(whyEl);
+  const btn = document.createElement('button');
+  btn.textContent = bubbles.length > 1 ? '📋 全部コピー(改行区切り)' : '📋 コピー';
+  btn.addEventListener('click', () => {
+    navigator.clipboard.writeText(bubbles.join('\n'));
+    bubbles.forEach(addAdopted);
+    btn.textContent = '✅ コピーしました';
+    setTimeout(() => { btn.textContent = bubbles.length > 1 ? '📋 全部コピー(改行区切り)' : '📋 コピー'; }, 1500);
+  });
+  card.appendChild(btn);
+  return card;
 }
 
 /* ---------- 共通UI部品 ---------- */
