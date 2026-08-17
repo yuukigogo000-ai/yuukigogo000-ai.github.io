@@ -65,6 +65,28 @@
       <h2 style="margin-top:0">C2PA署名の検証</h2>
       <div id="c2paBody"></div>
     </div>
+    <div class="card" id="pixelCard" style="display:none; border-color: var(--warn)">
+      <h2 style="margin-top:0">🧪 実験: 画素からのAI判定(参考値)</h2>
+      <p class="note" id="pixelIntro">メタデータではなく<b>画像そのもの</b>を学習済みモデルで判定します。ブラウザ内で動作し、画像は送信されません。
+        初回はモデル(<span id="pixelSize">約200MB</span>)を読み込みます。PC推奨。</p>
+      <div id="pixelControls">
+        <button id="pixelRun" class="secondary" style="margin-top:0">画素判定を実行する</button>
+        <label style="display:inline-block; margin:0 0 0 12px; font-weight:400; font-size:.85rem"><input type="checkbox" id="pixelAuto"> 次回から自動で実行</label>
+      </div>
+      <div id="pixelProgress" class="note" style="display:none"></div>
+      <div id="pixelResult" style="display:none">
+        <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:8px">
+          <span id="pixelScore" style="font-size:2rem; font-weight:800"></span>
+          <span id="pixelLabel" style="font-weight:700"></span>
+          <span class="note" id="pixelMeta"></span>
+        </div>
+        <div style="height:12px; border-radius:999px; background:var(--line); overflow:hidden; margin:8px 0">
+          <div id="pixelBar" style="height:100%; width:0%; background:var(--warn); transition:width .4s"></div>
+        </div>
+        <p class="note" id="pixelNote"></p>
+      </div>
+      <p class="note" id="pixelEval" style="margin-bottom:0"></p>
+    </div>
     <div class="card">
       <h2 style="margin-top:0">検出されたシグナル</h2>
       <div id="findings"></div>
@@ -109,6 +131,7 @@
   HONMONO プロジェクト — 画像はブラウザ外に送信されません。
 </div></footer>
 
+<script src="pixel.js"></script>
 <script>
 'use strict';
 
@@ -928,6 +951,64 @@ const VERDICTS = {
              body: 'メタデータが見つかりませんでした。SNS経由のファイルはメタデータが消えるため、可能なら元データで再チェックを。下の「経緯(推定)」も参考にしてください。' },
 };
 
+/* ========== 実験: 画素判定のUI ========== */
+let pixelCurrentFile = null;
+function setupPixel(file, res) {
+  const P = window.HonmonoPixel;
+  const card = $('pixelCard');
+  const isVideoFile = (file.type && file.type.startsWith('video/')) || /[.](mp4|mov|m4v)$/i.test(file.name);
+  if (!P || !P.available() || isVideoFile || res.format === '不明') { card.style.display = 'none'; return; }
+  pixelCurrentFile = file;
+  card.style.display = 'block';
+  $('pixelResult').style.display = 'none';
+  $('pixelProgress').style.display = 'none';
+  $('pixelControls').style.display = '';
+  if (P.cfg.totalBytes) $('pixelSize').textContent = '約' + Math.round(P.cfg.totalBytes / 1e6) + 'MB';
+  $('pixelEval').textContent = P.cfg.evalNote || '';
+  const auto = localStorage.getItem('honmono_pixel_auto') === '1';
+  $('pixelAuto').checked = auto;
+  if (auto) runPixel();
+}
+async function runPixel() {
+  const P = window.HonmonoPixel;
+  const file = pixelCurrentFile;
+  if (!P || !file) return;
+  $('pixelControls').style.display = 'none';
+  $('pixelProgress').style.display = 'block';
+  $('pixelProgress').textContent = 'モデルを読み込み中…';
+  try {
+    const r = await P.predict(file, (got, total) => {
+      $('pixelProgress').textContent = total
+        ? `モデルを読み込み中… ${Math.round(got / 1e6)} / ${Math.round(total / 1e6)} MB`
+        : `モデルを読み込み中… ${Math.round(got / 1e6)} MB`;
+    });
+    if (file !== pixelCurrentFile) return; // 別ファイルに切り替わっていたら捨てる
+    const pct = Math.round(r.pAI * 100);
+    const thr = P.cfg.threshold;
+    let label, cls, note;
+    if (r.pAI >= thr) { label = 'AI生成の可能性が高い'; cls = 'var(--bad)'; note = 'このモデルが「AI」と言った場合の的中率は評価セットで9割超ですが、誤りもあります。他のシグナルと合わせて判断してください。'; }
+    else if (r.pAI >= 0.5) { label = 'AI生成の疑いあり(弱)'; cls = 'var(--warn)'; note = '判定が割れる領域です。単独では根拠になりません。'; }
+    else { label = 'AI生成の兆候は薄い'; cls = 'var(--ok)'; note = '注意: このモデルは最新の生成器の画像を4割ほど見逃します。「AIではない」証明にはなりません。'; }
+    $('pixelScore').textContent = pct + '%';
+    $('pixelScore').style.color = cls;
+    $('pixelLabel').textContent = label;
+    $('pixelLabel').style.color = cls;
+    $('pixelBar').style.width = pct + '%';
+    $('pixelBar').style.background = cls;
+    $('pixelMeta').textContent = `AIらしさスコア / ${r.backend === 'webgpu' ? 'GPU' : 'CPU'} ${r.ms}ms / ${P.cfg.name}${P.cfg.version ? ' ' + P.cfg.version : ''}`;
+    $('pixelNote').textContent = note;
+    $('pixelProgress').style.display = 'none';
+    $('pixelResult').style.display = 'block';
+  } catch (e) {
+    $('pixelProgress').textContent = '画素判定を実行できませんでした: ' + (e && e.message || e);
+    $('pixelControls').style.display = '';
+  }
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const b = $('pixelRun'); if (b) b.addEventListener('click', runPixel);
+  const a = $('pixelAuto'); if (a) a.addEventListener('change', () => localStorage.setItem('honmono_pixel_auto', a.checked ? '1' : '0'));
+});
+
 async function handle(file) {
   $('result').style.display = 'block';
   $('fileName').textContent = file.name;
@@ -985,6 +1066,8 @@ async function handle(file) {
     $('xmpDetails').style.display = 'block';
     $('xmpRaw').textContent = res.xmp.slice(0, 20000);
   }
+
+  setupPixel(file, res);
 
   if (res.hasC2PA) {
     $('c2paCard').style.display = 'block';
