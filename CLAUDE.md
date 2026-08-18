@@ -28,6 +28,7 @@
 | `reply-ai/` | 上記の `npm run build` 出力(GitHub Pages 配信用・手書き禁止) |
 | `pachinko/` | パチスロ帝国(ホール経営シミュレーション) |
 | `honmono/` | AI検出・クリエイター向けツール群 |
+| `surf/` | 波チェック(サーフ予報・Open-Meteo を使用) |
 | `ui-workbench/` | UI 試作の置き場 |
 | `index.html` | JAN→楽天価格 取得ツール(個人用) |
 | `privacy.html` | サイト共通のプライバシーポリシー。各アプリからリンク済み |

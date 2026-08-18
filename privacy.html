@@ -56,7 +56,7 @@
   <ul>
     <li>このサイトに<b>サーバーはありません</b>。GitHub Pages が静的ファイルを配信しているだけで、入力内容を受け取る仕組みを持っていません。</li>
     <li>アクセス解析・広告・追跡用の Cookie は<b>一切入れていません</b>。</li>
-    <li>ただし<b>2つのツールだけは外部サービスへ直接データを送ります</b>(Replier → Anthropic / JAN→楽天価格 取得ツール → 楽天)。下で個別に説明します。</li>
+    <li>ただし<b>3つのツールだけは外部サービスへ直接データを送ります</b>(Replier → Anthropic / JAN→楽天価格 取得ツール → 楽天 / 波チェック → Open-Meteo)。下で個別に説明します。</li>
   </ul>
 </div>
 
@@ -96,6 +96,12 @@
       <td>入力した JAN コード、あなたが入力した楽天 API の applicationId / accessKey</td>
       <td>楽天(<code>openapi.rakuten.co.jp</code>)</td>
     </tr>
+    <tr>
+      <td>波チェック(サーフ予報)<br><code>/surf/</code></td>
+      <td class="yes">あり</td>
+      <td>表示するサーフスポットの緯度・経度と日付</td>
+      <td>Open-Meteo(<code>open-meteo.com</code> / <code>marine-api.open-meteo.com</code>)</td>
+    </tr>
     <tr><td>セトリズム<br><code>/band/</code></td><td class="no">なし</td><td>—</td><td>—</td></tr>
     <tr><td>パチスロ帝国<br><code>/pachinko/</code></td><td class="no">なし</td><td>—</td><td>—</td></tr>
     <tr><td>HONMONO<br><code>/honmono/</code></td><td class="no">なし</td><td>—</td><td>—</td></tr>
@@ -119,6 +125,16 @@
 <h3>JAN→楽天価格 取得ツール(トップページ)</h3>
 <p>入力した JAN コードと、あなたが入力した楽天 API の applicationId / accessKey を、<b>ブラウザから楽天のAPIへ直接</b>送って価格を取得します。当サイトのサーバーには送られません(サーバーがありません)。楽天側の取り扱いは
 <a href="https://privacy.rakuten.co.jp/" target="_blank" rel="noopener">楽天グループのプライバシーポリシー</a>に従います。</p>
+
+<h3>波チェック(サーフ予報)</h3>
+<p>波・風・潮の予報を取得するため、<b>表示するスポットの緯度・経度と日付</b>を
+<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a> の API へ
+<b>ブラウザから直接</b>送ります。当サイトのサーバーには送られません(サーバーがありません)。</p>
+<ul>
+  <li>送るのは<b>スポットの座標</b>であって、<b>あなたの現在地ではありません</b>。このアプリは端末の位置情報(GPS)を要求しません。</li>
+  <li>自分で追加したスポットの座標も、予報を取得するときに同じように送信されます。</li>
+  <li>送信先での取り扱いは <a href="https://open-meteo.com/en/terms" target="_blank" rel="noopener">Open-Meteo の規約</a>に従います。</li>
+</ul>
 
 <h3>セトリズム(バンド用セトリ設計)</h3>
 <p>外部への送信はありません。曲・セットリスト・録音はすべて端末内に保存されます。</p>
@@ -164,6 +180,7 @@
     </tr>
     <tr><td>パチスロ帝国</td><td><code>pachi-teikoku-save-v1</code></td><td>ゲームのセーブデータ</td></tr>
     <tr><td>HONMONO</td><td><code>honmono_pixel_auto</code></td><td>自動判定のオン/オフ設定</td></tr>
+    <tr><td>波チェック</td><td><code>sc.level</code> / <code>sc.spots</code></td><td>腕前の設定 / 自分で追加したスポット(名前と座標)</td></tr>
     <tr>
       <td>JAN→楽天価格</td>
       <td><code>rk_appId</code> / <code>rk_accessKey</code> / <code>rk_remember</code></td>
