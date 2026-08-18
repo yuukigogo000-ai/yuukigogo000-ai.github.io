@@ -17,3 +17,4 @@
 ## テスト
 - セトリズム: `tests/` は main に無い → `git checkout origin/claude/band-app-development-wgs7ly -- tests` → `cd tests && npm install && npm test`
 - Replier: `cd reply-ai-app && npm test`。見た目の変更はソース側 → `npm run build` → `reply-ai/` を検査
+- 波チェック(`surf/`): 基準線 `surf/docs/ui/baselines/surf.json`(旧UI・2026-08-18)/ 候補 `surf.v2-candidate.json`(G6 OK 後に昇格)・WO `surf/docs/ui/wo/WO_UI_surf_home.md`・状態フック `?state=loading|normal|empty|error|offline|flat` `&view=detail|settings`・テスト `cd surf/tests && npm install && npm test`(Playwright・API モック・通信なし)

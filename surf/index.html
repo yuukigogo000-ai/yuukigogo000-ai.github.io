@@ -2,189 +2,417 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<meta name="theme-color" content="#10131a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f9f9ff" media="(prefers-color-scheme: light)">
 <title>波チェック — 今日入れるか3秒判定</title>
 <meta name="description" content="サーフスポットの波・風・水温から「今日入れるか」とウェットスーツを自動判定">
 <style>
+/* ============================================================
+   トークン(UI_PLAYBOOK G3)— 見本 Stitch「Oceanic Precision」の computed 値と
+   M3 公式ライブラリ(seed 3b82f6)から生成した色ロール。生値はここにだけ書く。
+   ============================================================ */
 :root {
   color-scheme: light;
-  --surface-1: #fcfcfb;
-  --page: #f9f9f7;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted: #898781;
-  --grid: #e1e0d9;
-  --baseline: #c3c2b7;
-  --border: rgba(11,11,11,0.10);
-  --series-1: #2a78d6;
-  --series-1-soft: #cde2fb;
-  --status-good: #0ca30c;
-  --status-warning: #fab219;
-  --status-serious: #ec835a;
-  --status-critical: #d03b3b;
-  --chip-bg: #f0efec;
+  /* 面(M3 surface roles・light) */
+  --bg: #f9f9ff;
+  --surface-1: #f3f3fa;         /* surface-container-low */
+  --surface-2: #eeedf4;         /* surface-container      */
+  --surface-3: #e2e2e9;         /* surface-container-highest(スケルトン・シート) */
+  --outline: #c4c6d0;           /* outline-variant */
+  --scrim: rgba(0, 0, 0, 0.5);
+  /* 文字 */
+  --ink-1: #1a1b20;             /* on-surface */
+  --ink-2: #44474f;             /* on-surface-variant */
+  --ink-3: #5c5f68;             /* muted(4.5:1 を満たす) */
+  /* アクセント(primary) */
+  --primary: #445e91;
+  --on-primary: #ffffff;
+  --primary-container: #d8e2ff;
+  --on-primary-container: #001a42;
+  /* 判定色(4系統・M3 status 相当) fill=バッジ地 / text=文字・リング */
+  --rank-good-fill: #22c55e;   --rank-good-text: #166534;
+  --rank-fair-fill: #eab308;   --rank-fair-text: #854d0e;
+  --rank-meh-fill:  #f97316;   --rank-meh-text:  #b03a0a;
+  --rank-bad-fill:  #f87171;   --rank-bad-text:  #b91c1c;
+  --rank-ink: #10131a;          /* バッジ地の上の文字 */
+  --rank-none-text: #5c5f68;    /* 取得不可 */
+  /* 余白 */
+  --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
+  /* 文字階層(5種・M3 型スケール ⊆ 12/14/16/22/56) */
+  --fs-1: 12px; --fs-2: 14px; --fs-3: 16px; --fs-4: 22px; --fs-5: 56px;
+  --lh-1: 16px; --lh-2: 20px; --lh-3: 24px; --lh-4: 28px; --lh-5: 60px;
+  /* 角丸(3種) */
+  --r-1: 12px; --r-2: 28px; --r-3: 999px;
+  /* 寸法 */
+  --tap: 48px; --row-h: 72px; --bar-h: 64px;
+  --shadow-1: 0 -8px 24px rgba(0, 0, 0, 0.25);
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root {
     color-scheme: dark;
-    --surface-1: #1a1a19;
-    --page: #0d0d0d;
-    --text-primary: #ffffff;
-    --text-secondary: #c3c2b7;
-    --text-muted: #898781;
-    --grid: #2c2c2a;
-    --baseline: #383835;
-    --border: rgba(255,255,255,0.10);
-    --series-1: #3987e5;
-    --series-1-soft: #184f95;
-    --chip-bg: #383835;
+    --bg: #10131a;
+    --surface-1: #191b23;
+    --surface-2: #1d2027;
+    --surface-3: #272a31;
+    --outline: #424754;
+    --scrim: rgba(0, 0, 0, 0.6);
+    --ink-1: #e1e2ec;
+    --ink-2: #c2c6d6;
+    --ink-3: #8c909f;
+    --primary: #adc6ff;
+    --on-primary: #002e6a;
+    --primary-container: #2b4678;
+    --on-primary-container: #d8e2ff;
+    --rank-good-text: #22c55e;
+    --rank-fair-text: #eab308;
+    --rank-meh-text:  #f97316;
+    --rank-bad-text:  #f87171;
+    --rank-none-text: #8c909f;
+    --shadow-1: 0 -8px 24px rgba(0, 0, 0, 0.6);
   }
 }
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --surface-1: #1a1a19;
-  --page: #0d0d0d;
-  --text-primary: #ffffff;
-  --text-secondary: #c3c2b7;
-  --text-muted: #898781;
-  --grid: #2c2c2a;
-  --baseline: #383835;
-  --border: rgba(255,255,255,0.10);
-  --series-1: #3987e5;
-  --series-1-soft: #184f95;
-  --chip-bg: #383835;
-}
-* { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ============================================================
+   ベース
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-text-size-adjust: 100%; }
 body {
-  background: var(--page);
-  color: var(--text-primary);
+  background: var(--bg);
+  color: var(--ink-1);
   font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Sans", "Noto Sans JP", sans-serif;
-  line-height: 1.55;
+  font-size: var(--fs-3);
+  line-height: var(--lh-3);
   -webkit-font-smoothing: antialiased;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
-.wrap { max-width: 640px; margin: 0 auto; padding: 16px 12px 48px; }
-header.app { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
-header.app h1 { font-size: 1.35rem; letter-spacing: 0.01em; }
-header.app .date { color: var(--text-secondary); font-size: 0.85rem; }
-.sub { color: var(--text-muted); font-size: 0.78rem; margin-bottom: 14px; }
-.controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
-.levels { display: flex; gap: 6px; }
-.level-chip {
-  border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
-  border-radius: 999px; padding: 5px 12px; font-size: 0.82rem; cursor: pointer;
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+[hidden] { display: none !important; }
+svg { display: block; }
+.ico { width: 24px; height: 24px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+
+/* ============================================================
+   外殻: トップアプリバー(64px + safe area)
+   ============================================================ */
+.topbar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; gap: var(--sp-2);
+  min-height: 64px;
+  padding: calc(env(safe-area-inset-top) + var(--sp-2)) var(--sp-2) var(--sp-2) var(--sp-4);
+  background: var(--bg);
+  border-bottom: 1px solid var(--outline);
 }
-.level-chip.active { background: var(--series-1); border-color: var(--series-1); color: #fff; font-weight: 600; }
-.btn-refresh {
-  margin-left: auto; border: 1px solid var(--border); background: var(--surface-1); color: var(--text-secondary);
-  border-radius: 999px; padding: 5px 12px; font-size: 0.82rem; cursor: pointer;
+.topbar .ttl { flex: 1; min-width: 0; }
+.topbar h1 { font-size: var(--fs-4); line-height: var(--lh-4); font-weight: 700; letter-spacing: 0.01em; }
+.topbar .sub { display: block; font-size: var(--fs-1); line-height: var(--lh-1); color: var(--ink-3); }
+.topbar .name { font-size: var(--fs-4); line-height: var(--lh-4); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.icon-btn {
+  width: var(--tap); height: var(--tap); flex: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: var(--r-3); color: var(--ink-2);
 }
-.btn-refresh:active { opacity: 0.7; }
-.updated { width: 100%; color: var(--text-muted); font-size: 0.72rem; }
-.cards { display: flex; flex-direction: column; gap: 10px; }
-.card {
-  background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px;
-  padding: 14px 14px 12px; cursor: pointer;
+.icon-btn:active { background: var(--surface-3); }
+.icon-btn.spin .ico { animation: spin 0.9s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .icon-btn.spin .ico { animation: none; } }
+
+/* ============================================================
+   主画面
+   ============================================================ */
+.page { max-width: 640px; margin: 0 auto; padding: 0 var(--sp-4) calc(var(--sp-6) + env(safe-area-inset-bottom)); }
+.sec-h { font-size: var(--fs-2); line-height: var(--lh-2); font-weight: 500; color: var(--ink-3); margin: var(--sp-5) 0 var(--sp-2); }
+
+/* 状態1文(Surf Captain 04 の「色付き丸+1文」) */
+.status-line {
+  display: flex; align-items: flex-start; gap: var(--sp-2);
+  margin-top: var(--sp-4);
+  font-size: var(--fs-3); line-height: var(--lh-3); color: var(--ink-2);
 }
-.card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.spot-name { font-size: 1.02rem; font-weight: 700; }
-.spot-region { color: var(--text-muted); font-size: 0.72rem; font-weight: 400; margin-left: 6px; }
+.status-line .dot { flex: none; width: 10px; height: 10px; border-radius: var(--r-3); margin-top: 7px; background: var(--ink-3); }
+.status-line.good .dot { background: var(--rank-good-text); }
+.status-line.warn .dot { background: var(--rank-fair-text); }
+.status-line.bad  .dot { background: var(--rank-bad-text); }
+
+/* ヒーローカード(A案 / MICHIHIKI 01 / Shacked 04) */
+.hero {
+  display: block; width: 100%; text-align: left;
+  background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--r-1);
+  padding: var(--sp-4);
+}
+.hero:active { background: var(--surface-3); }
+.hero .head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--sp-3); }
+.hero .name { font-size: var(--fs-4); line-height: var(--lh-4); font-weight: 700; }
+.hero .region { font-size: var(--fs-1); line-height: var(--lh-1); color: var(--ink-3); margin-left: var(--sp-2); font-weight: 400; }
+.hero .advice { margin-top: var(--sp-2); font-size: var(--fs-3); line-height: var(--lh-3); color: var(--ink-1); }
+.tiles { display: grid; grid-template-columns: repeat(3, 1fr); margin-top: var(--sp-4); }
+.tile { padding: 0 var(--sp-3); border-left: 1px solid var(--outline); }
+.tile:first-child { padding-left: 0; border-left: 0; }
+.tile .v { font-size: var(--fs-4); line-height: var(--lh-4); font-weight: 700; color: var(--ink-1); }
+.tile .v small { font-size: var(--fs-2); font-weight: 400; color: var(--ink-2); margin-left: 2px; }
+.tile .s { font-size: var(--fs-2); line-height: var(--lh-2); color: var(--ink-2); }
+.tile .l { font-size: var(--fs-1); line-height: var(--lh-1); color: var(--ink-3); margin-top: var(--sp-1); }
+.hero .wear {
+  display: flex; align-items: center; gap: var(--sp-2);
+  margin-top: var(--sp-4); padding-top: var(--sp-3); border-top: 1px solid var(--outline);
+  font-size: var(--fs-3); line-height: var(--lh-3);
+}
+.hero .wear .ico { color: var(--ink-2); flex: none; }
+.hero .wear b { font-weight: 700; flex: 1; min-width: 0; }
+.hero .wear .win { font-size: var(--fs-2); color: var(--primary); white-space: nowrap; }
+
+/* 判定バッジ(語+点・pill) */
 .badge {
-  display: inline-flex; align-items: center; gap: 5px; border-radius: 8px; padding: 3px 9px;
-  font-size: 0.82rem; font-weight: 700; color: #fff; white-space: nowrap; flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: var(--sp-1);
+  padding: 4px 12px; border-radius: var(--r-3);
+  font-size: var(--fs-2); line-height: var(--lh-2); font-weight: 700;
+  color: var(--rank-ink); white-space: nowrap; flex: none;
 }
-.badge .b-icon { font-size: 0.9rem; line-height: 1; }
-.stats { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; font-size: 0.86rem; color: var(--text-secondary); }
-.stat b { color: var(--text-primary); font-weight: 700; }
-.stat .lab { color: var(--text-muted); font-size: 0.72rem; display: block; }
-.wind-arrow { display: inline-block; font-weight: 700; }
-.wet-line { margin-top: 8px; font-size: 0.82rem; color: var(--text-secondary); border-top: 1px solid var(--grid); padding-top: 8px; }
-.wet-line b { color: var(--text-primary); }
-.err-line { margin-top: 8px; font-size: 0.8rem; color: var(--status-critical); }
-.stale-line { margin-top: 6px; font-size: 0.72rem; color: var(--text-muted); }
-.detail { display: none; margin-top: 12px; border-top: 1px solid var(--grid); padding-top: 12px; cursor: default; }
-.card.open .detail { display: block; }
-.detail h3 { font-size: 0.82rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 6px; }
-.chart-box { position: relative; overflow-x: auto; }
-.chart-box svg { display: block; width: 100%; height: auto; min-width: 480px; }
-.tooltip {
-  position: absolute; pointer-events: none; display: none; z-index: 5;
-  background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
-  box-shadow: 0 4px 14px rgba(0,0,0,0.18); padding: 7px 10px; font-size: 0.75rem;
-  color: var(--text-secondary); white-space: nowrap;
+.badge.good { background: var(--rank-good-fill); }
+.badge.fair { background: var(--rank-fair-fill); }
+.badge.meh  { background: var(--rank-meh-fill); }
+.badge.bad  { background: var(--rank-bad-fill); }
+.badge.none { background: var(--surface-3); color: var(--rank-none-text); }
+
+/* 行リスト(FUNWAVES 02 の丸スコアバッジ + Apple 天気 01) */
+.rows { list-style: none; display: flex; flex-direction: column; gap: var(--sp-2); }
+.row {
+  display: flex; align-items: center; gap: var(--sp-3); width: 100%; text-align: left;
+  min-height: var(--row-h); padding: var(--sp-3) var(--sp-3) var(--sp-3) var(--sp-4);
+  background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--r-1);
 }
-.tooltip b { color: var(--text-primary); }
-.days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 12px; }
-.day-chip { background: var(--chip-bg); border-radius: 9px; padding: 7px 2px; text-align: center; }
-.day-chip .d-lab { font-size: 0.68rem; color: var(--text-muted); }
-.day-chip .d-val { font-size: 0.82rem; font-weight: 700; }
-.day-chip .d-score { font-size: 0.68rem; font-weight: 700; margin-top: 1px; }
-.detail-meta { margin-top: 12px; font-size: 0.8rem; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; }
-.add-spot { margin-top: 20px; background: var(--surface-1); border: 1px solid var(--border); border-radius: 14px; padding: 4px 14px; }
-.add-spot summary { cursor: pointer; padding: 10px 0; font-size: 0.9rem; color: var(--text-secondary); }
-.add-form { display: flex; flex-direction: column; gap: 8px; padding: 4px 0 14px; }
-.add-form label { font-size: 0.78rem; color: var(--text-muted); }
-.add-form input, .add-form select {
-  width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px;
-  background: var(--page); color: var(--text-primary); font-size: 0.9rem;
+.row:active { background: var(--surface-3); }
+.score-ring {
+  flex: none; width: 44px; height: 44px; border-radius: var(--r-3);
+  border: 2px solid var(--outline);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: var(--fs-3); font-weight: 700; color: var(--ink-1);
 }
-.add-form .hint { font-size: 0.72rem; color: var(--text-muted); }
-.add-form button {
-  align-self: flex-start; background: var(--series-1); color: #fff; border: none;
-  border-radius: 999px; padding: 8px 18px; font-size: 0.88rem; font-weight: 600; cursor: pointer;
+.score-ring.good { border-color: var(--rank-good-text); }
+.score-ring.fair { border-color: var(--rank-fair-text); }
+.score-ring.meh  { border-color: var(--rank-meh-text); }
+.score-ring.bad  { border-color: var(--rank-bad-text); }
+.score-ring.none { color: var(--rank-none-text); font-size: var(--fs-1); }
+.row .body { flex: 1; min-width: 0; }
+.row .t1 { font-size: var(--fs-3); line-height: var(--lh-3); font-weight: 700; display: flex; align-items: baseline; gap: var(--sp-2); min-width: 0; }
+.row .t1 .region { font-size: var(--fs-1); color: var(--ink-3); font-weight: 400; white-space: nowrap; }
+.row .t1 .rk { font-size: var(--fs-1); font-weight: 700; white-space: nowrap; }
+.row .t2 { display: block; font-size: var(--fs-2); line-height: var(--lh-2); color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rk.good { color: var(--rank-good-text); } .rk.fair { color: var(--rank-fair-text); }
+.rk.meh { color: var(--rank-meh-text); }   .rk.bad { color: var(--rank-bad-text); }
+.rk.none { color: var(--rank-none-text); }
+.row .chev { flex: none; color: var(--ink-3); }
+
+.btn-text {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: var(--tap); padding: 0 var(--sp-4); margin-top: var(--sp-3);
+  border-radius: var(--r-3); font-size: var(--fs-2); font-weight: 500; color: var(--primary);
 }
-.del-spot { background: none; border: none; color: var(--text-muted); font-size: 0.72rem; cursor: pointer; text-decoration: underline; margin-top: 8px; padding: 0; }
-footer { margin-top: 24px; font-size: 0.7rem; color: var(--text-muted); line-height: 1.7; }
-footer a { color: var(--text-muted); }
-.loading { color: var(--text-muted); font-size: 0.85rem; padding: 20px 0; text-align: center; }
+.btn-text:active { background: var(--surface-2); }
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; width: 100%;
+  min-height: var(--tap); padding: 0 var(--sp-5);
+  border-radius: var(--r-3); background: var(--primary); color: var(--on-primary);
+  font-size: var(--fs-3); font-weight: 700;
+}
+.btn-primary:active { opacity: 0.85; }
+.foot { margin-top: var(--sp-6); font-size: var(--fs-1); line-height: var(--lh-1); color: var(--ink-3); }
+.foot-link { display: inline-flex; align-items: center; min-height: var(--tap); color: var(--ink-2); font-size: var(--fs-2); }
+
+/* 読込中スケルトン */
+.skel { background: var(--surface-3); border-radius: var(--r-1); }
+.skel.hero-skel { height: 220px; }
+.skel.row-skel { height: var(--row-h); }
+.skel + .skel { margin-top: var(--sp-2); }
+
+/* 空 */
+.empty { text-align: center; color: var(--ink-2); padding: var(--sp-6) 0; }
+.empty p { margin-bottom: var(--sp-3); }
+
+/* ============================================================
+   詳細ページ(D案 / Surfline 06・09 / Shacked 04)
+   ============================================================ */
+.view { display: block; }
+.detail-hero { padding-top: var(--sp-4); }
+.detail-hero .big { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; }
+.detail-hero .num { font-size: var(--fs-5); line-height: var(--lh-5); font-weight: 700; letter-spacing: -0.02em; }
+.detail-hero .word { font-size: var(--fs-4); line-height: var(--lh-4); font-weight: 700; }
+.detail-hero .upd { margin-left: auto; font-size: var(--fs-1); color: var(--ink-3); }
+.detail-hero .advice { margin-top: var(--sp-2); font-size: var(--fs-3); line-height: var(--lh-3); color: var(--ink-1); }
+.detail-hero .stale { margin-top: var(--sp-2); font-size: var(--fs-1); color: var(--rank-fair-text); }
+.card { background: var(--surface-2); border: 1px solid var(--outline); border-radius: var(--r-1); padding: var(--sp-4); }
+.card + .card, .tiles-card + .card { margin-top: var(--sp-3); }
+.tiles-card { margin-top: var(--sp-4); }
+.tiles-card .tiles { margin-top: 0; }
+.card .cap { display: flex; align-items: center; gap: var(--sp-2); font-size: var(--fs-1); line-height: var(--lh-1); color: var(--ink-3); }
+.card .cap .ico { width: 20px; height: 20px; color: var(--ink-2); }
+.card .h { margin-top: var(--sp-1); font-size: var(--fs-4); line-height: var(--lh-4); font-weight: 700; }
+.card .n { margin-top: var(--sp-1); font-size: var(--fs-2); line-height: var(--lh-2); color: var(--ink-2); }
+.card.win { border-left: 4px solid var(--rank-good-text); }
+.card.win.fair { border-left-color: var(--rank-fair-text); }
+.card.win.meh { border-left-color: var(--rank-meh-text); }
+.card.win.bad { border-left-color: var(--rank-bad-text); }
+
+/* 48h チャート */
+.chart-head { display: flex; align-items: baseline; justify-content: space-between; }
+.chart-head .lg { font-size: var(--fs-1); color: var(--ink-3); }
+.chart-box { position: relative; margin-top: var(--sp-2); }
+.chart-box svg { width: 100%; height: auto; }
+.chart-box .grid { stroke: var(--outline); stroke-width: 1; }
+.chart-box .tick { fill: var(--ink-3); font-size: var(--fs-1); }
+.chart-box .tick.b { fill: var(--ink-2); font-weight: 700; }
+.chart-box .bar { fill: var(--primary); opacity: 0.4; }
+.chart-box .bar.off { opacity: 1; }
+.chart-box .bar.nodata { opacity: 0.12; }
+.chart-box .now { stroke: var(--ink-2); stroke-width: 1; stroke-dasharray: 3 3; }
+.chart-box .nowtag { fill: var(--ink-2); font-size: var(--fs-1); font-weight: 700; }
+.chart-box .hit { fill: transparent; }
+.tip {
+  position: absolute; pointer-events: none; display: none; z-index: 3;
+  background: var(--surface-3); border: 1px solid var(--outline); border-radius: var(--r-1);
+  padding: var(--sp-2) var(--sp-3); font-size: var(--fs-1); line-height: var(--lh-1); color: var(--ink-2); white-space: nowrap;
+}
+.tip b { color: var(--ink-1); }
+
+/* 週間 */
+.week { list-style: none; border-top: 1px solid var(--outline); }
+.week li { display: flex; align-items: center; min-height: var(--tap); border-bottom: 1px solid var(--outline); gap: var(--sp-3); }
+.week .d { flex: 1; font-size: var(--fs-2); color: var(--ink-2); }
+.week .d.today { color: var(--ink-1); font-weight: 700; }
+.week .h { flex: 1; text-align: center; font-size: var(--fs-3); font-weight: 700; }
+.week .rk { flex: 1; text-align: right; font-size: var(--fs-2); font-weight: 700; }
+.meta { margin-top: var(--sp-4); font-size: var(--fs-1); line-height: var(--lh-1); color: var(--ink-3); }
+.err-box { margin-top: var(--sp-4); }
+.err-box .cap { color: var(--rank-bad-text); }
+
+/* ============================================================
+   設定シート(E案 / M3 bottom sheet / MICHIHIKI 05)
+   ============================================================ */
+.scrim { position: fixed; inset: 0; z-index: 20; background: var(--scrim); }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 21;
+  max-height: 92dvh; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface-1); border-radius: var(--r-2) var(--r-2) 0 0; box-shadow: var(--shadow-1);
+  padding: var(--sp-2) var(--sp-4) calc(var(--sp-6) + env(safe-area-inset-bottom));
+}
+.sheet .inner { max-width: 640px; margin: 0 auto; }
+.sheet .handle { width: 32px; height: 4px; border-radius: var(--r-3); background: var(--outline); margin: 0 auto var(--sp-2); }
+.sheet .head { display: flex; align-items: center; justify-content: space-between; }
+.sheet h2 { font-size: var(--fs-4); line-height: var(--lh-4); font-weight: 700; }
+.levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+.level {
+  min-height: 72px; border-radius: var(--r-1); border: 1px solid var(--outline); background: var(--surface-2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+}
+.level b { font-size: var(--fs-3); }
+.level small { font-size: var(--fs-1); color: var(--ink-3); }
+.level[aria-pressed="true"] { border: 2px solid var(--primary); background: var(--primary-container); color: var(--on-primary-container); }
+.level[aria-pressed="true"] small { color: var(--on-primary-container); }
+.hint { margin-top: var(--sp-2); font-size: var(--fs-1); line-height: var(--lh-1); color: var(--ink-3); }
+.spots { list-style: none; border: 1px solid var(--outline); border-radius: var(--r-1); overflow: hidden; }
+.spots li { display: flex; align-items: center; min-height: 56px; padding-left: var(--sp-4); gap: var(--sp-2); background: var(--surface-2); }
+.spots li + li { border-top: 1px solid var(--outline); }
+.spots .nm { flex: 1; font-size: var(--fs-3); }
+.spots .nm small { color: var(--ink-3); font-size: var(--fs-1); margin-left: var(--sp-2); }
+.spots .tag { font-size: var(--fs-1); color: var(--ink-3); padding: 0 var(--sp-4); }
+.spots .del { min-width: var(--tap); min-height: 56px; padding: 0 var(--sp-4); font-size: var(--fs-2); color: var(--ink-2); }
+.spots .del:active { background: var(--surface-3); }
+.field { position: relative; margin-top: var(--sp-3); }
+.field label { position: absolute; top: -8px; left: 12px; padding: 0 4px; background: var(--surface-1); font-size: var(--fs-1); line-height: var(--lh-1); color: var(--ink-3); }
+.field input, .field select {
+  width: 100%; height: 56px; padding: 0 var(--sp-4);
+  border: 1px solid var(--outline); border-radius: var(--r-1); background: transparent;
+  color: var(--ink-1); font-size: var(--fs-3); line-height: var(--lh-3);
+}
+.field input:focus, .field select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 1px var(--primary) inset; }
+.field input::placeholder { color: var(--ink-3); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-3); }
+.two .field { margin-top: var(--sp-3); }
+.form-err { margin-top: var(--sp-2); font-size: var(--fs-2); color: var(--rank-bad-text); }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header class="app">
-    <h1>波チェック</h1>
-    <span class="date" id="today-date"></span>
-  </header>
-  <p class="sub">波・風・水温から「今日入れるか」とウェットスーツを自動判定</p>
+<div id="app">
 
-  <div class="controls">
-    <div class="levels" id="levels" role="group" aria-label="レベル選択"></div>
-    <button class="btn-refresh" id="refresh">↻ 更新</button>
-    <span class="updated" id="updated"></span>
-  </div>
+  <!-- ===== 主画面 ===== -->
+  <section id="view-home" class="view">
+    <header class="topbar">
+      <div class="ttl">
+        <h1>波チェック</h1>
+        <span class="sub" id="home-sub"></span>
+      </div>
+      <button class="icon-btn" id="btn-refresh" aria-label="更新">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>
+      </button>
+      <button class="icon-btn" id="btn-settings" aria-label="設定">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h10M18 7h2M4 12h2M10 12h10M4 17h12M20 17h0"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="12" r="2"/><circle cx="18" cy="17" r="2"/></svg>
+      </button>
+    </header>
+    <main class="page">
+      <p class="status-line" id="status-line" hidden><span class="dot"></span><span class="txt"></span></p>
+      <div id="home-body"></div>
+      <footer class="foot">データ: Open-Meteo（予測モデル値・非商用利用）。実測の波情報ではありません。海に入る判断は必ず現地の状況を確認し、自己責任で。<br><a class="foot-link" href="https://open-meteo.com/" target="_blank" rel="noopener">データの出典 Open-Meteo ↗</a></footer>
+    </main>
+  </section>
 
-  <div class="cards" id="cards"><div class="loading">読み込み中…</div></div>
+  <!-- ===== 詳細ページ ===== -->
+  <section id="view-detail" class="view" hidden>
+    <header class="topbar">
+      <button class="icon-btn" id="btn-back" aria-label="戻る">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+      </button>
+      <div class="ttl">
+        <div class="name" id="detail-name"></div>
+        <span class="sub" id="detail-region"></span>
+      </div>
+    </header>
+    <main class="page" id="detail-body"></main>
+  </section>
 
-  <details class="add-spot">
-    <summary>＋ スポットを追加</summary>
-    <div class="add-form">
-      <div>
-        <label for="f-name">スポット名</label>
-        <input id="f-name" placeholder="例: 千倉">
+  <!-- ===== 設定シート ===== -->
+  <div id="settings-scrim" class="scrim" hidden></div>
+  <div id="settings-sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+    <div class="inner">
+      <div class="handle" aria-hidden="true"></div>
+      <div class="head">
+        <h2 id="settings-title">設定</h2>
+        <button class="icon-btn" id="btn-close-settings" aria-label="閉じる">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6L6 18"/><path d="M6 6l12 12"/></svg>
+        </button>
       </div>
-      <div>
-        <label for="f-lat">緯度 / 経度（少し沖の海上を指定すると確実）</label>
-        <input id="f-lat" placeholder="緯度 例: 34.95" inputmode="decimal">
-        <input id="f-lon" placeholder="経度 例: 139.96" inputmode="decimal" style="margin-top:6px">
+
+      <h3 class="sec-h">あなたのレベル</h3>
+      <div class="levels" id="levels" role="group" aria-label="レベル選択"></div>
+      <p class="hint">レベルで理想の波高が変わり、スコアが変わります</p>
+
+      <h3 class="sec-h">スポット</h3>
+      <ul class="spots" id="spot-list"></ul>
+
+      <h3 class="sec-h">スポットを追加</h3>
+      <div class="field"><label for="f-name">スポット名</label><input id="f-name" placeholder="例: 千倉" autocomplete="off"></div>
+      <div class="two">
+        <div class="field"><label for="f-lat">緯度</label><input id="f-lat" placeholder="例: 34.95" inputmode="decimal" autocomplete="off"></div>
+        <div class="field"><label for="f-lon">経度</label><input id="f-lon" placeholder="例: 139.96" inputmode="decimal" autocomplete="off"></div>
       </div>
-      <div>
-        <label for="f-off">オフショアになる風向（陸→海に吹く風の方角）</label>
-        <select id="f-off"></select>
-        <p class="hint">例: 南向きのビーチなら「北」</p>
-      </div>
-      <button id="f-add">追加する</button>
+      <div class="field"><label for="f-off">オフショアになる風向(陸→海)</label><select id="f-off"></select></div>
+      <p class="hint">少し沖の海上の座標を指定すると確実です。南向きのビーチなら風向は「北」。</p>
+      <p class="form-err" id="f-err" hidden></p>
+      <div style="margin-top: var(--sp-4)"><button class="btn-primary" id="f-add">追加する</button></div>
+
+      <p class="hint" style="margin-top: var(--sp-5)">データ: Open-Meteo（予測モデル値・非商用）。実測ではありません。</p>
     </div>
-  </details>
-
-  <footer>
-    データ: <a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo</a>（予測モデル値・非商用利用）。
-    実測の波情報ではありません。海に入る判断は必ず現地の状況を確認し、自己責任で。
-  </footer>
+  </div>
 </div>
 
 <script>
 "use strict";
 
-/* ---------- 定数・設定 ---------- */
+/* ============================================================
+   ロジック(不変・旧実装から移植。スコア/ウェットスーツ/API/キャッシュ/保存キー)
+   ============================================================ */
 const MARINE_URL = "https://marine-api.open-meteo.com/v1/marine";
 const WEATHER_URL = "https://api.open-meteo.com/v1/forecast";
 // best_matchが日本沿岸で全nullを返す既知事象への保険として明示モデルへ順にフォールバック
@@ -205,17 +433,17 @@ const LEVELS = {
   advanced:     { label: "上級",   lo: 0.6, peak: 1.5, hi: 2.5 },
 };
 
+// しきい値・語は不変。tone は見た目のクラス名(判定色4系統)
 const RANKS = [
-  { min: 75, label: "最高",     icon: "◎", color: "var(--status-good)" },
-  { min: 60, label: "良い",     icon: "○", color: "var(--status-good)" },
-  { min: 45, label: "まあまあ", icon: "△", color: "var(--status-warning)" },
-  { min: 30, label: "微妙",     icon: "▽", color: "var(--status-serious)" },
-  { min: -1, label: "見送り",   icon: "✕", color: "var(--status-critical)" },
+  { min: 75, label: "最高",     tone: "good" },
+  { min: 60, label: "良い",     tone: "good" },
+  { min: 45, label: "まあまあ", tone: "fair" },
+  { min: 30, label: "微妙",     tone: "meh"  },
+  { min: -1, label: "見送り",   tone: "bad"  },
 ];
 
 const DIRS16 = ["北","北北東","北東","東北東","東","東南東","南東","南南東","南","南南西","南西","西南西","西","西北西","北西","北北西"];
 
-/* ---------- 状態 ---------- */
 const store = {
   get(key, fallback) {
     try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
@@ -230,15 +458,9 @@ const results = new Map(); // spotId -> {marine, weather, model, stale, error}
 
 function allSpots() { return PRESET_SPOTS.concat(customSpots); }
 
-/* ---------- ユーティリティ ---------- */
 function dirLabel(deg) { return DIRS16[Math.round(((deg % 360) + 360) % 360 / 22.5) % 16]; }
 function angleDiff(a, b) { const d = Math.abs(a - b) % 360; return d > 180 ? 360 - d : d; }
 function fmt1(v) { return v == null ? "–" : (Math.round(v * 10) / 10).toFixed(1); }
-
-/* 風の吹いていく向きに矢印を回す（気象の風向は「吹いてくる方角」） */
-function windArrowSpan(fromDeg) {
-  return `<span class="wind-arrow" style="transform:rotate(${Math.round(fromDeg + 180)}deg);display:inline-block">↑</span>`;
-}
 
 function windRelation(spot, windFromDeg, speed) {
   if (speed < 2) return { key: "glassy", label: "無風" };
@@ -249,7 +471,6 @@ function windRelation(spot, windFromDeg, speed) {
   return { key: "on", label: "オンショア" };
 }
 
-/* ---------- スコアリング ---------- */
 function sizeScore(h, lv) {
   if (h == null) return 0;
   const { lo, peak, hi } = LEVELS[lv];
@@ -288,7 +509,6 @@ function hourScore(spot, h, p, windFrom, windSpd, lv) {
 
 function rankOf(score) { return RANKS.find(r => score >= r.min); }
 
-/* ---------- ウェットスーツ判定 ---------- */
 function wetsuit(sst, airTemp, windSpd) {
   if (sst == null) return { gear: "水温データなし", note: "" };
   let gear;
@@ -305,7 +525,6 @@ function wetsuit(sst, airTemp, windSpd) {
   return { gear, note };
 }
 
-/* ---------- データ取得 ---------- */
 async function fetchJson(url) {
   const res = await fetch(url);
   if (!res.ok) throw new Error("HTTP " + res.status);
@@ -360,7 +579,6 @@ async function loadSpot(spot, force) {
   }
 }
 
-/* ---------- 解析 ---------- */
 function analyze(spot, r) {
   if (!r || r.error) return { error: r ? r.error : "no data" };
   const mh = r.marine.hourly, wh = r.weather.hourly, wd = r.weather.daily;
@@ -410,7 +628,7 @@ function analyze(spot, r) {
   });
 
   return {
-    hours, nowIdx, cur, best, suit, sstNow,
+    hours, nowIdx, cur, best, suit, sstNow, pool,
     todayScore: best ? best.score : 0,
     days: Array.from(byDay.entries()).slice(0, 7),
     sunrise: wd && wd.sunrise ? wd.sunrise[0] : null,
@@ -419,218 +637,425 @@ function analyze(spot, r) {
   };
 }
 
-/* ---------- 描画 ---------- */
-const cardsEl = document.getElementById("cards");
-
+/* ============================================================
+   表示用の補助(値の言い換えのみ・判定には使わない)
+   ============================================================ */
+const WEEK_JA = ["日","月","火","水","木","金","土"];
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function pad2(n) { return String(n).padStart(2, "0"); }
+function hhmm(d) { return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
+function toneOf(score) { return rankOf(score).tone; }
 
-function badgeHtml(score) {
-  const r = rankOf(score);
-  return `<span class="badge" style="background:${r.color}"><span class="b-icon">${r.icon}</span>${r.label} ${score}</span>`;
+// 波高 → 体の部位ことば(BCM 01 / MICHIHIKI 01 / Surfline 09「Chest to head」の日本流)
+function partLabel(h) {
+  if (h == null) return "–";
+  if (h < 0.2) return "フラット";
+  if (h < 0.35) return "スネ";
+  if (h < 0.5) return "ヒザ";
+  if (h < 0.65) return "モモ";
+  if (h < 0.8) return "コシ";
+  if (h < 1.0) return "ハラ";
+  if (h < 1.2) return "ムネ";
+  if (h < 1.4) return "カタ";
+  if (h < 1.7) return "アタマ";
+  if (h < 2.2) return "アタマ半";
+  return "ダブル";
+}
+function partRange(a) {
+  const hs = a.pool.map(o => o.h).filter(v => v != null);
+  if (!hs.length) return partLabel(a.cur.h);
+  const lo = partLabel(Math.min(...hs)), hi = partLabel(Math.max(...hs));
+  return lo === hi ? lo : `${lo}〜${hi}`;
+}
+// 狙い目の時間帯 = 日中プールでベストに近い(−8点以内)連続区間
+function bestWindow(a) {
+  if (!a.best || !a.pool.length) return null;
+  const bi = a.pool.indexOf(a.best);
+  const ok = o => o.score >= a.best.score - 8;
+  let s = bi, e = bi;
+  while (s > 0 && ok(a.pool[s - 1]) && a.pool[s - 1].i === a.pool[s].i - 1) s--;
+  while (e < a.pool.length - 1 && ok(a.pool[e + 1]) && a.pool[e + 1].i === a.pool[e].i + 1) e++;
+  const h1 = +a.pool[s].t.slice(11, 13), h2 = +a.pool[e].t.slice(11, 13);
+  if (h1 === h2) return `${h1}時ごろ`;
+  return h2 + 1 <= h1 ? `${h1}〜翌${h2 + 1}時` : `${h1}〜${h2 + 1}時`;
+}
+// 日中(6〜18時)のデータで判定できたか。夜はロジック上「次の6時間」で判定するため参考値と明示する
+function isNightPool(a) {
+  return !a.pool.some(o => { const h = +o.t.slice(11, 13); return h >= 6 && h <= 18; });
+}
+// 状態1文(値の言い換え。Surf Captain 04 / TWC 01 の「要約1文」)
+function advice(spot, a) {
+  if (!a.best) return "";
+  if (a.best.h != null && a.best.h < 0.25) return "ほぼフラット。今日は見送りが無難。";
+  const win = bestWindow(a);
+  const rel = a.best.windDir != null ? windRelation(spot, a.best.windDir, a.best.windSpd || 0) : null;
+  let w = "";
+  if (rel) {
+    const d = rel.key === "glassy" ? "" : dirLabel(a.best.windDir);
+    if (rel.key === "glassy") w = "風は弱く面はきれい。";
+    else if (rel.key === "off") w = `${d}風で面がきれい。`;
+    else if (rel.key === "cross") w = `${d}のサイド風。面はまずまず。`;
+    else if (rel.key === "crosson") w = `${d}のサイドオンで面はやや荒れ気味。`;
+    else w = `${d}のオンショアで面は荒れ気味。`;
+  }
+  const size = a.best.h != null && a.best.h > LEVELS[level].hi ? "サイズは大きめ。" : "";
+  const night = isNightPool(a) ? "夜間のため次の数時間の参考値。" : "";
+  return `${night}${win ? win + "が狙い目。" : ""}${w}${size}`;
+}
+function windText(o, spot) {
+  if (o.windDir == null || o.windSpd == null) return "風 –";
+  const rel = windRelation(spot, o.windDir, o.windSpd);
+  return `${dirLabel(o.windDir)} ${fmt1(o.windSpd)}m/s ${rel.label}`;
 }
 
-function chartSvg(a, spotId) {
-  const H = 190, W = 720, padL = 34, padB = 30, padT = 16;
+/* ============================================================
+   状態の再現フック(?state=…・本番=無指定では通らない・通信しない)
+   ============================================================ */
+const Q = new URLSearchParams(location.search);
+const FIX_STATE = Q.get("state");           // loading | normal | empty | error | offline | flat
+const FIX_VIEW = Q.get("view");             // detail | settings
+function makeTimes() {
+  const times = []; const d = new Date(); d.setHours(0, 0, 0, 0);
+  for (let i = 0; i < 24 * 7; i++) { times.push(`${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:00`); d.setHours(d.getHours() + 1); }
+  return times;
+}
+function fixtureFor(spot, flat) {
+  const times = makeTimes();
+  const prof = {
+    kugenuma:    { h: 0.80, amp: 0.15, p: 9, ws: 3, wd: 350, sst: 27.2, air: 29 },
+    hebara:      { h: 1.10, amp: 0.10, p: 8, ws: 9, wd: 135, sst: 28.1, air: 29 },
+    tsurigasaki: { h: 0.90, amp: 0.10, p: 7, ws: 6, wd: 90,  sst: 26.8, air: 28 },
+    katakai:     { h: 1.60, amp: 0.20, p: 6, ws: 8, wd: 90,  sst: 26.7, air: 28 },
+    irago:       { h: 0.20, amp: 0.02, p: 5, ws: 2, wd: 315, sst: 27.5, air: 30 },
+  }[spot.id] || { h: 0.7, amp: 0.1, p: 8, ws: 4, wd: spot.offshore, sst: 25, air: 27 };
+  const H = flat ? 0.15 : prof.h, AMP = flat ? 0.02 : prof.amp;
+  const days = [...new Set(times.map(t => t.slice(0, 10)))];
+  return {
+    marine: { hourly: {
+      time: times,
+      wave_height: times.map((_, i) => +(H + AMP * Math.sin((i - 8) / 5)).toFixed(2)),
+      wave_period: times.map(() => prof.p),
+      sea_surface_temperature: times.map(() => prof.sst),
+    } },
+    weather: { hourly: {
+      time: times,
+      wind_speed_10m: times.map((_, i) => +(prof.ws + (i % 24 >= 12 && i % 24 <= 16 ? 2 : 0)).toFixed(1)),
+      wind_direction_10m: times.map(() => prof.wd),
+      temperature_2m: times.map(() => prof.air),
+    }, daily: { time: days, sunrise: days.map(d => d + "T05:03"), sunset: days.map(d => d + "T18:26") } },
+    model: "gwam", error: null,
+  };
+}
+const FIX_KNOWN = ["loading", "normal", "empty", "error", "offline", "flat"];
+function applyFixture() {
+  if (!FIX_STATE || !FIX_KNOWN.includes(FIX_STATE)) return false; // 未知の値・無指定 = 本番経路
+  results.clear();
+  if (FIX_STATE === "loading") return true;
+  if (FIX_STATE === "empty") { customSpots = []; return true; }
+  for (const s of allSpots()) {
+    if (FIX_STATE === "error" && s.id === "irago") { results.set(s.id, { error: "all-null" }); continue; }
+    const f = fixtureFor(s, FIX_STATE === "flat");
+    if (FIX_STATE === "offline") { f.stale = true; f.staleAt = Date.now() - 3 * 3600 * 1000; }
+    results.set(s.id, f);
+  }
+  return true;
+}
+// empty 状態の再現用: プリセットは本番では消せない(標準)。フィクスチャでは一覧を空にする
+function visibleSpots() { return FIX_STATE === "empty" && FIX_KNOWN.includes(FIX_STATE) ? [] : allSpots(); }
+
+/* ============================================================
+   描画: 主画面
+   ============================================================ */
+const homeBody = document.getElementById("home-body");
+const statusLine = document.getElementById("status-line");
+let loading = false;
+let lastUpdated = null;
+
+const ICON_WEAR = '<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8l3 4-3 2v12H8V9L5 7l3-4z"/><path d="M8 3c0 2 1.5 3 4 3s4-1 4-3"/></svg>';
+const ICON_CHEV = '<svg class="ico chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+
+function setStatus(kind, text) {
+  if (!text) { statusLine.hidden = true; return; }
+  statusLine.hidden = false;
+  statusLine.className = "status-line " + (kind || "");
+  statusLine.querySelector(".txt").textContent = text;
+}
+
+function tilesHtml(a, spot, withDetail) {
+  const cur = a.cur;
+  const rel = cur.windDir != null ? windRelation(spot, cur.windDir, cur.windSpd || 0) : null;
+  return `<div class="tiles">
+    <div class="tile"><div class="v">${fmt1(cur.h)}<small>m</small></div><div class="s">${esc(partRange(a))}</div><div class="l">波高${withDetail && cur.p != null ? " · 周期" + Math.round(cur.p) + "秒" : ""}</div></div>
+    <div class="tile"><div class="v">${fmt1(cur.windSpd)}<small>m/s</small></div><div class="s">${cur.windDir != null ? esc(dirLabel(cur.windDir)) + " " : ""}${rel ? esc(rel.label) : "–"}</div><div class="l">風</div></div>
+    <div class="tile"><div class="v">${a.sstNow == null ? "–" : Math.round(a.sstNow)}<small>℃</small></div><div class="s">水温</div><div class="l">${withDetail && cur.air != null ? "気温" + Math.round(cur.air) + "℃" : ""}</div></div>
+  </div>`;
+}
+
+function renderHome() {
+  const spots = visibleSpots();
+  const now = new Date();
+  document.getElementById("home-sub").textContent =
+    `${now.getMonth() + 1}月${now.getDate()}日(${WEEK_JA[now.getDay()]})` + (lastUpdated ? ` 更新 ${hhmm(lastUpdated)}` : "");
+
+  if (!spots.length) {
+    setStatus("", "");
+    homeBody.innerHTML = `<div class="empty"><p>スポットがありません。</p><button class="btn-text" id="btn-add-empty">＋ スポットを追加</button></div>`;
+    document.getElementById("btn-add-empty").addEventListener("click", () => openSettings(true));
+    return;
+  }
+  if (loading && !spots.some(s => results.has(s.id))) {
+    setStatus("", "波・風・水温を取得しています…");
+    homeBody.innerHTML = `<h2 class="sec-h">今日のベスト</h2><div class="skel hero-skel" aria-hidden="true"></div>
+      <h2 class="sec-h">ほかのスポット</h2>${spots.slice(1).map(() => '<div class="skel row-skel" aria-hidden="true"></div>').join("")}`;
+    return;
+  }
+
+  const analyzed = spots.map(s => ({ spot: s, a: analyze(s, results.get(s.id)) }));
+  analyzed.sort((x, y) => (y.a.todayScore || 0) - (x.a.todayScore || 0));
+  const ok = analyzed.filter(x => !x.a.error);
+  const staleN = ok.filter(x => x.a.stale).length;
+  const errN = analyzed.length - ok.length;
+
+  // 状態1文
+  if (staleN === ok.length && ok.length) {
+    const t = ok[0].a.staleAt ? new Date(ok[0].a.staleAt) : null;
+    setStatus("warn", `オフラインのため${t ? " " + hhmm(t) + " 取得" : "前回"}のデータを表示中。更新で再取得します。`);
+  } else if (!ok.length) {
+    setStatus("bad", "データを取得できませんでした。電波の届く場所で「更新」を押してください。");
+  } else {
+    const top = ok[0];
+    const tone = toneOf(top.a.todayScore);
+    const flatAll = ok.every(x => x.a.best && x.a.best.h != null && x.a.best.h < 0.25);
+    if (flatAll) setStatus("bad", "どこもほぼフラット。今日は見送りが無難。");
+    else if (tone === "good") setStatus("good", `今日は${top.spot.name.replace(/海岸$/, "")}が一番良さそう。${errN ? `${errN}件は取得不可。` : ""}`);
+    else if (tone === "fair") setStatus("warn", `今日は${top.spot.name.replace(/海岸$/, "")}がまあまあ。無理せず判断を。${errN ? `${errN}件は取得不可。` : ""}`);
+    else setStatus("bad", `今日は良いスポットが見当たらない。${errN ? `${errN}件は取得不可。` : ""}`);
+  }
+
+  let html = "";
+  const [top, ...rest] = analyzed;
+  if (top && !top.a.error) {
+    const a = top.a, r = rankOf(a.todayScore);
+    const win = bestWindow(a);
+    html += `<h2 class="sec-h">今日のベスト</h2>
+    <button class="hero" data-open="${esc(top.spot.id)}" aria-label="${esc(top.spot.name)}の詳細を開く">
+      <div class="head"><div><span class="name">${esc(top.spot.name)}</span><span class="region">${esc(top.spot.region || "")}</span></div><span class="badge ${r.tone}">${r.label} ${a.todayScore}</span></div>
+      <p class="advice">${esc(advice(top.spot, a))}</p>
+      ${tilesHtml(a, top.spot, false)}
+      <div class="wear">${ICON_WEAR}<b>${esc(a.suit.gear)}</b>${win ? `<span class="win">狙い目 ${esc(win)}</span>` : ""}</div>
+    </button>`;
+    if (rest.length) html += `<h2 class="sec-h">ほかのスポット</h2>`;
+  } else {
+    html += `<h2 class="sec-h">スポット</h2>`;
+  }
+  const rowsSrc = (top && !top.a.error) ? rest : analyzed;
+  if (rowsSrc.length) {
+    html += `<ul class="rows">` + rowsSrc.map(({ spot, a }) => {
+      if (a.error) {
+        return `<li><button class="row" data-open="${esc(spot.id)}">
+          <span class="score-ring none">–</span>
+          <span class="body"><span class="t1">${esc(spot.name)}<span class="region">${esc(spot.region || "")}</span><span class="rk none">取得不可</span></span>
+          <span class="t2">座標が陸の格子の可能性。時間をおいて更新するか、少し沖の座標で登録し直してください</span></span>${ICON_CHEV}</button></li>`;
+      }
+      const r = rankOf(a.todayScore);
+      return `<li><button class="row" data-open="${esc(spot.id)}">
+        <span class="score-ring ${r.tone}">${a.todayScore}</span>
+        <span class="body"><span class="t1">${esc(spot.name)}<span class="region">${esc(spot.region || "")}</span><span class="rk ${r.tone}">${r.label}</span></span>
+        <span class="t2">${esc(partRange(a))} · ${esc(windText(a.cur, spot))} · ${a.sstNow == null ? "–" : Math.round(a.sstNow)}℃${a.stale ? " · キャッシュ" : ""}</span></span>${ICON_CHEV}</button></li>`;
+    }).join("") + `</ul>`;
+  }
+  html += `<button class="btn-text" id="btn-add-spot">＋ スポットを追加</button>`;
+  homeBody.innerHTML = html;
+  homeBody.querySelectorAll("[data-open]").forEach(el => el.addEventListener("click", () => { location.hash = "spot=" + el.dataset.open; }));
+  document.getElementById("btn-add-spot").addEventListener("click", () => openSettings(true));
+}
+
+/* ============================================================
+   描画: 詳細ページ
+   ============================================================ */
+const detailBody = document.getElementById("detail-body");
+
+function chartSvg(a, spot) {
   const seg = a.hours.slice(a.nowIdx, a.nowIdx + 48);
   if (!seg.length) return "";
+  const W = 358, H = 170, padL = 30, padR = 6, padT = 22, padB = 28; // 358 = 390 − 余白16×2(1単位≈1px で文字が縮まない)
   const maxH = Math.max(1, ...seg.map(o => o.h || 0)) * 1.15;
-  const bw = (W - padL - 6) / seg.length;
+  const bw = (W - padL - padR) / seg.length;
   const y = v => padT + (H - padT - padB) * (1 - v / maxH);
-  const gridVals = [0.5, 1, 1.5, 2, 2.5, 3].filter(v => v < maxH);
-  let maxIdx = 0;
-  seg.forEach((o, i) => { if ((o.h || 0) > (seg[maxIdx].h || 0)) maxIdx = i; });
-
-  const grid = gridVals.map(v =>
-    `<line x1="${padL}" x2="${W - 4}" y1="${y(v)}" y2="${y(v)}" stroke="var(--grid)" stroke-width="1"/>` +
-    `<text x="${padL - 5}" y="${y(v) + 3}" text-anchor="end" font-size="9" fill="var(--text-muted)">${v}</text>`
-  ).join("");
-
+  const ticks = [0.5, 1, 1.5, 2, 2.5, 3, 4].filter(v => v < maxH);
+  const grid = ticks.map(v => `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}"/><text class="tick" x="${padL - 5}" y="${(y(v) + 4).toFixed(1)}" text-anchor="end">${v}</text>`).join("");
   const bars = seg.map((o, i) => {
-    const h = o.h || 0;
-    const x = padL + i * bw;
-    const barH = Math.max(2, (H - padT - padB) * h / maxH);
-    const rel = o.windDir != null ? windRelation({ offshore: currentSpotOffshore(spotId) }, o.windDir, o.windSpd || 0) : null;
-    return `<rect data-i="${i}" x="${(x + 1).toFixed(1)}" y="${(H - padB - barH).toFixed(1)}" width="${Math.max(1, bw - 2).toFixed(1)}" height="${barH.toFixed(1)}" rx="3" fill="var(--series-1)" opacity="${o.h == null ? 0.15 : (rel && (rel.key === "off" || rel.key === "glassy") ? 1 : 0.55)}"/>`;
+    const h = o.h || 0, x = padL + i * bw;
+    const bh = Math.max(2, (H - padT - padB) * h / maxH);
+    const rel = o.windDir != null ? windRelation(spot, o.windDir, o.windSpd || 0) : null;
+    const cls = o.h == null ? "bar nodata" : (rel && (rel.key === "off" || rel.key === "glassy") ? "bar off" : "bar");
+    return `<rect class="${cls}" x="${(x + 0.5).toFixed(1)}" y="${(H - padB - bh).toFixed(1)}" width="${Math.max(1, bw - 1).toFixed(1)}" height="${bh.toFixed(1)}" rx="1"/>` +
+      `<rect class="hit" data-i="${i}" x="${x.toFixed(1)}" y="${padT}" width="${bw.toFixed(1)}" height="${H - padT - padB}"/>`;
   }).join("");
-
-  const xLabels = seg.map((o, i) => {
+  const labels = seg.map((o, i) => {
     const hr = +o.t.slice(11, 13);
     if (hr % 6 !== 0) return "";
     const day = +o.t.slice(8, 10);
-    return `<text x="${padL + i * bw + bw / 2}" y="${H - padB + 12}" text-anchor="middle" font-size="9" fill="var(--text-muted)">${hr === 0 ? day + "日" : hr + "時"}</text>`;
+    return `<text class="tick${hr === 0 ? " b" : ""}" x="${(padL + i * bw + bw / 2).toFixed(1)}" y="${H - padB + 15}" text-anchor="middle">${hr === 0 ? day + "日" : hr + "時"}</text>`;
   }).join("");
-
-  const arrows = seg.map((o, i) => {
-    const hr = +o.t.slice(11, 13);
-    if (hr % 4 !== 0 || o.windDir == null) return "";
-    return `<g transform="translate(${padL + i * bw + bw / 2},${H - padB + 22}) rotate(${Math.round(o.windDir + 180)})"><path d="M0,-4 L0,4 M0,-4 L-2.5,-1 M0,-4 L2.5,-1" stroke="var(--text-muted)" stroke-width="1.2" fill="none" stroke-linecap="round"/></g>`;
-  }).join("");
-
-  const mo = seg[maxIdx];
-  const maxLabel = mo && mo.h != null
-    ? `<text x="${padL + maxIdx * bw + bw / 2}" y="${y(mo.h) - 5}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--text-secondary)">${fmt1(mo.h)}m</text>`
-    : "";
-
-  return `<svg viewBox="0 0 ${W} ${H + 6}" role="img" aria-label="今後48時間の波高予測">
-    ${grid}
-    <line x1="${padL}" x2="${W - 4}" y1="${H - padB}" y2="${H - padB}" stroke="var(--baseline)" stroke-width="1"/>
-    ${bars}${maxLabel}${xLabels}${arrows}
-    <text x="${padL}" y="${padT - 6}" font-size="9" fill="var(--text-muted)">波高(m)・濃い色=オフショア/無風の時間帯・矢印=風向</text>
-  </svg>`;
+  const nowX = (padL + bw / 2).toFixed(1);
+  const nowLine = `<line class="now" x1="${nowX}" x2="${nowX}" y1="${padT - 4}" y2="${H - padB}"/><text class="nowtag" x="${padL + bw / 2 + 4}" y="${padT - 8}">今</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="今後48時間の波高予測">${grid}<line class="grid" x1="${padL}" x2="${W - padR}" y1="${H - padB}" y2="${H - padB}"/>${bars}${nowLine}${labels}</svg>`;
 }
 
-function currentSpotOffshore(spotId) {
-  const s = allSpots().find(x => x.id === spotId);
-  return s ? s.offshore : 0;
+function renderDetail(spotId) {
+  const spot = allSpots().find(s => s.id === spotId);
+  if (!spot) { location.hash = ""; return; }
+  document.getElementById("detail-name").textContent = spot.name;
+  document.getElementById("detail-region").textContent = spot.region || "";
+  const a = analyze(spot, results.get(spot.id));
+  if (a.error) {
+    detailBody.innerHTML = `<div class="card err-box"><div class="cap">取得不可</div><div class="h">データを取得できませんでした</div>
+      <p class="n">理由: ${esc(a.error)}。座標が陸の格子の可能性があります。時間をおいて更新するか、少し沖の海上の座標で登録し直してください。</p></div>
+      ${spot.custom ? `<button class="btn-text" data-del="${esc(spot.id)}">このスポットを削除</button>` : ""}`;
+    bindDelete(detailBody);
+    return;
+  }
+  const r = rankOf(a.todayScore), win = bestWindow(a), cur = a.cur;
+  const upd = lastUpdated ? hhmm(lastUpdated) : "";
+  const wk = a.days.map(([d, e], idx) => {
+    const dt = new Date(d + "T00:00:00"), rr = rankOf(e.best);
+    return `<li><span class="d${idx === 0 ? " today" : ""}">${idx === 0 ? "今日" : `${dt.getDate()} (${WEEK_JA[dt.getDay()]})`}</span><span class="h">${e.maxH == null ? "–" : fmt1(e.maxH)}m</span><span class="rk ${rr.tone}">${rr.label} ${e.best}</span></li>`;
+  }).join("");
+  detailBody.innerHTML = `
+    <div class="detail-hero">
+      <div class="big"><span class="num rk ${r.tone}">${a.todayScore}</span><span class="word rk ${r.tone}">${r.label}</span>${upd ? `<span class="upd">更新 ${upd}</span>` : ""}</div>
+      <p class="advice">${esc(advice(spot, a))}</p>
+      ${a.stale ? `<p class="stale">オフライン: ${a.staleAt ? hhmm(new Date(a.staleAt)) + " 取得" : "前回"}のデータを表示中</p>` : ""}
+    </div>
+    <div class="card tiles-card">${tilesHtml(a, spot, true)}</div>
+    <div class="card"><div class="cap">${ICON_WEAR}今日の服装</div><div class="h">${esc(a.suit.gear)}</div><p class="n">${a.sstNow == null ? "水温データなし" : `水温${Math.round(a.sstNow)}℃`}${cur.air != null ? `・気温${Math.round(cur.air)}℃` : ""}${a.suit.note ? "。" + esc(a.suit.note) : "。迷ったら薄めでOK"}</p></div>
+    <div class="card win ${r.tone}"><div class="cap">今日の狙い目</div><div class="h">${win ? esc(win) : "なし"}</div><p class="n">${a.best ? `${fmt1(a.best.h)}m · 周期${a.best.p == null ? "–" : Math.round(a.best.p)}秒 · ${esc(windText(a.best, spot))}` : ""}</p></div>
+    <h2 class="sec-h chart-head"><span>今後48時間の波高</span><span class="lg">濃い=オフショア/無風</span></h2>
+    <div class="chart-box"><div class="tip" role="tooltip"></div>${chartSvg(a, spot)}</div>
+    <h2 class="sec-h">週間（日中の最大波高とスコア）</h2>
+    <ul class="week">${wk}</ul>
+    <p class="meta">${a.sunrise ? `日の出 ${a.sunrise.slice(11)} / 日の入 ${a.sunset ? a.sunset.slice(11) : "–"} · ` : ""}波モデル ${esc(a.model || "-")} · 予測値のため実際の波と異なることがあります</p>
+    ${spot.custom ? `<button class="btn-text" data-del="${esc(spot.id)}">このスポットを削除</button>` : ""}`;
+  bindDelete(detailBody);
+  bindTooltip(detailBody.querySelector(".chart-box"), a, spot);
 }
 
-function dayChips(a) {
-  const weekJa = ["日", "月", "火", "水", "木", "金", "土"];
-  return a.days.map(([d, e]) => {
-    const dt = new Date(d + "T00:00:00");
-    const r = rankOf(e.best);
-    return `<div class="day-chip">
-      <div class="d-lab">${dt.getMonth() + 1}/${dt.getDate()}(${weekJa[dt.getDay()]})</div>
-      <div class="d-val">${e.maxH == null ? "–" : fmt1(e.maxH)}</div>
-      <div class="d-score" style="color:${r.color}">${r.icon}${e.best}</div>
-    </div>`;
-  }).join("");
-}
-
-function render() {
-  const spots = allSpots();
-  const analyzed = spots.map(s => ({ spot: s, a: analyze(s, results.get(s.id)) }));
-  analyzed.sort((x, y) => (y.a.todayScore || 0) - (x.a.todayScore || 0));
-
-  cardsEl.innerHTML = analyzed.map(({ spot, a }) => {
-    if (a.error) {
-      return `<div class="card" data-id="${esc(spot.id)}">
-        <div class="card-head"><span class="spot-name">${esc(spot.name)}<span class="spot-region">${esc(spot.region || "")}</span></span></div>
-        <p class="err-line">✕ データ取得不可（${esc(a.error)}）。座標が陸格子の可能性 — 少し沖の座標で登録し直すか、時間をおいて更新してください。</p>
-        ${spot.custom ? `<button class="del-spot" data-del="${esc(spot.id)}">このスポットを削除</button>` : ""}
-      </div>`;
-    }
-    const cur = a.cur;
-    const rel = cur.windDir != null ? windRelation(spot, cur.windDir, cur.windSpd || 0) : null;
-    const bestHr = a.best ? +a.best.t.slice(11, 13) : null;
-    return `<div class="card" data-id="${esc(spot.id)}">
-      <div class="card-head">
-        <span class="spot-name">${esc(spot.name)}<span class="spot-region">${esc(spot.region || "")}</span></span>
-        ${badgeHtml(a.todayScore)}
-      </div>
-      <div class="stats">
-        <span class="stat"><span class="lab">波高</span><b>${fmt1(cur.h)}m</b> <span style="color:var(--text-muted)">周期${cur.p == null ? "–" : Math.round(cur.p)}s</span></span>
-        <span class="stat"><span class="lab">風</span><b>${fmt1(cur.windSpd)}m/s</b> ${cur.windDir != null ? windArrowSpan(cur.windDir) + " " + dirLabel(cur.windDir) : ""} ${rel ? `<span style="color:var(--text-muted)">(${rel.label})</span>` : ""}</span>
-        <span class="stat"><span class="lab">水温</span><b>${fmt1(a.sstNow)}℃</b></span>
-        ${bestHr != null ? `<span class="stat"><span class="lab">狙い目</span><b>${bestHr}時ごろ</b></span>` : ""}
-      </div>
-      <div class="wet-line">🩱 <b>${esc(a.suit.gear)}</b>${a.suit.note ? `<br><span style="color:var(--text-muted)">${esc(a.suit.note)}</span>` : ""}</div>
-      ${a.stale ? `<p class="stale-line">⚠ 通信不可のため ${new Date(a.staleAt).toLocaleString("ja-JP")} 取得のキャッシュを表示中</p>` : ""}
-      <div class="detail">
-        <h3>今後48時間の波高</h3>
-        <div class="chart-box"><div class="tooltip"></div>${chartSvg(a, spot.id)}</div>
-        <h3 style="margin-top:12px">週間（日中の最大波高とスコア）</h3>
-        <div class="days">${dayChips(a)}</div>
-        <div class="detail-meta">
-          ${a.sunrise ? `<span>🌅 日の出 ${a.sunrise.slice(11)} / 日の入 ${a.sunset ? a.sunset.slice(11) : "–"}</span>` : ""}
-          <span style="color:var(--text-muted)">波モデル: ${esc(a.model || "-")} / 予測値のため実際の波と異なることがあります</span>
-          ${spot.custom ? `<button class="del-spot" data-del="${esc(spot.id)}">このスポットを削除</button>` : ""}
-        </div>
-      </div>
-    </div>`;
-  }).join("");
-
-  // カード開閉
-  cardsEl.querySelectorAll(".card").forEach(card => {
-    card.addEventListener("click", e => {
-      if (e.target.closest(".detail") || e.target.closest(".del-spot")) return;
-      card.classList.toggle("open");
-    });
+function bindTooltip(box, a, spot) {
+  if (!box) return;
+  const tip = box.querySelector(".tip");
+  const seg = a.hours.slice(a.nowIdx, a.nowIdx + 48);
+  const show = rect => {
+    const o = seg[+rect.dataset.i]; if (!o) return;
+    const rel = o.windDir != null ? windRelation(spot, o.windDir, o.windSpd || 0) : null;
+    tip.innerHTML = `<b>${o.t.slice(5, 10).replace("-", "/")} ${o.t.slice(11, 16)}</b><br>波 <b>${fmt1(o.h)}m</b> / 周期 ${o.p == null ? "–" : Math.round(o.p)}秒<br>風 ${fmt1(o.windSpd)}m/s ${o.windDir != null ? dirLabel(o.windDir) : ""}${rel ? "(" + rel.label + ")" : ""}<br>スコア <b>${o.score}</b>`;
+    tip.style.display = "block";
+    const br = box.getBoundingClientRect(), rr = rect.getBoundingClientRect();
+    let x = rr.left - br.left + 8; if (x + 160 > br.width) x = Math.max(0, x - 176);
+    tip.style.left = x + "px"; tip.style.top = "0px";
+  };
+  box.querySelectorAll("rect.hit").forEach(rect => {
+    rect.addEventListener("pointerenter", () => show(rect));
+    rect.addEventListener("pointerdown", () => show(rect));
   });
-  // 削除
-  cardsEl.querySelectorAll(".del-spot").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const id = btn.dataset.del;
-      customSpots = customSpots.filter(s => s.id !== id);
-      store.set("sc.spots", customSpots);
-      results.delete(id);
-      render();
-    });
-  });
-  // ツールチップ
-  cardsEl.querySelectorAll(".chart-box").forEach(box => {
-    const tip = box.querySelector(".tooltip");
-    const card = box.closest(".card");
-    const spot = allSpots().find(s => s.id === card.dataset.id);
-    const a = analyze(spot, results.get(spot.id));
-    if (a.error) return;
-    const seg = a.hours.slice(a.nowIdx, a.nowIdx + 48);
-    box.querySelectorAll("rect[data-i]").forEach(rect => {
-      const show = () => {
-        const o = seg[+rect.dataset.i];
-        if (!o) return;
-        const rel = o.windDir != null ? windRelation(spot, o.windDir, o.windSpd || 0) : null;
-        tip.innerHTML = `<b>${o.t.slice(5, 10).replace("-", "/")} ${o.t.slice(11, 16)}</b><br>波 <b>${fmt1(o.h)}m</b> / 周期 ${o.p == null ? "–" : Math.round(o.p)}s<br>風 ${fmt1(o.windSpd)}m/s ${o.windDir != null ? dirLabel(o.windDir) : ""}${rel ? `(${rel.label})` : ""}<br>スコア <b>${o.score}</b>`;
-        tip.style.display = "block";
-        const br = box.getBoundingClientRect(), rr = rect.getBoundingClientRect();
-        let x = rr.left - br.left + box.scrollLeft + 8;
-        if (x + 150 > box.scrollWidth) x -= 160;
-        tip.style.left = x + "px";
-        tip.style.top = Math.max(0, rr.top - br.top - 10) + "px";
-      };
-      rect.addEventListener("mouseenter", show);
-      rect.addEventListener("touchstart", show, { passive: true });
-    });
-    box.addEventListener("mouseleave", () => { tip.style.display = "none"; });
-  });
+  box.addEventListener("pointerleave", () => { tip.style.display = "none"; });
 }
 
-/* ---------- コントロール ---------- */
-function renderLevels() {
-  const el = document.getElementById("levels");
-  el.innerHTML = Object.entries(LEVELS).map(([k, v]) =>
-    `<button class="level-chip${k === level ? " active" : ""}" data-lv="${k}">${v.label}</button>`).join("");
-  el.querySelectorAll(".level-chip").forEach(b => b.addEventListener("click", () => {
-    level = b.dataset.lv;
-    store.set("sc.level", level);
-    renderLevels();
-    render();
+function bindDelete(root) {
+  root.querySelectorAll("[data-del]").forEach(btn => btn.addEventListener("click", () => {
+    const id = btn.dataset.del;
+    customSpots = customSpots.filter(s => s.id !== id);
+    store.set("sc.spots", customSpots);
+    results.delete(id);
+    if (location.hash.includes("spot=" + id)) location.hash = "";
+    renderAll();
   }));
 }
 
-document.getElementById("refresh").addEventListener("click", () => loadAll(true));
+/* ============================================================
+   設定シート
+   ============================================================ */
+const sheet = document.getElementById("settings-sheet");
+const scrim = document.getElementById("settings-scrim");
+function openSettings(focusAdd) {
+  renderSettings();
+  sheet.hidden = false; scrim.hidden = false;
+  document.body.style.overflow = "hidden";
+  if (focusAdd) setTimeout(() => { document.getElementById("f-name").scrollIntoView({ block: "center" }); document.getElementById("f-name").focus(); }, 50);
+}
+function closeSettings() { sheet.hidden = true; scrim.hidden = true; document.body.style.overflow = ""; }
+document.getElementById("btn-settings").addEventListener("click", () => openSettings(false));
+document.getElementById("btn-close-settings").addEventListener("click", closeSettings);
+scrim.addEventListener("click", closeSettings);
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !sheet.hidden) closeSettings(); });
 
+function renderSettings() {
+  document.getElementById("levels").innerHTML = Object.entries(LEVELS).map(([k, v]) =>
+    `<button class="level" data-lv="${k}" aria-pressed="${k === level}"><b>${v.label}</b><small>${v.lo}〜${v.hi}m</small></button>`).join("");
+  document.getElementById("levels").querySelectorAll(".level").forEach(b => b.addEventListener("click", () => {
+    level = b.dataset.lv; store.set("sc.level", level); renderSettings(); renderAll();
+  }));
+  document.getElementById("spot-list").innerHTML = allSpots().map(s =>
+    `<li><span class="nm">${esc(s.name)}<small>${esc(s.region || "")}</small></span>${s.custom ? `<button class="del" data-del="${esc(s.id)}">削除</button>` : `<span class="tag">標準</span>`}</li>`).join("");
+  document.getElementById("spot-list").querySelectorAll("[data-del]").forEach(btn => btn.addEventListener("click", () => {
+    customSpots = customSpots.filter(s => s.id !== btn.dataset.del); store.set("sc.spots", customSpots); results.delete(btn.dataset.del);
+    renderSettings(); renderAll();
+  }));
+}
 document.getElementById("f-off").innerHTML = DIRS16.map((d, i) => `<option value="${i * 22.5}">${d}</option>`).join("");
 document.getElementById("f-add").addEventListener("click", () => {
   const name = document.getElementById("f-name").value.trim();
   const lat = parseFloat(document.getElementById("f-lat").value);
   const lon = parseFloat(document.getElementById("f-lon").value);
   const off = parseFloat(document.getElementById("f-off").value);
+  const err = document.getElementById("f-err");
   if (!name || !isFinite(lat) || !isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-    alert("スポット名と正しい緯度・経度を入力してください");
-    return;
+    err.hidden = false; err.textContent = "スポット名と正しい緯度・経度を入力してください"; return;
   }
+  err.hidden = true;
   const spot = { id: "c" + Date.now(), name, region: "追加", lat, lon, offshore: off, custom: true };
-  customSpots.push(spot);
-  store.set("sc.spots", customSpots);
-  document.getElementById("f-name").value = "";
-  document.getElementById("f-lat").value = "";
-  document.getElementById("f-lon").value = "";
+  customSpots.push(spot); store.set("sc.spots", customSpots);
+  ["f-name", "f-lat", "f-lon"].forEach(id => { document.getElementById(id).value = ""; });
+  closeSettings();
   loadAll(false);
 });
 
-/* ---------- 起動 ---------- */
-async function loadAll(force) {
-  document.getElementById("updated").textContent = "取得中…";
-  await Promise.all(allSpots().map(s => loadSpot(s, force)));
-  document.getElementById("updated").textContent = "更新: " + new Date().toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
-  render();
+/* ============================================================
+   ルーティング(#spot=<id> = 詳細・戻るボタンで一覧へ)
+   ============================================================ */
+const viewHome = document.getElementById("view-home");
+const viewDetail = document.getElementById("view-detail");
+document.getElementById("btn-back").addEventListener("click", () => { if (history.length > 1) history.back(); else location.hash = ""; });
+function route() {
+  const m = /spot=([^&]+)/.exec(location.hash);
+  if (m) { viewHome.hidden = true; viewDetail.hidden = false; renderDetail(decodeURIComponent(m[1])); window.scrollTo(0, 0); }
+  else { viewDetail.hidden = true; viewHome.hidden = false; }
 }
+window.addEventListener("hashchange", route);
+function renderAll() { renderHome(); route(); }
 
-const now = new Date();
-document.getElementById("today-date").textContent =
-  `${now.getMonth() + 1}/${now.getDate()}(${["日","月","火","水","木","金","土"][now.getDay()]})`;
-renderLevels();
+/* ============================================================
+   起動
+   ============================================================ */
+const btnRefresh = document.getElementById("btn-refresh");
+btnRefresh.addEventListener("click", () => loadAll(true));
+async function loadAll(force) {
+  loading = true; btnRefresh.classList.add("spin"); btnRefresh.disabled = true;
+  renderAll();
+  if (applyFixture()) {
+    if (FIX_STATE !== "loading") { lastUpdated = new Date(); loading = false; btnRefresh.classList.remove("spin"); btnRefresh.disabled = false; }
+    renderAll();
+    if (FIX_VIEW === "detail" && FIX_STATE !== "loading" && FIX_STATE !== "empty") {
+      const spots = visibleSpots(); const best = spots.map(s => ({ s, a: analyze(s, results.get(s.id)) })).filter(x => !x.a.error).sort((x, y) => y.a.todayScore - x.a.todayScore)[0];
+      location.hash = "spot=" + (best ? best.s.id : spots[0].id);
+    }
+    if (FIX_VIEW === "settings") openSettings(false);
+    return;
+  }
+  await Promise.all(allSpots().map(s => loadSpot(s, force)));
+  lastUpdated = new Date(); loading = false; btnRefresh.classList.remove("spin"); btnRefresh.disabled = false;
+  renderAll();
+}
 loadAll(false);
 </script>
 </body>
