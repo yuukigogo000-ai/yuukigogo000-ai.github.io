@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>おじさん健康手帳</title>
+<title>カラダ日報</title>
 <style>
   :root {
     color-scheme: light dark;
@@ -129,7 +129,7 @@
 </head>
 <body>
 
-<h1>🍺 おじさん健康手帳 💪</h1>
+<h1>🍺 カラダ日報 💪</h1>
 <p class="tagline">対象:おじさん限定。メタボ・痛風・γ-GTPと静かに戦う人のための記録帳。データはこのブラウザの中だけに保存。</p>
 <p class="senryu" id="senryu"></p>
 
@@ -859,13 +859,13 @@ $("exportBtn").addEventListener("click", () => {
     const out = { ...r, alc_g: alcGrams(r), drinks: drinkCount(r) };
     lines.push(CSV_COLS.map(c => csvEscape(out[c])).join(","));
   }
-  downloadCsv("おじさん健康手帳_日次_" + todayISO() + ".csv", lines);
+  downloadCsv("カラダ日報_日次_" + todayISO() + ".csv", lines);
 });
 $("exportCheckupBtn").addEventListener("click", () => {
   const cols = ["date", ...CHK_METRICS.map(m => m.key)];
   const lines = [cols.join(",")];
   for (const c of checkups) lines.push(cols.map(k => csvEscape(c[k])).join(","));
-  downloadCsv("おじさん健康手帳_健診_" + todayISO() + ".csv", lines);
+  downloadCsv("カラダ日報_健診_" + todayISO() + ".csv", lines);
 });
 $("importBtn").addEventListener("click", () => $("importFile").click());
 $("importFile").addEventListener("change", ev => {
