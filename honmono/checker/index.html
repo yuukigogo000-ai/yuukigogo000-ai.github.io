@@ -136,11 +136,11 @@
 window.HONMONO_PIXEL_CONFIG = {
   enabled: true,
   name: 'HONMONO自前モデル',
-  version: 'v3 (2026-08-18)',
-  parts: ['../vendor/models/honmono_v3_int8.onnx.part1', '../vendor/models/honmono_v3_int8.onnx.part2'],
-  totalBytes: 90283574,
-  threshold: 0.95,
-  evalNote: '実測(学習に一切使っていない外部545枚): 一般の写真では実写をAIと誤判定 0.4%・AI画像の検出 70%・AUC 0.95。ただし顔だけを大きく写した写真は苦手で、実在の人の顔を約10%誤判定します。2025年世代の生成器(Seedream 4 / Gemini 2.5 / FLUX Pro 等)の検出は61%。学習データは商用利用可のものだけを使用。'
+  version: 'v3.1 (2026-08-19)',
+  parts: ['../vendor/models/honmono_v31_int8.onnx.part1', '../vendor/models/honmono_v31_int8.onnx.part2'],
+  totalBytes: 90283577,
+  threshold: 0.8,
+  evalNote: '実測(学習に一切使っていない外部545枚): 実写をAIと誤判定 1.8%・AI画像の検出 70%。2025年世代の生成器(Seedream 4 / Gemini 2.5 / FLUX Pro 等)の検出は63%。人物の顔で別に測った615枚では、実在の人の顔の誤判定 1.1%・AI生成の顔の検出 92%。学習データは商用利用可のものだけを使用。'
 };
 </script>
 <script src="pixel.js"></script>
@@ -998,8 +998,8 @@ async function runPixel() {
     const pct = Math.round(r.pAI * 100);
     const thr = P.cfg.threshold;
     let label, cls, note;
-    if (r.pAI >= thr) { label = 'AI生成の可能性が高い'; cls = 'var(--bad)'; note = 'このモデルが「AI」と言った場合の的中率は外部評価で約97%です。ただし顔だけを大きく写した写真では、実在の人でもAIと判定してしまうことが約10%あります(実測)。他のシグナルと合わせて判断してください。'; }
-    else if (r.pAI >= 0.5) { label = 'AI生成の疑いあり(弱)'; cls = 'var(--warn)'; note = '判定が割れる領域です(この帯では実写も混ざります)。単独では根拠になりません。'; }
+    if (r.pAI >= thr) { label = 'AI生成の可能性が高い'; cls = 'var(--bad)'; note = 'このモデルが「AI」と言った場合の的中率は外部評価で約97%です。ただし誤りもあります(実在の人の顔写真を誤判定する割合は実測1.1%、古いGAN風に切り取られた顔では5%)。他のシグナルと合わせて判断してください。'; }
+    else if (r.pAI >= 0.5) { label = 'AI生成の疑いあり(弱)'; cls = 'var(--warn)'; note = '判定が割れる領域です。単独では根拠になりません。'; }
     else { label = 'AI生成の兆候は薄い'; cls = 'var(--ok)'; note = '注意: このモデルはAI画像の約3割(2025年世代の生成器は約4割)を見逃します。「AIではない」証明にはなりません。'; }
     $('pixelScore').textContent = pct + '%';
     $('pixelScore').style.color = cls;

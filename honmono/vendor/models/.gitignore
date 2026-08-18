@@ -2,4 +2,4 @@
 *.part*
 *.onnx
 # 自前学習モデル(HONMONO v3)は同梱する
-!honmono_v3_int8.onnx.part*
+!honmono_v31_int8.onnx.part*
