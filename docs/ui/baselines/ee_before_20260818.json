@@ -1,0 +1,578 @@
+{
+  "name": "ee",
+  "path": "/expectation-explorer.html",
+  "state": null,
+  "at": "2026-08-18T11-14-42-524Z",
+  "mutate": false,
+  "fixed_conditions": {
+    "viewports": [
+      "android-s 360x800",
+      "iphone 390x844"
+    ],
+    "schemes": [
+      "light",
+      "dark"
+    ],
+    "TAP_MIN": 44,
+    "INPUT_FONT_MIN": 16
+  },
+  "hard": {
+    "console_errors": 0,
+    "overflow_x": false,
+    "input_font_small": 0,
+    "external_font": false,
+    "uses_100vh": false
+  },
+  "metric": {
+    "tap_small": 16,
+    "contrast_low": 8,
+    "distinct_font_sizes": 10,
+    "distinct_radii": 3,
+    "distinct_text_colors": 4,
+    "distinct_bg_colors": 3,
+    "css_raw_hex_outside_root": 2,
+    "css_font_size_decl_distinct": 13,
+    "css_radius_decl_distinct": 6
+  },
+  "info": {
+    "uses_safe_area": false,
+    "uses_dvh": false,
+    "viewport_fit_cover": false,
+    "has_manifest": false,
+    "registers_sw_in_html": false,
+    "sw_registered": false,
+    "contrast_unknown": 0,
+    "interactive_count": 17,
+    "title": "期待値エクスプローラー"
+  },
+  "runs": [
+    {
+      "viewport": "android-s",
+      "scheme": "light",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "android-s_light.png",
+      "tap_small": [
+        {
+          "el": "button.active \"① 前提\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "button \"② 選択肢\"",
+          "w": 99,
+          "h": 41
+        },
+        {
+          "el": "button \"③ 俯瞰\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "button \"④ 感度\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "input#p-lumpSumMax",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-monthlyBudget",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-monthlyHours",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-age",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-activeYears",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-maxLoss",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-livingCost",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-discountRate",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-parallelMax",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "button#exportJson.ghost \"JSONエクスポート\"",
+          "w": 144,
+          "h": 34
+        },
+        {
+          "el": "button#importJson.ghost \"JSONインポート\"",
+          "w": 130,
+          "h": 34
+        },
+        {
+          "el": "button#wipeAll.ghost \"全データ削除\"",
+          "w": 108,
+          "h": 34
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 10,
+      "distinct_radii": 3,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 3,
+      "contrast_low": [
+        {
+          "el": "button.active \"① 前提\"",
+          "ratio": 4.42,
+          "need": 4.5,
+          "fontSize": 15.2
+        },
+        {
+          "el": "p.note \"すべての選択肢はこの前提と照合されます。金額の単位は万円です\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "b \"万円\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "div.t-label \"収入ゼロで耐えられる期間\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "div.t-label \"年間で張れる時間\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "div.t-label \"残り活動年数\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "p.note \"サンプルの選択肢（転職・資格・積立増額）を入れて、まず俯瞰と\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "button#loadSample.primary \"サンプルを入れてみる\"",
+          "ratio": 4.42,
+          "need": 4.5,
+          "fontSize": 16
+        }
+      ],
+      "contrast_unknown": 0,
+      "interactive_count": 17,
+      "title": "期待値エクスプローラー",
+      "sw_registered": false
+    },
+    {
+      "viewport": "android-s",
+      "scheme": "dark",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "android-s_dark.png",
+      "tap_small": [
+        {
+          "el": "button.active \"① 前提\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "button \"② 選択肢\"",
+          "w": 99,
+          "h": 41
+        },
+        {
+          "el": "button \"③ 俯瞰\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "button \"④ 感度\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "input#p-lumpSumMax",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-monthlyBudget",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-monthlyHours",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-age",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-activeYears",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-maxLoss",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-livingCost",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-discountRate",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "input#p-parallelMax",
+          "w": 140,
+          "h": 39
+        },
+        {
+          "el": "button#exportJson.ghost \"JSONエクスポート\"",
+          "w": 144,
+          "h": 34
+        },
+        {
+          "el": "button#importJson.ghost \"JSONインポート\"",
+          "w": 130,
+          "h": 34
+        },
+        {
+          "el": "button#wipeAll.ghost \"全データ削除\"",
+          "w": 108,
+          "h": 34
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 10,
+      "distinct_radii": 3,
+      "distinct_text_colors": 3,
+      "distinct_bg_colors": 3,
+      "contrast_low": [
+        {
+          "el": "button.active \"① 前提\"",
+          "ratio": 3.64,
+          "need": 4.5,
+          "fontSize": 15.2
+        },
+        {
+          "el": "button#loadSample.primary \"サンプルを入れてみる\"",
+          "ratio": 3.64,
+          "need": 4.5,
+          "fontSize": 16
+        }
+      ],
+      "contrast_unknown": 0,
+      "interactive_count": 17,
+      "title": "期待値エクスプローラー",
+      "sw_registered": false
+    },
+    {
+      "viewport": "iphone",
+      "scheme": "light",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "iphone_light.png",
+      "tap_small": [
+        {
+          "el": "button.active \"① 前提\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "button \"② 選択肢\"",
+          "w": 99,
+          "h": 41
+        },
+        {
+          "el": "button \"③ 俯瞰\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "button \"④ 感度\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "input#p-lumpSumMax",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-monthlyBudget",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-monthlyHours",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-age",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-activeYears",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-maxLoss",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-livingCost",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-discountRate",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-parallelMax",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "button#exportJson.ghost \"JSONエクスポート\"",
+          "w": 144,
+          "h": 34
+        },
+        {
+          "el": "button#importJson.ghost \"JSONインポート\"",
+          "w": 130,
+          "h": 34
+        },
+        {
+          "el": "button#wipeAll.ghost \"全データ削除\"",
+          "w": 108,
+          "h": 34
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 10,
+      "distinct_radii": 3,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 3,
+      "contrast_low": [
+        {
+          "el": "button.active \"① 前提\"",
+          "ratio": 4.42,
+          "need": 4.5,
+          "fontSize": 15.2
+        },
+        {
+          "el": "p.note \"すべての選択肢はこの前提と照合されます。金額の単位は万円です\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "b \"万円\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "div.t-label \"収入ゼロで耐えられる期間\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "div.t-label \"年間で張れる時間\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "div.t-label \"残り活動年数\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "p.note \"サンプルの選択肢（転職・資格・積立増額）を入れて、まず俯瞰と\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "button#loadSample.primary \"サンプルを入れてみる\"",
+          "ratio": 4.42,
+          "need": 4.5,
+          "fontSize": 16
+        }
+      ],
+      "contrast_unknown": 0,
+      "interactive_count": 17,
+      "title": "期待値エクスプローラー",
+      "sw_registered": false
+    },
+    {
+      "viewport": "iphone",
+      "scheme": "dark",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "iphone_dark.png",
+      "tap_small": [
+        {
+          "el": "button.active \"① 前提\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "button \"② 選択肢\"",
+          "w": 99,
+          "h": 41
+        },
+        {
+          "el": "button \"③ 俯瞰\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "button \"④ 感度\"",
+          "w": 84,
+          "h": 41
+        },
+        {
+          "el": "input#p-lumpSumMax",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-monthlyBudget",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-monthlyHours",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-age",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-activeYears",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-maxLoss",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-livingCost",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-discountRate",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "input#p-parallelMax",
+          "w": 155,
+          "h": 39
+        },
+        {
+          "el": "button#exportJson.ghost \"JSONエクスポート\"",
+          "w": 144,
+          "h": 34
+        },
+        {
+          "el": "button#importJson.ghost \"JSONインポート\"",
+          "w": 130,
+          "h": 34
+        },
+        {
+          "el": "button#wipeAll.ghost \"全データ削除\"",
+          "w": 108,
+          "h": 34
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 10,
+      "distinct_radii": 3,
+      "distinct_text_colors": 3,
+      "distinct_bg_colors": 3,
+      "contrast_low": [
+        {
+          "el": "button.active \"① 前提\"",
+          "ratio": 3.64,
+          "need": 4.5,
+          "fontSize": 15.2
+        },
+        {
+          "el": "button#loadSample.primary \"サンプルを入れてみる\"",
+          "ratio": 3.64,
+          "need": 4.5,
+          "fontSize": 16
+        }
+      ],
+      "contrast_unknown": 0,
+      "interactive_count": 17,
+      "title": "期待値エクスプローラー",
+      "sw_registered": false
+    }
+  ],
+  "verdict": "BASELINE",
+  "regressions": [],
+  "accepted": [],
+  "hard_fails": []
+}

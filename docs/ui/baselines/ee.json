@@ -1,0 +1,132 @@
+{
+  "name": "ee",
+  "path": "/expectation-explorer.html",
+  "state": null,
+  "at": "2026-08-18T11-46-00-190Z",
+  "mutate": false,
+  "fixed_conditions": {
+    "viewports": [
+      "android-s 360x800",
+      "iphone 390x844"
+    ],
+    "schemes": [
+      "light",
+      "dark"
+    ],
+    "TAP_MIN": 44,
+    "INPUT_FONT_MIN": 16
+  },
+  "hard": {
+    "console_errors": 0,
+    "overflow_x": false,
+    "input_font_small": 0,
+    "external_font": false,
+    "uses_100vh": false
+  },
+  "metric": {
+    "tap_small": 0,
+    "contrast_low": 0,
+    "distinct_font_sizes": 4,
+    "distinct_radii": 2,
+    "distinct_text_colors": 4,
+    "distinct_bg_colors": 5,
+    "css_raw_hex_outside_root": 0,
+    "css_font_size_decl_distinct": 6,
+    "css_radius_decl_distinct": 4
+  },
+  "info": {
+    "uses_safe_area": true,
+    "uses_dvh": false,
+    "viewport_fit_cover": true,
+    "has_manifest": false,
+    "registers_sw_in_html": false,
+    "sw_registered": false,
+    "contrast_unknown": 0,
+    "interactive_count": 6,
+    "title": "期待値エクスプローラー"
+  },
+  "runs": [
+    {
+      "viewport": "android-s",
+      "scheme": "light",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "android-s_light.png",
+      "tap_small": [],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 4,
+      "distinct_radii": 2,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 5,
+      "contrast_low": [],
+      "contrast_unknown": 0,
+      "interactive_count": 6,
+      "title": "期待値エクスプローラー",
+      "sw_registered": false
+    },
+    {
+      "viewport": "android-s",
+      "scheme": "dark",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "android-s_dark.png",
+      "tap_small": [],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 4,
+      "distinct_radii": 2,
+      "distinct_text_colors": 3,
+      "distinct_bg_colors": 5,
+      "contrast_low": [],
+      "contrast_unknown": 0,
+      "interactive_count": 6,
+      "title": "期待値エクスプローラー",
+      "sw_registered": false
+    },
+    {
+      "viewport": "iphone",
+      "scheme": "light",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "iphone_light.png",
+      "tap_small": [],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 4,
+      "distinct_radii": 2,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 5,
+      "contrast_low": [],
+      "contrast_unknown": 0,
+      "interactive_count": 6,
+      "title": "期待値エクスプローラー",
+      "sw_registered": false
+    },
+    {
+      "viewport": "iphone",
+      "scheme": "dark",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "iphone_dark.png",
+      "tap_small": [],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 4,
+      "distinct_radii": 2,
+      "distinct_text_colors": 3,
+      "distinct_bg_colors": 5,
+      "contrast_low": [],
+      "contrast_unknown": 0,
+      "interactive_count": 6,
+      "title": "期待値エクスプローラー",
+      "sw_registered": false
+    }
+  ],
+  "verdict": "GREEN",
+  "regressions": [],
+  "accepted": [
+    "distinct_bg_colors: 3 -> 5 (WO宣言の上限 5)"
+  ],
+  "hard_fails": []
+}
