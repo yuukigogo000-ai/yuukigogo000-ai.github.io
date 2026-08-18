@@ -83,18 +83,42 @@ jobs:
 
       - name: 構文検査(band / pachinko / honmono)
         run: |
+          set -uo pipefail
           fail=0
-          files=$(find band pachinko honmono -name '*.js' \
-            -not -path '*/vendor/*' -not -path '*/node_modules/*' -not -path '*/desktop/*' | sort)
-          for f in $files; do
-            if node --input-type=module --check < "$f" > /dev/null 2>&1; then
-              echo "  OK  $f"
-            else
-              echo "  NG  $f"
-              node --input-type=module --check < "$f" 2>&1 | tail -5
-              fail=1
+          # ⚠ 3つを合算した件数だけを見てはいけない。honmono が消えたり改名されても
+          #   band と pachinko で下限を満たしてしまい、find のエラーは sort に隠れて緑になる。
+          #   フォルダごとに「存在するか」と「下限を満たすか」を見る。
+          check_dir() {
+            dir="$1"; min="$2"
+            if [ ! -d "$dir" ]; then
+              echo "::error::検査対象のフォルダ $dir がありません。改名・削除したなら、このワークフローの一覧も更新してください。"
+              exit 1
             fi
-          done
+            files=$(find "$dir" -name '*.js' \
+              -not -path '*/vendor/*' -not -path '*/node_modules/*' -not -path '*/desktop/*' | sort)
+            if [ $? -ne 0 ]; then
+              echo "::error::$dir の走査に失敗しました。"
+              exit 1
+            fi
+            count=$(printf '%s\n' "$files" | grep -c . || true)
+            echo "  $dir: ${count} ファイル(下限 ${min})"
+            if [ "$count" -lt "$min" ]; then
+              echo "::error::$dir の検査対象が ${count} 件しかありません(想定 ${min} 件以上)。検査が空振りしています。意図した削除なら下限を更新してください。"
+              exit 1
+            fi
+            for f in $files; do
+              if node --input-type=module --check < "$f" > /dev/null 2>&1; then
+                echo "    OK  $f"
+              else
+                echo "    NG  $f"
+                node --input-type=module --check < "$f" 2>&1 | tail -5
+                fail=1
+              fi
+            done
+          }
+          check_dir band 10
+          check_dir pachinko 1
+          check_dir honmono 1
           if [ "$fail" != 0 ]; then
             echo "::error::構文エラーのあるファイルがあります。"
             exit 1
