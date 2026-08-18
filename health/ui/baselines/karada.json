@@ -1,0 +1,658 @@
+{
+  "name": "karada",
+  "path": "/health/",
+  "state": null,
+  "at": "2026-08-18T10-49-43-507Z",
+  "mutate": false,
+  "fixed_conditions": {
+    "viewports": [
+      "android-s 360x800",
+      "iphone 390x844"
+    ],
+    "schemes": [
+      "light",
+      "dark"
+    ],
+    "TAP_MIN": 44,
+    "INPUT_FONT_MIN": 16
+  },
+  "hard": {
+    "console_errors": 0,
+    "overflow_x": false,
+    "input_font_small": 0,
+    "external_font": false,
+    "uses_100vh": false
+  },
+  "metric": {
+    "tap_small": 11,
+    "contrast_low": 22,
+    "distinct_font_sizes": 11,
+    "distinct_radii": 4,
+    "distinct_text_colors": 5,
+    "distinct_bg_colors": 3,
+    "css_raw_hex_outside_root": 1,
+    "css_font_size_decl_distinct": 14,
+    "css_radius_decl_distinct": 6
+  },
+  "info": {
+    "uses_safe_area": false,
+    "uses_dvh": false,
+    "viewport_fit_cover": false,
+    "has_manifest": false,
+    "registers_sw_in_html": false,
+    "sw_registered": false,
+    "contrast_unknown": 0,
+    "interactive_count": 36,
+    "title": "カラダ日報"
+  },
+  "runs": [
+    {
+      "viewport": "android-s",
+      "scheme": "light",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "android-s_light.png",
+      "tap_small": [
+        {
+          "el": "button.chip \"🍺 ビール中+\"",
+          "w": 126,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍺 缶ビール350+\"",
+          "w": 150,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🥃 ハイボール+\"",
+          "w": 141,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍶 日本酒1合+\"",
+          "w": 134,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍵 焼酎1杯+\"",
+          "w": 119,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍋 チューハイ+\"",
+          "w": 141,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍷 ワイン+\"",
+          "w": 111,
+          "h": 40
+        },
+        {
+          "el": "button#dryDayBtn.ghost.small \"今日は休肝日で確定\"",
+          "w": 137,
+          "h": 30
+        },
+        {
+          "el": "button#resetDrinkBtn.ghost.small \"今日の酒をやり直す\"",
+          "w": 137,
+          "h": 30
+        },
+        {
+          "el": "summary \"＋ 健診結果を入力する\"",
+          "w": 294,
+          "h": 23
+        },
+        {
+          "el": "summary \"⚙️ 設定・データ管理\"",
+          "w": 294,
+          "h": 23
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 11,
+      "distinct_radii": 4,
+      "distinct_text_colors": 5,
+      "distinct_bg_colors": 3,
+      "contrast_low": [
+        {
+          "el": "span.sub \"飲んだらその場でタップ。今日の分が即保存されます\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.note \"今日はまだ未記録。飲まずに寝られたら「休肝日で確定」を。\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "p.note \"純アルコール量の目安で計算(ビール中ジョッキ≈20g など)\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "button#saveBtn \"記録する\"",
+          "ratio": 4.42,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "p.note \"腹囲はへその高さで、息を吐いた状態で測るのが健診と同じ条件で\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "span.sub \"直近30日\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "div.empty \"まだデータがありません。記録するとここにグラフが出ます。\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 13.6
+        },
+        {
+          "el": "span.sub \"直近30日\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "div.empty \"まだデータがありません。記録するとここにグラフが出ます。\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 13.6
+        },
+        {
+          "el": "span.sub \"年1回の答え合わせ。届いたら転記して経年比較\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "p.note \"まだ健診結果がありません。会社の健診結果が届いたら、γ-GT\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "button#saveCheckup \"健診結果を保存\"",
+          "ratio": 4.42,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "div.empty \"記録はまだありません。\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 13.6
+        },
+        {
+          "el": "button#saveSettings \"設定を保存\"",
+          "ratio": 4.42,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "p.note \"データは端末のブラウザ(localStorage)にのみ保存\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        }
+      ],
+      "contrast_unknown": 0,
+      "interactive_count": 36,
+      "title": "カラダ日報",
+      "sw_registered": false
+    },
+    {
+      "viewport": "android-s",
+      "scheme": "dark",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "android-s_dark.png",
+      "tap_small": [
+        {
+          "el": "button.chip \"🍺 ビール中+\"",
+          "w": 126,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍺 缶ビール350+\"",
+          "w": 150,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🥃 ハイボール+\"",
+          "w": 141,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍶 日本酒1合+\"",
+          "w": 134,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍵 焼酎1杯+\"",
+          "w": 119,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍋 チューハイ+\"",
+          "w": 141,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍷 ワイン+\"",
+          "w": 111,
+          "h": 40
+        },
+        {
+          "el": "button#dryDayBtn.ghost.small \"今日は休肝日で確定\"",
+          "w": 137,
+          "h": 30
+        },
+        {
+          "el": "button#resetDrinkBtn.ghost.small \"今日の酒をやり直す\"",
+          "w": 137,
+          "h": 30
+        },
+        {
+          "el": "summary \"＋ 健診結果を入力する\"",
+          "w": 294,
+          "h": 23
+        },
+        {
+          "el": "summary \"⚙️ 設定・データ管理\"",
+          "w": 294,
+          "h": 23
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 11,
+      "distinct_radii": 4,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 3,
+      "contrast_low": [
+        {
+          "el": "button#saveBtn \"記録する\"",
+          "ratio": 3.64,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "button#saveCheckup \"健診結果を保存\"",
+          "ratio": 3.64,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "button#saveSettings \"設定を保存\"",
+          "ratio": 3.64,
+          "need": 4.5,
+          "fontSize": 16
+        }
+      ],
+      "contrast_unknown": 0,
+      "interactive_count": 36,
+      "title": "カラダ日報",
+      "sw_registered": false
+    },
+    {
+      "viewport": "iphone",
+      "scheme": "light",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "iphone_light.png",
+      "tap_small": [
+        {
+          "el": "button.chip \"🍺 ビール中+\"",
+          "w": 126,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍺 缶ビール350+\"",
+          "w": 150,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🥃 ハイボール+\"",
+          "w": 141,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍶 日本酒1合+\"",
+          "w": 134,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍵 焼酎1杯+\"",
+          "w": 119,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍋 チューハイ+\"",
+          "w": 141,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍷 ワイン+\"",
+          "w": 111,
+          "h": 40
+        },
+        {
+          "el": "button#dryDayBtn.ghost.small \"今日は休肝日で確定\"",
+          "w": 137,
+          "h": 30
+        },
+        {
+          "el": "button#resetDrinkBtn.ghost.small \"今日の酒をやり直す\"",
+          "w": 137,
+          "h": 30
+        },
+        {
+          "el": "summary \"＋ 健診結果を入力する\"",
+          "w": 324,
+          "h": 23
+        },
+        {
+          "el": "summary \"⚙️ 設定・データ管理\"",
+          "w": 324,
+          "h": 23
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 11,
+      "distinct_radii": 4,
+      "distinct_text_colors": 5,
+      "distinct_bg_colors": 3,
+      "contrast_low": [
+        {
+          "el": "span.sub \"飲んだらその場でタップ。今日の分が即保存されます\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.cnt \"+\"",
+          "ratio": 4.3,
+          "need": 4.5,
+          "fontSize": 14.72
+        },
+        {
+          "el": "span.note \"今日はまだ未記録。飲まずに寝られたら「休肝日で確定」を。\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "p.note \"純アルコール量の目安で計算(ビール中ジョッキ≈20g など)\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "button#saveBtn \"記録する\"",
+          "ratio": 4.42,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "p.note \"腹囲はへその高さで、息を吐いた状態で測るのが健診と同じ条件で\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "span.sub \"直近30日\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "div.empty \"まだデータがありません。記録するとここにグラフが出ます。\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 13.6
+        },
+        {
+          "el": "span.sub \"直近30日\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "div.empty \"まだデータがありません。記録するとここにグラフが出ます。\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 13.6
+        },
+        {
+          "el": "span.sub \"年1回の答え合わせ。届いたら転記して経年比較\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.48
+        },
+        {
+          "el": "p.note \"まだ健診結果がありません。会社の健診結果が届いたら、γ-GT\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        },
+        {
+          "el": "button#saveCheckup \"健診結果を保存\"",
+          "ratio": 4.42,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "div.empty \"記録はまだありません。\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 13.6
+        },
+        {
+          "el": "button#saveSettings \"設定を保存\"",
+          "ratio": 4.42,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "p.note \"データは端末のブラウザ(localStorage)にのみ保存\"",
+          "ratio": 3.5,
+          "need": 4.5,
+          "fontSize": 12.8
+        }
+      ],
+      "contrast_unknown": 0,
+      "interactive_count": 36,
+      "title": "カラダ日報",
+      "sw_registered": false
+    },
+    {
+      "viewport": "iphone",
+      "scheme": "dark",
+      "http_status": 200,
+      "console_errors": [],
+      "screenshot": "iphone_dark.png",
+      "tap_small": [
+        {
+          "el": "button.chip \"🍺 ビール中+\"",
+          "w": 126,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍺 缶ビール350+\"",
+          "w": 150,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🥃 ハイボール+\"",
+          "w": 141,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍶 日本酒1合+\"",
+          "w": 134,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍵 焼酎1杯+\"",
+          "w": 119,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍋 チューハイ+\"",
+          "w": 141,
+          "h": 40
+        },
+        {
+          "el": "button.chip \"🍷 ワイン+\"",
+          "w": 111,
+          "h": 40
+        },
+        {
+          "el": "button#dryDayBtn.ghost.small \"今日は休肝日で確定\"",
+          "w": 137,
+          "h": 30
+        },
+        {
+          "el": "button#resetDrinkBtn.ghost.small \"今日の酒をやり直す\"",
+          "w": 137,
+          "h": 30
+        },
+        {
+          "el": "summary \"＋ 健診結果を入力する\"",
+          "w": 324,
+          "h": 23
+        },
+        {
+          "el": "summary \"⚙️ 設定・データ管理\"",
+          "w": 324,
+          "h": 23
+        }
+      ],
+      "input_font_small": [],
+      "overflow_x": false,
+      "distinct_font_sizes": 11,
+      "distinct_radii": 4,
+      "distinct_text_colors": 4,
+      "distinct_bg_colors": 3,
+      "contrast_low": [
+        {
+          "el": "button#saveBtn \"記録する\"",
+          "ratio": 3.64,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "button#saveCheckup \"健診結果を保存\"",
+          "ratio": 3.64,
+          "need": 4.5,
+          "fontSize": 16
+        },
+        {
+          "el": "button#saveSettings \"設定を保存\"",
+          "ratio": 3.64,
+          "need": 4.5,
+          "fontSize": 16
+        }
+      ],
+      "contrast_unknown": 0,
+      "interactive_count": 36,
+      "title": "カラダ日報",
+      "sw_registered": false
+    }
+  ],
+  "verdict": "BASELINE",
+  "regressions": [],
+  "accepted": [],
+  "hard_fails": []
+}

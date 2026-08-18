@@ -1,3 +1,7 @@
+> ⚠ **この指示書は役目を終えました(2026-08-18)**。発注者の指示により、UI は Figma Make 画像の移植ではなく
+> `~/.claude/playbooks/UI_PLAYBOOK.md`(v3・1から全部作り変え)の手順で作り直しました。
+> **現行の正本は `health/ui/wo/WO_UI_karada_home.md`** です。以下は経緯として残します。
+
 # WORK ORDER: カラダ日報 UI移植(Figma Makeデザイン → health/index.html)
 
 - 発注日: 2026-08-17
