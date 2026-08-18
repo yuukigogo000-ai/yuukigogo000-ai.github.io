@@ -1,142 +1,49 @@
-[
- [
-  "Hemg/AI-Generated-vs-Real-Images-Datasets",
-  "?",
-  false
- ],
- [
-  "Hemg/deepfake-and-real-images",
-  "?",
-  false
- ],
- [
-  "LuckyCow/Ai_vs_real_web_images",
-  "?",
-  false
- ],
- [
-  "Rapidata/Flux-2-pro_t2i_human_preference",
-  "cdla-permissive-2.0",
-  false
- ],
- [
-  "Rapidata/Hidream_t2i_human_preference",
-  "cdla-permissive-2.0",
-  false
- ],
- [
-  "Rapidata/Ideogram-V2_t2i_human_preference",
-  "cdla-permissive-2.0",
-  false
- ],
- [
-  "Rapidata/Imagen4_t2i_human_preference",
-  "cdla-permissive-2.0",
-  false
- ],
- [
-  "Rapidata/OpenAI-4o_t2i_human_preference",
-  "cdla-permissive-2.0",
-  false
- ],
- [
-  "Rapidata/Recraft-v3-24-7-25_t2i_human_preference",
-  "cdla-permissive-2.0",
-  false
- ],
- [
-  "Rapidata/Seedream-3_t2i_human_preference",
-  "cdla-permissive-2.0",
-  false
- ],
- [
-  "VIBE-Benchmark/VIBE-Seedream4.5",
-  "?",
-  false
- ],
- [
-  "bitmind/JourneyDB",
-  "unknown",
-  false
- ],
- [
-  "bitmind/bm-real",
-  "?",
-  false
- ],
- [
-  "bitmind/nano-banana",
-  "mit",
-  false
- ],
- [
-  "data-is-better-together/open-image-preferences-v1",
-  "apache-2.0",
-  false
- ],
- [
-  "ehristoforu/dalle-3-images",
-  "mit",
-  false
- ],
- [
-  "ehristoforu/midjourney-images",
-  "mit",
-  false
- ],
- [
-  "elsaEU/ELSA_D3",
-  "?",
-  false
- ],
- [
-  "javi22/this-person-does-not-exist-10k",
-  "mit",
-  false
- ],
- [
-  "julienlucas/midjourney-dalle-sd-nanobananapro-dataset",
-  "mit",
-  false
- ],
- [
-  "jxie/flickr8k",
-  "?",
-  false
- ],
- [
-  "kaupane/nano-banana-pro-gen",
-  "?",
-  false
- ],
- [
-  "krishnakalyan3/flux-pro-1.1-v3",
-  "?",
-  false
- ],
- [
-  "marcosv/ffhq-dataset",
-  "cc",
-  false
- ],
- [
-  "mattymchen/celeba-hq",
-  "?",
-  false
- ],
- [
-  "nlphuji/flickr30k",
-  "?",
-  false
- ],
- [
-  "playgroundai/MJHQ-30K",
-  "?",
-  false
- ],
- [
-  "rafaelpadilla/coco2017",
-  "?",
-  false
- ]
-]
+{
+ "生成日": "2026-08-18",
+ "方針": "商用利用が明示的に許されるデータのみで学習する。不明は使わない。",
+ "v3で使った源": {
+  "Rapidata/Seedream-3_t2i_human_preference": "cdla-permissive-2.0",
+  "Rapidata/Imagen4_t2i_human_preference": "cdla-permissive-2.0",
+  "Rapidata/Imagen-4-ultra-24-7-25_t2i_human_preference": "cdla-permissive-2.0",
+  "Rapidata/Recraft-v3-24-7-25_t2i_human_preference": "cdla-permissive-2.0",
+  "Rapidata/Flux-2-pro_t2i_human_preference": "cdla-permissive-2.0",
+  "Rapidata/HunyuanImage-2.1_t2i_human_preference": "cdla-permissive-2.0",
+  "Rapidata/OpenAI-4o_t2i_human_preference": "cdla-permissive-2.0",
+  "Rapidata/Ideogram-V2_t2i_human_preference": "cdla-permissive-2.0",
+  "Rapidata/Hidream_t2i_human_preference": "cdla-permissive-2.0",
+  "Rapidata/Runway_Frames_t2i_human_preferences": "cdla-permissive-2.0",
+  "Rapidata/Recraft-V2_t2i_human_preference": "cdla-permissive-2.0",
+  "Rapidata/xAI_Aurora_t2i_human_preferences": "cdla-permissive-2.0 (選択用devのみ)",
+  "bitmind/nano-banana": "mit",
+  "ehristoforu/dalle-3-images": "mit",
+  "ehristoforu/midjourney-images": "mit",
+  "julienlucas/midjourney-dalle-sd-nanobananapro-dataset": "mit (AI側のみ使用)",
+  "javi22/this-person-does-not-exist-10k": "mit",
+  "bitmind/open-images-v7-subset": "上流 Open Images V7 の画像は CC BY 2.0 (https://storage.googleapis.com/openimages/web/factsfigures_v7.html)",
+  "1aurent/unsplash-lite": "Unsplash Dataset 規約: 商用・非商用ともに利用可 (https://github.com/unsplash/datasets/blob/master/TERMS.md)",
+  "janpf/self-supervised-...(Pexels URL一覧)": "Pexels License: 商用利用可 (選択用devのみ)"
+ },
+ "v3で外した源(理由つき)": {
+  "mjhq": "playgroundai/MJHQ-30K: ライセンス未記載",
+  "elsa": "elsaEU/ELSA_D3: ライセンス未記載(研究目的の可能性)",
+  "journeydb": "bitmind/JourneyDB: license:unknown(上流JourneyDBは研究目的)",
+  "fluxpro11": "krishnakalyan3/flux-pro-1.1-v3: 未記載",
+  "vibe_sd45": "VIBE-Benchmark/VIBE-Seedream4.5: 未記載",
+  "nbpro": "kaupane/nano-banana-pro-gen: 未記載",
+  "dfr_fake": "Hemg/deepfake-and-real-images: 未記載",
+  "hemg_ai": "Hemg/AI-Generated-vs-Real-Images-Datasets: 未記載",
+  "lucky_ai": "LuckyCow/Ai_vs_real_web_images: カードはCC0宣言だがBrave検索のスクレイプで出所の権利が担保されない",
+  "coco": "rafaelpadilla/coco2017: 注釈はCC BY 4.0だが画像はFlickr個別ライセンス",
+  "flickr30k": "nlphuji/flickr30k: 研究目的",
+  "flickr8k": "jxie/flickr8k: 研究目的",
+  "celebahq": "mattymchen/celeba-hq: 非商用研究",
+  "ffhq": "marcosv/ffhq-dataset: CC BY-NC-SA 4.0(非商用)",
+  "bmreal": "bitmind/bm-real: 未記載",
+  "dfr_real": "Hemg/deepfake-and-real-images: 未記載",
+  "hemg_real": "Hemg/AI-Generated-vs-Real-Images-Datasets: 未記載",
+  "lucky_real": "LuckyCow: 同上(スクレイプ)",
+  "julien_real": "julienlucas/...: MIT宣言だが実写の出所不明(AI側 julien_ai は生成物なので採用)",
+  "oip": "data-is-better-together/open-image-preferences-v1: 評価セット eddy のAI画像と完全一致(d=0)が多数。"
+ },
+ "注意": "Open Images(CC BY 2.0)は表示義務のあるライセンス。モデルの重みは自前だが、学習データの出所として本一覧を公開する。"
+}
