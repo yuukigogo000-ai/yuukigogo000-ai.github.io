@@ -1,2 +1,5 @@
+# 借り物モデル(ライセンス未確認)の重みはコミットしない
 *.part*
 *.onnx
+# 自前学習モデル(HONMONO v2)は同梱する
+!honmono_v2_int8.onnx.part*
