@@ -231,6 +231,21 @@
 
 ## 8. 公開
 
+**まず [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) を埋める。必須項目がすべて ✅ になるまで公開しない。**
+規模(S/M/L)で使う項目を選べるので、小さな修正でも飛ばさずに使うこと。このリポジトリでの具体的な手段は次のとおり。
+
+| チェックリストの項目 | このリポジトリでの確かめ方 |
+|---|---|
+| B1 テストがコミットされている | `reply-ai-app/tests/e2e.test.js`。**素のJSのプロジェクトはテストが無いので、まずそこから** |
+| B3 テストがいま作ったものを見ている | テスト先頭の番人(ビルド結果と配信中のバンドルの照合) |
+| B4 CI が緑 | `.github/workflows/ci.yml` |
+| C1 ビルド出力が最新 | `npm run build` して `reply-ai/` に差分が出ないこと(CI も見る) |
+| C2 公開先で動く | `https://yuukigogo000-ai.github.io/<パス>/` を実際に開く |
+| C3 更新が届く | Service Worker の更新バー(`registerType: 'prompt'`) |
+| C6 前の版に戻せる | `git revert` + 再ビルド。デスクトップ版は前のタグの Release |
+| D2 外部送信の記載 | `privacy.html` に追記し、アプリ内からリンク(Replier は設定シート内) |
+| E4 初回起動 | ブラウザのサイトデータを消してから開く |
+
 - Web:GitHub Pages(ソースと `npm run build` の出力を分ける。例 `reply-ai-app/` → `reply-ai/`)
 - デスクトップ:GitHub Actions の Desktop Build(手動実行で Artifacts / `desktop-v1.0.0` 形式のタグ push で Release に自動添付)
 - `sitemap.xml` / `robots.txt` / ルート `index.html` からの導線も更新する
@@ -258,7 +273,7 @@
 | 大きな修正のあと | コミット → 変異注入 → テストが落ちるか確認 |
 | UI 刷新の完了時 | テストプレイ ラウンド2 を再走 → ビルド → テスト全通過 → Codex 開始 |
 | Codex ラウンドごと | 指摘を修正 or 理由つき見送り → REVIEW_LOG.md に追記 |
-| 公開の直前 | PASS を確認 / **CI が緑** / **送信先が増えていれば `privacy.html` を更新** / 残リスクを DESIGN.md に明記 |
+| 公開の直前 | **RELEASE_CHECKLIST.md を埋める**(必須が全部 ✅ になるまで公開しない) |
 | 公開の直後 | 実機で触る / 設計書と説明書を実物に合わせて更新 |
 
 ## 各工程で残るファイル
@@ -271,4 +286,5 @@
 | `PLAYTEST_LOG.md` | 工程4(3ラウンドの記録と数値) |
 | `ASSET_BRIEF.md` / `IMAGE_BRIEF.md` | 工程5(素材の発注書) |
 | `CODEX_*_PROMPT.txt` | 工程7(検証用プロンプト) |
+| `RELEASE_CHECKLIST.md` | 工程8(公開の可否判定。埋めた記録を残す) |
 | `REVIEW_REQUEST.md` / `REVIEW_LOG.md` | 工程7(依頼と結果) |
