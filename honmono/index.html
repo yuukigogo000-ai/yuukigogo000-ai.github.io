@@ -100,15 +100,38 @@
     </ul>
   </div>
 
+  <h2>測った数字を全部公開しています</h2>
+  <div class="card">
+    <p style="font-size:.92rem; margin-top:0">「AI画像を見分けられます」と言うだけなら誰でもできます。
+    HONMONO は<b>実際に測った数字と、外れた場面</b>を公開しています。
+    公開されている判定モデル9本を同一条件で測ったところ、<b>8本は実写を10〜88%の割合でAIと誤判定</b>しました。
+    そこで自前で学習し、<b>学習データは商用利用が明示的に許諾されたものだけ</b>を使っています(条件不明の22データセットは除外)。</p>
+    <p style="font-size:.92rem; margin-bottom:0">
+      <a href="report/"><b>📊 実測レポートを読む →</b></a>(数値・弱点・学習データの出典・過去の訂正まで全部)<br>
+      <a href="business/">🏢 法人・開発者の方へ</a>(判定モデルのライセンス提供)
+    </p>
+  </div>
+
   <div class="notice">
     <b>免責:</b> 本ツール群の判定は「参考情報」です。メタデータは編集・削除が可能なため、
     AI生成の痕跡がない=人間、痕跡がある=悪意、を断定するものではありません。
-    重要な判断には複数の証拠を組み合わせてください。
+    重要な判断には複数の証拠を組み合わせてください。<br>
+    <b>実在する誰かを「AIだ」「詐欺だ」と断定して公表する目的では使わないでください。</b>
+    この道具は、実在する人が疑われずに済むために作られたものです(<a href="legal/terms.html">利用規約</a>)。
   </div>
 </main>
 
 <footer class="site-foot"><div class="wrap">
-  HONMONO プロジェクト — すべての処理はあなたのブラウザ内で完結します。画像やフォーム入力が外部に送信されることはありません。
+  <div style="margin-bottom:6px">
+  <a href="./">HONMONO</a> ·
+  <a href="docs/">説明書</a> ·
+  <a href="report/">実測レポート</a> ·
+  <a href="business/">法人向け</a> ·
+  <a href="legal/privacy.html">プライバシー</a> ·
+  <a href="legal/terms.html">利用規約</a> ·
+  <a href="legal/credits.html">クレジット</a>
+  </div>
+  <div style="font-size:.82rem; opacity:.8">HONMONO プロジェクト — すべての処理はあなたのブラウザ内で完結します。画像やフォーム入力が外部に送信されることはありません。</div>
 </div></footer>
 </body>
 </html>

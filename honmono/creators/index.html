@@ -60,6 +60,13 @@
     </p>
   </div>
 
+  <div class="notice" style="margin-top:20px">
+    <b>実在のクリエイターの掲載は、まだ0件です。</b>
+    下に並んでいるのは<b>カードの見本</b>で、どんな項目が載るかを示すためだけのものです。実在の人物ではありません。
+    <b>実在を売りにする名鑑で架空の人物をでっち上げるのは筋が通らない</b>ので、人名は載せていません。
+    掲載申請を受け付け次第、見本は順次差し替えます。
+  </div>
+
   <label for="q" style="margin-top:20px">キーワード検索</label>
   <input type="text" id="q" placeholder="名前・ジャンル・キーワードで絞り込み">
   <div class="filters" id="filters"></div>
@@ -67,14 +74,21 @@
   <div class="grid" id="list"></div>
   <div id="empty">該当するクリエイターが見つかりませんでした。</div>
 
-  <div class="notice">
-    現在の掲載カードは<b>すべて表示イメージ用のサンプル(架空)</b>です。実在のクリエイターの掲載申請を受け付け次第、順次差し替えます。
-    掲載は実在を保証する審査ではなく、相互リンク証明の確認に基づくものです。
-  </div>
+  <p class="note">掲載は実在を保証する審査ではなく、<b>相互リンク証明の輪が閉じていることの確認</b>に基づくものです。
+  掲載料・審査料・優先表示料は一切いただきません(<a href="../legal/terms.html">利用規約</a>第6条)。</p>
 </main>
 
 <footer class="site-foot"><div class="wrap">
-  HONMONO プロジェクト
+  <div style="margin-bottom:6px">
+  <a href="../">HONMONO</a> ·
+  <a href="../docs/">説明書</a> ·
+  <a href="../report/">実測レポート</a> ·
+  <a href="../business/">法人向け</a> ·
+  <a href="../legal/privacy.html">プライバシー</a> ·
+  <a href="../legal/terms.html">利用規約</a> ·
+  <a href="../legal/credits.html">クレジット</a>
+  </div>
+  <div style="font-size:.82rem; opacity:.8">HONMONO プロジェクト — 掲載料・審査料はいただきません。</div>
 </div></footer>
 
 <script>
@@ -85,35 +99,35 @@
 const FALLBACK_CREATORS = [
   {
     sample: true,
-    name: '(サンプル)葉山みお',
+    name: '掲載カードの見本 ①',
     category: 'イラストレーター',
-    desc: '装画・キャラクターデザイン。制作過程をすべてタイムラプスで公開し、手描きの全工程を検証可能にしています。',
+    desc: 'ここに紹介文(100字以内)が入ります。活動内容と、実在をどうやって検証できるようにしているかを書きます。例:「制作過程をすべてタイムラプスで公開し、手描きの全工程を検証可能にしています」',
     links: { '証明ページ': '#', 'X': '#', 'ポートフォリオ': '#' },
-    promise: '生成AI不使用(制作過程公開)',
+    promise: '自分で決めた約束をここに書きます(例: 生成AI不使用・制作過程公開)',
   },
   {
     sample: true,
-    name: '(サンプル)如月ケイ',
+    name: '掲載カードの見本 ②',
     category: 'コスプレイヤー',
-    desc: 'イベント出演とライブ配信を中心に活動。全投稿写真に撮影者クレジットとC2PA来歴データを付与。',
+    desc: 'ジャンルは自由に書けます。「証明ページ」のリンクから相互リンクの輪をたどれることが、掲載の唯一の条件です。',
     links: { '証明ページ': '#', 'Instagram': '#', 'イベント出演記録': '#' },
-    promise: '全写真に来歴データ付与・加工内容明記',
+    promise: '例: 全写真に来歴データを付与・加工内容を明記',
   },
   {
     sample: true,
-    name: '(サンプル)真田ユウ',
+    name: '掲載カードの見本 ③',
     category: '写真家・モデル',
-    desc: 'ポートレート撮影。RAWデータの照合に応じる「実写証明」ポリシーを掲げています。',
+    desc: 'リンクは何本でも載せられます。実在の裏付けになるもの(イベント出演記録・受賞歴・掲載誌など)があれば、それも書けます。',
     links: { '証明ページ': '#', 'X': '#', '作品集': '#' },
-    promise: 'RAW照合対応・AIレタッチの範囲を明記',
+    promise: '例: RAW照合に応じる・AIレタッチの範囲を明記',
   },
   {
     sample: true,
-    name: '(サンプル)音無こはる',
+    name: '掲載カードの見本 ④',
     category: 'VTuber・配信者',
-    desc: '「中の人は実在の一人の人間」を相互リンク証明で宣言。週3回のライブ配信で継続的に実在を示しています。',
-    links: { '証明ページ': '#', 'YouTube': '#' },
-    promise: 'ライブ配信による継続的実在証明',
+    desc: '「中の人は実在の一人の人間」といった宣言も、相互リンク証明で示せます。姿を出さない活動でも掲載できます。',
+    links: { '証明ページ': '#', '配信チャンネル': '#' },
+    promise: '例: 週3回のライブ配信で継続的に実在を示す',
   },
 ];
 
@@ -139,7 +153,7 @@ function render() {
   });
   $('list').innerHTML = shown.map(c =>
     `<div class="card creator">` +
-    (c.sample ? '<span class="sample">サンプル</span>' : '') +
+    (c.sample ? '<span class="sample">見本</span>' : '') +
     `<span class="vbadge">✓ 実在証明ページあり</span>` +
     `<h3>${esc(c.name)}</h3>` +
     `<p class="cat">${esc(c.category)}</p>` +

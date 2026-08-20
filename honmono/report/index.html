@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>実測レポート — HONMONO</title>
+<meta name="description" content="AI画像判定モデルの実測比較。公開モデル9本のうち8本が実写を10〜88%誤判定した測定結果と、HONMONO自前モデルの数値・弱点・学習データの出典を全て公開しています。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta property="og:type" content="article">
+<meta property="og:title" content="実測レポート — AI画像判定モデルを9本測ったら8本が使い物にならなかった">
+<meta property="og:description" content="同じ545枚で公開モデル9本を測定。実写の誤判定率は10〜88%。自前モデルの数値と弱点、学習データの出典も全部公開します。">
+<meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/report/">
+<meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../honmono.css">
+<style>
+  .toc { font-size: .9rem; }
+  .toc a { display: inline-block; margin: 2px 10px 2px 0; }
+  table { font-size: .85rem; }
+  .num { text-align: right; white-space: nowrap; }
+  .win { color: var(--ok); font-weight: 700; }
+  .lose { color: var(--bad); }
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .srclist { font-size: .82rem; line-height: 1.75; }
+  .srclist code { font-size: .95em; }
+</style>
+</head>
+<body>
+<header class="site-head"><div class="wrap">
+  <a class="brand" href="../">HONMONO<small>実在性証明プロジェクト</small></a>
+  <nav>
+    <a href="../checker/">来歴チェッカー</a>
+    <a href="../badge/">実在証明バッジ</a>
+    <a href="../aicheck/">AIアカウント鑑定</a>
+    <a href="../creators/">実在クリエイター名鑑</a>
+    <a href="../docs/">説明書</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <h1>📊 実測レポート</h1>
+  <p class="lead">「このモデルはAI画像を見分けられます」と言うだけなら誰でもできます。
+  このページは、<b>実際に測った数字と、外れた場面</b>を全部出すためのものです。都合の悪い数字も消していません。</p>
+
+  <div class="card toc">
+    <b>目次:</b>
+    <a href="#summary">結論</a>
+    <a href="#public">公開モデル9本の実測</a>
+    <a href="#honmono">HONMONOモデルの実測</a>
+    <a href="#faces">顔だけの独立測定</a>
+    <a href="#weak">弱点</a>
+    <a href="#data">学習データの出典</a>
+    <a href="#repro">再現方法</a>
+    <a href="#corrections">訂正の履歴</a>
+  </div>
+
+  <h2 id="summary">1. 結論</h2>
+  <div class="card">
+    <ul style="font-size:.92rem; margin:0; padding-left:1.3em">
+      <li><b>公開されているAI画像判定モデルは、ほとんど使い物にならない。</b> 同一条件で9本を測り、8本は実写を10〜88%の割合でAIと誤判定した。「AI画像を検出する」より「実在の人を偽物扱いする」ほうが実害が大きいため、この誤判定率では搭載できない</li>
+      <li>唯一まともだった1本は<b>ライセンスが未記載</b>で、商用利用の可否が判断できず採用を見送った(作者は13か月無応答)</li>
+      <li>そこで<b>自分で学習した</b>。学習データは<b>商用利用が明示的に許諾されたものだけ</b>を使い、条件が不明・非商用・研究目的限定の22データセットは除外した</li>
+      <li>結果、外部545枚で <b>実写の誤判定 1.8% / AI検出 70.0%</b>。人物の顔だけを別に測った615枚では <b>誤判定 1.1% / 検出 92.2%</b></li>
+      <li><b>それでも「AIではない」ことの証明には使えない。</b> 2025年世代の生成器は4割近く見逃す</li>
+    </ul>
+  </div>
+
+  <h2 id="public">2. 公開モデル9本の実測(2026-08-17)</h2>
+  <p style="font-size:.9rem">評価に使ったのは、いずれのモデルの学習にも使われていない外部データセットから集めた <b>545枚</b>(AI 273 / 実写 272)。
+  4つの独立したセットで構成し、前処理は全モデルで同一にしています。</p>
+  <div class="scroll"><table>
+    <tr><th>セット</th><th>内容</th><th class="num">AI</th><th class="num">実写</th></tr>
+    <tr><td>mj6</td><td>Midjourney v6 vs 実写</td><td class="num">60</td><td class="num">60</td></tr>
+    <tr><td>tellif</td><td><b>2025年の最新生成器</b>(Seedream 4・FLUX Pro・Gemini 2.5・Imagen 4・Ideogram v2・Recraft v3・SD3.5 等)と意味的に似た実写のペア</td><td class="num">123</td><td class="num">122</td></tr>
+    <tr><td>eddy</td><td>汎用の AI vs 実写セット</td><td class="num">50</td><td class="num">50</td></tr>
+    <tr><td>faces</td><td>StyleGAN生成の顔 vs 実在の人の顔(256px)</td><td class="num">40</td><td class="num">40</td></tr>
+  </table></div>
+
+  <p style="font-size:.9rem; margin-top:18px"><b>FPR = 実写をAIと誤判定した割合。これが低いことを最優先で見ています。</b></p>
+  <div class="scroll"><table>
+    <tr><th>モデル</th><th class="num">AUC</th><th class="num">FPR<br>(実写の誤判定)</th><th class="num">recall<br>(AI検出)</th><th>ライセンス</th><th>判定</th></tr>
+    <tr><td>haywoodsloan/ai-image-detector-deploy</td><td class="num">0.892</td><td class="num win">3.7%</td><td class="num">61.2%</td><td><b>未記載</b></td><td>性能は唯一合格。ライセンス不明で<b>不採用</b></td></tr>
+    <tr><td>Ateeqq/ai-vs-human-image-detector</td><td class="num">0.737</td><td class="num lose">18.4%</td><td class="num">57.5%</td><td>Apache-2.0</td><td>ライセンス品の最良。それでも実写5枚に1枚を誤判定</td></tr>
+    <tr><td>Organika/sdxl-detector</td><td class="num">0.662</td><td class="num lose">26.8%</td><td class="num">52.0%</td><td>CC BY-NC</td><td>非商用のみ</td></tr>
+    <tr><td>onnx-community/SMOGY-Ai-images-detector</td><td class="num">0.683</td><td class="num lose">46.7%</td><td class="num">73.6%</td><td>—</td><td>実写の顔をほぼ全部AI扱い(顔FPR 87.5%)</td></tr>
+    <tr><td>onnx-community/ai-image-detection</td><td class="num">0.642</td><td class="num lose">75.7%</td><td class="num">92.3%</td><td>—</td><td>ほぼ何でもAIと言う</td></tr>
+    <tr><td>prithivMLmods/AI-vs-Deepfake-vs-Real</td><td class="num">0.686</td><td class="num lose">81.6%</td><td class="num">85.3%</td><td>—</td><td>較正が崩壊している</td></tr>
+    <tr><td>prithivMLmods/…-Siglip2</td><td class="num lose">0.353</td><td class="num">27.9%</td><td class="num lose">6.6%</td><td>—</td><td><b>ランダム以下</b></td></tr>
+    <tr><td>onnx-community/deepfake_vs_real_image_detection</td><td class="num">0.514</td><td class="num">11.4%</td><td class="num lose">11.0%</td><td>—</td><td>ほぼ見逃す</td></tr>
+    <tr><td>umm-maybe/AI-image-detector</td><td class="num">0.605</td><td class="num lose">19.9%</td><td class="num">33.7%</td><td>—</td><td>2023年のモデル。世代遅れ</td></tr>
+  </table></div>
+
+  <h2 id="honmono">3. HONMONO 自前モデルの実測</h2>
+  <p style="font-size:.9rem">Swin v2 base の微調整。79,716枚で学習。評価は上と<b>同じ545枚</b>で、学習にも選択にも一切使っていません。
+  ブラウザに載せている int8 量子化版(90MB)での数値です。</p>
+  <div class="scroll"><table>
+    <tr><th>モデル</th><th class="num">AUC</th><th class="num">実写の誤判定</th><th class="num">AI検出</th><th class="num">2025年世代の検出</th><th class="num">顔だけの写真の誤判定</th><th>学習データの条件</th></tr>
+    <tr><td><b>v3.1(現在搭載・しきい値0.8)</b></td><td class="num">0.932</td><td class="num win">1.8%</td><td class="num win">70.0%</td><td class="num">62.6%</td><td class="num">5.0%</td><td class="win">全て商用可</td></tr>
+    <tr><td>v3(同日の先行版)</td><td class="num">0.952</td><td class="num">1.8%</td><td class="num">69.6%</td><td class="num">61.0%</td><td class="num lose">10.0%</td><td>全て商用可</td></tr>
+    <tr><td>v2(前世代)</td><td class="num">0.929</td><td class="num">2.6%</td><td class="num">63.0%</td><td class="num lose">45.5%</td><td class="num">0.0%</td><td class="lose">非商用を含む</td></tr>
+    <tr><td>借り物 haywoodsloan(比較用)</td><td class="num">0.897</td><td class="num">2.6%</td><td class="num">62.3%</td><td class="num">—</td><td class="num">—</td><td class="lose">未記載</td></tr>
+    <tr><td>公開ライセンス品の最良(Ateeqq)</td><td class="num">0.737</td><td class="num lose">18.4%</td><td class="num">57.5%</td><td class="num">—</td><td class="num">—</td><td>Apache-2.0</td></tr>
+  </table></div>
+  <p class="note">v3 と v3.1 は AUC では v3 が上ですが、<b>実際に使うしきい値での顔の誤判定が半分になる</b>ため v3.1 を採用しました。
+  AUC は「全てのしきい値をならした平均的な良さ」であり、運用で使う1点の性能とは別物です。</p>
+
+  <h2 id="faces">4. 顔だけを独立に測り直した(615枚)</h2>
+  <p style="font-size:.9rem">実害がいちばん大きいのは「実在の人の顔写真をAI扱いすること」です。
+  そこで、<b>学習にも選択にも一度も使っていない</b>写真から専用のベンチマークを作りました
+  (実在の人の顔 270枚 = Pexels の写真から顔を自動検出して切り出し / AI生成の顔 345枚 = 評価4セットのどこにも出てこない生成器 xAI Aurora)。</p>
+  <div class="scroll"><table>
+    <tr><th>モデル</th><th class="num">実在の人の顔の誤判定</th><th class="num">AI生成の顔の検出</th><th class="num">AUC</th></tr>
+    <tr><td><b>v3.1(現在搭載)</b></td><td class="num win">1.1%(3/270)</td><td class="num win">92.2%</td><td class="num">0.995</td></tr>
+    <tr><td>v3(先行版)</td><td class="num">2.2%(6/270)</td><td class="num">92.5%</td><td class="num">0.990</td></tr>
+  </table></div>
+
+  <h2 id="weak">5. 弱点(正直に書く)</h2>
+  <div class="card" style="font-size:.9rem">
+    <ul style="margin:0; padding-left:1.3em">
+      <li><b>2025年世代の生成器は4割近く見逃します</b>(検出 62.6%)。Seedream 4・Gemini 2.5・FLUX Pro 等。生成器は毎月新しくなるので、この数字は放っておけば下がり続けます</li>
+      <li><b>古いGAN風に正方形で切り取られた顔</b>では、実在の人の誤判定が 5.0% まで上がります(通常の写真では 1.8%)</li>
+      <li><b>「AIではない」ことの証明には使えません。</b> 検出しなかった=人間、ではありません</li>
+      <li>正方形に切り取った実写では誤判定が 1.8% → 2.9% に上がることを、意図的な加工テスト(切り抜き・低画質JPEG・縮小・白黒化)で確認しています</li>
+      <li>この数字は<b>私たち自身が測ったもの</b>です。第三者による再測定は行われていません。だからこそ手順を下に公開しています</li>
+    </ul>
+  </div>
+
+  <h2 id="data">6. 学習データの出典</h2>
+  <p style="font-size:.9rem">方針は <b>「商用利用が明示的に許諾されたデータのみを使う。条件が不明なものは使わない」</b>。
+  学習に使った画像そのものは配布していません(配布する権利を持たないため)。</p>
+
+  <div class="card">
+    <h3 style="margin-top:0">使ったデータ(帰属表示)</h3>
+    <div class="srclist">
+      <p style="margin:0 0 6px"><b>AI生成画像</b></p>
+      <ul style="margin:0 0 14px; padding-left:1.3em">
+        <li><b>Rapidata</b> の text-to-image 人間選好データセット11本 — ライセンス <b>CDLA-Permissive-2.0</b><br>
+        <code>Seedream-3 / Imagen4 / Imagen-4-ultra / Recraft-v3 / Flux-2-pro / HunyuanImage-2.1 / OpenAI-4o / Ideogram-V2 / Hidream / Runway_Frames / Recraft-V2</code>
+        (加えて選択用 dev に <code>xAI_Aurora</code>)</li>
+        <li><b>bitmind/nano-banana</b>(Gemini 系生成)— MIT</li>
+        <li><b>ehristoforu/dalle-3-images</b>、<b>ehristoforu/midjourney-images</b> — MIT</li>
+        <li><b>julienlucas/midjourney-dalle-sd-nanobananapro-dataset</b>(AI側のみ使用)— MIT</li>
+        <li><b>javi22/this-person-does-not-exist-10k</b>(StyleGAN顔)— MIT</li>
+      </ul>
+      <p style="margin:0 0 6px"><b>実写画像</b></p>
+      <ul style="margin:0; padding-left:1.3em">
+        <li><b>Open Images V7</b>(<code>bitmind/open-images-v7-subset</code> 経由)— 画像は <b>CC BY 2.0</b>。
+        Open Images の画像は Flickr の利用者が CC BY 2.0 で公開したものです。
+        <a href="https://storage.googleapis.com/openimages/web/factsfigures_v7.html" target="_blank" rel="noopener">出典</a></li>
+        <li><b>Unsplash</b>(<code>1aurent/unsplash-lite</code> 経由・写真は Unsplash の CDN から取得)— <a href="https://unsplash.com/license" target="_blank" rel="noopener">Unsplash License</a>(商用利用可)</li>
+        <li><b>Pexels</b>(URL一覧経由・写真は Pexels の CDN から取得・選択用 dev と顔ベンチマークに使用)— <a href="https://www.pexels.com/license/" target="_blank" rel="noopener">Pexels License</a>(商用利用可)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">使わなかったデータと、その理由(22件)</h3>
+    <p class="note" style="margin-top:0">性能だけを見れば入れたほうがよかったものも含まれています。実際 FFHQ・CelebA-HQ を外したせいで、
+    顔写真の誤判定が一度 17.5% まで悪化しました(顔の切り出しを両クラスに足して 1.1% まで戻しました)。</p>
+    <div class="scroll"><table>
+      <tr><th>データセット</th><th>外した理由</th></tr>
+      <tr><td>playgroundai/MJHQ-30K</td><td>ライセンス未記載</td></tr>
+      <tr><td>elsaEU/ELSA_D3</td><td>ライセンス未記載(研究目的の可能性)</td></tr>
+      <tr><td>bitmind/JourneyDB</td><td>license:unknown(上流 JourneyDB は研究目的)</td></tr>
+      <tr><td>krishnakalyan3/flux-pro-1.1-v3</td><td>未記載</td></tr>
+      <tr><td>VIBE-Benchmark/VIBE-Seedream4.5</td><td>未記載</td></tr>
+      <tr><td>kaupane/nano-banana-pro-gen</td><td>未記載</td></tr>
+      <tr><td>Hemg/deepfake-and-real-images(AI側・実写側)</td><td>未記載</td></tr>
+      <tr><td>Hemg/AI-Generated-vs-Real-Images-Datasets(AI側・実写側)</td><td>未記載</td></tr>
+      <tr><td>LuckyCow/Ai_vs_real_web_images(AI側・実写側)</td><td>カードは CC0 宣言だが、検索エンジンのスクレイプで出所の権利が担保されない</td></tr>
+      <tr><td>rafaelpadilla/coco2017</td><td>注釈は CC BY 4.0 だが、画像は Flickr の個別ライセンス</td></tr>
+      <tr><td>nlphuji/flickr30k、jxie/flickr8k</td><td>研究目的</td></tr>
+      <tr><td>mattymchen/celeba-hq</td><td>非商用研究</td></tr>
+      <tr><td>marcosv/ffhq-dataset</td><td>CC BY-NC-SA 4.0(非商用)</td></tr>
+      <tr><td>bitmind/bm-real</td><td>未記載</td></tr>
+      <tr><td>julienlucas/…(実写側)</td><td>MIT 宣言だが実写の出所が不明</td></tr>
+      <tr><td>data-is-better-together/open-image-preferences-v1</td><td><b>評価セットと画像が一致していた</b>ため、学習にも選択にも使わない(下記「訂正の履歴」参照)</td></tr>
+    </table></div>
+  </div>
+
+  <h2 id="repro">7. 再現方法</h2>
+  <div class="card" style="font-size:.9rem">
+    <p style="margin-top:0">この数字を疑う場合、次の手順で確かめられます。手元にモデルを落として自分のデータで測るのがいちばん早いです。</p>
+    <ol style="padding-left:1.3em">
+      <li>来歴チェッカーを開くと <code>honmono_v31_int8.onnx.part1</code> / <code>.part2</code> が読み込まれます。2つを順に結合すると 90MB の ONNX ファイルになります</li>
+      <li>入力は 256×256・RGB・ImageNet 正規化。出力は2クラス(実写 / AI)の logit。しきい値は 0.8</li>
+      <li>評価セットは公開データセット4本から作っています(上表の mj6 / tellif / eddy / faces)。<b>データセット名を明記しているのは、同じものを自分で組み直せるようにするためです</b></li>
+      <li>ブラウザ実装が Python と同じ結果を出すことは、80枚で照合して確認しています</li>
+    </ol>
+    <p style="margin-bottom:0">評価手順の詳細と生ログは
+    <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/design/AI_DETECTOR_EVAL.md" target="_blank" rel="noopener">AI_DETECTOR_EVAL.md</a> にあります。
+    モデルの利用条件は <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/vendor/models/LICENSE.md" target="_blank" rel="noopener">モデルライセンス</a> をご確認ください。</p>
+  </div>
+
+  <h2 id="corrections">8. 訂正の履歴</h2>
+  <div class="notice">
+    <b>2026-08-18 — v2 の数値には、評価データを覗いてしまった疑いがあります。</b><br>
+    v2 を学習したとき、途中経過の良し悪しを判定する「選択用データ」に <code>open-image-preferences-v1</code> を使っていました。
+    その後の汚染チェックで、<b>このデータセットの画像が評価セット eddy の AI 画像と完全一致(ハッシュ距離0)している</b>ことが分かりました。
+    画像6組を目視で並べて確認済みです。つまり v2 は「どの途中経過を採用するか」を決める段で、評価に使うはずの画像を見ていたことになります。
+    v3 以降はこのデータセットを学習にも選択にも使わず、選択用は評価4セットに出てこない生成器(xAI Aurora)に差し替えました。
+    <b>v2 の公開数値は、この分だけ良く出ていた可能性があります。</b>
+  </div>
+  <p class="note">同じことが起きないように、収集したデータと評価セットを全件ハッシュ照合する検査器を作り、
+  さらに「わざと同じ画像を仕込んで、本当に見つけられるか」を確かめてから使っています(仕込んだ6枚を6枚とも検出・無関係な30枚の誤検出0)。</p>
+
+  <div class="notice" style="margin-top:24px">
+    <b>このモデルを製品に組み込みたい方へ:</b> 上の数字と弱点をそのまま前提にしたうえで、
+    ライセンスと継続的な更新についてご相談を受け付けています →
+    <a href="../business/">法人・開発者向けのご案内</a>
+  </div>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <a href="../">HONMONO</a> ·
+  <a href="../docs/">説明書</a> ·
+  <a href="./">実測レポート</a> ·
+  <a href="../business/">法人向け</a> ·
+  <a href="../legal/privacy.html">プライバシー</a> ·
+  <a href="../legal/terms.html">利用規約</a> ·
+  <a href="../legal/credits.html">クレジット</a>
+</div></footer>
+</body>
+</html>

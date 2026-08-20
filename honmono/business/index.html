@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>法人・開発者向け — HONMONO</title>
+<meta name="description" content="端末内で動くAI画像判定モデルのライセンス提供。商用利用可のデータだけで学習し、実測値と弱点を全て公開しています。マッチング・フリマ・ファンプラットフォーム等での組込のご相談を承ります。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="法人・開発者向け — HONMONO">
+<meta property="og:description" content="画像を自社サーバーに送らずに済む、端末内で動くAI画像判定モデル。学習データは全て商用利用可。実測値と弱点を公開しています。">
+<meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/business/">
+<meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="../honmono.css">
+<style>
+  h2 { margin-top: 30px; }
+  main p, main li, main td, main th { font-size: .9rem; }
+  .kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 14px 0; }
+  .kpi div { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .kpi b { display: block; font-size: 1.5rem; color: var(--accent-strong); line-height: 1.2; }
+  .kpi span { font-size: .78rem; color: var(--muted); }
+  .rev { font-size: .82rem; color: var(--muted); }
+  .scroll { overflow-x: auto; }
+</style>
+</head>
+<body>
+<header class="site-head"><div class="wrap">
+  <a class="brand" href="../">HONMONO<small>実在性証明プロジェクト</small></a>
+  <nav>
+    <a href="../checker/">来歴チェッカー</a>
+    <a href="../badge/">実在証明バッジ</a>
+    <a href="../aicheck/">AIアカウント鑑定</a>
+    <a href="../creators/">実在クリエイター名鑑</a>
+    <a href="../docs/">説明書</a>
+  </nav>
+</div></header>
+
+<main class="wrap">
+  <h1>法人・開発者向けのご案内</h1>
+  <p class="lead"><b>画像を自社サーバーに送らずに、AI生成かどうかを判定したい</b>——
+  そのための判定モデルを、ライセンス提供しています。
+  <a href="../checker/">来歴チェッカー</a>で動いているものと同じモデルです。今すぐ無料でお試しいただけます。</p>
+
+  <div class="kpi">
+    <div><b>1.1%</b><span>実在の人の顔を<br>AIと誤判定する割合</span></div>
+    <div><b>92.2%</b><span>AI生成の顔を<br>検出する割合</span></div>
+    <div><b>90MB</b><span>端末内で動く<br>int8 ONNX</span></div>
+    <div><b>100%</b><span>学習データが<br>商用利用可</span></div>
+  </div>
+  <p class="note">顔だけを独立に測ったベンチマーク615枚での実測。一般的な写真を含む545枚では、誤判定 1.8% / AI検出 70.0%。
+  <b>数字の出どころ、測り方、外れた場面は<a href="../report/">実測レポート</a>に全部書いています。</b></p>
+
+  <h2>1. こういう場面で使われます</h2>
+  <div class="card">
+    <ul style="margin:0; padding-left:1.3em">
+      <li><b>マッチング・婚活サービス</b> — プロフィール写真がAI生成でないかの一次スクリーニング</li>
+      <li><b>フリマ・中古売買</b> — 出品画像の捏造検出</li>
+      <li><b>ファンプラットフォーム・投げ銭サービス</b> — なりすましアカウント対策</li>
+      <li><b>メディア・出版</b> — 投稿写真・寄稿画像の検証フローに組み込む</li>
+      <li><b>保険・金融の書類審査</b> — 提出画像の真正性チェックの補助</li>
+    </ul>
+  </div>
+
+  <h2>2. なぜ他ではなくこれなのか</h2>
+  <div class="card">
+    <h3 style="margin-top:0">① 画像を外に出さずに済む</h3>
+    <p style="margin:4px 0 14px">端末内(ブラウザ・アプリ内)で完結します。クラウドAPI型の検出サービスと違い、
+    <b>利用者の画像を自社サーバーにも第三者にも送る必要がありません。</b>
+    個人情報を預かりたくない事業では、これ自体が要件になります。</p>
+
+    <h3>② 学習データがすべて商用利用可</h3>
+    <p style="margin:4px 0 14px">条件が未記載・非商用・研究目的限定のデータセットは<b>22件を意図的に除外</b>しました。
+    性能が上がると分かっていても外しています(実際、顔データセットを外したせいで一度精度が落ち、作り直しました)。
+    <b>法務審査で止まらないことを最初から設計に入れています。</b>
+    <a href="../report/#data">出典と除外理由の全リスト</a></p>
+
+    <h3>③ 公開されている判定モデルは、ほとんど使い物にならない</h3>
+    <p style="margin:4px 0">同一条件で公開モデル9本を測ったところ、<b>8本は実写を10〜88%の割合でAIと誤判定</b>しました。
+    唯一まともだった1本はライセンス未記載で商用利用の可否が判断できません。
+    「自前で作ればいい」と考える場合、この31データセットのライセンス確認・7.5万枚の収集・汚染チェック・学習の反復を、
+    そちらでやり直すことになります。<a href="../report/#public">9本の実測結果</a></p>
+  </div>
+
+  <h2>3. 先に弱点をお伝えします</h2>
+  <div class="notice">
+    <ul style="margin:0; padding-left:1.3em">
+      <li><b>2025年世代の生成器は4割近く見逃します</b>(Seedream 4・Gemini 2.5・FLUX Pro 等で検出 62.6%)</li>
+      <li><b>「AIではない」ことの証明には使えません。</b>検出しなかった=人間、ではありません</li>
+      <li>生成器は毎月新しくなります。<b>更新しなければ、この数字は放っておけば下がり続けます</b></li>
+      <li>この数字は私たち自身が測ったものです。第三者による再測定は行われていません(だからこそ、測り方を公開しています)</li>
+    </ul>
+  </div>
+  <p class="note">3つ目が、継続的なご契約をおすすめしている理由です。買って終わりにすると、1年で陳腐化します。</p>
+
+  <h2>4. 提供の形</h2>
+  <div class="scroll"><table>
+    <tr><th>形態</th><th>内容</th><th>価格の目安</th></tr>
+    <tr><td><b>評価・検証</b></td><td>モデルを実際に落として、御社のデータで測っていただく</td><td><b>無料</b>(<a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/vendor/models/LICENSE.md" target="_blank" rel="noopener">モデルライセンス</a>の範囲内)</td></tr>
+    <tr><td><b>買い切りライセンス</b></td><td>重み + 推論コード + 実測レポート + 1年間の更新</td><td>30〜100万円</td></tr>
+    <tr><td><b>年間ライセンス</b></td><td>上記 + 新しい生成器への追随(定期更新)+ 技術サポート</td><td>月額 5〜20万円</td></tr>
+    <tr><td><b>API 従量</b></td><td>サーバー側で判定。御社での実装が不要な形</td><td>ご相談</td></tr>
+    <tr><td><b>導入支援・追加学習</b></td><td>組込作業、御社のデータでの再学習・しきい値調整</td><td>ご相談</td></tr>
+  </table></div>
+  <p class="note">用途・規模・提供形態で条件が変わるため、確定価格ではなく目安を記載しています。
+  <b>まずは無料で測っていただき、御社のデータで実用に足るかを確かめてからのご相談で構いません。</b></p>
+
+  <h2>5. お問い合わせ</h2>
+  <div class="card">
+    <p style="margin-top:0">現在、お問い合わせは GitHub Issue で受け付けています。</p>
+    <p style="margin:0 0 12px">
+      <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%5B%E6%B3%95%E4%BA%BA%5D%20HONMONO%20%E5%88%A4%E5%AE%9A%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E3%81%94%E7%9B%B8%E8%AB%87&body=%E4%BC%9A%E7%A4%BE%E5%90%8D%3A%0A%E3%81%94%E6%8B%85%E5%BD%93%E8%80%85%E5%90%8D%3A%0A%E3%81%94%E9%80%A3%E7%B5%A1%E5%85%88%3A%0A%0A%E7%94%A8%E9%80%94%28%E3%81%A9%E3%81%AE%E5%A0%B4%E9%9D%A2%E3%81%A7%E4%BD%BF%E3%81%84%E3%81%9F%E3%81%84%E3%81%8B%29%3A%0A%E6%83%B3%E5%AE%9A%E3%81%99%E3%82%8B%E5%88%A4%E5%AE%9A%E4%BB%B6%E6%95%B0%2F%E6%9C%88%3A%0A%E7%AB%AF%E6%9C%AB%E5%86%85%E3%81%A7%E5%8B%95%E3%81%8B%E3%81%99%E5%BF%85%E8%A6%81%E3%81%8C%E3%81%82%E3%82%8B%E3%81%8B%3A%0A%E5%B8%8C%E6%9C%9B%E3%81%AE%E6%8F%90%E4%BE%9B%E5%BD%A2%E6%85%8B%3A" target="_blank" rel="noopener"><b>お問い合わせフォーム(GitHub Issue)を開く →</b></a>
+    </p>
+    <p class="note" style="margin:0"><b>ご注意:</b> GitHub Issue の内容は<b>公開されます</b>。
+    社外に出せない情報を含む場合は、その旨だけを書いてご連絡ください。非公開の連絡手段をお伝えします。</p>
+  </div>
+
+  <h2>6. お引き受けしないこと</h2>
+  <div class="card">
+    <p style="margin-top:0">このプロジェクトは「実在する人が、AIと疑われずに済むように」という目的で作っています。
+    次のご依頼はお断りします。</p>
+    <ul style="margin:0; padding-left:1.3em">
+      <li>判定結果を、<b>特定の個人を公然と「AI」「詐欺」と断定する</b>用途に使うこと</li>
+      <li>本モデルの出力<b>だけ</b>を根拠に、アカウント停止・取引拒否・採用可否などを自動で決定する仕組み</li>
+      <li>「AI生成であることを検出されないようにする」ための利用(検出回避の開発)</li>
+      <li>実測値を伴わない「AI判定100%」といった宣伝に、本モデルの名前を使うこと</li>
+    </ul>
+  </div>
+
+  <p class="rev">最終更新: 2026-08-20 / HONMONO プロジェクト ·
+  <a href="../legal/terms.html">利用規約</a> ·
+  <a href="../legal/privacy.html">プライバシーポリシー</a></p>
+</main>
+
+<footer class="site-foot"><div class="wrap">
+  <a href="../">HONMONO</a> ·
+  <a href="../docs/">説明書</a> ·
+  <a href="../report/">実測レポート</a> ·
+  <a href="./">法人向け</a> ·
+  <a href="../legal/privacy.html">プライバシー</a> ·
+  <a href="../legal/terms.html">利用規約</a> ·
+  <a href="../legal/credits.html">クレジット</a>
+</div></footer>
+</body>
+</html>
