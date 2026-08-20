@@ -36,10 +36,14 @@
 
 ## 3. 現在のbranch
 
-- 作業ブランチ: **`claude/ojisan-health-app-panu15`**(UI専用ブランチではなく、このアプリ全体のブランチ)
-- 公開ブランチ: **`main`**(GitHub Pages)。**`main` に `health/` は存在しない**(`git ls-tree origin/main | grep ^health/` = 0件)
-- したがって **`https://yuukigogo000-ai.github.io/health/` はまだ存在しない**(未公開)
-- リモート: `origin` = github.com/yuukigogo000-ai/yuukigogo000-ai.github.io
+| 種別 | 値 |
+|---|---|
+| **UI作業用ブランチ(これから使う)** | **`ui/karada-v1`**(2026-08-21 作成・push済み) |
+| アプリのブランチ | `claude/ojisan-health-app-panu15` |
+| 公開ブランチ | `main`(GitHub Pages) |
+| リモート | `origin` = github.com/yuukigogo000-ai/yuukigogo000-ai.github.io |
+
+- **`main` に `health/` は存在しない**(`git ls-tree origin/main | grep ^health/` = 0件)。したがって `https://yuukigogo000-ai.github.io/health/` は**まだ存在しない**(未公開)
 - **注意**: このブランチは古いコミット `9fc5598` から分岐しており、`main` にある他アプリ(band/ honmono/ surf/ reply-ai-app/ 等)や README.md・robots.txt を含まない。マージ時に `main` の README.md と競合する可能性がある(本ブランチの README は `health/README.md` に置いてある)
 
 ---
@@ -48,11 +52,13 @@
 
 | 種別 | 値 | 内容 |
 |---|---|---|
-| HEAD | `06d6ad7` | UI: カラダ日報のホームを1から作り変え(UI_PLAYBOOK v3)。push 済み |
-| 直前 | `d551664` | アプリ名を「カラダ日報」に変更 |
-| **checkpoint tag** | **`health-pre-ui-rebuild-20260818`**(= `d551664`) | **UI作り変え直前の復旧点。リモートにも push 済み** |
-| 復旧コマンド | `git checkout health-pre-ui-rebuild-20260818 -- health/` | 旧UIに戻す |
-| 未コミット差分 | **なし**(`git status --porcelain` 空。ただし本ファイル作成後は本ファイルが未追跡になる) |
+| HEAD | `12188bf` | docs(ui): プロトコル v2 の Phase 0 成果物を整備(**UIコードは無変更**)。push済み |
+| 直前 | `06d6ad7` | UI: ホームを1から作り変え(UI_PLAYBOOK v3)= **v0.1 実装** |
+| **checkpoint tag(最新)** | **`checkpoint/karada-v0.1-20260821`**(= `12188bf`) | **UI作り直しの出発点**。v0.1実装 + Phase 0文書。push済み |
+| checkpoint tag(旧) | `health-pre-ui-rebuild-20260818`(= `d551664`) | v0.1 を作る前の旧UI。push済み |
+| 復旧コマンド | `git checkout checkpoint/karada-v0.1-20260821 -- health/` | v0.1 に戻す |
+| | `git checkout health-pre-ui-rebuild-20260818 -- health/` | さらに前の旧UIに戻す |
+| 未コミット差分 | **なし** |
 
 ---
 
@@ -367,13 +373,13 @@ uicheck の撮影物: `C:\Users\gogyo\AI_WORKSPACE\ui_toolkit\uicheck\out\karada
 
 | 項目 | 状態 |
 |---|---|
-| working tree | **clean**(本ファイル作成前の時点。作成後は本ファイルが未追跡) |
-| 本ブランチの最終commit | `06d6ad7` |
-| push | **済み**(`origin/claude/ojisan-health-app-panu15` = `06d6ad7`) |
+| working tree | **clean** |
+| 最新commit | `12188bf`(docs のみ。`health/index.html` は無変更) |
+| push | **済み** — `origin/claude/ojisan-health-app-panu15` と `origin/ui/karada-v1` が同じ `12188bf` |
+| tag | `checkpoint/karada-v0.1-20260821` / `health-pre-ui-rebuild-20260818` — 両方 push済み |
 | merge | **未**。`main` に `health/` は無い |
 | 公開 | **未公開** |
-| checkpoint tag | `health-pre-ui-rebuild-20260818` — ローカル・リモート両方に存在 |
-| **本ファイル(UI_HANDOFF.md)** | **未コミット**(発注者の指示により commit / push / merge を行っていない) |
+| これからの作業ブランチ | **`ui/karada-v1`** で行う。未レビューのUI実装を `main` へ push / merge しない(プロトコル §6) |
 
 ---
 
