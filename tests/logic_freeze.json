@@ -1,0 +1,86 @@
+{
+  "generated_for": "expectation-explorer.html",
+  "missing": [],
+  "pageerrors": [],
+  "protected": {
+    "fn:num": {
+      "sha256_16": "fee7059512485f5b",
+      "bytes": 131
+    },
+    "fn:sanitizeProfile": {
+      "sha256_16": "f7fc7d661c255ef1",
+      "bytes": 288
+    },
+    "fn:sanitizeOption": {
+      "sha256_16": "daa2b4b4b8e33f4f",
+      "bytes": 947
+    },
+    "fn:loadProfile": {
+      "sha256_16": "dfb37da4b8fd47b7",
+      "bytes": 156
+    },
+    "fn:loadOptions": {
+      "sha256_16": "8cf3898e30d4feef",
+      "bytes": 207
+    },
+    "fn:persist": {
+      "sha256_16": "8d903fca2a0ec36a",
+      "bytes": 368
+    },
+    "fn:annuity": {
+      "sha256_16": "cf715e966a9d4946",
+      "bytes": 211
+    },
+    "fn:calc": {
+      "sha256_16": "9d494f78a0fd9ca4",
+      "bytes": 1851
+    },
+    "fn:fmtMan": {
+      "sha256_16": "12134cd5580a8857",
+      "bytes": 515
+    },
+    "fn:fmtPerHour": {
+      "sha256_16": "9192c286bc53425a",
+      "bytes": 311
+    },
+    "fn:fmtX": {
+      "sha256_16": "70db056af81cb2b2",
+      "bytes": 124
+    },
+    "fn:fmtPct": {
+      "sha256_16": "4651a0a63560ce20",
+      "bytes": 79
+    },
+    "fn:esc": {
+      "sha256_16": "eaccc469a1083574",
+      "bytes": 129
+    },
+    "const:LS_PROFILE": {
+      "sha256_16": "7059f7686c3bc40a",
+      "bytes": 15
+    },
+    "const:LS_OPTIONS": {
+      "sha256_16": "d50f70a3f4fe2fcf",
+      "bytes": 15
+    },
+    "const:DOMAINS": {
+      "sha256_16": "3e58138c47d83877",
+      "bytes": 106
+    },
+    "const:TEMPLATES": {
+      "sha256_16": "bc65ec827045736b",
+      "bytes": 2113
+    },
+    "const:PROFILE_DEF": {
+      "sha256_16": "7dbb8486b505e38b",
+      "bytes": 143
+    }
+  },
+  "contracts": {
+    "no_fetch": true,
+    "no_external_url": true,
+    "no_external_asset": true,
+    "ls_accessors": "LS_OPTIONS,LS_PROFILE",
+    "demo_guard": true
+  }
+}
