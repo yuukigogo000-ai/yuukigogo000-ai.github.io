@@ -31,10 +31,14 @@
 
 - サイトの入口 `/` = つくったもの置き場(公開中のアプリ一覧)
 - **JAN→楽天価格 取得ツールはサイトから降ろした**(2026-08-25)。`tools/` は `_config.yml` で配信停止。
-  使うときは `tools/jan/index.html` を**ブラウザで直接開く**(このリポジトリのローカルファイル)。
   理由: 公開オリジンに置くと、保存した楽天APIキーがサイト内のどこか1箇所のXSSから読める
-  ⚠ 楽天の accessKey は Referer で本人確認する。ローカルで弾かれる場合は
-  楽天アプリ設定の許可Refererに `file://` またはローカルの出所を足す必要がある(未検証)
+  - **使う場所 = `C:\\Users\\gogyo\\tools\\jan\\index.html`**(ブラウザで直接開く)。
+    このリポジトリの `tools/jan/index.html` の写し。リポジトリ側を直したら**コピーし直す**。
+    作業ブランチが main 以外だとリポジトリ内の `tools/` が作業ツリーから消えるので、外に置いてある
+  - Referer/CORS は**実測で問題なし**(2026-08-25): `file://` から楽天APIに到達し、
+    返ってきたのは `403 Invalid Access Key`(ダミーキーのため)。CORS遮断なら `Failed to fetch` になり
+    HTTPステータスすら取れない。ただし**有効な鍵での通しは未実施**
+  - ⚠ サイトに戻してはいけない。戻すと CSP の `connect-src 'self'` で楽天APIが遮断される
 - 公開停止中 = `/surf/`(波チェック)・`/reply-ai/`(Replier)。どちらも告知ページのみ
 - `/reply-ai/sw.js` は「墓標」。PWAとして端末に残った旧アプリを解除して消すためのもの。**消さない**
 - 配信しないもの = `reply-ai-app/` `tests/` `honmono/tests/` `CLAUDE.md` `desktop/`
