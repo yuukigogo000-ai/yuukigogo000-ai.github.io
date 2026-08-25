@@ -19,6 +19,10 @@
 - 公開面: `node tests/site_surface.mjs`(実サイトに対して「開いてよいもの/閉じるべきもの」を両方検査する)
 - Replier 告知ページの後始末: `node tests/reply_ai_tombstone.mjs`(`--mutate` で検査器自身を確認)
 - Replier: `cd reply-ai-app && npm test`。見た目の変更はソース側 → `npm run build` → `reply-ai/` を検査
+- CSP: `node tests/csp_check.mjs`(`--mutate` で自己検査)。全公開ページを実ブラウザで開き、
+  CSP違反0・JSエラー0を見る。HONMONOの画素判定は実画像を1枚流して Worker(blob:)と wasm が生きているか確認する
+- HONMONO: `python honmono/tests/verify_site.py`(`--selftest`)/ `node honmono/tests/test_pages_smoke.js`(`--mutate`)
+  ※後者の検査対象は `SITE_ROOT` で差し替えられる(既定はリポジトリ直下)
 
 ## 公開面の地図(2026-08-25 整理)
 
@@ -26,8 +30,11 @@
 **github.com 上では引き続き読める**。秘密は絶対に置かない。
 
 - サイトの入口 `/` = つくったもの置き場(公開中のアプリ一覧)
-- **JAN→楽天価格 取得ツールは `/tools/jan/` へ移動した**(noindex + robots Disallow)。
-  トップからはリンクしていないので、URL直打ちで開く
+- **JAN→楽天価格 取得ツールはサイトから降ろした**(2026-08-25)。`tools/` は `_config.yml` で配信停止。
+  使うときは `tools/jan/index.html` を**ブラウザで直接開く**(このリポジトリのローカルファイル)。
+  理由: 公開オリジンに置くと、保存した楽天APIキーがサイト内のどこか1箇所のXSSから読める
+  ⚠ 楽天の accessKey は Referer で本人確認する。ローカルで弾かれる場合は
+  楽天アプリ設定の許可Refererに `file://` またはローカルの出所を足す必要がある(未検証)
 - 公開停止中 = `/surf/`(波チェック)・`/reply-ai/`(Replier)。どちらも告知ページのみ
 - `/reply-ai/sw.js` は「墓標」。PWAとして端末に残った旧アプリを解除して消すためのもの。**消さない**
 - 配信しないもの = `reply-ai-app/` `tests/` `honmono/tests/` `CLAUDE.md` `desktop/`

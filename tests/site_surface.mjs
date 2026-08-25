@@ -35,13 +35,14 @@ const MUST_BE_OPEN = [
   ['/surf/', '波チェック 公開停止の告知'],
   ['/reply-ai/', 'Replier 公開停止の告知'],
   ['/reply-ai/sw.js', 'Replier の墓標ServiceWorker'],
-  ['/tools/jan/', 'JAN→楽天ツール(移動先)'],
   ['/robots.txt', 'robots'],
   ['/sitemap.xml', 'sitemap'],
 ];
 
 // 閉じていてほしいもの(他人に見せる必要がない開発用ファイル)
 const MUST_BE_CLOSED = [
+  ['/tools/jan/', '個人用JAN→楽天ツール(公開オリジンから降ろした)'],
+  ['/tools/jan/index.html', '同上・直リンク'],
   ['/reply-ai-app/', 'Replier 開発用ソース'],
   ['/reply-ai-app/REVIEW_LOG.md', 'レビュー記録'],
   ['/reply-ai-app/REVIEW_REQUEST.md', 'レビュー依頼'],
@@ -74,9 +75,12 @@ const CONTENT = [
   ['/reply-ai/', 'includes', '公開を停止', 'Replier が告知ページになっている'],
   ['/reply-ai/', 'excludes', 'assets/index-', 'Replier が旧アプリ本体を読み込んでいない'],
   ['/reply-ai/sw.js', 'includes', 'unregister', '墓標SWが自分を解除する'],
-  ['/tools/jan/', 'includes', 'noindex', '移動先ツールが検索除外されている'],
   ['/robots.txt', 'includes', 'Disallow: /tools/', 'robots が個人用ツールを除外'],
   ['/surf/', 'includes', '公開を停止', '波チェックの告知が生きている'],
+  ['/', 'includes', 'Content-Security-Policy', '入口にCSPが入っている'],
+  ['/band/', 'includes', "base-uri 'none'", 'セトリズムのCSPが base 注入を封じている'],
+  ['/honmono/checker/', 'includes', "connect-src 'self'", 'チェッカーのCSPが外部送信を封じている'],
+  ['/pachinko/', 'includes', 'Content-Security-Policy', 'パチスロ帝国にCSPが入っている'],
 ];
 
 async function head(path) {

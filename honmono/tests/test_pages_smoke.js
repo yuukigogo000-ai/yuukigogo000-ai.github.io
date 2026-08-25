@@ -6,7 +6,10 @@ const fs = require('fs');
 const path = require('path');
 const http = require('http');
 
-const REPO = path.resolve('C:/Users/gogyo/AppData/Local/Temp/hbk/site');
+// 検査対象のサイトルート。既定はこのファイルから見たリポジトリ直下。
+// (以前は特定セッションの一時ディレクトリを直書きしていて、そのフォルダが消えた時点で
+//  この検査器は実行不能になっていた。SITE_ROOT で差し替えられるようにした)
+const REPO = path.resolve(process.env.SITE_ROOT || path.join(__dirname, '..', '..'));
 const PORT = 8771;
 
 function findBrowser() {
