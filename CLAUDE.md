@@ -15,5 +15,21 @@
 禁止: 外部CDN/Webフォント/外部アイコン読込(オフラインPWA)・見た目WOでのロジック/保存形式/localStorage キー変更・他社画像の持ち込み。
 
 ## テスト
-- セトリズム: `tests/` は main に無い → `git checkout origin/claude/band-app-development-wgs7ly -- tests` → `cd tests && npm install && npm test`
+- セトリズム: `cd tests && npm install && npm test`(main に入っている。smoke 87項目 + torture 42項目)
+- 公開面: `node tests/site_surface.mjs`(実サイトに対して「開いてよいもの/閉じるべきもの」を両方検査する)
 - Replier: `cd reply-ai-app && npm test`。見た目の変更はソース側 → `npm run build` → `reply-ai/` を検査
+
+## 公開面の地図(2026-08-25 整理)
+
+このリポジトリは **public**。`_config.yml` の `exclude` に書いたものはサイトから配信されないが、
+**github.com 上では引き続き読める**。秘密は絶対に置かない。
+
+- サイトの入口 `/` = つくったもの置き場(公開中のアプリ一覧)
+- **JAN→楽天価格 取得ツールは `/tools/jan/` へ移動した**(noindex + robots Disallow)。
+  トップからはリンクしていないので、URL直打ちで開く
+- 公開停止中 = `/surf/`(波チェック)・`/reply-ai/`(Replier)。どちらも告知ページのみ
+- `/reply-ai/sw.js` は「墓標」。PWAとして端末に残った旧アプリを解除して消すためのもの。**消さない**
+- 配信しないもの = `reply-ai-app/` `tests/` `honmono/tests/` `CLAUDE.md` `desktop/`
+  `pachinko/desktop/` と内部の企画資料。詳細と理由は `_config.yml` に書いてある
+- `honmono/design/AI_DETECTOR_EVAL.md` と `dataset_licenses.json` は
+  公開ページからリンクしているので **exclude してはいけない**

@@ -1,25 +1,108 @@
 <!doctype html>
 <html lang="ja">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>Replier — LINE・マッチングアプリの返信コーチ</title>
-    <meta
-      name="description"
-      content="LINE・マッチングアプリのトーク画面から、あなたの文体のまま送れる返信を提案する会話コーチ。"
-    />
-    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#16181b" media="(prefers-color-scheme: dark)" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-    <meta name="apple-mobile-web-app-title" content="Replier" />
-    <meta name="format-detection" content="telephone=no" />
-    <link rel="icon" href="/reply-ai/icons/favicon.svg" type="image/svg+xml" />
-    <link rel="apple-touch-icon" href="/reply-ai/icons/apple-touch-icon.png" />
-    <script type="module" crossorigin src="/reply-ai/assets/index-DFuEpde7.js"></script>
-    <link rel="stylesheet" crossorigin href="/reply-ai/assets/index-Bg1SwlMZ.css">
-  <link rel="manifest" href="/reply-ai/manifest.webmanifest"></head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Replier — 公開停止中</title>
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: #f4f5f7;
+    color: #16181b;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  main {
+    width: 100%;
+    max-width: 26rem;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, .1);
+    border-radius: 16px;
+    padding: 32px 24px;
+    text-align: center;
+  }
+  h1 { margin: 0 0 6px; font-size: 1.125rem; letter-spacing: .04em; }
+  .sub { margin: 0 0 20px; font-size: .8125rem; color: #6b7280; letter-spacing: .06em; }
+  p { margin: 0 0 12px; font-size: .875rem; color: #374151; }
+  hr { border: 0; border-top: 1px solid rgba(0, 0, 0, .1); margin: 20px 0; }
+  .note { margin: 0 0 8px; font-size: .75rem; color: #6b7280; }
+  #wiped { font-size: .8125rem; color: #166534; background: #dcfce7; border-radius: 8px; padding: 10px 12px; margin: 0 0 12px; }
+  #wiped[hidden] { display: none; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0d0e10; color: #e5e7eb; }
+    main { background: #16181b; border-color: rgba(255, 255, 255, .1); }
+    .sub, .note { color: #9ca3af; }
+    p { color: #d1d5db; }
+    hr { border-top-color: rgba(255, 255, 255, .1); }
+    #wiped { color: #bbf7d0; background: #14532d; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Replier</h1>
+  <p class="sub">現在、公開を停止しています</p>
+
+  <p id="wiped" hidden></p>
+
+  <p>ログインと利用料の仕組みが用意できていないため、一時的に公開を取りやめています。</p>
+  <p>再開の時期は未定です。</p>
+  <hr>
+  <p class="note">このページでは、返信の生成や添削は行っていません。</p>
+  <p class="note">ホーム画面に追加している場合は、アイコンを削除してください。</p>
+</main>
+
+<script>
+// 公開停止にともなう後始末。
+// このアプリは利用者本人の Anthropic APIキーをこの端末の localStorage に保存していた。
+// ページを開いた時点で、それらを消す。
+(function () {
+  var removed = 0;
+  try {
+    var keys = [];
+    for (var i = 0; i < localStorage.length; i++) {
+      var k = localStorage.key(i);
+      if (k && k.indexOf('reply') === 0) keys.push(k);
+    }
+    for (var j = 0; j < keys.length; j++) {
+      localStorage.removeItem(keys[j]);
+      removed++;
+    }
+  } catch (e) {
+    // プライベートウィンドウなど、localStorage が使えない場合は何もしない
+  }
+
+  if (removed > 0) {
+    var el = document.getElementById('wiped');
+    el.textContent = 'この端末に保存されていたAPIキーと設定（' + removed + '件）を削除しました。';
+    el.hidden = false;
+  }
+
+  // 端末に残っている旧アプリのキャッシュと Service Worker を解除する
+  try {
+    if ('caches' in window) {
+      caches.keys().then(function (names) {
+        names.forEach(function (n) { caches.delete(n); });
+      });
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function (regs) {
+        regs.forEach(function (r) { r.unregister(); });
+      });
+    }
+  } catch (e) {
+    // 対応していないブラウザでは何もしない
+  }
+})();
+</script>
+</body>
 </html>

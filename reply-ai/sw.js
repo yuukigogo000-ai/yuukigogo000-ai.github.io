@@ -1,1 +1,35 @@
-if(!self.define){let e,i={};const n=(n,s)=>(n=new URL(n+".js",s).href,i[n]||new Promise(i=>{if("document"in self){const e=document.createElement("script");e.src=n,e.onload=i,document.head.appendChild(e)}else e=n,importScripts(n),i()}).then(()=>{let e=i[n];if(!e)throw new Error(`Module ${n} didn’t register its module`);return e}));self.define=(s,o)=>{const c=e||("document"in self?document.currentScript.src:"")||location.href;if(i[c])return;let r={};const d=e=>n(e,c),l={module:{uri:c},exports:r,require:d};i[c]=Promise.all(s.map(e=>l[e]||d(e))).then(e=>(o(...e),r))}}define(["./workbox-2fbc6a65"],function(e){"use strict";self.addEventListener("message",e=>{e.data&&"SKIP_WAITING"===e.data.type&&self.skipWaiting()}),e.precacheAndRoute([{url:"manifest.webmanifest",revision:"7d182acc59a0461c8597d48541bb477d"},{url:"index.html",revision:"8e687e11bc59e5e8ff57c96f567e8c59"},{url:"icons/icon-maskable-512.png",revision:"c9e6560365f4ab01ead7ad79e3239c5e"},{url:"icons/icon-512.png",revision:"1fd7250641472de3fc3c11058e944692"},{url:"icons/icon-192.png",revision:"3151100d6e3737aa6dd7833684d648ba"},{url:"icons/favicon.svg",revision:"65a8119e103c97cba91367d8f30d817e"},{url:"icons/apple-touch-icon.png",revision:"31128401fe9571856db5706884990bd8"},{url:"assets/workbox-window.prod.es5-Bd17z0YL.js",revision:null},{url:"assets/index-DFuEpde7.js",revision:null},{url:"assets/index-Bg1SwlMZ.css",revision:null},{url:"icons/apple-touch-icon.png",revision:"31128401fe9571856db5706884990bd8"},{url:"icons/favicon.svg",revision:"65a8119e103c97cba91367d8f30d817e"},{url:"icons/icon-192.png",revision:"3151100d6e3737aa6dd7833684d648ba"},{url:"icons/icon-512.png",revision:"1fd7250641472de3fc3c11058e944692"},{url:"icons/icon-maskable-512.png",revision:"c9e6560365f4ab01ead7ad79e3239c5e"},{url:"manifest.webmanifest",revision:"7d182acc59a0461c8597d48541bb477d"}],{}),e.cleanupOutdatedCaches(),e.registerRoute(new e.NavigationRoute(e.createHandlerBoundToURL("/reply-ai/index.html"),{denylist:[/^\/api/]}))});
+// Replier は公開を停止した。
+//
+// これは旧アプリの Service Worker を置き換えるための「墓標」。
+// PWA として端末に入っている利用者は、次にアプリを開いたときにこのファイルを取得する。
+// ここでキャッシュ(古いアプリ本体)を全部消し、自分自身の登録も解除する。
+// これをやらないと、公開停止後も古いアプリがオフラインで動き続け、
+// APIキーを預かる画面がいつまでも端末に残る。
+
+self.addEventListener('install', function () {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', function (event) {
+  event.waitUntil(
+    caches.keys()
+      .then(function (names) {
+        return Promise.all(names.map(function (n) { return caches.delete(n); }));
+      })
+      .then(function () {
+        return self.registration.unregister();
+      })
+      .then(function () {
+        return self.clients.matchAll({ type: 'window' });
+      })
+      .then(function (clients) {
+        clients.forEach(function (c) {
+          // 告知ページを取りに行かせる(キャッシュ済みの旧アプリを表示させない)
+          if ('navigate' in c) { c.navigate(c.url); }
+        });
+      })
+      .catch(function () {
+        // 解除に失敗しても、少なくとも fetch は素通しにする(下の fetch ハンドラ無し)
+      })
+  );
+});

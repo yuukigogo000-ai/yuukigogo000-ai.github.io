@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
 
+# 個人用ツール・公開停止中のページは検索結果に載せない
+Disallow: /tools/
+Disallow: /reply-ai/
+Disallow: /surf/
+
 Sitemap: https://yuukigogo000-ai.github.io/sitemap.xml

@@ -1,0 +1,47 @@
+# 公開サイト(GitHub Pages / Jekyll)の設定
+#
+# exclude に書いたものは https://yuukigogo000-ai.github.io/ から配信されない。
+# ファイル自体はリポジトリに残るので、開発とテストには引き続き使える。
+#
+# 【重要な限界】このリポジトリは public のため、ここに書いたファイルも
+# github.com 上では読める。「サイトから消す」だけで「GitHubから消す」ではない。
+# 完全に隠すにはリポジトリを private にする必要があるが、
+# Free プランでは private 化すると Pages ごと停止する。
+
+exclude:
+  # --- Jekyll の既定値(exclude を書くと既定値が消えるため明示的に持ち越す) ---
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+
+  # --- 2026-08-25 追加: 公開する必要のない開発用ファイル ---
+
+  # Replier の開発用ソースと内部資料(設計書・レビュー記録・レビュー用プロンプト)
+  - reply-ai-app/
+
+  # テスト一式(リポジトリには残す。配信だけしない)
+  - tests/
+  - honmono/tests/
+
+  # このリポジトリの作業ルール
+  - CLAUDE.md
+
+  # 内部の企画・レビュー資料
+  # ※ honmono/design/AI_DETECTOR_EVAL.md と dataset_licenses.json は
+  #    公開ページ(/honmono/docs/ と /honmono/report/)から明示的にリンクしているため除外しない
+  - honmono/design/IMAGE_BRIEF.md
+  - honmono/design/PLAN_RELEASE_PREP.md
+  - honmono/design/UI_REVIEW_BRIEF.md
+  - pachinko/DESIGN.md
+  - pachinko/ASSET_BRIEF.md
+
+  # デスクトップ版のビルド定義(Webサイトとしては配信しない)
+  - desktop/
+  - pachinko/desktop/

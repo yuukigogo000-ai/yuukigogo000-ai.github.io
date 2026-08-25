@@ -1,242 +1,93 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ja">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>JAN→楽天価格 取得ツール（個人用）</title>
+<title>つくったもの置き場</title>
+<meta name="description" content="個人でつくっているWebツールとアプリの入口。">
 <style>
   :root { color-scheme: light dark; }
-  body { font-family: system-ui, -apple-system, "Segoe UI", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
-         max-width: 860px; margin: 0 auto; padding: 20px; line-height: 1.6; }
-  h1 { font-size: 1.4rem; }
-  fieldset { border: 1px solid #8886; border-radius: 8px; margin: 14px 0; padding: 14px; }
-  legend { font-weight: 600; padding: 0 6px; }
-  label { display: block; margin: 8px 0 4px; font-size: .9rem; }
-  input[type=text], input[type=password], textarea {
-    width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #8886;
-    border-radius: 6px; font-size: 1rem; font-family: inherit; }
-  textarea { min-height: 120px; resize: vertical; }
-  button { font-size: 1rem; padding: 10px 18px; border: 0; border-radius: 6px;
-    background: #bf0000; color: #fff; cursor: pointer; margin-top: 10px; }
-  button:disabled { background: #888; cursor: default; }
-  .row { display: flex; gap: 12px; flex-wrap: wrap; }
-  .row > div { flex: 1; min-width: 220px; }
-  #log { white-space: pre-wrap; background: #8881; border-radius: 6px; padding: 10px;
-    font-family: ui-monospace, Consolas, monospace; font-size: .85rem; max-height: 260px; overflow: auto; }
-  table { border-collapse: collapse; width: 100%; font-size: .82rem; margin-top: 10px; }
-  th, td { border: 1px solid #8884; padding: 4px 6px; text-align: left; }
-  th { background: #8882; }
-  .note { font-size: .82rem; color: #888; }
-  .warn { background: #ffae0022; border-left: 4px solid #ffae00; padding: 8px 12px; border-radius: 4px; font-size: .85rem; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 40px 20px 64px;
+    background: #f4f5f7;
+    color: #16181b;
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+    line-height: 1.8;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 40rem; margin: 0 auto; }
+  h1 { font-size: 1.25rem; margin: 0 0 4px; letter-spacing: .02em; }
+  .lead { margin: 0 0 32px; font-size: .875rem; color: #6b7280; }
+  h2 { font-size: .75rem; letter-spacing: .12em; color: #6b7280; margin: 32px 0 12px; font-weight: 600; }
+  ul { list-style: none; margin: 0; padding: 0; }
+  li { margin: 0 0 10px; }
+  a.card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, .1);
+    border-radius: 12px;
+    padding: 16px 18px;
+  }
+  a.card:hover { border-color: rgba(0, 0, 0, .28); }
+  a.card:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+  .name { font-weight: 600; font-size: .9375rem; }
+  .desc { font-size: .8125rem; color: #6b7280; margin-top: 2px; }
+  .stopped { font-size: .8125rem; color: #6b7280; margin: 0 0 6px; }
+  footer { margin-top: 40px; font-size: .75rem; color: #6b7280; border-top: 1px solid rgba(0, 0, 0, .1); padding-top: 16px; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #0d0e10; color: #e5e7eb; }
+    a.card { background: #16181b; border-color: rgba(255, 255, 255, .1); }
+    a.card:hover { border-color: rgba(255, 255, 255, .3); }
+    .lead, .desc, h2, .stopped, footer { color: #9ca3af; }
+    footer { border-top-color: rgba(255, 255, 255, .1); }
+  }
 </style>
 </head>
 <body>
-<h1>JAN → 楽天価格 取得ツール（個人用）</h1>
-<p class="note">JANコードを入れると楽天市場APIで最安値を引き、<b>価格証拠テンプレート.csv</b>（14列）形式でダウンロードします。
-このページはあなたのGitHubサイト上で動き、楽天が本人確認に使うRefererはブラウザが自動で付けます（偽装なし）。</p>
+<div class="wrap">
 
-<div class="warn">
-  <b>取り込む前に必ず確認：</b> 出力CSVは機械が作った候補です。各行の <code>source_ref</code> のURLを開いて実際に買えるか確認し、
-  食品など軽減税率(8%)の商品は <code>tax_rate</code> を <code>0.08</code> に直し、送料欄を埋めてから、エンジンの取込画面で宣誓して取り込んでください。
+  <h1>つくったもの置き場</h1>
+  <p class="lead">個人でつくっているWebツールです。どれも作りかけで、予告なく止めたり変えたりします。</p>
+
+  <h2>いま動いているもの</h2>
+  <ul>
+    <li>
+      <a class="card" href="/honmono/">
+        <div class="name">HONMONO</div>
+        <div class="desc">その画像や作品が「人が作った本物か」を確かめるための道具をまとめたもの。画像の来歴データを読む検査、画素からのAI判定(実験)、実在クリエイターの相互リンク。</div>
+      </a>
+    </li>
+    <li>
+      <a class="card" href="/band/">
+        <div class="name">セトリズム</div>
+        <div class="desc">バンドのセットリストを組む道具。持ち時間の計算、盛り上がりの流れ、チューニング持ち替え、メトロノーム、通し練習、本番の進行表まで。ブラウザだけで動きます。</div>
+      </a>
+    </li>
+    <li>
+      <a class="card" href="/pachinko/">
+        <div class="name">パチスロ帝国</div>
+        <div class="desc">ホール経営のシミュレーションゲーム。実機や実店舗とは関係のない架空の設定です。</div>
+      </a>
+    </li>
+    <li>
+      <a class="card" href="/line-auto-reply/">
+        <div class="name">LINE自動返信ボット の作り方</div>
+        <div class="desc">サーバー代なしで自動返信ボットを立てる手順書とコード。自分のGoogleアカウントで動かします。</div>
+      </a>
+    </li>
+  </ul>
+
+  <h2>いま止めているもの</h2>
+  <p class="stopped">波チェック(サーフィン判定)と Replier(返信コーチ)は、内容の見直しのため公開を停止しています。再開の時期は未定です。</p>
+
+  <footer>
+    作っているのは個人です。データはあなたのブラウザの中にだけ保存され、こちらのサーバーには送られません(HONMONOの画素判定を含め、処理は端末内で完結します)。
+  </footer>
+
 </div>
-
-<fieldset>
-  <legend>1. 楽天APIキー（このページ内だけで使用・送信されません）</legend>
-  <div class="row">
-    <div>
-      <label for="appId">applicationId（アプリID・UUID形式）</label>
-      <input type="text" id="appId" placeholder="xxxxxxxx-xxxx-...">
-    </div>
-    <div>
-      <label for="accessKey">accessKey（pk_ で始まるキー）</label>
-      <input type="password" id="accessKey" placeholder="pk_...">
-    </div>
-  </div>
-  <p class="note">※ キーは <b>あなたのブラウザの中だけ</b>で楽天へ直接送られます。GitHubのコードにも、どこかのサーバーにも保存されません。
-  チェックを入れるとこのブラウザに記憶します（共用PCでは入れない）。</p>
-  <label><input type="checkbox" id="remember"> このブラウザにキーを記憶する</label>
-</fieldset>
-
-<fieldset>
-  <legend>2. JANコード（1行に1つ）</legend>
-  <textarea id="jans" placeholder="4535164046503&#10;4974052577048&#10;4970116046482"></textarea>
-  <p class="note">楽天の作法として1件ごとに約1秒あけて問い合わせます（多すぎると時間がかかります・目安は数十件まで）。</p>
-  <button id="run">価格を取得してCSVを作る</button>
-  <button id="download" disabled>CSVをダウンロード</button>
-</fieldset>
-
-<fieldset>
-  <legend>3. 結果</legend>
-  <div id="summary" class="note"></div>
-  <div id="tableWrap"></div>
-  <label>ログ</label>
-  <div id="log"></div>
-</fieldset>
-
-<script>
-// ===== 価格証拠テンプレート.csv と同一の14列（バイト一致させる） =====
-const COLUMNS = ["product_name","jan","manufacturer","model_number","category",
-  "evidence_class","data_origin","price","tax_included","tax_rate","quantity_min",
-  "purchase_shipping_jpy_per_unit","source_ref","observed_at"];
-const ENDPOINT = "https://openapi.rakuten.co.jp/ichibams/api/IchibaItem/Search/20260701";
-
-const $ = id => document.getElementById(id);
-let rows = [];       // 収集した候補行
-let csvBlobUrl = null;
-
-// キー記憶（localStorage・任意）
-window.addEventListener("load", () => {
-  if (localStorage.getItem("rk_remember") === "1") {
-    $("appId").value = localStorage.getItem("rk_appId") || "";
-    $("accessKey").value = localStorage.getItem("rk_accessKey") || "";
-    $("remember").checked = true;
-  }
-});
-
-function log(msg) { $("log").textContent += msg + "\n"; $("log").scrollTop = $("log").scrollHeight; }
-function todayISO() { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-// JANチェックデジット検証（EAN-8/13）— エンジン側 jan_checksum_ok と同じ考え方
-function janOk(code) {
-  if (!/^\d+$/.test(code)) return false;
-  if (code.length !== 8 && code.length !== 13) return false;
-  const digits = code.split("").map(Number);
-  const check = digits.pop();
-  let sum = 0;
-  // 右端（チェック桁の隣）から重み3,1,3,1...
-  for (let i = digits.length - 1, w = 3; i >= 0; i--, w = (w === 3 ? 1 : 3)) sum += digits[i] * w;
-  return ((10 - (sum % 10)) % 10) === check;
-}
-
-function csvEscape(v) {
-  v = (v === null || v === undefined) ? "" : String(v);
-  return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
-}
-
-async function fetchOne(appId, accessKey, jan) {
-  const params = new URLSearchParams({
-    applicationId: appId, accessKey: accessKey,
-    keyword: jan, sort: "+itemPrice", hits: "5", format: "json", formatVersion: "2"
-  });
-  const res = await fetch(ENDPOINT + "?" + params.toString(), { method: "GET" });
-  if (res.status === 401 || res.status === 403 || res.status === 429) {
-    throw { kind: "restricted", status: res.status };
-  }
-  if (!res.ok) throw { kind: "http", status: res.status };
-  const data = await res.json();
-  const items = data.Items || [];
-  // keyword検索なので、JANが商品名/型番に一致する最安の1件を採用（無ければ先頭）
-  let best = null;
-  for (const it of items) {
-    const name = it.itemName || "";
-    const price = Number(it.itemPrice);
-    const url = it.itemUrl || "";
-    if (!name || !url || !isFinite(price) || price <= 0) continue;
-    if (best === null || price < best.price) best = { name, price, url, shop: it.shopName || "" };
-  }
-  return best;
-}
-
-$("run").addEventListener("click", async () => {
-  const appId = $("appId").value.trim();
-  const accessKey = $("accessKey").value.trim();
-  if (!appId || !accessKey) { alert("applicationId と accessKey を入れてください"); return; }
-
-  // キー記憶
-  if ($("remember").checked) {
-    localStorage.setItem("rk_remember", "1");
-    localStorage.setItem("rk_appId", appId);
-    localStorage.setItem("rk_accessKey", accessKey);
-  } else {
-    localStorage.removeItem("rk_remember");
-    localStorage.removeItem("rk_appId");
-    localStorage.removeItem("rk_accessKey");
-  }
-
-  // JAN入力の検証
-  const raw = $("jans").value.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
-  const seen = new Set(); const jans = []; let bad = 0;
-  for (const j of raw) {
-    if (!janOk(j)) { bad++; continue; }
-    if (!seen.has(j)) { seen.add(j); jans.push(j); }
-  }
-  $("log").textContent = "";
-  log(`有効JAN ${jans.length}件 / 不正スキップ ${bad}件`);
-  if (!jans.length) { alert("有効なJANがありません"); return; }
-
-  $("run").disabled = true; $("download").disabled = true;
-  rows = [];
-  const today = todayISO();
-  let ok = 0, nohit = 0, fail = 0;
-
-  for (let i = 0; i < jans.length; i++) {
-    const jan = jans[i];
-    try {
-      const hit = await fetchOne(appId, accessKey, jan);
-      if (hit) {
-        rows.push({
-          product_name: hit.name, jan: jan, manufacturer: "", model_number: "", category: "",
-          evidence_class: "EXECUTABLE_RETAIL_PRICE", data_origin: "self_purchasable",
-          price: Math.round(hit.price), tax_included: "true", tax_rate: "0.10",
-          quantity_min: "1", purchase_shipping_jpy_per_unit: "", source_ref: hit.url,
-          observed_at: today
-        });
-        ok++; log(`[${i+1}/${jans.length}] ${jan} → ${Math.round(hit.price)}円 OK`);
-      } else {
-        nohit++; log(`[${i+1}/${jans.length}] ${jan} → ヒットなし`);
-      }
-    } catch (e) {
-      if (e.kind === "restricted") {
-        fail++;
-        log(`[${i+1}/${jans.length}] ${jan} → 停止 (status ${e.status})`);
-        if (e.status === 403) log("  ※403: このサイトのドメインが楽天のAllowed websitesに登録されているか確認してください。");
-        if (e.status === 429) { log("  ※429: レート超過。時間をおいて再実行してください。中断します。"); break; }
-      } else {
-        fail++; log(`[${i+1}/${jans.length}] ${jan} → 失敗 (${e.status || e})`);
-      }
-    }
-    if (i < jans.length - 1) await sleep(1100); // 楽天の作法：1秒以上あける
-  }
-
-  $("summary").textContent = `取得: ${ok}件 / ヒットなし: ${nohit}件 / 失敗: ${fail}件`;
-  renderTable();
-  buildCsv();
-  $("run").disabled = false;
-  $("download").disabled = rows.length === 0;
-  log("完了。");
-});
-
-function renderTable() {
-  if (!rows.length) { $("tableWrap").innerHTML = "<p class='note'>取得できた行はありません。</p>"; return; }
-  let html = "<table><thead><tr><th>商品名</th><th>JAN</th><th>価格</th><th>URL</th></tr></thead><tbody>";
-  for (const r of rows) {
-    html += `<tr><td>${escapeHtml(r.product_name)}</td><td>${r.jan}</td><td>${r.price}</td>`
-         +  `<td><a href="${escapeHtml(r.source_ref)}" target="_blank" rel="noopener">開く</a></td></tr>`;
-  }
-  html += "</tbody></table>";
-  $("tableWrap").innerHTML = html;
-}
-function escapeHtml(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-function buildCsv() {
-  if (csvBlobUrl) { URL.revokeObjectURL(csvBlobUrl); csvBlobUrl = null; }
-  if (!rows.length) return;
-  const lines = [COLUMNS.join(",")];
-  for (const r of rows) lines.push(COLUMNS.map(c => csvEscape(r[c])).join(","));
-  const body = lines.join("\n") + "\n";
-  // BOM付きUTF-8（Excel・エンジンの取込どちらも安全）
-  const blob = new Blob(["\uFEFF" + body], { type: "text/csv;charset=utf-8" });
-  csvBlobUrl = URL.createObjectURL(blob);
-}
-
-$("download").addEventListener("click", () => {
-  if (!csvBlobUrl) return;
-  const a = document.createElement("a");
-  a.href = csvBlobUrl;
-  a.download = "価格証拠テンプレート_楽天.csv";
-  document.body.appendChild(a); a.click(); a.remove();
-});
-</script>
 </body>
 </html>
