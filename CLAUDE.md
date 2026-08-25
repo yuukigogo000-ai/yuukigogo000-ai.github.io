@@ -17,6 +17,7 @@
 ## テスト
 - セトリズム: `cd tests && npm install && npm test`(main に入っている。smoke 87項目 + torture 42項目)
 - 公開面: `node tests/site_surface.mjs`(実サイトに対して「開いてよいもの/閉じるべきもの」を両方検査する)
+- Replier 告知ページの後始末: `node tests/reply_ai_tombstone.mjs`(`--mutate` で検査器自身を確認)
 - Replier: `cd reply-ai-app && npm test`。見た目の変更はソース側 → `npm run build` → `reply-ai/` を検査
 
 ## 公開面の地図(2026-08-25 整理)
