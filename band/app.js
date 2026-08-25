@@ -684,7 +684,11 @@ function renderPlanner() {
     return;
   }
   if (plan.needed.length === 1) {
-    body.innerHTML = `<p class="note">チューニングは「${plan.needed[0].tuning}」の1種類。持ち替えなしで通せます 👍</p>`;
+    // チューニング名は共有リンク経由で他人が渡せるので、HTMLとして解釈させない
+    const only = document.createElement("p");
+    only.className = "note";
+    only.textContent = `チューニングは「${plan.needed[0].tuning}」の1種類。持ち替えなしで通せます 👍`;
+    body.replaceChildren(only);
     return;
   }
 

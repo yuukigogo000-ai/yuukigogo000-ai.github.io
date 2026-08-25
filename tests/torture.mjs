@@ -225,6 +225,37 @@ ok(!chartInjected, "チャートにも注入されない");
 // 後片付け:曲追加・rename・item追加をUndo
 await openMore(page); await page.click("#undoBtn"); await openMore(page); await page.click("#undoBtn"); await openMore(page); await page.click("#undoBtn");
 
+// --- C-2: 共有リンク経由のチューニング名(2026-08-25 追加)---
+// 持ち替えプランナーはチューニング名を innerHTML に埋めていた。sanitizeSong は
+// 20文字に切るだけで HTML エスケープをしないので、20文字以内なら素通りする。
+// 入口は「他人が送りつけられる共有リンク」なので、自分で打ち込む他のフィールドより危ない。
+// この経路だけ C章の注入テストから漏れていた(title/memo/gear/セトリ名は見ていた)。
+{
+  const ctx = await browser.newContext();
+  await ctx.addInitScript(NO_WEB_SHARE);
+  const p2 = await ctx.newPage();
+  await p2.goto(URL0);
+  const XSS_TUNING = "<svg onload=XSS5=1>"; // 19文字 — 20文字制限を通り抜ける
+  const bundle = {
+    n: "細工されたセトリ", t: 30, g: 15, m: 90,
+    s: [["普通の曲", 120, "", XSS_TUNING, 180, 3, 0, "", ""]],
+  };
+  const payload = "1." + b64url(zlib.deflateRawSync(Buffer.from(JSON.stringify(bundle))));
+  await p2.evaluate((v) => { location.hash = "#s=" + v; }, payload);
+  await p2.waitForTimeout(400);
+  await p2.click("#importOkBtn");
+  await p2.waitForTimeout(500);
+  const r = await p2.evaluate(() => ({
+    executed: !!window.XSS5,
+    injected: !!document.querySelector("#plannerBody svg, #plannerBody img"),
+    asText: (document.getElementById("plannerBody").textContent || "").includes("<svg onload="),
+  }));
+  ok(!r.executed, "共有リンクのチューニング名からスクリプトが実行されない");
+  ok(!r.injected, "持ち替えプランナーにHTML要素が注入されない");
+  ok(r.asText, "チューニング名はただの文字として表示される");
+  await ctx.close();
+}
+
 // ============ D. 極端なデータ量 ============
 console.log("--- D. 極端なデータ量(80曲) ---");
 {
