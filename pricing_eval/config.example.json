@@ -1,0 +1,22 @@
+{
+  "_comment": "pricing_eval/config.json としてコピーして使う。モデル名はここに書かない(探索結果から決まる)。",
+
+  "region": "ap-northeast-1",
+  "allowedDestinations": ["ap-northeast-1", "ap-northeast-3"],
+
+  "_evalEnvironmentDeclared": "本番と分離された評価用アカウント/ロールであることを人間が宣言する。true にしない限り preflight は通らない。",
+  "evalEnvironmentDeclared": false,
+
+  "_maxBudgetJpy": "この実行で使ってよい上限(円)。既定 10000。",
+  "maxBudgetJpy": 10000,
+
+  "_usdJpy": "為替は暗黙値を使わない。null のままなら円換算を一切出さない。保守的に置くなら 160 など。",
+  "usdJpy": null,
+
+  "_adapter": "bedrock = 実AWS / mock = ローカル検証用(品質・原価の結論には使えない)",
+  "adapter": "bedrock",
+
+  "outputMaxTokens": 1024,
+  "temperature": 0.7,
+  "concurrency": 2
+}

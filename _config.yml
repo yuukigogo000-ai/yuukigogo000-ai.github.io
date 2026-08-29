@@ -35,6 +35,9 @@ exclude:
   - tests/
   - honmono/tests/
 
+  # Replier のAIモデル探索・原価実測基盤(合成データと評価結果。サイトとしては配信しない)
+  - pricing_eval/
+
   # このリポジトリの作業ルール
   - CLAUDE.md
 

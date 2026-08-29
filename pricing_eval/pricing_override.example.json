@@ -1,0 +1,15 @@
+{
+  "_comment": "価格を機械取得できないときに、人間が公式ページの値を転記する。source と fetchedAt が無い項目は読み込み時にエラーになる(出典なしの価格は使わない)。",
+  "note": "転記者と確認日を書く",
+  "models": {
+    "<inferenceProfileId または modelId>": {
+      "inputPerMTokUsd": 0.0,
+      "outputPerMTokUsd": 0.0,
+      "imageUnitUsd": null,
+      "region": "ap-northeast-1",
+      "tier": "on-demand",
+      "source": "https://aws.amazon.com/bedrock/pricing/ の該当行",
+      "fetchedAt": "2026-08-29T00:00:00Z"
+    }
+  }
+}

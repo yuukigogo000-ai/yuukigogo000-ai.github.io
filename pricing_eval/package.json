@@ -1,0 +1,22 @@
+{
+  "name": "replier-pricing-eval",
+  "private": true,
+  "type": "module",
+  "description": "Replier のAIモデル探索・品質評価・原価実測基盤(本番経路とは独立)",
+  "scripts": {
+    "cases": "node src/generate_cases.mjs",
+    "screenshots": "node src/render_screenshots.mjs",
+    "validate": "node src/validate_dataset.mjs",
+    "preflight": "node src/retention_preflight.mjs",
+    "discover": "node src/discover_models.mjs",
+    "dryrun": "node src/run_eval.mjs --stage=dryrun",
+    "smoke": "node src/run_eval.mjs --stage=smoke",
+    "full": "node src/run_eval.mjs --stage=full",
+    "report": "node src/report.mjs",
+    "test": "node tests/run_tests.mjs",
+    "test:destructive": "node tests/destructive.mjs"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.62.0"
+  }
+}
