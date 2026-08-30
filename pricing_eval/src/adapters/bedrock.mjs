@@ -13,11 +13,30 @@ import { execFileSync } from 'node:child_process';
 import { signRequest } from '../lib/sigv4.mjs';
 
 export class AwsError extends Error {
-  constructor(message, { status, code, operation } = {}) {
+  constructor(message, { status, code, operation, requestId } = {}) {
     super(message);
     this.name = 'AwsError';
     this.status = status; this.code = code; this.operation = operation;
+    this.requestId = requestId ?? null; // AWSサポート照会用。秘密ではないので成果物に残してよい
   }
+}
+
+/**
+ * AWSエラーメッセージのサニタイズ。SigV4系エラーは canonical request を丸ごと返すことが
+ * あるため、資格情報・署名・トークン様の文字列を落としてから長さを制限する。
+ * 認証情報・署名・Authorization ヘッダーをログ/成果物へ出さない、の機械的な担保。
+ */
+export function sanitizeAwsMessage(message, maxLen = 500) {
+  let s = String(message ?? '');
+  s = s
+    .replace(/\b(AKIA|ASIA)[0-9A-Z]{8,}/g, '[REDACTED_AWS_KEY]')
+    .replace(/(Credential=)[^,\s]+/gi, '$1[REDACTED]')
+    .replace(/(Signature=)[0-9a-f]{8,}/gi, '$1[REDACTED]')
+    .replace(/(SignedHeaders=)[^,\s]+/gi, '$1[REDACTED]')
+    .replace(/(X-Amz-Security-Token[:=])[^&\s]+/gi, '$1[REDACTED]')
+    .replace(/(Authorization[:=]\s*)\S+/gi, '$1[REDACTED]')
+    .replace(/\b[A-Za-z0-9/+=]{40}\b/g, '[REDACTED_SECRETLIKE]');
+  return s.length > maxLen ? `${s.slice(0, maxLen)}…[truncated]` : s;
 }
 
 /** 環境から資格情報を読む。値はログへ出さない(呼び出し側も出さないこと) */
@@ -89,7 +108,11 @@ export function createBedrockClient({ region, credentials, fetchImpl = globalThi
     if (!res.ok) {
       const code = json?.__type || json?.code || res.headers?.get?.('x-amzn-errortype') || String(res.status);
       throw new AwsError(json?.message || json?.Message || `HTTP ${res.status}`, {
-        status: res.status, code: String(code).split('#').pop(), operation,
+        status: res.status,
+        // __type は "ns#Code"、x-amzn-errortype は "Code:http://..." の形。コード名だけ残す
+        code: String(code).split('#').pop().split(':')[0],
+        operation,
+        requestId: res.headers?.get?.('x-amzn-requestid') || res.headers?.get?.('x-amzn-request-id') || null,
       });
     }
     return json;
@@ -118,6 +141,12 @@ export function createBedrockClient({ region, credentials, fetchImpl = globalThi
       call(cp({
         method: 'GET', path: `/inference-profiles/${encodeURIComponent(id)}`,
         operation: 'GetInferenceProfile',
+      })),
+    /** モデル利用可否(agreement/authorization/entitlement/region)。読み取り専用・契約操作はしない */
+    getFoundationModelAvailability: (modelId) =>
+      call(cp({
+        method: 'GET', path: `/foundation-model-availability/${encodeURIComponent(modelId)}`,
+        operation: 'GetFoundationModelAvailability',
       })),
     /** 実効データ保持の確認材料: 呼び出しログ設定 */
     getModelInvocationLoggingConfiguration: () =>

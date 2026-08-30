@@ -20,7 +20,7 @@ import { loadConfig, parseArgs, isCliEntry } from './lib/config.mjs';
 import { logInfo, logWarn, logError } from './lib/log.mjs';
 import { SYSTEM_INSTRUCTION, buildUserText, parseReplies } from './adapters/contract.mjs';
 import { createMockClient } from './adapters/mock.mjs';
-import { createBedrockClient, resolveCredentials, buildConverseBody, extractConverse } from './adapters/bedrock.mjs';
+import { createBedrockClient, resolveCredentials, buildConverseBody, extractConverse, sanitizeAwsMessage } from './adapters/bedrock.mjs';
 import { validateReplies } from './validate_output.mjs';
 import { costUsdForAttempt, loadPricing, toJpy, bucketOf } from './calculate_cost.mjs';
 import { runPreflight } from './retention_preflight.mjs';
@@ -105,6 +105,12 @@ async function attemptOnce({ client, cfg, model, testCase, attemptNo }) {
       ok: false,
       failureKind: e.code === 'Timeout' ? 'timeout' : `http_${e.status || 'error'}`,
       error: `${e.code || e.name}`,
+      // AccessDenied 等の診断に必要な情報を自動保存する(秘密はサニタイズ済み)
+      errorCode: e.code ?? e.name ?? null,
+      sanitizedErrorMessage: sanitizeAwsMessage(e.message),
+      httpStatus: e.status ?? null,
+      requestId: e.requestId ?? null,
+      apiOperation: e.operation ?? (client.synthetic ? 'MockInvoke' : 'Converse'),
       replies: null,
       failureClass: 'system',
     };
@@ -112,6 +118,23 @@ async function attemptOnce({ client, cfg, model, testCase, attemptNo }) {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// 契約・権限・購読・モデルアクセス・検証系のエラー。再試行も継続もせず即停止(人間操作が必要)
+const CONTRACT_ERROR_RE = /AccessDenied|NotAuthorized|Unauthorized|Subscription|Marketplace|EULA|ModelAccess|ValidationException/i;
+
+/**
+ * 1ケースの結果行から「即停止すべき契約系エラー」を判定し、停止メッセージか null を返す。
+ * 純関数。main のループはこれが非 null なら throw して残りの呼び出しを行わない。
+ */
+export function contractStopError(row) {
+  if (row.success || row.failureClass !== 'system') return null;
+  const errText = (row.attempts || [])
+    .map((x) => [x.errorCode, x.error, x.sanitizedErrorMessage].filter(Boolean).join(' '))
+    .join(' ');
+  if (!CONTRACT_ERROR_RE.test(errText)) return null;
+  const ids = (row.attempts || []).map((x) => x.requestId).filter(Boolean).join(',');
+  return `契約/権限/検証系エラーのため ${row.modelKey} の実行を停止します(再試行しません): ${errText}${ids ? ` [requestId: ${ids}]` : ''}`;
+}
 
 /** 1ケースを実行(自動再試行は最大1回) */
 export async function runCase({ client, cfg, model, testCase, price }) {
@@ -155,6 +178,13 @@ export async function runCase({ client, cfg, model, testCase, price }) {
       ok: x.ok, failureKind: x.failureKind, failureClass: x.failureClass,
       // エラーコード(AccessDeniedException 等)。これが無いと契約系エラーの即停止判定が空振りする
       error: x.error ?? null,
+      // 診断用の詳細(サニタイズ済み)。requestId は AWS サポート照会に必要
+      errorCode: x.errorCode ?? null,
+      sanitizedErrorMessage: x.sanitizedErrorMessage ?? null,
+      httpStatus: x.httpStatus ?? null,
+      requestId: x.requestId ?? null,
+      modelId: model.modelId,
+      apiOperation: x.apiOperation ?? null,
       costUsd: attemptCosts[i],
     })),
     totalLatencyMs: attempts.reduce((s, x) => s + x.latencyMs, 0),
@@ -221,7 +251,13 @@ async function main() {
   const blocked = candidates.filter((c) => !c.evaluable);
   for (const b of blocked) logWarn(`Hard Gate 違反のため実行しません: ${b.key} (${b.fails.join(',')})`);
 
-  const targetCases = stage === 'smoke' ? pickSmokeCases(cases) : cases;
+  let targetCases = stage === 'smoke' ? pickSmokeCases(cases) : cases;
+  // 診断用: 1ケースだけに絞る(合成データの実在IDのみ。full の抜け道にはならない)
+  if (args['case-id']) {
+    const one = cases.find((c) => c.id === args['case-id']);
+    if (!one) throw new Error(`--case-id=${args['case-id']} が cases.json に存在しません`);
+    targetCases = [one];
+  }
 
   // 価格
   const pricing = loadPricing();
@@ -306,12 +342,8 @@ async function main() {
       row.finalFailure = !row.success; // 再試行後も失敗 = 確定失敗。resume で再実行しない。
       appendFileSync(resultsPath, JSON.stringify(row) + '\n');
       // 契約・権限・購読・モデルアクセス系のエラーは再試行も継続もせず即停止(人間操作が必要)
-      if (!row.success && row.failureClass === 'system') {
-        const errText = row.attempts.map((x) => x.error || '').join(' ');
-        if (/AccessDenied|NotAuthorized|Unauthorized|Subscription|Marketplace|EULA|ModelAccess|ValidationException/i.test(errText)) {
-          throw new Error(`契約/権限/検証系エラーのため ${model.key} の実行を停止します(再試行しません): ${errText}`);
-        }
-      }
+      const stopMsg = contractStopError(row);
+      if (stopMsg) throw new Error(stopMsg);
       total++; if (!row.success) errors++;
       if (row.effectiveCostUsd == null) unknownCostRows++;
       if (row.effectiveCostUsd != null) {

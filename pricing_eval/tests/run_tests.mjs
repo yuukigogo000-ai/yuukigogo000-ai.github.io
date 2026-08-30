@@ -24,13 +24,14 @@ const TMP = 'pricing_eval/runs/_test_tmp';
 const { validateDataset } = await import('../src/validate_dataset.mjs');
 const { parseReplies, SYSTEM_INSTRUCTION, buildUserText } = await import('../src/adapters/contract.mjs');
 const { createMockClient } = await import('../src/adapters/mock.mjs');
-const { buildConverseBody, extractConverse, resolveCredentials } = await import('../src/adapters/bedrock.mjs');
+const { buildConverseBody, extractConverse, resolveCredentials, AwsError, sanitizeAwsMessage } = await import('../src/adapters/bedrock.mjs');
+const { judgeAvailability } = await import('../src/check_availability.mjs');
 const { signRequest, canonicalUriPath } = await import('../src/lib/sigv4.mjs');
 const { evaluateGates, gate, judgeDestinations, judgeEol, PASS, FAIL, UNKNOWN } = await import('../src/lib/hardgate.mjs');
 const cost = await import('../src/calculate_cost.mjs');
 const { loadConfig, parseArgs, ConfigError, isCliEntry } = await import('../src/lib/config.mjs');
 const { redact, maskAccount } = await import('../src/lib/log.mjs');
-const { runCase, readResults, pickSmokeCases } = await import('../src/run_eval.mjs');
+const { runCase, readResults, pickSmokeCases, contractStopError } = await import('../src/run_eval.mjs');
 const { validateReplies } = await import('../src/validate_output.mjs');
 const { scoreRun } = await import('../src/score_results.mjs');
 const { buildBlindReview } = await import('../src/report.mjs');
@@ -506,7 +507,69 @@ await (async () => {
   t('32b. attempts にエラーコードが残る(契約系エラー即停止の判定材料)', () => {
     assert(typeof rowB.attempts[0].error === 'string' && rowB.attempts[0].error.length > 0, 'error コードが保存されていない');
   });
+
+  // 33. AccessDenied で attempts に診断6項目が自動保存され、1回目で即停止できる
+  const deniedClient = {
+    synthetic: true,
+    invoke: async () => {
+      throw new AwsError("You don't have access to the model with the specified model ID.", {
+        status: 403, code: 'AccessDeniedException', operation: 'Converse', requestId: 'req-test-0001',
+      });
+    },
+  };
+  const rowDenied = await runCase({ client: deniedClient, cfg: rtCfg, model, testCase: cases[0], price });
+  t('33. AccessDenied: attempts へ errorCode/message/httpStatus/requestId/modelId/apiOperation を自動保存し再試行しない(変異検出)', () => {
+    assertEq(rowDenied.attempts.length, MUTATE ? 2 : 1, 'AccessDenied を再試行している(禁止)');
+    const a = rowDenied.attempts[0];
+    assertEq(a.errorCode, 'AccessDeniedException', 'errorCode');
+    assert(typeof a.sanitizedErrorMessage === 'string' && a.sanitizedErrorMessage.includes('access'), 'sanitizedErrorMessage');
+    assertEq(a.httpStatus, 403, 'httpStatus');
+    assertEq(a.requestId, 'req-test-0001', 'requestId');
+    assertEq(a.modelId, model.modelId, 'modelId');
+    assertEq(a.apiOperation, 'Converse', 'apiOperation');
+  });
+  t('33b. contractStopError: AccessDenied 行は停止・429/モデル出力不良の行は停止しない(変異検出)', () => {
+    const stop = contractStopError(rowDenied);
+    assertEq(stop === null, MUTATE ? true : false, 'AccessDenied 行で停止メッセージが出ない');
+    if (stop) {
+      assert(stop.includes('AccessDeniedException'), '停止メッセージにエラーコードが無い');
+      assert(stop.includes('req-test-0001'), '停止メッセージに requestId が無い');
+    }
+    assertEq(contractStopError(rowB), null, '429(一時的)で誤停止する');
+    assertEq(contractStopError(rowA), null, 'モデル出力不良(model_output)で誤停止する');
+  });
 })();
+
+t('34. --max-retries は 0 を許可し、1 超は 1 に丸める(増やせない)(変異検出)', () => {
+  const zero = loadConfig(parseArgs(['--max-retries=0'])).maxAutoRetries;
+  assertEq(zero, MUTATE ? 1 : 0, '--max-retries=0 が効かない');
+  assertEq(loadConfig(parseArgs(['--max-retries=5'])).maxAutoRetries, 1, '1 超が丸められない');
+  assertEq(loadConfig(parseArgs([])).maxAutoRetries, 1, '既定値');
+});
+
+t('35. sanitizeAwsMessage: 資格情報・署名様の文字列を落とし長さを制限する(変異検出)', () => {
+  const dirty = 'Credential=AKIAIOSFODNN7EXAMPLE/20260831, SignedHeaders=host;x-amz-date, ' +
+    'Signature=deadbeefdeadbeefdeadbeef secret=wJalrXUtnFEMIK7MDENGbPxRfiCYEXAMPLEKEYAB end';
+  const s = sanitizeAwsMessage(dirty);
+  assertEq(/AKIA|deadbeef|wJalrXUtnFEMIK7MDENG/.test(s), MUTATE ? true : false, `秘密様の文字列が残っている: ${s}`);
+  assert(s.includes('[REDACTED'), 'REDACTED マークが無い');
+  const long = sanitizeAwsMessage('x'.repeat(2000));
+  assert(long.length < 600 && long.includes('[truncated]'), '長文が切られていない');
+});
+
+t('36. judgeAvailability: 全項目 AVAILABLE/AUTHORIZED のみ ok(変異検出)', () => {
+  const good = judgeAvailability({
+    agreementAvailability: { status: 'AVAILABLE' }, authorizationStatus: 'AUTHORIZED',
+    entitlementAvailability: 'AVAILABLE', regionAvailability: 'AVAILABLE',
+  });
+  assertEq(good.ok, MUTATE ? false : true, '正常系が ok にならない');
+  for (const bad of [
+    { agreementAvailability: { status: 'NOT_AVAILABLE' }, authorizationStatus: 'AUTHORIZED', entitlementAvailability: 'AVAILABLE', regionAvailability: 'AVAILABLE' },
+    { agreementAvailability: { status: 'AVAILABLE' }, authorizationStatus: 'NOT_AUTHORIZED', entitlementAvailability: 'AVAILABLE', regionAvailability: 'AVAILABLE' },
+    { agreementAvailability: { status: 'AVAILABLE' }, authorizationStatus: 'AUTHORIZED', entitlementAvailability: 'NOT_AVAILABLE', regionAvailability: 'AVAILABLE' },
+    {},
+  ]) assertEq(judgeAvailability(bad).ok, false, '不可の状態を ok にしている');
+});
 
 function allPass() {
   const g = {};

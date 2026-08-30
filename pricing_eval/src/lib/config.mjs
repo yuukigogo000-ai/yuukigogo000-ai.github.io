@@ -54,7 +54,8 @@ export function loadConfig(args = parseArgs()) {
     evalEnvironmentDeclared: file.evalEnvironmentDeclared === true,
     mockEndpoint: args['mock-endpoint'] || file.mockEndpoint || null,
     maxImages: 6,
-    maxAutoRetries: 1, // §7: 自動再試行は最大1回。増やさない。
+    // §7: 自動再試行は最大1回。--max-retries=0 で完全無効化できるが、1 を超える値は 1 に丸める(増やせない)。
+    maxAutoRetries: clampRetries(num(args['max-retries'])),
     // true のとき再試行は 429 / 一時的 5xx に限定(実費 smoke の予算ゲート要件)。
     retryTransientOnly: args['retry-transient-only'] === true || file.retryTransientOnly === true,
     // EOL 猶予の最低日数。黙って固定しない(設定・CLIで変更可)。推奨比較は 90 日。
@@ -66,6 +67,11 @@ export function loadConfig(args = parseArgs()) {
     modelsFilter: args.models ? String(args.models).split(',').map((s) => s.trim()).filter(Boolean) : null,
   };
   return cfg;
+}
+
+function clampRetries(v) {
+  if (v === null) return 1;
+  return v <= 0 ? 0 : 1;
 }
 
 function num(v) {
