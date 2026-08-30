@@ -1,0 +1,17 @@
+{
+  "_comment": "データ保持・共有ゲートの判定根拠(AWS公式)。値は fetchedAt 時点の各URLの記載に基づく要約。最終的な法解釈は人間の仕事。",
+  "fetchedAt": "2026-08-30T14:11:11Z",
+  "promptOutputSharing": {
+    "basis": "account data retention mode が 'none' の場合、リクエスト・レスポンス(プロンプト・出力)は永続保存されず、モデルプロバイダーにも共有されない",
+    "sources": [
+      "https://docs.aws.amazon.com/bedrock/latest/userguide/data-retention.html",
+      "https://docs.aws.amazon.com/bedrock/latest/userguide/data-protection.html"
+    ],
+    "exception": "モデルカードに retention の opt-in 要求(例: provider_data_share)が明記されたモデルは 'none' では利用できず、この根拠を適用できない(例: Claude Fable 5)"
+  },
+  "nonContentUsageMetadataSharing": {
+    "basis": "AWS Service Terms 50.12.5: Your Content を含まない第三者モデルの利用情報(non-content usage information)はプロバイダーへ共有される場合がある",
+    "sources": ["https://aws.amazon.com/service-terms/"],
+    "verdict": "自動 PASS 不可。Replier の要件が『プロンプト・出力の非共有』か『非コンテンツ利用情報を含む一切の非共有』かは人間が決める(HUMAN_REQUIRED)"
+  }
+}

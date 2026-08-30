@@ -1,0 +1,133 @@
+{
+  "_comment": "AWS公式モデルカード(docs.aws.amazon.com)からの転記。各値は fetchedAt 時点の url の記載。推測値を書かない。eolFloor は「No sooner than <日付>」の日付(ISO)。'none_announced' はカードに『Model EOL date: N/A』と明記されていたことを意味する(EOL未告知)。tokyoInRegion は Regional Availability 表の ap-northeast-1 行の In-Region 列。",
+  "fetchedAt": "2026-08-30T14:11:11Z",
+  "models": {
+    "moonshotai.kimi-k2.5": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-moonshot-ai-kimi-k2-5.html",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "lifecycle": "Active",
+      "eolFloor": "none_announced",
+      "tokyoInRegion": true,
+      "geoInferenceId": null,
+      "globalInferenceId": null,
+      "converse": true,
+      "imageInput": true,
+      "maxImagePayloadMB": 3,
+      "eulaUrl": "https://huggingface.co/moonshotai/Kimi-K2.5/blob/main/LICENSE"
+    },
+    "mistral.mistral-large-3-675b-instruct": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-mistral-ai-mistral-large-3.html",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "lifecycle": "Active",
+      "eolFloor": "none_announced",
+      "tokyoInRegion": true,
+      "geoInferenceId": null,
+      "globalInferenceId": null,
+      "converse": true,
+      "imageInput": true,
+      "eulaUrl": "https://aws.amazon.com/legal/bedrock/third-party-models/"
+    },
+    "mistral.ministral-3-14b-instruct": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-mistral-ai-ministral-14b-3-0.html",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "lifecycle": "Active",
+      "eolFloor": "none_announced",
+      "tokyoInRegion": true,
+      "geoInferenceId": null,
+      "globalInferenceId": null,
+      "converse": true,
+      "imageInput": true,
+      "eulaUrl": "https://aws.amazon.com/legal/bedrock/third-party-models/"
+    },
+    "qwen.qwen3-vl-235b-a22b": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-qwen-qwen3-vl-235b-a22b.html",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "lifecycle": "Active",
+      "eolFloor": "none_announced",
+      "tokyoInRegion": true,
+      "geoInferenceId": null,
+      "globalInferenceId": null,
+      "converse": true,
+      "imageInput": true,
+      "eulaUrl": "https://github.com/QwenLM/Qwen3-VL/blob/main/LICENSE"
+    },
+    "anthropic.claude-haiku-4-5-20251001-v1:0": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-haiku-4-5.html",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "lifecycle": "Active",
+      "eolFloor": "2026-10-01",
+      "eolFloorText": "No sooner than 10/1/2026",
+      "tokyoInRegion": false,
+      "geoInferenceId": "jp.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "jpGeoDestinations": ["ap-northeast-1", "ap-northeast-3"],
+      "globalInferenceId": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "converse": true,
+      "imageInput": true,
+      "marketplaceProductId": "prod-xdkflymybwmvi",
+      "eulaUrl": "https://aws.amazon.com/legal/bedrock/third-party-models/"
+    },
+    "anthropic.claude-sonnet-4-5-20250929-v1:0": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-4-5.html",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "lifecycle": "Active",
+      "eolFloor": "2026-09-29",
+      "eolFloorText": "No sooner than 9/29/2026",
+      "tokyoInRegion": false,
+      "geoInferenceId": "jp.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "jpGeoDestinations": ["ap-northeast-1", "ap-northeast-3"],
+      "globalInferenceId": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "converse": true,
+      "imageInput": true,
+      "marketplaceProductId": "prod-mxcfnwvpd6kb4",
+      "eulaUrl": "https://aws.amazon.com/legal/bedrock/third-party-models/"
+    },
+    "anthropic.claude-sonnet-4-6": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-4-6.html",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "lifecycle": "Active",
+      "eolFloor": "none_announced",
+      "tokyoInRegion": false,
+      "geoInferenceId": "jp.anthropic.claude-sonnet-4-6",
+      "jpGeoDestinations": ["ap-northeast-1", "ap-northeast-3"],
+      "converse": true,
+      "imageInput": true,
+      "eulaUrl": "https://aws.amazon.com/legal/bedrock/third-party-models/"
+    },
+    "anthropic.claude-opus-4-7": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-opus-4-7.html",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "lifecycle": "Active",
+      "eolFloor": "none_announced",
+      "tokyoInRegion": false,
+      "geoInferenceId": "jp.anthropic.claude-opus-4-7",
+      "jpGeoDestinations": ["ap-northeast-1", "ap-northeast-3"],
+      "converse": true,
+      "imageInput": true,
+      "eulaUrl": "https://aws.amazon.com/legal/bedrock/third-party-models/"
+    },
+    "anthropic.claude-opus-4-8": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-opus-4-8.html",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "lifecycle": "Active",
+      "eolFloor": "none_announced",
+      "tokyoInRegion": false,
+      "geoInferenceId": "jp.anthropic.claude-opus-4-8",
+      "jpGeoDestinations": ["ap-northeast-1", "ap-northeast-3"],
+      "converse": true,
+      "imageInput": true,
+      "eulaUrl": "https://aws.amazon.com/legal/bedrock/third-party-models/"
+    },
+    "anthropic.claude-fable-5": {
+      "url": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-fable-5.html",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "lifecycle": "Active",
+      "eolFloor": "none_announced",
+      "tokyoInRegion": false,
+      "converse": true,
+      "imageInput": true,
+      "retentionRequirement": "provider_data_share",
+      "retentionRequirementQuote": "To use this model, you must opt in to provider data sharing by setting your data retention mode to provider_data_share via the Data Retention API.",
+      "eulaUrl": "https://aws.amazon.com/legal/bedrock/third-party-models/"
+    }
+  }
+}

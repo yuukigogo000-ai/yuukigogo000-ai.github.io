@@ -16,6 +16,9 @@
   "_adapter": "bedrock = 実AWS / mock = ローカル検証用(品質・原価の結論には使えない)",
   "adapter": "bedrock",
 
+  "_minimumEolHeadroomDays": "EOL までに最低限必要な猶予日数。これ未満は production candidate から外れる(benchmark-only)。推奨 90。",
+  "minimumEolHeadroomDays": 90,
+
   "outputMaxTokens": 1024,
   "temperature": 0.7,
   "concurrency": 2

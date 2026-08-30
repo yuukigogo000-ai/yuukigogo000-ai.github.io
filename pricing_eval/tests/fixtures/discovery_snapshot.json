@@ -1,0 +1,517 @@
+{
+  "_comment": "2026-08-30 の東京 Bedrock read-only API 実応答の抜粋(回帰テスト用 fixture)。秘密値なし。",
+  "capturedAt": "2026-08-30T14:16:57.965Z",
+  "region": "ap-northeast-1",
+  "models": [
+    {
+      "modelId": "anthropic.claude-haiku-4-5-20251001-v1:0",
+      "modelName": "Claude Haiku 4.5",
+      "providerName": "Anthropic",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "INFERENCE_PROFILE"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2025-10-15T17:00:00Z",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "modelId": "moonshotai.kimi-k2.5",
+      "modelName": "Kimi K2.5",
+      "providerName": "Moonshot AI",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "ON_DEMAND"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2026-02-06T18:00:00Z",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "modelId": "anthropic.claude-fable-5",
+      "modelName": "Claude Fable 5",
+      "providerName": "Anthropic",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "INFERENCE_PROFILE"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2026-06-09T10:00:00Z",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "modelId": "anthropic.claude-sonnet-4-6",
+      "modelName": "Claude Sonnet 4.6",
+      "providerName": "Anthropic",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "INFERENCE_PROFILE"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2026-02-17T18:00:00Z",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "modelId": "mistral.mistral-large-3-675b-instruct",
+      "modelName": "Mistral Large 3",
+      "providerName": "Mistral AI",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "ON_DEMAND"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2025-12-02T00:00:00Z",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "modelId": "mistral.ministral-3-14b-instruct",
+      "modelName": "Ministral 14B 3.0",
+      "providerName": "Mistral AI",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "ON_DEMAND"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2025-12-02T00:00:00Z",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "modelId": "anthropic.claude-opus-5",
+      "modelName": "Claude Opus 5",
+      "providerName": "Anthropic",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "INFERENCE_PROFILE"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2026-07-23T17:00:00Z",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "modelId": "anthropic.claude-opus-4-8",
+      "modelName": "Claude Opus 4.8",
+      "providerName": "Anthropic",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "INFERENCE_PROFILE"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2026-05-28T10:00:00Z",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "modelId": "anthropic.claude-opus-4-7",
+      "modelName": "Claude Opus 4.7",
+      "providerName": "Anthropic",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "INFERENCE_PROFILE"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2026-04-16T14:30:00Z",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "modelId": "anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "modelName": "Claude Sonnet 4.5",
+      "providerName": "Anthropic",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "INFERENCE_PROFILE"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2025-09-29T00:00:00Z",
+        "status": "ACTIVE"
+      }
+    },
+    {
+      "modelId": "qwen.qwen3-vl-235b-a22b",
+      "modelName": "Qwen3 VL 235B A22B",
+      "providerName": "Qwen",
+      "inputModalities": [
+        "TEXT",
+        "IMAGE"
+      ],
+      "outputModalities": [
+        "TEXT"
+      ],
+      "inferenceTypesSupported": [
+        "ON_DEMAND"
+      ],
+      "modelLifecycle": {
+        "endOfLifeTime": null,
+        "legacyTime": null,
+        "publicExtendedAccessTime": null,
+        "startOfLifeTime": "2025-12-02T00:00:00Z",
+        "status": "ACTIVE"
+      }
+    }
+  ],
+  "profiles": [
+    {
+      "inferenceProfileId": "jp.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-3::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "jp.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-3::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "jp.anthropic.claude-sonnet-4-6",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-3::foundation-model/anthropic.claude-sonnet-4-6"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-sonnet-4-6"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "global.anthropic.claude-sonnet-4-6",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-4-6"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-sonnet-4-6"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "jp.anthropic.claude-opus-4-7",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-3::foundation-model/anthropic.claude-opus-4-7"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-opus-4-7"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "global.anthropic.claude-opus-4-7",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-opus-4-7"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-opus-4-7"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "jp.anthropic.claude-opus-4-8",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-3::foundation-model/anthropic.claude-opus-4-8"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-opus-4-8"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "global.anthropic.claude-opus-4-8",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-opus-4-8"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-opus-4-8"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "global.anthropic.claude-fable-5",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-fable-5"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-fable-5"
+        }
+      ]
+    },
+    {
+      "inferenceProfileId": "global.anthropic.claude-opus-5",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-opus-5"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-opus-5"
+        }
+      ]
+    }
+  ],
+  "profileDetails": {
+    "jp.anthropic.claude-sonnet-4-5-20250929-v1:0": {
+      "inferenceProfileId": "jp.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-3::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+      ]
+    },
+    "jp.anthropic.claude-haiku-4-5-20251001-v1:0": {
+      "inferenceProfileId": "jp.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-3::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        }
+      ]
+    },
+    "jp.anthropic.claude-sonnet-4-6": {
+      "inferenceProfileId": "jp.anthropic.claude-sonnet-4-6",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-3::foundation-model/anthropic.claude-sonnet-4-6"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-sonnet-4-6"
+        }
+      ]
+    },
+    "global.anthropic.claude-sonnet-4-6": {
+      "inferenceProfileId": "global.anthropic.claude-sonnet-4-6",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-4-6"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-sonnet-4-6"
+        }
+      ]
+    },
+    "jp.anthropic.claude-opus-4-7": {
+      "inferenceProfileId": "jp.anthropic.claude-opus-4-7",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-3::foundation-model/anthropic.claude-opus-4-7"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-opus-4-7"
+        }
+      ]
+    },
+    "global.anthropic.claude-sonnet-4-5-20250929-v1:0": {
+      "inferenceProfileId": "global.anthropic.claude-sonnet-4-5-20250929-v1:0",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+      ]
+    },
+    "global.anthropic.claude-opus-4-7": {
+      "inferenceProfileId": "global.anthropic.claude-opus-4-7",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-opus-4-7"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-opus-4-7"
+        }
+      ]
+    },
+    "jp.anthropic.claude-opus-4-8": {
+      "inferenceProfileId": "jp.anthropic.claude-opus-4-8",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-3::foundation-model/anthropic.claude-opus-4-8"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-opus-4-8"
+        }
+      ]
+    },
+    "global.anthropic.claude-opus-4-8": {
+      "inferenceProfileId": "global.anthropic.claude-opus-4-8",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-opus-4-8"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-opus-4-8"
+        }
+      ]
+    },
+    "global.anthropic.claude-haiku-4-5-20251001-v1:0": {
+      "inferenceProfileId": "global.anthropic.claude-haiku-4-5-20251001-v1:0",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+        }
+      ]
+    },
+    "global.anthropic.claude-fable-5": {
+      "inferenceProfileId": "global.anthropic.claude-fable-5",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-fable-5"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-fable-5"
+        }
+      ]
+    },
+    "global.anthropic.claude-opus-5": {
+      "inferenceProfileId": "global.anthropic.claude-opus-5",
+      "models": [
+        {
+          "modelArn": "arn:aws:bedrock:::foundation-model/anthropic.claude-opus-5"
+        },
+        {
+          "modelArn": "arn:aws:bedrock:ap-northeast-1::foundation-model/anthropic.claude-opus-5"
+        }
+      ]
+    }
+  }
+}

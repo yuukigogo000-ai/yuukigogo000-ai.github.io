@@ -79,7 +79,7 @@ async function attemptOnce({ client, cfg, model, testCase, attemptNo }) {
         maxTokens: cfg.outputMaxTokens,
         temperature: cfg.temperature,
       });
-      const res = await client.converse(model.inferenceProfileId || model.modelId, body);
+      const res = await client.converse(model.invocationTarget || model.inferenceProfileId || model.modelId, body);
       const ex = extractConverse(res);
       text = ex.text; usage = ex.usage; stopReason = ex.stopReason;
     }
@@ -189,12 +189,17 @@ async function main() {
   if (existsSync(discoveryPath)) {
     const d = JSON.parse(readFileSync(discoveryPath, 'utf8'));
     candidates = (d.candidates || []).map((c) => ({
-      key: c.inferenceProfileId || c.modelId,
+      // 呼び出し先は探索が決めた invocationTarget(direct 経路 = base model ID / jp geo 経路 = jp profile ID)。
+      // global profile を黙って使わない。
+      key: c.invocationTarget || c.inferenceProfileId || c.modelId,
       modelId: c.modelId,
       modelName: c.modelName ?? null,
       inferenceProfileId: c.inferenceProfileId,
+      invocationTarget: c.invocationTarget ?? null,
+      domesticPath: c.domesticPath ?? null,
       evaluable: c.evaluable,
       adoptionBlocked: c.adoptionBlocked,
+      benchmarkOnly: c.benchmarkOnly ?? false,
       fails: c.fails,
     }));
   }
@@ -336,18 +341,28 @@ function estimateBudget({ runnable, targetCases, pricing, priceFor, cfg, stage }
             'pricing_override.json に公式価格を転記するまで、費用を 0 とはみなしません。',
     };
   }
-  // 上限見積り: 全ケースが最大入力 + 再試行1回
-  const calls = targetCases.length * (1 + cfg.maxAutoRetries);
+  // 上限見積り: 全ケースが最大入力 + 再試行1回。候補別の smoke / full 上限も出す(§6)。
+  const fullCalls = targetCases.length * (1 + cfg.maxAutoRetries);
+  const smokeCalls = pickSmokeCases(targetCases).length * (1 + cfg.maxAutoRetries);
+  const inTok = 16000, outTok = cfg.outputMaxTokens;
+  const jpyOrNull = (usd) => { try { return toJpy(usd, cfg); } catch { return null; } };
   let maxUsd = 0;
+  const perModel = [];
   for (const m of withPrice) {
     const p = priceFor(m);
-    const inTok = 16000, outTok = cfg.outputMaxTokens;
-    maxUsd += calls * ((inTok / 1e6) * p.inputPerMTokUsd + (outTok / 1e6) * p.outputPerMTokUsd);
+    const perCall = (inTok / 1e6) * p.inputPerMTokUsd + (outTok / 1e6) * p.outputPerMTokUsd;
+    const fullUsd = fullCalls * perCall;
+    const smokeUsd = smokeCalls * perCall;
+    maxUsd += stage === 'smoke' ? smokeUsd : fullUsd;
+    perModel.push({
+      key: m.key, modelId: m.modelId,
+      smokeMaxUsd: Number(smokeUsd.toFixed(4)), smokeMaxJpy: jpyOrNull(smokeUsd) === null ? null : Math.round(jpyOrNull(smokeUsd)),
+      fullMaxUsd: Number(fullUsd.toFixed(4)), fullMaxJpy: jpyOrNull(fullUsd) === null ? null : Math.round(jpyOrNull(fullUsd)),
+    });
   }
-  let maxJpy = null;
-  try { maxJpy = toJpy(maxUsd, cfg); } catch { maxJpy = null; }
+  const maxJpy = jpyOrNull(maxUsd);
   return {
-    maxUsd, maxJpy, unknownPriceModels: [],
+    maxUsd, maxJpy, unknownPriceModels: [], perModel,
     note: maxJpy === null
       ? `上限 $${maxUsd.toFixed(2)}。USD/JPY 未指定のため円は出しません(--usd-jpy で明示)。`
       : `上限 $${maxUsd.toFixed(2)} = 約 ${Math.round(maxJpy)} 円(予算 ${cfg.maxBudgetJpy} 円)`,

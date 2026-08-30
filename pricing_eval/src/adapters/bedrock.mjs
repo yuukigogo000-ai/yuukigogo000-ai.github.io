@@ -103,11 +103,14 @@ export function createBedrockClient({ region, credentials, fetchImpl = globalThi
     /** 基盤モデル一覧(ライフサイクル・モダリティを含む) */
     listFoundationModels: () =>
       call(cp({ method: 'GET', path: '/foundation-models', operation: 'ListFoundationModels' })),
-    /** 推論プロファイル一覧 */
-    listInferenceProfiles: (type) =>
+    /** 推論プロファイル一覧(nextToken でページを辿れる。取り漏らすと jp. profile が消える) */
+    listInferenceProfiles: (type, nextToken) =>
       call(cp({
         method: 'GET', path: '/inference-profiles',
-        query: type ? `typeEquals=${encodeURIComponent(type)}` : '',
+        query: [
+          type ? `typeEquals=${encodeURIComponent(type)}` : '',
+          nextToken ? `nextToken=${encodeURIComponent(nextToken)}` : '',
+        ].filter(Boolean).join('&'),
         operation: 'ListInferenceProfiles',
       })),
     /** 個別の推論プロファイル(destination 検証に必須。名前から推測しない) */

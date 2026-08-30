@@ -1,0 +1,42 @@
+{
+  "_comment": "terms_allow_usecase(Hard Gate 10)の人間レビュー用レジストリ。ここに URL があっても自動 PASS はしない(resolution は常に HUMAN_REQUIRED / LEGAL_REVIEW_REQUIRED)。checklist は Replier 固有の確認観点。",
+  "fetchedAt": "2026-08-30T14:11:11Z",
+  "replierChecklist": [
+    "利用者が私的会話・相手のメッセージ/画像を入力する権利・同意・必要な許可があるか",
+    "プライバシーおよび会話相手(第三者)の権利の扱い",
+    "各マッチングサービスの利用規約(スクショの外部AI入力の可否)",
+    "AI支援による文章であることの扱い(開示義務・禁止の有無)",
+    "未成年・健康情報・連絡先・顔写真等のセンシティブ情報の混入時の扱い",
+    "人間レビュー必須・自動送信禁止の維持(Replier設計と規約の整合)"
+  ],
+  "providers": {
+    "Anthropic": {
+      "termsUrl": "https://aws.amazon.com/legal/bedrock/third-party-models/",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "resolution": "LEGAL_REVIEW_REQUIRED",
+      "notes": "Anthropic on Bedrock terms。AUP(dating/persona関連の適用範囲)・第三者データ入力・人間関与要件を要確認。初回利用はFTU(First Time Use)承諾を伴う場合がある: https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html"
+    },
+    "Moonshot AI": {
+      "termsUrl": "https://huggingface.co/moonshotai/Kimi-K2.5/blob/main/LICENSE",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "resolution": "LEGAL_REVIEW_REQUIRED",
+      "notes": "モデルカードのEULAリンクはHFのLICENSE。商用SaaS利用・入出力の扱い・利用制限条項を要確認"
+    },
+    "Mistral AI": {
+      "termsUrl": "https://aws.amazon.com/legal/bedrock/third-party-models/",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "resolution": "LEGAL_REVIEW_REQUIRED",
+      "notes": "Bedrock third-party terms経由。用途制限・プライバシー条項を要確認"
+    },
+    "Qwen": {
+      "termsUrl": "https://github.com/QwenLM/Qwen3-VL/blob/main/LICENSE",
+      "fetchedAt": "2026-08-30T14:11:11Z",
+      "resolution": "LEGAL_REVIEW_REQUIRED",
+      "notes": "Apache系ライセンスでも利用ポリシー別紙の有無を要確認"
+    }
+  },
+  "firstTimeUse": {
+    "basis": "第三者モデルの初回利用はEULA同意を伴う。AnthropicはFTU送信が必要な場合がある。規約承認前に初回呼び出しをしない",
+    "source": "https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html"
+  }
+}

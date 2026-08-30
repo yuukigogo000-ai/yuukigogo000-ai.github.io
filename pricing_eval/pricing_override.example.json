@@ -1,14 +1,23 @@
 {
-  "_comment": "価格を機械取得できないときに、人間が公式ページの値を転記する。source と fetchedAt が無い項目は読み込み時にエラーになる(出典なしの価格は使わない)。",
+  "_comment": "価格を機械取得できないときに、人間が公式ページの値を転記する。source と fetchedAt が無い項目は読み込み時にエラーになる(出典なしの価格は使わない)。kind='official_exact'(AWS公式の対象リージョン実価格。原価計算に使う)/ 'derived_estimate'(global価格×係数などの計算値。参考表示のみで原価計算・公式価格としては絶対に使われない)。Anthropic直販価格や推定値を official_exact として書かないこと。",
   "note": "転記者と確認日を書く",
   "models": {
     "<inferenceProfileId または modelId>": {
+      "kind": "official_exact",
       "inputPerMTokUsd": 0.0,
       "outputPerMTokUsd": 0.0,
       "imageUnitUsd": null,
       "region": "ap-northeast-1",
       "tier": "on-demand",
       "source": "https://aws.amazon.com/bedrock/pricing/ の該当行",
+      "fetchedAt": "2026-08-29T00:00:00Z"
+    },
+    "<参考推定の例(原価計算には使われない)>": {
+      "kind": "derived_estimate",
+      "inputPerMTokUsd": 0.0,
+      "outputPerMTokUsd": 0.0,
+      "basis": "推定の根拠(例: global価格を暫定流用)を明記",
+      "source": "根拠URL",
       "fetchedAt": "2026-08-29T00:00:00Z"
     }
   }

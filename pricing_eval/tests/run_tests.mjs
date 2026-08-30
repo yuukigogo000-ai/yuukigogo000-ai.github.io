@@ -294,10 +294,140 @@ t('19. 資格情報解決: 環境変数キーを外した子プロセスでは n
   assertEq(resolveCredentials({}, { execImpl: fakeExport }), null, 'profile 未指定なのに解決している');
 });
 
+console.log('\n== 国内処理・EOL・共有ゲート(2026-08-31 回帰。変異は --mutate で検出確認) ==');
+const { assessModel, loadEvidenceFiles } = await import('../src/discover_models.mjs');
+const { judgeDirectTokyo, JAPAN_REGIONS } = await import('../src/lib/hardgate.mjs');
+const FIX = JSON.parse(readFileSync('pricing_eval/tests/fixtures/discovery_snapshot.json', 'utf8'));
+const EVID = loadEvidenceFiles();
+const NOW = new Date('2026-08-30T12:00:00Z'); // 指示の基準日で固定
+const fixModel = (id) => FIX.models.find((m) => m.modelId === id);
+const fixProfile = (id) => FIX.profiles.find((p) => p.inferenceProfileId === id) ?? null;
+const fixDetail = (id) => FIX.profileDetails[id] ?? null;
+const assess = (modelId, profileId) => assessModel({
+  model: fixModel(modelId),
+  profile: profileId ? fixProfile(profileId) : null,
+  profileDetail: profileId ? fixDetail(profileId) : null,
+  retention: { gate: gate(PASS, { mode: 'none' }) },
+  pricingKnown: null,
+  allowedDestinations: ['ap-northeast-1', 'ap-northeast-3'],
+  card: EVID.cards[modelId] ?? null, policy: EVID.policy, terms: EVID.terms,
+  region: 'ap-northeast-1', now: NOW, minEolHeadroomDays: 90,
+});
+
+t('20. direct In-Region Tokyo 4件が国内処理PASS(変異: 国外扱いに戻すと落ちる)', () => {
+  for (const id of ['moonshotai.kimi-k2.5', 'mistral.mistral-large-3-675b-instruct',
+    'mistral.ministral-3-14b-instruct', 'qwen.qwen3-vl-235b-a22b']) {
+    const a = assess(id, null);
+    assertEq(a.gates.destinations_japan.status, MUTATE ? FAIL : PASS, `${id} destinations_japan`);
+    assertEq(a.domesticPath, 'direct_in_region_tokyo', `${id} 経路`);
+    assertEq(a.invocationTarget, id, `${id} は base model ID を直接指定する`);
+    assert(a.gates.destinations_japan.evidence?.endpoint === 'bedrock-runtime.ap-northeast-1.amazonaws.com', `${id} endpoint証拠`);
+  }
+});
+t('21. 東京モデルをglobal profileへ置換しても国内PASSにならない(変異検出)', () => {
+  // ON_DEMAND の無い Claude を global profile で評価 → 国内 PASS してはいけない
+  const a = assessModel({
+    model: fixModel('anthropic.claude-opus-5'),
+    profile: { inferenceProfileId: 'global.anthropic.claude-opus-5' },
+    profileDetail: { models: [{ modelArn: 'arn:aws:bedrock:::foundation-model/x' }, { modelArn: 'arn:aws:bedrock:us-east-1::x' }] },
+    retention: { gate: gate(PASS, {}) }, pricingKnown: null,
+    allowedDestinations: ['ap-northeast-1', 'ap-northeast-3'],
+    card: null, policy: EVID.policy, terms: EVID.terms, region: 'ap-northeast-1', now: NOW, minEolHeadroomDays: 90,
+  });
+  const notDomestic = a.gates.destinations_japan.status !== PASS && a.domesticPath === null;
+  assertEq(notDomestic, MUTATE ? false : true, 'global profile が国内扱いされている');
+});
+t('22. jp geo profile 5件が国内処理PASS / 国外destination追加やSeoulで落ちる(変異検出)', () => {
+  const jp5 = [
+    ['anthropic.claude-haiku-4-5-20251001-v1:0', 'jp.anthropic.claude-haiku-4-5-20251001-v1:0'],
+    ['anthropic.claude-sonnet-4-5-20250929-v1:0', 'jp.anthropic.claude-sonnet-4-5-20250929-v1:0'],
+    ['anthropic.claude-sonnet-4-6', 'jp.anthropic.claude-sonnet-4-6'],
+    ['anthropic.claude-opus-4-7', 'jp.anthropic.claude-opus-4-7'],
+    ['anthropic.claude-opus-4-8', 'jp.anthropic.claude-opus-4-8'],
+  ];
+  for (const [mid, pid] of jp5) {
+    const a = assess(mid, pid);
+    assertEq(a.gates.destinations_japan.status, PASS, `${mid} destinations_japan`);
+    assertEq(a.domesticPath, 'jp_geo_profile', `${mid} 経路`);
+    assertEq(a.invocationTarget, pid, `${mid} は jp profile を指定する`);
+  }
+  // jp. profile に国外 destination が混ざったら FAIL(名前では判定しない)
+  const tampered = judgeDestinations(['ap-northeast-1', 'ap-northeast-3', 'us-east-1'], JAPAN_REGIONS);
+  assertEq(tampered.destinations_japan.status, MUTATE ? PASS : FAIL, '国外destination追加を見逃した');
+  // ap-northeast-2(ソウル)は前方一致では通ってしまう。国内リスト厳格判定で落とす
+  assertEq(judgeDestinations(['ap-northeast-1', 'ap-northeast-2'], JAPAN_REGIONS).destinations_japan.status, FAIL, 'Seoulを日本扱いしている');
+  // 空集合は PASS にしない
+  assert(judgeDestinations([], JAPAN_REGIONS).destinations_japan.status !== PASS, '空destinationをPASSにしている');
+});
+t('23. EOL: Haiku4.5/Sonnet4.5 は 2026-08-30 基準・猶予90日で production candidate から外れる(変異: EOL欠落/未来改ざんで落ちる)', () => {
+  const h = assess('anthropic.claude-haiku-4-5-20251001-v1:0', 'jp.anthropic.claude-haiku-4-5-20251001-v1:0');
+  const s = assess('anthropic.claude-sonnet-4-5-20250929-v1:0', 'jp.anthropic.claude-sonnet-4-5-20250929-v1:0');
+  for (const [a, floor] of [[h, '2026-10-01'], [s, '2026-09-29']]) {
+    assertEq(a.gates.eol_not_near.status, MUTATE ? PASS : FAIL, `${a.modelId} eol gate`);
+    assertEq(a.productionCandidate, MUTATE ? true : false, `${a.modelId} production除外`);
+    assertEq(a.benchmarkOnly, true, `${a.modelId} は benchmark-only 表示`);
+    assertEq(a.gates.eol_not_near.evidence.eolDate, floor, `${a.modelId} EOL floor`);
+  }
+  // 変異「EOLを欠落させる」→ UNKNOWN になり FAIL(=production除外)ではなくなることを検出できる
+  assertEq(judgeEol(null, NOW, 90).status, UNKNOWN);
+  // 変異「EOLを未来へ改ざん」→ PASS になる = このテストの FAIL 期待が落ちる
+  assertEq(judgeEol('2027-12-31', NOW, 90).status, PASS);
+  // 猶予基準は設定値で、黙って固定されない
+  assertEq(judgeEol('2026-10-01', NOW, 10).status, PASS, 'minimumEolHeadroomDays が効いていない');
+});
+t('24. retention: provider_data_share 要求モデル(Fable 5)は none のまま候補から除外(変異検出)', () => {
+  const a = assess('anthropic.claude-fable-5', null);
+  assertEq(a.gates.retention_none.status, MUTATE ? PASS : FAIL, 'opt-in保持要求を見逃した');
+  assertEq(a.gates.no_prompt_output_sharing_with_model_provider.status, FAIL, '共有opt-in要求モデルの共有ゲートがFAILでない');
+  assertEq(a.evaluable, false, 'Fable 5 が実行可能になっている');
+  assert(String(a.gates.retention_none.evidence?.modelCard?.url || '').includes('model-card-anthropic-claude-fable-5'), '公式カードの証拠が無い');
+});
+t('25. 共有ゲート分割: none+公式仕様でプロンプト/出力非共有はPASS、非コンテンツ共有は決してPASSしない(変異検出)', () => {
+  const a = assess('moonshotai.kimi-k2.5', null);
+  assertEq(a.gates.no_prompt_output_sharing_with_model_provider.status, PASS, 'retention none の証拠付きPASSが効かない');
+  assert((a.gates.no_prompt_output_sharing_with_model_provider.evidence?.sources || []).some((s) => s.includes('data-retention')), '公式仕様の出典が無い');
+  assertEq(a.gates.no_noncontent_usage_metadata_sharing.status, MUTATE ? PASS : UNKNOWN, '非コンテンツ共有を自動PASSしている');
+  assertEq(a.gates.no_noncontent_usage_metadata_sharing.evidence?.resolution, 'HUMAN_REQUIRED');
+});
+t('26. 6枚ゲート分離: structural は公式仕様でPASS可、runtime は smoke まで UNKNOWN(変異: 混同で落ちる)', () => {
+  const a = assess('moonshotai.kimi-k2.5', null);
+  assertEq(a.gates.six_image_structural.status, PASS, 'Image+Converse+上限20の構造的PASSが効かない');
+  assertEq(a.gates.six_image_structural.evidence?.converseImageLimit, 20);
+  assertEq(a.gates.six_image_runtime_verified.status, MUTATE ? PASS : UNKNOWN, 'runtime verified を smoke 前にPASSしている(structuralとの混同)');
+});
+t('27. terms_allow_usecase を証拠なしでPASSしない(変異検出)', () => {
+  const a = assess('anthropic.claude-haiku-4-5-20251001-v1:0', 'jp.anthropic.claude-haiku-4-5-20251001-v1:0');
+  assertEq(a.gates.terms_allow_usecase.status, MUTATE ? PASS : UNKNOWN, '規約を自動PASSしている');
+  assert(['HUMAN_REQUIRED', 'LEGAL_REVIEW_REQUIRED'].includes(a.gates.terms_allow_usecase.evidence?.resolution), 'resolution が人間判断になっていない');
+  assert(Array.isArray(a.gates.terms_allow_usecase.evidence?.checklist), 'Replier固有チェックリストが添付されていない');
+});
+t('28. derived_estimate 価格を official として扱わない(変異検出)', () => {
+  mkdirSync(TMP, { recursive: true });
+  const p = join(TMP, 'override_derived.json');
+  writeFileSync(p, JSON.stringify({ models: {
+    'x.official': { kind: 'official_exact', inputPerMTokUsd: 1, outputPerMTokUsd: 2, source: 'https://aws.amazon.com/bedrock/pricing/', fetchedAt: 'now' },
+    'x.derived': { kind: 'derived_estimate', inputPerMTokUsd: 9, outputPerMTokUsd: 9, basis: 'global流用', source: 'url', fetchedAt: 'now' },
+  } }));
+  const pr = cost.loadPricing({ overridePath: p, snapshotPath: null });
+  assertEq(!!pr.models['x.official'], true, 'official が読まれない');
+  assertEq(!!pr.models['x.derived'], MUTATE ? true : false, 'derived が official 扱いになっている');
+  assertEq(!!pr.derivedEstimates['x.derived'], true, 'derived が参考一覧に無い');
+});
+t('29. dry-run は実モデル呼び出し経路を通らない(資格情報ゼロでも成功する。変異: 有効化で落ちる)', () => {
+  const env = { ...process.env };
+  delete env.AWS_ACCESS_KEY_ID; delete env.AWS_SECRET_ACCESS_KEY; delete env.AWS_SESSION_TOKEN; delete env.AWS_PROFILE;
+  const out = execFileSync(process.execPath,
+    ['pricing_eval/src/run_eval.mjs', '--stage=dryrun', '--usd-jpy=160', '--max-budget-jpy=10000'],
+    { encoding: 'utf8', env });
+  assert(out.includes('dry-run'), 'dryrun が実行されていない');
+  assertEq(out.includes('実行開始'), MUTATE ? true : false, 'dry-run 中に実行経路へ入っている');
+});
+
 function allPass() {
   const g = {};
   for (const id of ['bedrock_available', 'lifecycle_active', 'callable_from_tokyo', 'destinations_japan',
-    'destinations_allowed', 'multimodal', 'six_images', 'retention_none', 'no_provider_sharing',
+    'destinations_allowed', 'multimodal', 'six_image_structural', 'six_image_runtime_verified',
+    'retention_none', 'no_prompt_output_sharing_with_model_provider', 'no_noncontent_usage_metadata_sharing',
     'terms_allow_usecase', 'pricing_obtainable', 'eol_not_near']) g[id] = gate(PASS, {});
   return g;
 }

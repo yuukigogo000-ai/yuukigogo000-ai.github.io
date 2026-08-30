@@ -42,11 +42,22 @@ export function loadPricing({
     Object.assign(out.models, snapshot.models || {});
     out.sources.push(...(snapshot.sources || []));
   }
+  // 推定価格(derived_estimate)は official と混ぜない。原価計算に使うのは official_exact だけ。
+  out.derivedEstimates = {};
   if (existsSync(overridePath)) {
     const ov = JSON.parse(readFileSync(overridePath, 'utf8'));
     for (const [id, p] of Object.entries(ov.models || {})) {
       if (!p.source || !p.fetchedAt) {
         throw new Error(`pricing_override.json の ${id} に source / fetchedAt がありません(出典なしの価格は使えません)`);
+      }
+      const kind = p.kind ?? 'official_exact';
+      if (kind === 'derived_estimate') {
+        // 参考表示専用。AWS公式実価格として扱わない(モデル一覧にも入れない)。
+        out.derivedEstimates[id] = p;
+        continue;
+      }
+      if (kind !== 'official_exact') {
+        throw new Error(`pricing_override.json の ${id} の kind '${kind}' は不正(official_exact / derived_estimate のみ)`);
       }
       out.models[id] = p;
     }
