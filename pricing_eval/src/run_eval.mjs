@@ -119,9 +119,12 @@ export async function runCase({ client, cfg, model, testCase, price }) {
   let a = await attemptOnce({ client, cfg, model, testCase, attemptNo: 1 });
   attempts.push(a);
 
-  if (!a.ok && cfg.maxAutoRetries >= 1) {
+  const transient = /^http_(429|5\d\d)$/.test(a.failureKind || '');
+  // retryTransientOnly: 429/一時的5xx 以外(AccessDenied・Validation・契約系・JSON崩れ等)は再試行しない
+  const retryAllowed = cfg.retryTransientOnly ? transient : true;
+  if (!a.ok && cfg.maxAutoRetries >= 1 && retryAllowed) {
     // rate limit / 5xx は指数backoff を挟む
-    if (/^http_(429|5\d\d)$/.test(a.failureKind || '')) await sleep(cfg.backoffMs ?? 1000);
+    if (transient) await sleep(cfg.backoffMs ?? 1000);
     const b = await attemptOnce({ client, cfg, model, testCase, attemptNo: 2 });
     attempts.push(b);
     a = b;
@@ -140,6 +143,8 @@ export async function runCase({ client, cfg, model, testCase, price }) {
     modelKey: model.key,
     modelId: model.modelId,
     inferenceProfileId: model.inferenceProfileId ?? null,
+    invocationTarget: model.invocationTarget ?? null,
+    domesticPath: model.domesticPath ?? null,
     synthetic: !!client.synthetic,
     success: a.ok,
     failureKind: a.failureKind,
@@ -148,6 +153,8 @@ export async function runCase({ client, cfg, model, testCase, price }) {
     attempts: attempts.map((x, i) => ({
       attemptNo: x.attemptNo, latencyMs: x.latencyMs, usage: x.usage,
       ok: x.ok, failureKind: x.failureKind, failureClass: x.failureClass,
+      // エラーコード(AccessDeniedException 等)。これが無いと契約系エラーの即停止判定が空振りする
+      error: x.error ?? null,
       costUsd: attemptCosts[i],
     })),
     totalLatencyMs: attempts.reduce((s, x) => s + x.latencyMs, 0),
@@ -298,6 +305,13 @@ async function main() {
       row.runId = runId; row.stage = stage;
       row.finalFailure = !row.success; // 再試行後も失敗 = 確定失敗。resume で再実行しない。
       appendFileSync(resultsPath, JSON.stringify(row) + '\n');
+      // 契約・権限・購読・モデルアクセス系のエラーは再試行も継続もせず即停止(人間操作が必要)
+      if (!row.success && row.failureClass === 'system') {
+        const errText = row.attempts.map((x) => x.error || '').join(' ');
+        if (/AccessDenied|NotAuthorized|Unauthorized|Subscription|Marketplace|EULA|ModelAccess|ValidationException/i.test(errText)) {
+          throw new Error(`契約/権限/検証系エラーのため ${model.key} の実行を停止します(再試行しません): ${errText}`);
+        }
+      }
       total++; if (!row.success) errors++;
       if (row.effectiveCostUsd == null) unknownCostRows++;
       if (row.effectiveCostUsd != null) {

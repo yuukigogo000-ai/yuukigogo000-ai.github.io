@@ -423,6 +423,91 @@ t('29. dry-run は実モデル呼び出し経路を通らない(資格情報ゼ�
   assertEq(out.includes('実行開始'), MUTATE ? true : false, 'dry-run 中に実行経路へ入っている');
 });
 
+console.log('\n== smoke 前提(2026-08-31 GO対応: EOL意味論・安全ガード・再試行制限) ==');
+t('30. EOL=N/A は PASS でなく UNKNOWN(smoke可・production=CONDITIONAL)。無期限保証と表示しない(変異検出)', () => {
+  const g = judgeEol('none_announced', new Date('2026-08-30T12:00:00Z'), 90);
+  assertEq(g.status, MUTATE ? PASS : UNKNOWN, 'N/A を PASS(90日保証)扱いしている');
+  assertEq(g.evidence.eligible_for_smoke, true);
+  assertEq(g.evidence.eligible_for_production, 'CONDITIONAL');
+  assert(!/無期限|保証/.test(g.note.replace('無期限保証ではない', '')), 'N/A を保証として表示している');
+  assert(g.note.includes('リスク受容'), '人間のリスク受容が明示されていない');
+  // assessModel 側にも同じ意味論が出る
+  const a = assess('moonshotai.kimi-k2.5', null);
+  assertEq(a.eolAssessment.eol_headroom_verified, UNKNOWN);
+  assertEq(a.eolAssessment.eligible_for_smoke, true);
+  assertEq(a.eolAssessment.eligible_for_production, 'CONDITIONAL');
+  assertEq(a.evaluable, true, 'EOL未公表で smoke まで塞いでいる');
+  // 公表EOLが90日以上先なら PASS / 90日未満は FAIL(production除外)のまま
+  assertEq(judgeEol('2027-01-01', new Date('2026-08-30T12:00:00Z'), 90).status, PASS);
+  assertEq(judgeEol('2026-10-01', new Date('2026-08-30T12:00:00Z'), 90).status, FAIL);
+});
+const { checkSmokeGuard } = await import('../src/smoke_guard.mjs');
+const SMOKE_ALLOW = ['mistral.ministral-3-14b-instruct', 'qwen.qwen3-vl-235b-a22b', 'mistral.mistral-large-3-675b-instruct', 'moonshotai.kimi-k2.5'];
+function guardBase() {
+  return {
+    preflight: {
+      identity: { arnTail: '...711901:user/replier-eval-cli', credentialSource: 'profile:replier-eval' },
+      region: 'ap-northeast-1', retention: { mode: 'none', ok: true }, allowModelEvaluation: true,
+    },
+    env: { AWS_PROFILE: 'replier-eval' },
+    expectedProfile: 'replier-eval',
+    region: 'ap-northeast-1',
+    allowlist: [...SMOKE_ALLOW],
+    candidates: SMOKE_ALLOW.map((id) => ({ modelId: id, invocationTarget: id, domesticPath: 'direct_in_region_tokyo', evaluable: true, fails: [] })),
+    pricing: { models: {
+      'mistral.ministral-3-14b-instruct': { inputPerMTokUsd: 0.24, outputPerMTokUsd: 0.12 },
+      'qwen.qwen3-vl-235b-a22b': { inputPerMTokUsd: 0.32, outputPerMTokUsd: 3.22 },
+      'mistral.mistral-large-3-675b-instruct': { inputPerMTokUsd: 0.61, outputPerMTokUsd: 1.82 },
+      'moonshotai.kimi-k2.5': { inputPerMTokUsd: 0.72, outputPerMTokUsd: 3.6 },
+    } },
+    stage: 'smoke', usdJpy: 160, maxBudgetJpy: 100, maxBudgetUsd: 0.625,
+    outputMaxTokens: 1024, maxAutoRetries: 1, retryTransientOnly: true,
+    casesShaHead: 'abc', casesShaDisk: 'abc',
+    screenshotCountExpected: 138, screenshotCountActual: 138,
+  };
+}
+t('31. smoke guard: 正常条件はPASSし、12種の変異すべてで fail closed になる(変異検出)', () => {
+  const ok = checkSmokeGuard(guardBase());
+  assertEq(ok.ok, MUTATE ? false : true, `正常条件がPASSしない: ${ok.blockers.join(' / ')}`);
+  assert(ok.facts.worstJpy < 100 && ok.facts.worstUsd < 0.625, 'worst-case計算が異常');
+  const mutants = {
+    'allowlist外モデル追加': (i) => { i.allowlist.push('evil.model'); },
+    'Claudeモデル混入': (i) => { i.allowlist.push('anthropic.claude-opus-5'); },
+    'global profileへ置換': (i) => { i.candidates[0].invocationTarget = 'global.' + i.candidates[0].modelId; },
+    'jp profileへ置換': (i) => { i.candidates[1].invocationTarget = 'jp.' + i.candidates[1].modelId; i.candidates[1].domesticPath = 'jp_geo_profile'; },
+    'regionを東京以外へ': (i) => { i.preflight.region = 'us-east-1'; },
+    'retentionをnone以外へ': (i) => { i.preflight.retention = { mode: 'default', ok: false }; },
+    'invocation logging有効': (i) => { i.preflight.retention = { mode: 'logging_enabled', ok: false }; },
+    '合成データhash不一致': (i) => { i.casesShaDisk = 'tampered'; },
+    '予算100円超過(上限緩和)': (i) => { i.maxBudgetJpy = 101; },
+    '予算100円超過(worst-case超え)': (i) => { i.pricing.models['moonshotai.kimi-k2.5'].outputPerMTokUsd = 9999; },
+    '価格不明': (i) => { delete i.pricing.models['qwen.qwen3-vl-235b-a22b']; },
+    'fullモード有効': (i) => { i.stage = 'full'; },
+    '偽のAWS環境変数': (i) => { i.env.AWS_ACCESS_KEY_ID = 'proxFAKE'; },
+    '再試行制限なし': (i) => { i.retryTransientOnly = false; },
+    'derived価格の使用': (i) => { i.pricing.models['qwen.qwen3-vl-235b-a22b'].kind = 'derived_estimate'; },
+  };
+  const leaks = [];
+  for (const [name, fn] of Object.entries(mutants)) {
+    const inp = guardBase(); fn(inp);
+    const r = checkSmokeGuard(inp);
+    if (r.ok) leaks.push(name);
+  }
+  assertEq(leaks.length, MUTATE ? 99 : 0, `fail closed にならなかった変異: ${leaks.join(', ')}`);
+});
+await (async () => {
+  const rtCfg = { maxAutoRetries: 1, outputMaxTokens: 512, temperature: 0.7, backoffMs: 1, retryTransientOnly: true };
+  const rowA = await runCase({ client: createMockClient({ fault: 'broken_json' }), cfg: rtCfg, model, testCase: cases[0], price });
+  const rowB = await runCase({ client: createMockClient({ fault: 'http_429' }), cfg: rtCfg, model, testCase: cases[0], price });
+  t('32. --retry-transient-only: 429/5xx以外(JSON崩れ等)は再試行しない(変異検出)', () => {
+    assertEq(rowA.attempts.length, MUTATE ? 2 : 1, 'JSON崩れを再試行している(予算ゲート違反)');
+    assertEq(rowB.attempts.length, 2, '429 の1回再試行が効かない');
+  });
+  t('32b. attempts にエラーコードが残る(契約系エラー即停止の判定材料)', () => {
+    assert(typeof rowB.attempts[0].error === 'string' && rowB.attempts[0].error.length > 0, 'error コードが保存されていない');
+  });
+})();
+
 function allPass() {
   const g = {};
   for (const id of ['bedrock_available', 'lifecycle_active', 'callable_from_tokyo', 'destinations_japan',

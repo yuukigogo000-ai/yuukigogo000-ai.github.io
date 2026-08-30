@@ -55,6 +55,8 @@ export function loadConfig(args = parseArgs()) {
     mockEndpoint: args['mock-endpoint'] || file.mockEndpoint || null,
     maxImages: 6,
     maxAutoRetries: 1, // §7: 自動再試行は最大1回。増やさない。
+    // true のとき再試行は 429 / 一時的 5xx に限定(実費 smoke の予算ゲート要件)。
+    retryTransientOnly: args['retry-transient-only'] === true || file.retryTransientOnly === true,
     // EOL 猶予の最低日数。黙って固定しない(設定・CLIで変更可)。推奨比較は 90 日。
     minimumEolHeadroomDays: num(args['min-eol-headroom-days'] ?? file.minimumEolHeadroomDays) ?? 90,
     outputMaxTokens: num(file.outputMaxTokens) ?? 1024,

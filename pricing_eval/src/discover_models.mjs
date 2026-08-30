@@ -168,6 +168,14 @@ export function assessModel({
     invocationTarget,
     productionCandidate: result.fails.length === 0,
     benchmarkOnly,
+    // EOL 意味論(2026-08-31): verified=PASS のみ「90日以上の公表EOL」。UNKNOWN(未公表)は
+    // smoke 可・production は CONDITIONAL(人間のリスク受容必要)。FAIL は production 不可。
+    eolAssessment: {
+      eol_headroom_verified: eol.status,
+      headroomDays: eol.evidence?.headroomDays ?? null,
+      eligible_for_smoke: eol.status !== FAIL,
+      eligible_for_production: eol.status === PASS ? 'YES' : (eol.status === UNKNOWN ? 'CONDITIONAL' : 'NO'),
+    },
     modelCardEvidence: card ? { url: card.url, fetchedAt: card.fetchedAt, eolFloor: card.eolFloor ?? null, lifecycle: card.lifecycle ?? null } : null,
     ...result,
   };

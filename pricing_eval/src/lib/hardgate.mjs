@@ -127,7 +127,13 @@ export const DEFAULT_MIN_EOL_HEADROOM_DAYS = 90;
 export function judgeEol(eolDate, now = new Date(), minHeadroomDays = DEFAULT_MIN_EOL_HEADROOM_DAYS) {
   if (!eolDate) return gate(UNKNOWN, null, 'EOL 日が不明。最終採用は保留する。');
   if (eolDate === 'none_announced') {
-    return gate(PASS, { eolFloor: 'none_announced', minHeadroomDays }, '公式モデルカードで EOL 未告知(N/A)');
+    // 「EOL date: N/A」は EOL 未公表であって「無期限」でも「90日以上の保証」でもない。
+    // PASS 扱いは誤り(2026-08-31 発注者指摘で修正): smoke には進めるが、
+    // production 採用は人間によるサポート終了リスク受容が必要(CONDITIONAL)。
+    return gate(UNKNOWN, {
+      eolFloor: 'none_announced', minHeadroomDays,
+      eligible_for_smoke: true, eligible_for_production: 'CONDITIONAL',
+    }, 'EOL 未公表(カード表記 N/A)。無期限保証ではない。production は人間のサポート終了リスク受容が必要');
   }
   const d = new Date(eolDate);
   if (Number.isNaN(d.getTime())) return gate(UNKNOWN, { eolDate }, 'EOL 日を解釈できない');
