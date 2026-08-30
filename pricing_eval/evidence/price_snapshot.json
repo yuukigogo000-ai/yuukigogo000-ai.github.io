@@ -1,7 +1,7 @@
 {
   "ok": true,
   "url": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-  "fetchedAt": "2026-08-29T02:04:19.602Z",
+  "fetchedAt": "2026-08-30T13:11:04.200Z",
   "region": "ap-northeast-1",
   "publicationDate": "2026-08-26T18:19:19Z",
   "version": "20260826181919",
@@ -14,7 +14,7 @@
       "outputPerMTokUsd": 0.18000000000000002,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Nova Pro": {
       "modelName": "Nova Pro",
@@ -24,7 +24,7 @@
       "outputPerMTokUsd": 3.8400000000000003,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "GLM 4.7": {
       "modelName": "GLM 4.7",
@@ -34,7 +34,7 @@
       "outputPerMTokUsd": 2.64,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Nemotron Nano 3 30B": {
       "modelName": "Nemotron Nano 3 30B",
@@ -44,7 +44,7 @@
       "outputPerMTokUsd": 0.15,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "NVIDIA Nemotron Nano 2": {
       "modelName": "NVIDIA Nemotron Nano 2",
@@ -54,7 +54,7 @@
       "outputPerMTokUsd": 0.27999999999999997,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "NVIDIA Nemotron Nano 2 VL": {
       "modelName": "NVIDIA Nemotron Nano 2 VL",
@@ -64,7 +64,7 @@
       "outputPerMTokUsd": 0.36000000000000004,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Gemma 3 12B": {
       "modelName": "Gemma 3 12B",
@@ -74,7 +74,7 @@
       "outputPerMTokUsd": 0.35,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Voxtral Mini 1.0": {
       "modelName": "Voxtral Mini 1.0",
@@ -84,7 +84,7 @@
       "outputPerMTokUsd": 0.05,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Qwen3 VL 235B A22B": {
       "modelName": "Qwen3 VL 235B A22B",
@@ -94,7 +94,7 @@
       "outputPerMTokUsd": 3.22,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Devstral": {
       "modelName": "Devstral",
@@ -104,7 +104,7 @@
       "outputPerMTokUsd": 2.4,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "GPT OSS Safeguard 20B": {
       "modelName": "GPT OSS Safeguard 20B",
@@ -114,7 +114,7 @@
       "outputPerMTokUsd": 0.24000000000000002,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Nova 2.0 Lite": {
       "modelName": "Nova 2.0 Lite",
@@ -124,7 +124,7 @@
       "outputPerMTokUsd": 3.0100000000000002,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Gemma 3 27B": {
       "modelName": "Gemma 3 27B",
@@ -134,7 +134,7 @@
       "outputPerMTokUsd": 0.46,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Gemma 3 4B": {
       "modelName": "Gemma 3 4B",
@@ -144,7 +144,7 @@
       "outputPerMTokUsd": 0.1,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "gpt-oss-120b": {
       "modelName": "gpt-oss-120b",
@@ -154,7 +154,7 @@
       "outputPerMTokUsd": 0.36000000000000004,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "DeepSeek v3.2": {
       "modelName": "DeepSeek v3.2",
@@ -164,7 +164,7 @@
       "outputPerMTokUsd": 2.22,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "GLM 5": {
       "modelName": "GLM 5",
@@ -174,7 +174,7 @@
       "outputPerMTokUsd": 3.8400000000000003,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Qwen3 Coder Next": {
       "modelName": "Qwen3 Coder Next",
@@ -184,7 +184,7 @@
       "outputPerMTokUsd": 1.4400000000000002,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Kimi K2 Thinking": {
       "modelName": "Kimi K2 Thinking",
@@ -194,7 +194,7 @@
       "outputPerMTokUsd": 3.0300000000000002,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Nova Lite": {
       "modelName": "Nova Lite",
@@ -204,7 +204,7 @@
       "outputPerMTokUsd": 0.14400000000000002,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Ministral 14B 3.0": {
       "modelName": "Ministral 14B 3.0",
@@ -214,7 +214,7 @@
       "outputPerMTokUsd": 0.12000000000000001,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Ministral 3B 3.0": {
       "modelName": "Ministral 3B 3.0",
@@ -224,7 +224,7 @@
       "outputPerMTokUsd": 0.12000000000000001,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Qwen3 Coder 480B A35B": {
       "modelName": "Qwen3 Coder 480B A35B",
@@ -234,7 +234,7 @@
       "outputPerMTokUsd": 1.09,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "GPT OSS Safeguard 120B": {
       "modelName": "GPT OSS Safeguard 120B",
@@ -244,7 +244,7 @@
       "outputPerMTokUsd": 0.36000000000000004,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Minimax M2": {
       "modelName": "Minimax M2",
@@ -254,7 +254,7 @@
       "outputPerMTokUsd": 1.45,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Magistral Small 1.2": {
       "modelName": "Magistral Small 1.2",
@@ -264,7 +264,7 @@
       "outputPerMTokUsd": 1.82,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Kimi K2.5": {
       "modelName": "Kimi K2.5",
@@ -274,7 +274,7 @@
       "outputPerMTokUsd": 3.6,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "DeepSeek V3.1": {
       "modelName": "DeepSeek V3.1",
@@ -284,7 +284,7 @@
       "outputPerMTokUsd": 2.032411,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Qwen3 Coder 30B A3B": {
       "modelName": "Qwen3 Coder 30B A3B",
@@ -294,7 +294,7 @@
       "outputPerMTokUsd": 0.365,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "MiniMax M2.5": {
       "modelName": "MiniMax M2.5",
@@ -304,7 +304,7 @@
       "outputPerMTokUsd": 1.4400000000000002,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Minimax M2.1": {
       "modelName": "Minimax M2.1",
@@ -314,7 +314,7 @@
       "outputPerMTokUsd": 1.4400000000000002,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Voxtral Small 1.0": {
       "modelName": "Voxtral Small 1.0",
@@ -324,7 +324,7 @@
       "outputPerMTokUsd": 0.18000000000000002,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Qwen3 32B": {
       "modelName": "Qwen3 32B",
@@ -334,7 +334,7 @@
       "outputPerMTokUsd": 0.365,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Mistral Large 3": {
       "modelName": "Mistral Large 3",
@@ -344,7 +344,7 @@
       "outputPerMTokUsd": 1.82,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Writer Palmyra Vision 7B": {
       "modelName": "Writer Palmyra Vision 7B",
@@ -354,7 +354,7 @@
       "outputPerMTokUsd": 0.7200000000000001,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Ministral 8B 3.0": {
       "modelName": "Ministral 8B 3.0",
@@ -364,7 +364,7 @@
       "outputPerMTokUsd": 0.09000000000000001,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "GLM 4.7 Flash": {
       "modelName": "GLM 4.7 Flash",
@@ -374,7 +374,7 @@
       "outputPerMTokUsd": 0.48000000000000004,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Qwen3 Next 80B A3B": {
       "modelName": "Qwen3 Next 80B A3B",
@@ -384,7 +384,7 @@
       "outputPerMTokUsd": 1.4400000000000002,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "NVIDIA Nemotron 3 Super 120B A12B": {
       "modelName": "NVIDIA Nemotron 3 Super 120B A12B",
@@ -394,7 +394,7 @@
       "outputPerMTokUsd": 0.78,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Nova Micro": {
       "modelName": "Nova Micro",
@@ -404,7 +404,7 @@
       "outputPerMTokUsd": 0.16799999999999998,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     },
     "Qwen3 235B A22B 2507": {
       "modelName": "Qwen3 235B A22B 2507",
@@ -414,7 +414,7 @@
       "outputPerMTokUsd": 1.06,
       "tier": "on-demand",
       "source": "https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrock/current/ap-northeast-1/index.json",
-      "fetchedAt": "2026-08-29T02:04:19.602Z"
+      "fetchedAt": "2026-08-30T13:11:04.200Z"
     }
   },
   "incomplete": [

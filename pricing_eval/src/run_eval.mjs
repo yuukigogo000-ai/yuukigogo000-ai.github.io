@@ -16,11 +16,11 @@
 
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { loadConfig, parseArgs } from './lib/config.mjs';
+import { loadConfig, parseArgs, isCliEntry } from './lib/config.mjs';
 import { logInfo, logWarn, logError } from './lib/log.mjs';
 import { SYSTEM_INSTRUCTION, buildUserText, parseReplies } from './adapters/contract.mjs';
 import { createMockClient } from './adapters/mock.mjs';
-import { createBedrockClient, credentialsFromEnv, buildConverseBody, extractConverse } from './adapters/bedrock.mjs';
+import { createBedrockClient, resolveCredentials, buildConverseBody, extractConverse } from './adapters/bedrock.mjs';
 import { validateReplies } from './validate_output.mjs';
 import { costUsdForAttempt, loadPricing, toJpy, bucketOf } from './calculate_cost.mjs';
 import { runPreflight } from './retention_preflight.mjs';
@@ -271,7 +271,7 @@ async function main() {
   }
 
   // --- 実行 ---
-  const creds = cfg.adapter === 'mock' ? null : credentialsFromEnv();
+  const creds = cfg.adapter === 'mock' ? null : (resolveCredentials()?.credentials ?? null);
   let spentUsd = 0;
   let unknownCostRows = 0; // 原価不明の件数。0円と混同しないため別に数える。
   const smokeStats = new Map();
@@ -354,6 +354,6 @@ function estimateBudget({ runnable, targetCases, pricing, priceFor, cfg, stage }
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntry(import.meta.url)) {
   main().catch((e) => { logError(e.message); process.exit(1); });
 }

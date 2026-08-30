@@ -6,7 +6,7 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { loadConfig, parseArgs, ConfigError } from './lib/config.mjs';
+import { loadConfig, parseArgs, ConfigError, isCliEntry } from './lib/config.mjs';
 import { logInfo, logWarn } from './lib/log.mjs';
 import { readResults } from './run_eval.mjs';
 import { scoreRun } from './score_results.mjs';
@@ -172,7 +172,7 @@ function main() {
 function pct(v) { return v === null || v === undefined ? 'unknown' : `${(v * 100).toFixed(1)}%`; }
 function numOrUnknown(v) { return v === null || v === undefined ? 'unknown' : v; }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntry(import.meta.url)) {
   try { main(); } catch (e) {
     if (e instanceof ConfigError) { console.error('[error]', e.message); process.exit(2); }
     console.error('[error]', e.message); process.exit(1);

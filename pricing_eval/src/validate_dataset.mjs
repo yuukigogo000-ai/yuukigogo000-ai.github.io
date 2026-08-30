@@ -3,6 +3,7 @@
 
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { isCliEntry } from './lib/config.mjs';
 
 const CASES = 'pricing_eval/cases.json';
 const SHOTS = 'pricing_eval/screenshots';
@@ -92,7 +93,7 @@ export function validateDataset() {
   };
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntry(import.meta.url)) {
   const r = validateDataset();
   console.log(JSON.stringify(r.stats, null, 2));
   for (const w of r.warnings) console.log('[warn]', w);

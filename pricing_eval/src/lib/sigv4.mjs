@@ -8,6 +8,16 @@ import { createHash, createHmac } from 'node:crypto';
 const sha256hex = (data) => createHash('sha256').update(data).digest('hex');
 const hmac = (key, data) => createHmac('sha256', key).update(data, 'utf8').digest();
 
+/**
+ * 非S3サービスの canonical URI(SigV4 仕様: パスセグメントを二重URIエンコード)。
+ * URL.pathname は単エンコード(例: ':' → %3A)なので、各セグメントをもう一度エンコードする。
+ * これをしないと ':' を含む推論プロファイルID / モデルID のパス
+ * (GetInferenceProfile・Converse)が InvalidSignatureException になる(2026-08-30 実測)。
+ */
+export function canonicalUriPath(pathname) {
+  return String(pathname).split('/').map((s) => encodeURIComponent(s)).join('/');
+}
+
 export function canonicalRequest({ method, path, query = '', headers, payloadHash }) {
   const lower = {};
   for (const [k, v] of Object.entries(headers)) lower[k.toLowerCase()] = String(v).trim().replace(/\s+/g, ' ');
@@ -56,7 +66,7 @@ export function signRequest({
     .map(([k, v]) => `${k}=${v}`)
     .join('&');
 
-  const cr = canonicalRequest({ method, path: u.pathname, query, headers: h, payloadHash });
+  const cr = canonicalRequest({ method, path: canonicalUriPath(u.pathname), query, headers: h, payloadHash });
   const scope = `${dateStamp}/${region}/${service}/aws4_request`;
   const sts = stringToSign({ amzDate: date, scope, canonicalRequestText: cr.text });
   const key = signingKey({ secretKey: credentials.secretAccessKey, dateStamp, region, service });

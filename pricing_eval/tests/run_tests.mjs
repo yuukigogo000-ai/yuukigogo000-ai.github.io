@@ -4,7 +4,8 @@
 // --mutate を付けると、わざと壊した条件で「テストが実際に落ちること」を確認する。
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync, appendFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { execFileSync } from 'node:child_process';
 
 const MUTATE = process.argv.includes('--mutate');
@@ -23,11 +24,11 @@ const TMP = 'pricing_eval/runs/_test_tmp';
 const { validateDataset } = await import('../src/validate_dataset.mjs');
 const { parseReplies, SYSTEM_INSTRUCTION, buildUserText } = await import('../src/adapters/contract.mjs');
 const { createMockClient } = await import('../src/adapters/mock.mjs');
-const { buildConverseBody, extractConverse } = await import('../src/adapters/bedrock.mjs');
-const { signRequest } = await import('../src/lib/sigv4.mjs');
+const { buildConverseBody, extractConverse, resolveCredentials } = await import('../src/adapters/bedrock.mjs');
+const { signRequest, canonicalUriPath } = await import('../src/lib/sigv4.mjs');
 const { evaluateGates, gate, judgeDestinations, judgeEol, PASS, FAIL, UNKNOWN } = await import('../src/lib/hardgate.mjs');
 const cost = await import('../src/calculate_cost.mjs');
-const { loadConfig, parseArgs, ConfigError } = await import('../src/lib/config.mjs');
+const { loadConfig, parseArgs, ConfigError, isCliEntry } = await import('../src/lib/config.mjs');
 const { redact, maskAccount } = await import('../src/lib/log.mjs');
 const { runCase, readResults, pickSmokeCases } = await import('../src/run_eval.mjs');
 const { validateReplies } = await import('../src/validate_output.mjs');
@@ -85,6 +86,12 @@ t('8. 3案以外を失敗扱いにする', () => {
   assertEq(two.failureKind, 'wrong_reply_count');
   const four = parseReplies('{"replies":[{"text":"a"},{"text":"b"},{"text":"c"},{"text":"d"}]}');
   assertEq(four.ok, false, '4案が成功扱い');
+});
+t("SigV4 canonical path: ':' を含むパスを二重エンコードする(GetInferenceProfile/Converse 回帰)", () => {
+  assertEq(canonicalUriPath('/model/jp.provider.model-v1%3A0/converse'), '/model/jp.provider.model-v1%253A0/converse');
+  assertEq(canonicalUriPath('/inference-profiles/jp.x-v1%3A0'), '/inference-profiles/jp.x-v1%253A0');
+  assertEq(canonicalUriPath('/foundation-models'), '/foundation-models', '素のパスを変えてしまっている');
+  assertEq(canonicalUriPath('/'), '/');
 });
 t('SigV4 が AWS 公式テストベクタと一致(get-vanilla)', () => {
   const h = signRequest({
@@ -246,6 +253,45 @@ t('smoke の代表5ケースが必要な多様性を含む', () => {
   assert(s.some((c) => c.images.length === 6), '6枚が無い');
   assert(s.some((c) => c.category === 'style'), '文体が無い');
   assert(s.some((c) => c.category === 'edge'), '境界が無い');
+});
+
+console.log('\n== CLI 起動・設定・資格情報(2026-08-30 回帰) ==');
+t('17. CLI エントリ判定が Windows パスでも効く(無言スキップ回帰の防止)', () => {
+  const p = resolve('pricing_eval/src/validate_dataset.mjs');
+  assert(isCliEntry(pathToFileURL(p).href, p), '直接起動を検出できない');
+  assert(!isCliEntry(pathToFileURL(p).href, resolve('pricing_eval/src/run_eval.mjs')), 'import なのに CLI 扱い');
+  // 旧実装の壊れ方: バックスラッシュ入り argv では file:// 連結が一致しない
+  assert(!(`file://${p}` === pathToFileURL(p).href) || process.platform !== 'win32', '前提が変わった(このテストを見直す)');
+  // 実際に子プロセスとして起動し、main() が走って出力が出ること(exit 0 の無言スキップを検出)
+  const out = execFileSync(process.execPath, ['pricing_eval/src/validate_dataset.mjs'], { encoding: 'utf8' });
+  assert(out.includes('dataset OK') || out.includes('件の問題'), `CLI の main() が実行されていない(出力: ${out.slice(0, 80)})`);
+});
+t('18. config の evalEnvironmentDeclared を preflight が読める', () => {
+  mkdirSync(TMP, { recursive: true });
+  const p = join(TMP, 'cfg_declared.json');
+  writeFileSync(p, JSON.stringify({ evalEnvironmentDeclared: true }));
+  assertEq(loadConfig({ config: p }).evalEnvironmentDeclared, true, 'true 宣言が読まれない(preflight が永久にブロックされる)');
+  const p2 = join(TMP, 'cfg_undeclared.json');
+  writeFileSync(p2, JSON.stringify({}));
+  assertEq(loadConfig({ config: p2 }).evalEnvironmentDeclared, false, '未宣言が true になっている');
+  writeFileSync(p2, JSON.stringify({ evalEnvironmentDeclared: 'true' }));
+  assertEq(loadConfig({ config: p2 }).evalEnvironmentDeclared, false, '文字列 "true" を宣言扱いしている');
+});
+t('19. 資格情報解決: 環境変数キーを外した子プロセスでは named profile が使われる', () => {
+  const fakeExport = () => JSON.stringify({ AccessKeyId: 'AKIDTESTPROFILE', SecretAccessKey: 'S', SessionToken: null });
+  // 偽の環境変数キーが居る限り env が勝つ(AWS の慣例)→ 呼び出し側がキーを外して分離する
+  const withFake = resolveCredentials(
+    { AWS_ACCESS_KEY_ID: 'proxFAKE', AWS_SECRET_ACCESS_KEY: 'x', AWS_PROFILE: 'replier-eval' },
+    { execImpl: fakeExport },
+  );
+  assertEq(withFake.source, 'env', '優先順の前提が変わった(このテストと起動手順を見直す)');
+  // キーを外した状態(= 評価コマンドを包む子プロセスの状態)では profile が解決される
+  const cleaned = resolveCredentials({ AWS_PROFILE: 'replier-eval' }, { execImpl: fakeExport });
+  assertEq(cleaned.source, 'profile:replier-eval', 'profile 解決が効かない');
+  assertEq(cleaned.credentials.accessKeyId, 'AKIDTESTPROFILE');
+  // aws CLI 不在・失敗時は null(推測で資格情報を作らない)
+  assertEq(resolveCredentials({ AWS_PROFILE: 'x' }, { execImpl: () => { throw new Error('no aws'); } }), null);
+  assertEq(resolveCredentials({}, { execImpl: fakeExport }), null, 'profile 未指定なのに解決している');
 });
 
 function allPass() {

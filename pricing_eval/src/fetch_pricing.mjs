@@ -7,7 +7,7 @@
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { parseArgs, loadConfig } from './lib/config.mjs';
+import { parseArgs, loadConfig, isCliEntry } from './lib/config.mjs';
 import { logInfo, logWarn } from './lib/log.mjs';
 
 export const priceListUrl = (region) =>
@@ -96,7 +96,7 @@ export async function fetchPricing({ region, fetchImpl = globalThis.fetch, timeo
   }
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntry(import.meta.url)) {
   const args = parseArgs();
   const cfg = loadConfig(args);
   const out = args.out || 'pricing_eval/evidence/price_snapshot.json';

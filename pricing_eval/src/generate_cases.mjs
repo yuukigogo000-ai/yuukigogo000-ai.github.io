@@ -5,7 +5,7 @@
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { parseArgs } from './lib/config.mjs';
+import { parseArgs, isCliEntry } from './lib/config.mjs';
 
 const SEED = 20260829;
 
@@ -294,7 +294,7 @@ export function generateCases() {
   return cases;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntry(import.meta.url)) {
   const args = parseArgs();
   const out = args.out || 'pricing_eval/cases.json';
   const cases = generateCases();

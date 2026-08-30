@@ -30,6 +30,16 @@ cp config.example.json config.json    # 必要に応じて編集
 `config.json` の `evalEnvironmentDeclared` を `true` にしない限り preflight は通らない
 (本番と分離された評価用アカウントであることを人間が宣言する項目)。
 
+### Windows での実行(2026-08-30 追記)
+
+- スクリーンショット生成は `CHROMIUM_PATH` に Chromium/Chrome の exe を指定する
+  (例: `%LOCALAPPDATA%\ms-playwright\chromium-*\chrome-win64\chrome.exe`)
+- AWS 資格情報は **named profile 対応**: 環境変数キーが無く `AWS_PROFILE` があるときは
+  `aws configure export-credentials --format process` で解決する(値はメモリ内のみ・ログへ出さない)。
+  環境変数キーが残っているとそちらが優先されるため、評価コマンドは
+  `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_SESSION_TOKEN` を外した子プロセスで実行し、
+  `AWS_PROFILE` / `AWS_REGION` / `AWS_DEFAULT_REGION` だけを渡す
+
 ## コマンド
 
 すべてリポジトリのルートから実行する。

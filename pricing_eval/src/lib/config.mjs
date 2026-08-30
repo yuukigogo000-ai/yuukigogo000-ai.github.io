@@ -6,11 +6,22 @@
 //  - 予算上限 EVAL_MAX_BUDGET_JPY の既定は 10,000 円。
 
 import { readFileSync, existsSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 export const DEFAULT_MAX_BUDGET_JPY = 10000;
 export const SUGGESTED_CONSERVATIVE_USDJPY = 160; // 例示のみ。既定値として使わない。
 
 export class ConfigError extends Error {}
+
+/**
+ * CLI として直接起動されたかの判定。
+ * `file://${process.argv[1]}` との文字列比較は Windows のバックスラッシュパスでは
+ * 決して一致せず、main() が無言でスキップされる(exit 0)ため使わない。
+ */
+export function isCliEntry(metaUrl, argv1 = process.argv[1]) {
+  if (!argv1) return false;
+  try { return pathToFileURL(argv1).href === metaUrl; } catch { return false; }
+}
 
 /** CLI引数を --key=value / --flag 形式で読む */
 export function parseArgs(argv = process.argv.slice(2)) {
@@ -39,6 +50,8 @@ export function loadConfig(args = parseArgs()) {
     usdJpy: num(args['usd-jpy'] ?? file.usdJpy ?? process.env.EVAL_USD_JPY) ?? null,
     // 呼び出し先。'bedrock' = 実AWS / 'mock' = ローカル検証用(品質・原価の結論には使わない)
     adapter: args.adapter || file.adapter || 'bedrock',
+    // 本番と分離された評価環境であることの人間による宣言。config ファイルの true のみ有効。
+    evalEnvironmentDeclared: file.evalEnvironmentDeclared === true,
     mockEndpoint: args['mock-endpoint'] || file.mockEndpoint || null,
     maxImages: 6,
     maxAutoRetries: 1, // §7: 自動再試行は最大1回。増やさない。

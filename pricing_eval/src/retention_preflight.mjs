@@ -7,9 +7,9 @@
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { loadConfig, parseArgs } from './lib/config.mjs';
+import { loadConfig, parseArgs, isCliEntry } from './lib/config.mjs';
 import { logInfo, logWarn, logError, maskAccount } from './lib/log.mjs';
-import { createBedrockClient, credentialsFromEnv } from './adapters/bedrock.mjs';
+import { createBedrockClient, resolveCredentials } from './adapters/bedrock.mjs';
 import { signRequest } from './lib/sigv4.mjs';
 
 /** STS GetCallerIdentity(read-only)。アカウントIDはマスクして扱う。 */
@@ -58,11 +58,13 @@ export async function runPreflight(cfg, { fetchImpl } = {}) {
     allowModelEvaluation: false,
   };
 
-  const creds = credentialsFromEnv();
-  if (!creds) {
-    report.blockers.push('AWS 資格情報が無い(AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY が未設定)');
+  const resolved = resolveCredentials();
+  if (!resolved) {
+    report.blockers.push('AWS 資格情報が無い(AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY も AWS_PROFILE も未設定、またはプロファイル解決に失敗)');
     return report;
   }
+  const creds = resolved.credentials;
+  report.identity.credentialSource = resolved.source; // 'env' か 'profile:<名前>'。値は含まない
 
   try {
     const id = await getCallerIdentity({ region: cfg.region, credentials: creds, fetchImpl });
@@ -103,7 +105,7 @@ export async function runPreflight(cfg, { fetchImpl } = {}) {
   return report;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntry(import.meta.url)) {
   const args = parseArgs();
   const cfg = loadConfig(args);
   const out = args.out || 'pricing_eval/runs/_discovery/preflight.json';

@@ -7,9 +7,9 @@
 
 import { writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { loadConfig, parseArgs } from './lib/config.mjs';
+import { loadConfig, parseArgs, isCliEntry } from './lib/config.mjs';
 import { logInfo, logWarn, maskAccount } from './lib/log.mjs';
-import { createBedrockClient, credentialsFromEnv, AwsError } from './adapters/bedrock.mjs';
+import { createBedrockClient, resolveCredentials, AwsError } from './adapters/bedrock.mjs';
 import {
   PASS, FAIL, UNKNOWN, gate, evaluateGates, judgeDestinations, judgeEol,
 } from './lib/hardgate.mjs';
@@ -93,7 +93,8 @@ async function main() {
   const cfg = loadConfig(args);
   const out = args.out || 'pricing_eval/runs/_discovery/candidate_discovery.json';
 
-  const creds = credentialsFromEnv();
+  const resolved = resolveCredentials();
+  const creds = resolved?.credentials ?? null;
   const evidence = {
     generatedAt: new Date().toISOString(),
     region: cfg.region,
@@ -103,9 +104,10 @@ async function main() {
   };
 
   if (!creds) {
-    evidence.aws.blocker = 'AWS 資格情報が無い(AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY)';
+    evidence.aws.blocker = 'AWS 資格情報が無い(環境変数キーも AWS_PROFILE も解決できない)';
     return finish([], evidence, out, cfg);
   }
+  evidence.aws.credentialSource = resolved.source;
 
   const client = createBedrockClient({ region: cfg.region, credentials: creds });
 
@@ -201,6 +203,6 @@ function finish(assessed, evidence, out, cfg) {
   return payload;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (isCliEntry(import.meta.url)) {
   main().catch((e) => { console.error('[error]', e.message); process.exit(1); });
 }
