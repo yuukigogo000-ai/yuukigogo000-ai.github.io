@@ -105,6 +105,20 @@ export function effectiveCostUsd(attempts, price) {
   return each.reduce((s, v) => s + v, 0);
 }
 
+/**
+ * USD金額の表示用整形。浮動小数点の見かけ誤差(例: 0.0004939200000000001)を
+ * 桁丸めで除去した正確な10進文字列を返す。
+ * NaN / 空文字 / null / undefined / 数値でないものは null(0 にも '' にもしない)。
+ */
+export function formatUsd(v, digits = 8) {
+  if (typeof v === 'string') {
+    if (v.trim() === '') return null;
+    v = Number(v);
+  }
+  if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+  return v.toFixed(digits).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+}
+
 export function toJpy(usd, cfg) {
   if (usd === UNKNOWN) return UNKNOWN;
   const rate = requireUsdJpy(cfg); // 未指定なら例外。円を勝手に作らない。

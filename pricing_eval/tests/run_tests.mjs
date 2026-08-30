@@ -31,7 +31,9 @@ const { evaluateGates, gate, judgeDestinations, judgeEol, PASS, FAIL, UNKNOWN } 
 const cost = await import('../src/calculate_cost.mjs');
 const { loadConfig, parseArgs, ConfigError, isCliEntry } = await import('../src/lib/config.mjs');
 const { redact, maskAccount } = await import('../src/lib/log.mjs');
-const { runCase, readResults, pickSmokeCases, contractStopError } = await import('../src/run_eval.mjs');
+const { runCase, readResults, pickSmokeCases, contractStopError, computeSmokeGate } = await import('../src/run_eval.mjs');
+const { datasetHashOf, promptHashOf, configHashOf, ledgerKey, loadLedger } = await import('../src/lib/ledger.mjs');
+const { summarizeSmoke } = await import('../src/smoke_summary.mjs');
 const { validateReplies } = await import('../src/validate_output.mjs');
 const { scoreRun } = await import('../src/score_results.mjs');
 const { buildBlindReview } = await import('../src/report.mjs');
@@ -463,6 +465,7 @@ function guardBase() {
     } },
     stage: 'smoke', usdJpy: 160, maxBudgetJpy: 100, maxBudgetUsd: 0.625,
     outputMaxTokens: 1024, maxAutoRetries: 1, retryTransientOnly: true,
+    priorSpentUsd: 0.00065792,
     casesShaHead: 'abc', casesShaDisk: 'abc',
     screenshotCountExpected: 138, screenshotCountActual: 138,
   };
@@ -487,6 +490,7 @@ t('31. smoke guard: 正常条件はPASSし、12種の変異すべてで fail clo
     '偽のAWS環境変数': (i) => { i.env.AWS_ACCESS_KEY_ID = 'proxFAKE'; },
     '再試行制限なし': (i) => { i.retryTransientOnly = false; },
     'derived価格の使用': (i) => { i.pricing.models['qwen.qwen3-vl-235b-a22b'].kind = 'derived_estimate'; },
+    '既発生費用が予算を超える': (i) => { i.priorSpentUsd = 0.7; },
   };
   const leaks = [];
   for (const [name, fn] of Object.entries(mutants)) {
@@ -555,6 +559,155 @@ t('35. sanitizeAwsMessage: 資格情報・署名様の文字列を落とし長�
   assert(s.includes('[REDACTED'), 'REDACTED マークが無い');
   const long = sanitizeAwsMessage('x'.repeat(2000));
   assert(long.length < 600 && long.includes('[truncated]'), '長文が切られていない');
+});
+
+t('37. formatUsd: 浮動小数点の見かけ誤差を除去し、NaN/空文字/null を 0 にしない(変異検出)', () => {
+  assertEq(cost.formatUsd(0.0004939200000000001), MUTATE ? '0.0004939200000000001' : '0.00049392', '見かけ誤差の除去');
+  assertEq(cost.formatUsd(0.00065792), '0.00065792', '累計費用の表示');
+  assertEq(cost.formatUsd(NaN), null, 'NaN は null');
+  assertEq(cost.formatUsd(''), null, '空文字は null');
+  assertEq(cost.formatUsd(null), null, 'null は null');
+  assertEq(cost.formatUsd(undefined), null, 'undefined は null');
+  assertEq(cost.formatUsd(0), '0', '0 は "0"(null でも "" でもない)');
+  assertEq(cost.formatUsd('abc'), null, '数値でない文字列は null');
+});
+
+t('38. 実行台帳: 5要素すべてがキーに効き、壊れた行・失敗行は再利用しない(変異検出)', () => {
+  const base = {
+    modelId: 'm1', caseId: 'c1',
+    datasetHash: datasetHashOf('data'),
+    promptHash: promptHashOf({ system: 's', userText: 'u', imageFiles: ['a.png'] }),
+    configHash: configHashOf({ region: 'ap-northeast-1', invocationTarget: 'm1', outputMaxTokens: 1024, temperature: 0.7, maxImages: 6 }),
+  };
+  const k0 = ledgerKey(base);
+  const variants = [
+    { ...base, modelId: 'm2' },
+    { ...base, caseId: 'c2' },
+    { ...base, datasetHash: datasetHashOf('data2') },
+    { ...base, promptHash: promptHashOf({ system: 's', userText: 'u2', imageFiles: ['a.png'] }) },
+    { ...base, promptHash: promptHashOf({ system: 's', userText: 'u', imageFiles: ['b.png'] }) },
+    { ...base, configHash: configHashOf({ region: 'ap-northeast-1', invocationTarget: 'm1', outputMaxTokens: 512, temperature: 0.7, maxImages: 6 }) },
+  ];
+  const distinct = new Set([k0, ...variants.map(ledgerKey)]);
+  assertEq(distinct.size, MUTATE ? 1 : 7, 'どれかの要素がキーに効いていない');
+  // 欠損キーの行は書けない/照合できない
+  let threw = false;
+  try { ledgerKey({ ...base, promptHash: null }); } catch { threw = true; }
+  assert(threw, '欠損キーを許している');
+  // 壊れた行・失敗行は再利用しない
+  mkdirSync(TMP, { recursive: true });
+  const lp = join(TMP, 'ledger_test.jsonl');
+  writeFileSync(lp, [
+    JSON.stringify({ ...base, success: true, runId: 'r1' }),
+    JSON.stringify({ ...base, caseId: 'c2', success: false, runId: 'r1' }),
+    '{broken json',
+  ].join('\n') + '\n');
+  const led = loadLedger(lp);
+  assertEq(led.size, 1, '成功1行だけが再利用対象になるべき');
+  assert(led.has(k0), '成功行のキーが引けない');
+});
+
+t('39. contractStopError: 429以外の4xxは名前を問わず全smoke停止・429は停止しない(変異検出)', () => {
+  const mk = (httpStatus, errorCode) => ({
+    success: false, failureClass: 'system', modelKey: 'm',
+    attempts: [{ errorCode, error: errorCode, httpStatus, requestId: 'req-x' }],
+  });
+  const stop402 = contractStopError(mk(402, 'SomeBillingError'));
+  assertEq(stop402 === null, MUTATE ? true : false, '未知の4xxを停止しない');
+  assertEq(contractStopError(mk(429, 'ThrottlingException')), null, '429で誤停止');
+  assertEq(contractStopError(mk(503, 'ServiceUnavailableException')), null, '5xxで誤停止(再試行対象)');
+});
+
+t('39b. 画像枚数上限のValidationExceptionは候補単位FAIL(全smoke停止しない)・他のValidationExceptionは停止(変異検出)', () => {
+  const mk = (msg) => ({
+    success: false, failureClass: 'system', modelKey: 'm',
+    attempts: [{ errorCode: 'ValidationException', error: 'ValidationException', sanitizedErrorMessage: msg, httpStatus: 400 }],
+  });
+  const capability = contractStopError(mk('The model returned the following errors: At most 3 image(s) may be provided in one prompt.'));
+  assertEq(capability === null, MUTATE ? false : true, '6画像非対応(モデル能力)で全smokeを止めている');
+  const account = contractStopError(mk('The provided model identifier is invalid.'));
+  assert(account !== null, 'アカウント/入力系のValidationExceptionを止めていない');
+});
+
+await (async () => {
+  const rtCfg = { maxAutoRetries: 1, outputMaxTokens: 512, temperature: 0.7, backoffMs: 1, retryTransientOnly: true };
+  const timeoutClient = {
+    synthetic: true,
+    invoke: async () => { throw new AwsError('タイムアウト', { code: 'Timeout', operation: 'Converse' }); },
+  };
+  const rowT = await runCase({ client: timeoutClient, cfg: rtCfg, model, testCase: cases[0], price });
+  t('40. タイムアウトは既存ルールどおり最大1回だけ再試行する(変異検出)', () => {
+    assertEq(rowT.attempts.length, MUTATE ? 1 : 2, 'タイムアウトの再試行回数');
+    assertEq(rowT.attempts[0].failureKind, 'timeout');
+    assertEq(contractStopError(rowT), null, 'タイムアウトで全smoke停止してしまう');
+  });
+
+  const okClient = {
+    converse: async () => ({
+      output: { message: { content: [{ text: '{"replies":[{"text":"はい、行きましょう"},{"text":"いいですね"},{"text":"楽しみです"}]}' }] } },
+      usage: { inputTokens: 100, outputTokens: 50 },
+      stopReason: 'end_turn',
+      $requestId: 'req-ok-0001', $httpStatus: 200,
+    }),
+  };
+  const rowOk = await runCase({ client: okClient, cfg: rtCfg, model, testCase: cases[0], price });
+  t('41. 成功時も requestId/httpStatus/started/completed/token/費用 を attempts へ保存する(変異検出)', () => {
+    const a = rowOk.attempts[0];
+    assertEq(a.requestId, MUTATE ? 'fabricated' : 'req-ok-0001', '成功時 requestId');
+    assertEq(a.httpStatus, 200, '成功時 httpStatus');
+    assertEq(a.modelId, model.modelId, 'modelId');
+    assertEq(a.caseId, cases[0].id, 'caseId');
+    assertEq(a.apiOperation, 'Converse', 'apiOperation');
+    assert(/^\d{4}-\d{2}-\d{2}T/.test(a.startedAt) && /^\d{4}-\d{2}-\d{2}T/.test(a.completedAt), 'startedAt/completedAt');
+    assertEq(a.inputTokens, 100, 'inputTokens');
+    assertEq(a.outputTokens, 50, 'outputTokens');
+    assert(typeof a.calculatedCostUsd === 'string' && !/e|NaN/i.test(a.calculatedCostUsd), 'calculatedCostUsd が正確な10進文字列でない');
+  });
+  t('41b. requestId が取れない場合は null(捏造しない)', () => {
+    // synthetic(mock)経路は requestId 無し → null になることを rowT で確認
+    assertEq(rowT.attempts[0].requestId, null, 'mock 経路で requestId が捏造されている');
+  });
+})();
+
+t('43. computeSmokeGate: resume前の確定失敗を含む全行で判定する(変異検出)', () => {
+  const rows = [
+    { modelKey: 'm', success: true }, { modelKey: 'm', success: true },
+    { modelKey: 'm', success: true }, { modelKey: 'm', success: true },
+    { modelKey: 'm', success: false }, // resume 前の確定失敗
+  ];
+  const g = computeSmokeGate(rows, 0.10);
+  assertEq(g.m.total, 5);
+  assertEq(g.m.errors, 1);
+  assertEq(g.m.passed, MUTATE ? true : false, '20%エラーを Full Run 可にしている');
+});
+
+t('42. summarizeSmoke: 1画像成功を6画像成功と混同しない・費用は正確な10進表示(変異検出)', () => {
+  const mkRow = (modelId, caseId, imageCount, success, extra = {}) => ({
+    modelId, caseId, imageCount, success,
+    invocationTarget: modelId,
+    replies: success ? ['あ', 'い', 'う'] : null,
+    validation: success ? { critical: [], minor: [] } : null,
+    totalLatencyMs: 100,
+    attempts: [{ usage: { inputTokens: 10, outputTokens: 5 }, httpStatus: success ? 200 : 403, requestId: 'r' }],
+    effectiveCostUsd: success ? 0.0004939200000000001 : null,
+    failureKind: success ? null : 'http_403',
+    ...extra,
+  });
+  const models = summarizeSmoke([
+    mkRow('mA', 'c1', 1, true),
+    mkRow('mA', 'c2', 0, true),
+    mkRow('mB', 'c1', 6, true),
+    mkRow('mB', 'c3', 6, false),
+  ]);
+  const mA = models.find((m) => m.modelId === 'mA');
+  const mB = models.find((m) => m.modelId === 'mB');
+  assertEq(mA.six_image_runtime_verified, MUTATE ? 'PASS' : 'UNKNOWN', '6画像未実行なのに PASS/FAIL 扱い');
+  // 6画像は成功していれば PASS(同一モデル内の別ケース失敗と混同しない)
+  assertEq(mB.six_image_runtime_verified, 'PASS', '6画像成功の判定');
+  assertEq(mA.calculatedCostUsd, '0.00098784', '費用の10進表示(見かけ誤差除去)');
+  assertEq(mA.schemaRate, 1, 'schema率');
+  assertEq(mA.threeRepliesRate, 1, '3案率');
+  assertEq(mB.failures, 1, '失敗集計');
 });
 
 t('36. judgeAvailability: 全項目 AVAILABLE/AUTHORIZED のみ ok(変異検出)', () => {

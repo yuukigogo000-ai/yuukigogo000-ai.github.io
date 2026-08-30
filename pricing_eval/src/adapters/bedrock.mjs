@@ -85,7 +85,8 @@ export function resolveCredentials(env = process.env, { execImpl = execFileSync 
 export function createBedrockClient({ region, credentials, fetchImpl = globalThis.fetch, timeoutMs = 120000 }) {
   if (!credentials) throw new AwsError('AWS 資格情報がありません', { code: 'NoCredentials' });
 
-  async function call({ service, host, method, path, query = '', body = null, operation }) {
+  // data に加えて requestId / HTTP status を返す(成功時の記録にも使う。取れなければ null・捏造しない)
+  async function callRaw({ service, host, method, path, query = '', body = null, operation }) {
     const url = `https://${host}${path}${query ? `?${query}` : ''}`;
     const payload = body === null ? '' : JSON.stringify(body);
     const headers = signRequest({
@@ -105,6 +106,7 @@ export function createBedrockClient({ region, credentials, fetchImpl = globalThi
     const text = await res.text();
     let json = null;
     try { json = text ? JSON.parse(text) : null; } catch { /* 非JSONはそのまま扱う */ }
+    const requestId = res.headers?.get?.('x-amzn-requestid') || res.headers?.get?.('x-amzn-request-id') || null;
     if (!res.ok) {
       const code = json?.__type || json?.code || res.headers?.get?.('x-amzn-errortype') || String(res.status);
       throw new AwsError(json?.message || json?.Message || `HTTP ${res.status}`, {
@@ -112,11 +114,13 @@ export function createBedrockClient({ region, credentials, fetchImpl = globalThi
         // __type は "ns#Code"、x-amzn-errortype は "Code:http://..." の形。コード名だけ残す
         code: String(code).split('#').pop().split(':')[0],
         operation,
-        requestId: res.headers?.get?.('x-amzn-requestid') || res.headers?.get?.('x-amzn-request-id') || null,
+        requestId,
       });
     }
-    return json;
+    return { data: json, requestId, status: res.status };
   }
+
+  const call = async (p) => (await callRaw(p)).data;
 
   const cp = (p) => ({ service: 'bedrock', host: `bedrock.${region}.amazonaws.com`, ...p });
   const rt = (p) => ({ service: 'bedrock', host: `bedrock-runtime.${region}.amazonaws.com`, ...p });
@@ -151,12 +155,14 @@ export function createBedrockClient({ region, credentials, fetchImpl = globalThi
     /** 実効データ保持の確認材料: 呼び出しログ設定 */
     getModelInvocationLoggingConfiguration: () =>
       call(cp({ method: 'GET', path: '/logging/modelinvocations', operation: 'GetModelInvocationLoggingConfiguration' })),
-    /** Converse(テキスト+画像。全モデル共通形式) */
-    converse: (modelOrProfileId, body) =>
-      call(rt({
+    /** Converse(テキスト+画像。全モデル共通形式)。成功時の requestId / HTTP status を $ 接頭辞で併載する */
+    converse: async (modelOrProfileId, body) => {
+      const r = await callRaw(rt({
         method: 'POST', path: `/model/${encodeURIComponent(modelOrProfileId)}/converse`,
         body, operation: 'Converse',
-      })),
+      }));
+      return { ...r.data, $requestId: r.requestId, $httpStatus: r.status };
+    },
   };
 }
 

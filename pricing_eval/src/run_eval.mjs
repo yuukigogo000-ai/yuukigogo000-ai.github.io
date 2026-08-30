@@ -22,8 +22,9 @@ import { SYSTEM_INSTRUCTION, buildUserText, parseReplies } from './adapters/cont
 import { createMockClient } from './adapters/mock.mjs';
 import { createBedrockClient, resolveCredentials, buildConverseBody, extractConverse, sanitizeAwsMessage } from './adapters/bedrock.mjs';
 import { validateReplies } from './validate_output.mjs';
-import { costUsdForAttempt, loadPricing, toJpy, bucketOf } from './calculate_cost.mjs';
+import { costUsdForAttempt, loadPricing, toJpy, bucketOf, formatUsd } from './calculate_cost.mjs';
 import { runPreflight } from './retention_preflight.mjs';
+import { LEDGER_PATH, datasetHashOf, promptHashOf, configHashOf, ledgerKey, loadLedger, appendLedger } from './lib/ledger.mjs';
 
 const CASES_PATH = 'pricing_eval/cases.json';
 const RUNS_DIR = 'pricing_eval/runs';
@@ -66,8 +67,9 @@ const keyOf = (modelKey, caseId) => `${modelKey}::${caseId}`;
 /** 1試行。例外は投げず結果として返す。 */
 async function attemptOnce({ client, cfg, model, testCase, attemptNo }) {
   const t0 = Date.now();
+  const startedAt = new Date(t0).toISOString();
   try {
-    let text, usage, stopReason;
+    let text, usage, stopReason, requestId = null, httpStatus = null;
     if (client.synthetic) {
       const r = await client.invoke({ caseId: testCase.id, imageCount: testCase.images.length });
       text = r.text; usage = r.usage; stopReason = r.stopReason;
@@ -82,11 +84,19 @@ async function attemptOnce({ client, cfg, model, testCase, attemptNo }) {
       const res = await client.converse(model.invocationTarget || model.inferenceProfileId || model.modelId, body);
       const ex = extractConverse(res);
       text = ex.text; usage = ex.usage; stopReason = ex.stopReason;
+      // 成功時も requestId / HTTP status を記録する。取得できなければ null(捏造しない)
+      requestId = res.$requestId ?? null;
+      httpStatus = res.$httpStatus ?? null;
     }
     const parsed = parseReplies(text);
     return {
       attemptNo,
       latencyMs: Date.now() - t0,
+      startedAt,
+      completedAt: new Date().toISOString(),
+      requestId,
+      httpStatus,
+      apiOperation: client.synthetic ? 'MockInvoke' : 'Converse',
       usage: usage ?? null,
       stopReason: stopReason ?? null,
       ok: parsed.ok,
@@ -100,6 +110,8 @@ async function attemptOnce({ client, cfg, model, testCase, attemptNo }) {
     return {
       attemptNo,
       latencyMs: Date.now() - t0,
+      startedAt,
+      completedAt: new Date().toISOString(),
       usage: null,
       stopReason: null,
       ok: false,
@@ -126,14 +138,26 @@ const CONTRACT_ERROR_RE = /AccessDenied|NotAuthorized|Unauthorized|Subscription|
  * 1ケースの結果行から「即停止すべき契約系エラー」を判定し、停止メッセージか null を返す。
  * 純関数。main のループはこれが非 null なら throw して残りの呼び出しを行わない。
  */
+// モデル側の画像枚数上限(例: "At most 3 image(s) may be provided")。アカウント/契約系の異常ではなく
+// 「6画像非対応」= 候補単位の FAIL。全 smoke 停止にせず、証拠は結果行として残す。
+const IMAGE_LIMIT_RE = /at most \d+ image|image\(s\) may be provided|too many images/i;
+
 export function contractStopError(row) {
   if (row.success || row.failureClass !== 'system') return null;
+  const capabilityImageLimit = (row.attempts || []).some(
+    (x) => /ValidationException/i.test(x.errorCode || '') && IMAGE_LIMIT_RE.test(x.sanitizedErrorMessage || ''),
+  );
+  if (capabilityImageLimit) return null;
   const errText = (row.attempts || [])
     .map((x) => [x.errorCode, x.error, x.sanitizedErrorMessage].filter(Boolean).join(' '))
     .join(' ');
-  if (!CONTRACT_ERROR_RE.test(errText)) return null;
+  // 429(スロットリング)以外の 4xx は原因を問わず全 smoke 停止(候補単位で握りつぶさない)
+  const abnormal4xx = (row.attempts || []).some(
+    (x) => typeof x.httpStatus === 'number' && x.httpStatus >= 400 && x.httpStatus < 500 && x.httpStatus !== 429,
+  );
+  if (!CONTRACT_ERROR_RE.test(errText) && !abnormal4xx) return null;
   const ids = (row.attempts || []).map((x) => x.requestId).filter(Boolean).join(',');
-  return `契約/権限/検証系エラーのため ${row.modelKey} の実行を停止します(再試行しません): ${errText}${ids ? ` [requestId: ${ids}]` : ''}`;
+  return `契約/権限/検証系または4xxエラーのため ${row.modelKey} の実行を停止します(再試行しません): ${errText || row.failureKind}${ids ? ` [requestId: ${ids}]` : ''}`;
 }
 
 /** 1ケースを実行(自動再試行は最大1回) */
@@ -142,8 +166,9 @@ export async function runCase({ client, cfg, model, testCase, price }) {
   let a = await attemptOnce({ client, cfg, model, testCase, attemptNo: 1 });
   attempts.push(a);
 
-  const transient = /^http_(429|5\d\d)$/.test(a.failureKind || '');
-  // retryTransientOnly: 429/一時的5xx 以外(AccessDenied・Validation・契約系・JSON崩れ等)は再試行しない
+  // 再試行してよいのは 429 / 一時的5xx / タイムアウトのみ(各最大1回)
+  const transient = /^(http_(429|5\d\d)|timeout)$/.test(a.failureKind || '');
+  // retryTransientOnly: 上記以外(AccessDenied・その他4xx・Validation・契約系・JSON崩れ等)は再試行しない
   const retryAllowed = cfg.retryTransientOnly ? transient : true;
   if (!a.ok && cfg.maxAutoRetries >= 1 && retryAllowed) {
     // rate limit / 5xx は指数backoff を挟む
@@ -178,14 +203,21 @@ export async function runCase({ client, cfg, model, testCase, price }) {
       ok: x.ok, failureKind: x.failureKind, failureClass: x.failureClass,
       // エラーコード(AccessDeniedException 等)。これが無いと契約系エラーの即停止判定が空振りする
       error: x.error ?? null,
-      // 診断用の詳細(サニタイズ済み)。requestId は AWS サポート照会に必要
+      // 診断用の詳細(サニタイズ済み)。requestId は成功・失敗とも保存(AWSサポート照会用)
       errorCode: x.errorCode ?? null,
       sanitizedErrorMessage: x.sanitizedErrorMessage ?? null,
       httpStatus: x.httpStatus ?? null,
       requestId: x.requestId ?? null,
       modelId: model.modelId,
+      caseId: testCase.id,
       apiOperation: x.apiOperation ?? null,
+      startedAt: x.startedAt ?? null,
+      completedAt: x.completedAt ?? null,
+      inputTokens: x.usage?.inputTokens ?? null,
+      outputTokens: x.usage?.outputTokens ?? null,
       costUsd: attemptCosts[i],
+      // 表示用の正確な10進文字列(浮動小数点の見かけ誤差を除去。不明は null であり 0 でない)
+      calculatedCostUsd: formatUsd(attemptCosts[i]),
     })),
     totalLatencyMs: attempts.reduce((s, x) => s + x.latencyMs, 0),
     effectiveCostUsd: effectiveUsd,
@@ -193,6 +225,23 @@ export async function runCase({ client, cfg, model, testCase, price }) {
     validation,
     at: new Date().toISOString(),
   };
+}
+
+/** smoke の Full Run 可否。results.jsonl の全行(resume 前の確定失敗を含む)を正本として判定する。 */
+export function computeSmokeGate(rows, threshold = SMOKE_ERROR_THRESHOLD) {
+  const byModel = new Map();
+  for (const r of rows) {
+    const s = byModel.get(r.modelKey) || { total: 0, errors: 0 };
+    s.total++;
+    if (!r.success) s.errors++;
+    byModel.set(r.modelKey, s);
+  }
+  const gate = {};
+  for (const [k, s] of byModel) {
+    const errorRate = s.total ? s.errors / s.total : 0;
+    gate[k] = { ...s, errorRate, passed: errorRate <= threshold };
+  }
+  return gate;
 }
 
 /** 並列実行。1ケースを2つのworkerが取らないよう、共有インデックスから取り出す。 */
@@ -217,8 +266,10 @@ async function main() {
   const stage = args.stage || 'dryrun';
   if (!['dryrun', 'smoke', 'full'].includes(stage)) throw new Error(`未知の stage: ${stage}`);
 
-  const data = JSON.parse(readFileSync(CASES_PATH, 'utf8'));
+  const casesRaw = readFileSync(CASES_PATH, 'utf8');
+  const data = JSON.parse(casesRaw);
   const cases = data.cases;
+  const datasetHash = datasetHashOf(casesRaw);
 
   // 候補の読み込み(探索結果から。コードにモデル名を持たない)
   const discoveryPath = args.discovery || 'pricing_eval/runs/_discovery/candidate_discovery.json';
@@ -313,34 +364,78 @@ async function main() {
       caseIds: targetCases.map((c) => c.id),
       candidates: runnable.map((m) => ({ key: m.key, modelId: m.modelId, inferenceProfileId: m.inferenceProfileId, adoptionBlocked: m.adoptionBlocked })),
       blocked: blocked.map((b) => ({ key: b.key, fails: b.fails })),
-      config: { region: cfg.region, adapter: cfg.adapter, outputMaxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, maxAutoRetries: cfg.maxAutoRetries, usdJpy: cfg.usdJpy, maxBudgetJpy: cfg.maxBudgetJpy },
+      config: { region: cfg.region, adapter: cfg.adapter, outputMaxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, maxAutoRetries: cfg.maxAutoRetries, usdJpy: cfg.usdJpy, maxBudgetJpy: cfg.maxBudgetJpy, priorSpentUsd: Number(args['prior-spent-usd']) || 0 },
       estimate,
     }, null, 2));
   }
 
   // --- 実行 ---
   const creds = cfg.adapter === 'mock' ? null : (resolveCredentials()?.credentials ?? null);
-  let spentUsd = 0;
+  // 既発生費用を累計予算へ算入する(--prior-spent-usd)。今回runの支出はこの上に積む。
+  const priorSpentUsd = Number(args['prior-spent-usd']) || 0;
+  let spentUsd = priorSpentUsd;
+  if (priorSpentUsd > 0) logInfo('既発生費用を予算へ算入します', { priorSpentUsd: formatUsd(priorSpentUsd) });
   let unknownCostRows = 0; // 原価不明の件数。0円と混同しないため別に数える。
   const smokeStats = new Map();
+  // 実行台帳: 同一 (modelId, caseId, datasetHash, promptHash, configHash) の成功は再実行しない
+  const ledger = cfg.adapter === 'mock' ? new Map() : loadLedger();
 
   for (const model of runnable) {
     const client = cfg.adapter === 'mock'
       ? createMockClient({ fault: args.fault || 'none' })
       : createBedrockClient({ region: cfg.region, credentials: creds });
     const price = priceFor(model);
-    const todo = targetCases.filter((c) => !doneKeys.has(keyOf(model.key, c.id)));
-    logInfo(`実行開始 ${model.key}`, { todo: todo.length, skipped: targetCases.length - todo.length });
+    const hashesFor = (c) => ({
+      modelId: model.modelId,
+      caseId: c.id,
+      datasetHash,
+      promptHash: promptHashOf({ system: SYSTEM_INSTRUCTION, userText: buildUserText(c), imageFiles: c.images }),
+      configHash: configHashOf({
+        region: cfg.region,
+        invocationTarget: model.invocationTarget || model.inferenceProfileId || model.modelId,
+        outputMaxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, maxImages: cfg.maxImages,
+      }),
+    });
+    const reused = [];
+    const todo = [];
+    for (const c of targetCases) {
+      if (doneKeys.has(keyOf(model.key, c.id))) continue;
+      if (cfg.adapter !== 'mock') {
+        const prev = ledger.get(ledgerKey(hashesFor(c)));
+        if (prev) { reused.push({ caseId: c.id, fromRunId: prev.runId ?? null }); continue; }
+      }
+      todo.push(c);
+    }
+    if (reused.length) logInfo(`台帳の成功済みケースを再利用します(全ハッシュ一致・再実行しない): ${model.key}`, { reused });
+    logInfo(`実行開始 ${model.key}`, { todo: todo.length, reused: reused.length, skipped: targetCases.length - todo.length - reused.length });
 
     let errors = 0, total = 0;
     // --slow-ms はテストで「実行途中に kill する」状況を作るためだけの遅延。本番では使わない。
     const slowMs = Number(args['slow-ms']) || 0;
     await runQueue(todo, cfg.concurrency, async (testCase) => {
       if (slowMs) await sleep(slowMs);
+      // 予算不足は呼び出し「前」に止める: 次の1ケースの worst-case(最大入力+最大出力×再試行込み)を先取り検査
+      if (price && cfg.usdJpy) {
+        const perCallWorstUsd = ((16000 / 1e6) * price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * price.outputPerMTokUsd) * (1 + cfg.maxAutoRetries);
+        if ((spentUsd + perCallWorstUsd) * cfg.usdJpy > cfg.maxBudgetJpy) {
+          throw new Error(`次の呼び出しの worst-case で予算上限 ${cfg.maxBudgetJpy} 円を超えうるため、呼び出し前に停止します(既発生費用 ${formatUsd(priorSpentUsd)} USD を含む)`);
+        }
+      }
       const row = await runCase({ client, cfg, model, testCase, price });
       row.runId = runId; row.stage = stage;
       row.finalFailure = !row.success; // 再試行後も失敗 = 確定失敗。resume で再実行しない。
       appendFileSync(resultsPath, JSON.stringify(row) + '\n');
+      // 成功は実行台帳へ記録(生応答は書かない。usage・費用・requestId のみ)
+      if (row.success && cfg.adapter !== 'mock') {
+        const okAttempt = row.attempts.find((x) => x.ok);
+        appendLedger({
+          ...hashesFor(testCase), success: true, runId, at: row.at,
+          requestId: okAttempt?.requestId ?? null,
+          inputTokens: okAttempt?.inputTokens ?? null,
+          outputTokens: okAttempt?.outputTokens ?? null,
+          calculatedCostUsd: formatUsd(row.effectiveCostUsd),
+        });
+      }
       // 契約・権限・購読・モデルアクセス系のエラーは再試行も継続もせず即停止(人間操作が必要)
       const stopMsg = contractStopError(row);
       if (stopMsg) throw new Error(stopMsg);
@@ -357,19 +452,21 @@ async function main() {
   }
 
   // --- smoke の合否 ---
+  // 判定は「この起動で実行した分」でなく results.jsonl の全行(resume 前の失敗を含む)から出す。
   if (stage === 'smoke') {
-    const gate = {};
-    for (const [k, s] of smokeStats) {
-      gate[k] = { ...s, passed: s.errorRate <= SMOKE_ERROR_THRESHOLD };
-      logInfo(`smoke ${k}: エラー率 ${(s.errorRate * 100).toFixed(1)}% → ${gate[k].passed ? 'Full Run 可' : 'Full Run 不可'}`);
+    const { rows: allRows } = readResults(resultsPath);
+    const gate = computeSmokeGate(allRows, SMOKE_ERROR_THRESHOLD);
+    for (const [k, g] of Object.entries(gate)) {
+      logInfo(`smoke ${k}: エラー率 ${(g.errorRate * 100).toFixed(1)}% (全${g.total}件) → ${g.passed ? 'Full Run 可' : 'Full Run 不可'}`);
     }
     writeFileSync(join(dir, 'smoke_gate.json'), JSON.stringify({ threshold: SMOKE_ERROR_THRESHOLD, gate }, null, 2));
   }
 
   logInfo('実行完了', {
     runId, dir,
-    // 原価不明を 0 円と表示しない
-    spentUsd: unknownCostRows ? `${spentUsd.toFixed(6)} (+原価不明 ${unknownCostRows} 件)` : Number(spentUsd.toFixed(6)),
+    // 原価不明を 0 円と表示しない。表示は formatUsd で正確な10進(浮動小数点の見かけ誤差を出さない)
+    thisRunUsd: unknownCostRows ? `${formatUsd(spentUsd - priorSpentUsd)} (+原価不明 ${unknownCostRows} 件)` : formatUsd(spentUsd - priorSpentUsd),
+    cumulativeUsd: formatUsd(spentUsd),
   });
   if (unknownCostRows) logWarn(`原価不明が ${unknownCostRows} 件あります。価格を pricing_override.json に転記するまで実費は確定しません(0円ではありません)。`);
   logInfo(`レポート生成: node pricing_eval/src/report.mjs --run-id=${runId}` + (cfg.usdJpy ? ` --usd-jpy=${cfg.usdJpy}` : ''));

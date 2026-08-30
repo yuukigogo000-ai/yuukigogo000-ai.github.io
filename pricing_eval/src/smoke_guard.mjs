@@ -97,14 +97,17 @@ export function checkSmokeGuard(input) {
     if (p.kind === 'derived_estimate') b.push(`${id} の価格が derived_estimate(official_exact 以外は使用禁止)`);
     worstUsd += calls * ((perCallInTok / 1e6) * p.inputPerMTokUsd + (outTok / 1e6) * p.outputPerMTokUsd);
   }
-  f.worstUsd = worstUsd;
-  f.worstJpy = usdJpy > 0 ? worstUsd * usdJpy : null;
+  // 既発生費用を累計予算へ算入する(worst-case + 既発生 ≤ 上限)
+  const prior = Number(input.priorSpentUsd) || 0;
+  f.priorSpentUsd = prior;
+  f.worstUsd = worstUsd + prior;
+  f.worstJpy = usdJpy > 0 ? f.worstUsd * usdJpy : null;
   if (input.maxBudgetJpy > 100) b.push(`予算上限が 100 円を超えている (${input.maxBudgetJpy})`);
   if (f.worstJpy === null || f.worstJpy > input.maxBudgetJpy) {
-    b.push(`worst-case 費用 ${f.worstJpy === null ? '不明' : Math.ceil(f.worstJpy) + '円'} が予算 ${input.maxBudgetJpy} 円以内と確認できない`);
+    b.push(`worst-case 費用(既発生込み) ${f.worstJpy === null ? '不明' : Math.ceil(f.worstJpy) + '円'} が予算 ${input.maxBudgetJpy} 円以内と確認できない`);
   }
-  if (input.maxBudgetUsd != null && worstUsd > input.maxBudgetUsd) {
-    b.push(`worst-case $${worstUsd.toFixed(4)} が USD 上限 $${input.maxBudgetUsd} を超える`);
+  if (input.maxBudgetUsd != null && f.worstUsd > input.maxBudgetUsd) {
+    b.push(`worst-case $${f.worstUsd.toFixed(4)}(既発生込み)が USD 上限 $${input.maxBudgetUsd} を超える`);
   }
   if (!input.retryTransientOnly) b.push('再試行が 429/一時的5xx に限定されていない(--retry-transient-only 必須)');
 
@@ -153,6 +156,7 @@ async function main() {
     outputMaxTokens: cfg.outputMaxTokens,
     maxAutoRetries: cfg.maxAutoRetries,
     retryTransientOnly: cfg.retryTransientOnly,
+    priorSpentUsd: Number(args['prior-spent-usd']) || 0,
     casesShaHead,
     casesShaDisk: sha(casesDisk),
     screenshotCountExpected: expectedShots,
