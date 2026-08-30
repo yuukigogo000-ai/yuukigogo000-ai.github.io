@@ -500,6 +500,30 @@ t('31. smoke guard: 正常条件はPASSし、12種の変異すべてで fail clo
   }
   assertEq(leaks.length, MUTATE ? 99 : 0, `fail closed にならなかった変異: ${leaks.join(', ')}`);
 });
+t('31b. full guard: 発注者GO時のみのfull条件(全ケースworst-case≤10,000円)・変異で fail closed(変異検出)', () => {
+  const guardFull = () => {
+    const i = guardBase();
+    i.stage = 'full'; i.caseCount = 120; i.maxBudgetJpy = 10000; i.maxBudgetUsd = 62.5;
+    return i;
+  };
+  const ok = checkSmokeGuard(guardFull());
+  assertEq(ok.ok, MUTATE ? false : true, `full 正常条件がPASSしない: ${ok.blockers.join(' / ')}`);
+  const mutants = {
+    'caseCount不明': (i) => { delete i.caseCount; },
+    '予算10,000円超': (i) => { i.maxBudgetJpy = 10001; },
+    '価格不明モデル': (i) => { delete i.pricing.models['moonshotai.kimi-k2.5']; },
+    'worst-case超過': (i) => { i.pricing.models['moonshotai.kimi-k2.5'].outputPerMTokUsd = 999999; },
+    '未知のstage': (i) => { i.stage = 'production'; },
+    '既発生費用が枠を食い潰す': (i) => { i.priorSpentUsd = 63; },
+  };
+  const leaks = [];
+  for (const [name, fn] of Object.entries(mutants)) {
+    const inp = guardFull(); fn(inp);
+    if (checkSmokeGuard(inp).ok) leaks.push(name);
+  }
+  assertEq(leaks.length, 0, `fail closed にならなかった変異: ${leaks.join(', ')}`);
+});
+
 await (async () => {
   const rtCfg = { maxAutoRetries: 1, outputMaxTokens: 512, temperature: 0.7, backoffMs: 1, retryTransientOnly: true };
   const rowA = await runCase({ client: createMockClient({ fault: 'broken_json' }), cfg: rtCfg, model, testCase: cases[0], price });

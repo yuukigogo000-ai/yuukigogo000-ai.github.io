@@ -73,15 +73,18 @@ export function checkSmokeGuard(input) {
   }
   f.targets = targets;
 
-  // --- stage / full 無効 ---
-  if (input.stage !== 'smoke') b.push(`stage が smoke でない (${input.stage})`);
+  // --- stage ---
+  // full は発注者の明示GO時のみ呼び出し側が指定できる。それ以外の stage は常に拒否。
+  if (input.stage !== 'smoke' && input.stage !== 'full') b.push(`stage が smoke/full でない (${input.stage})`);
+  if (input.stage === 'full' && !(input.caseCount > 0)) b.push('full なのに caseCount が不明(worst-case を見積れない)');
 
   // --- 価格・予算(worst-case・再試行込み・価格不明は呼び出し禁止) ---
   const usdJpy = input.usdJpy;
   if (!(usdJpy > 0)) b.push('USD/JPY が未指定');
   const perCallInTok = 16000;
   const outTok = input.outputMaxTokens;
-  const calls = SMOKE_CASES * (1 + (input.maxAutoRetries ?? 1));
+  const caseCount = input.stage === 'full' ? (input.caseCount || 0) : SMOKE_CASES;
+  const calls = caseCount * (1 + (input.maxAutoRetries ?? 1));
   let worstUsd = 0;
   for (const id of allow) {
     // run_eval と同じ解決順: invocationTarget/modelId → 表示名(Price List のキーは表示名)
@@ -102,7 +105,9 @@ export function checkSmokeGuard(input) {
   f.priorSpentUsd = prior;
   f.worstUsd = worstUsd + prior;
   f.worstJpy = usdJpy > 0 ? f.worstUsd * usdJpy : null;
-  if (input.maxBudgetJpy > 100) b.push(`予算上限が 100 円を超えている (${input.maxBudgetJpy})`);
+  // 予算枠の天井: smoke=100円(2026-08-31 GO)/ full=10,000円(当初指示の総予算)。それ以上は拒否。
+  const capJpy = input.stage === 'full' ? 10000 : 100;
+  if (input.maxBudgetJpy > capJpy) b.push(`予算上限が ${capJpy} 円を超えている (${input.maxBudgetJpy})`);
   if (f.worstJpy === null || f.worstJpy > input.maxBudgetJpy) {
     b.push(`worst-case 費用(既発生込み) ${f.worstJpy === null ? '不明' : Math.ceil(f.worstJpy) + '円'} が予算 ${input.maxBudgetJpy} 円以内と確認できない`);
   }
@@ -150,9 +155,13 @@ async function main() {
     candidates: discovery.candidates || [],
     pricing,
     stage: args.stage || 'smoke',
+    caseCount: casesJson.cases.length,
     usdJpy: cfg.usdJpy,
     maxBudgetJpy: cfg.maxBudgetJpy,
-    maxBudgetUsd: 0.625,
+    // USD 上限は smoke=GO固定($0.625)。full は予算枠の USD 換算。
+    maxBudgetUsd: (args.stage || 'smoke') === 'full'
+      ? (cfg.usdJpy > 0 ? cfg.maxBudgetJpy / cfg.usdJpy : 0)
+      : 0.625,
     outputMaxTokens: cfg.outputMaxTokens,
     maxAutoRetries: cfg.maxAutoRetries,
     retryTransientOnly: cfg.retryTransientOnly,

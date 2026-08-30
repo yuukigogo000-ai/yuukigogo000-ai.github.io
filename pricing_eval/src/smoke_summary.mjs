@@ -91,6 +91,8 @@ async function main() {
   if (!runIds.length) throw new Error('--runs=<runId,...> を指定してください');
   const usdJpy = Number(args['usd-jpy']) || null;
   const priorSpentUsd = Number(args['prior-spent-usd']) || 0;
+  // 予算枠の表示。既定は smoke GO の 100 円。full 集計では --budget-jpy=10000 を明示する。
+  const budgetJpy = Number(args['budget-jpy']) || 100;
 
   const rows = [];
   for (const id of runIds) {
@@ -124,8 +126,8 @@ async function main() {
       priorSpentUsd: formatUsd(priorSpentUsd),
       cumulativeUsd: formatUsd(totalUsd + priorSpentUsd),
       cumulativeJpy: usdJpy ? Number(((totalUsd + priorSpentUsd) * usdJpy).toFixed(4)) : null,
-      budgetJpy: 100,
-      budgetRemainderJpy: usdJpy ? Number((100 - (totalUsd + priorSpentUsd) * usdJpy).toFixed(4)) : null,
+      budgetJpy,
+      budgetRemainderJpy: usdJpy ? Number((budgetJpy - (totalUsd + priorSpentUsd) * usdJpy).toFixed(4)) : null,
       unknownCostRows: rows.filter((r) => r.effectiveCostUsd == null).length,
     },
     ledgerReconciliation: {
