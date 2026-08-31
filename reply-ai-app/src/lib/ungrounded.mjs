@@ -53,12 +53,24 @@ const GENERIC_FACILITY = new Set([
 const FACILITY_RE = /[一-龠ァ-ヴー]{2,8}(?:屋|亭|軒|飯店|食堂|横丁|水族館|美術館|博物館|植物園|動物園|遊園地|商店街|温泉|神社|公園|市場)/g;
 const KATAKANA_RE = /[ァ-ヴー]{4,}/g;
 
+// カタカナ語は「体験・場所の文脈」で使われたときだけ挙げる(2026-09-01: 「トピック」「ミステリー」のような
+// 一般語を停止事由にしてしまった実測への対策)。発注者の懸念は「行ったことのない店・場所を体験談として送る」こと
+// なので、後ろに移動/飲食/滞在の動詞、または前に場所を示す語があるものだけを固有名詞候補にする。
+// 施設接尾辞(〜屋・〜水族館 等)と REPLY_SYSTEM の例文名は文脈に関係なく必ず挙げる。
+const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function inExperienceContext(text, tok) {
+  const after = new RegExp(`${escapeRe(tok)}(?:に|へ|で|を|の|って|とか|も|は|が)?[^。!?！？\\n]{0,8}(?:行|来|寄|訪|通|食べ|飲|泊|遊|見|買|住|働|勤|集合|待ち合わせ|予約|良かった|よかった|最高|楽し|美味|おいし|うまかった|きれい|綺麗|感動|ハマ|写真|雰囲気|混んで|空いて)`);
+  const before = new RegExp(`(?:駅前の|近くの|地元の|有名な|評判の|おすすめの|人気の|新しくできた|例の|この前の|先週の|先月の|昨日の|去年の|前に行った|最近の|いつもの|行きつけの)${escapeRe(tok)}`);
+  return after.test(text) || before.test(text);
+}
+
 /** テキストから固有名詞らしきトークンを取り出す */
 export function extractNameTokens(text) {
   const out = new Set();
   const t = String(text ?? '');
   for (const m of t.matchAll(KATAKANA_RE)) {
-    if (!KATAKANA_COMMON.has(m[0])) out.add(m[0]);
+    if (KATAKANA_COMMON.has(m[0])) continue;
+    if (inExperienceContext(t, m[0])) out.add(m[0]);
   }
   for (const m of t.matchAll(FACILITY_RE)) {
     if (!GENERIC_FACILITY.has(m[0])) out.add(m[0]);

@@ -31,13 +31,15 @@ import { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToo
 import { datasetHashOf, promptHashOf, configHashOf, ledgerKey, loadLedger, appendLedger } from './lib/ledger.mjs';
 import { fidelityStopReason } from './lib/fidelity_checks.mjs';
 import { runPreflight } from './retention_preflight.mjs';
+import { callStarted, callEnded, loadCallLog, unaccountedCalls, unaccountedWorstCaseUsd, recordedSpendUsd } from './lib/call_log.mjs';
 
 /**
  * 実行前の fail-closed 再確認(--confirm-run)。1つでも満たさなければ呼び出しゼロで停止。
  *  expected = { arnTail, accountMask, datasetHash }(前回確証runと保存済み preflight から機械的に取る)
  */
-export function assertRunPreconditions({ preflight, cfg, datasetHash, expected, priorSpentUsd, priorSpentGiven }) {
+export function assertRunPreconditions({ preflight, cfg, datasetHash, expected, priorSpentUsd, priorSpentGiven, callLogBroken = 0 }) {
   const blockers = [];
+  if (callLogBroken > 0) blockers.push(`call_log.jsonl に壊れた行が ${callLogBroken} 件(STARTED が失われている可能性)。修復するまで確証runを実行しない`);
   if (cfg.region !== 'ap-northeast-1') blockers.push(`region が東京でない(${cfg.region})`);
   if (!preflight?.allowModelEvaluation) blockers.push(`preflight 不合格: ${(preflight?.blockers || ['report無し']).join(' / ')}`);
   if (preflight?.retention?.mode !== 'none' || preflight?.retention?.ok !== true) blockers.push(`retention が none でない(${preflight?.retention?.mode})`);
@@ -47,6 +49,8 @@ export function assertRunPreconditions({ preflight, cfg, datasetHash, expected, 
   if (!expected?.datasetHash || datasetHash !== expected.datasetHash) blockers.push(`cases.json のハッシュが前回確証runと異なる(${String(datasetHash).slice(0, 12)}… ≠ ${String(expected?.datasetHash).slice(0, 12)}…)`);
   if (!(cfg.maxBudgetJpy > 0) || cfg.maxBudgetJpy > 10000) blockers.push(`予算上限が不正(${cfg.maxBudgetJpy}円。上限10,000円)`);
   if (!priorSpentGiven || !(priorSpentUsd > 0)) blockers.push('--prior-spent-usd(既発生費用)が未指定。累計を0から数える実行は禁止');
+  // 契約: prior は「記録済み費用」のみ(UNKNOWN の worst-case はツールが別枠で加える)。成果物の合計と一致しなければ停止(二重計上・過少申告の両方を防ぐ)
+  if (expected?.recordedSpendUsd != null && Math.abs(priorSpentUsd - expected.recordedSpendUsd) > 1e-6) blockers.push(`--prior-spent-usd(${priorSpentUsd})が成果物の記録済み費用合計(${expected.recordedSpendUsd})と一致しない。UNKNOWN の worst-case を含めていないか/最新か確認`);
   if (!(cfg.usdJpy > 0)) blockers.push('usdJpy 未設定');
   return blockers;
 }
@@ -66,6 +70,8 @@ export async function loadProductionPrompts(tsPath = PROMPTS_TS, tmpDir = join(R
   if (!mod.REPLY_SYSTEM || mod.REPLY_SYSTEM.length < 3000) throw new Error('REPLY_SYSTEM の抽出に失敗(短すぎる)');
   if (!mod.REPLY_SCHEMA?.properties?.replies || !mod.REPLY_SCHEMA?.properties?.situation) throw new Error('REPLY_SCHEMA の抽出に失敗');
   if (mod.REPLY_SCHEMA.properties.interest_level || (mod.REPLY_SCHEMA.required || []).includes('interest_level')) throw new Error('REPLY_SCHEMA に除去済みの interest_level が残っている');
+  const rep = mod.REPLY_SCHEMA.properties.replies;
+  if (rep?.minItems !== 3 || rep?.maxItems !== 3) throw new Error('REPLY_SCHEMA.replies に minItems/maxItems=3 が無い(6案事故の対策・2026-09-01 決定)');
   return { REPLY_SYSTEM: mod.REPLY_SYSTEM, REPLY_SCHEMA: mod.REPLY_SCHEMA };
 }
 
@@ -119,9 +125,13 @@ async function main() {
   const toolUse = args['tool-use'] === true;
   const stopOnViolation = args['stop-on-violation'] === true;
   const confirmRun = args['confirm-run'] === true; // 確証run: 実行前 fail-closed 再確認+1件目の違反で停止
+  const fresh = confirmRun || args.fresh === true; // 台帳の成功済みを再利用しない(確証runは独立した30件として数える)
 
   const { REPLY_SYSTEM, REPLY_SCHEMA } = await loadProductionPrompts();
   const casesRaw = readFileSync('pricing_eval/cases.json', 'utf8');
+  // 違反時の出力本文(invalidOutput)を保存してよいのは合成評価データだけ。本番コードでは保存禁止(発注者決定 2026-09-01)
+  const syntheticDataset = JSON.parse(casesRaw).generated_by === 'generate_cases.mjs';
+  if (!syntheticDataset) throw new Error('cases.json が合成データ(generate_cases.mjs)でない。実データに対する fidelity 実行は禁止');
   const caseOffset = args['case-offset'] === undefined ? 0 : Number(args['case-offset']);
   let cases = pickFidelityCases(JSON.parse(casesRaw).cases, CASES_PER_CATEGORY, caseOffset);
   if (cases.length !== 6 * CASES_PER_CATEGORY) throw new Error(`選定件数が30件でない(${cases.length}件・case-offset=${caseOffset})`);
@@ -141,9 +151,9 @@ async function main() {
       .map((l) => { try { return JSON.parse(l); } catch { return null; } })
       .find((r) => r && r.runId === 'fidelity_tooluse_kimi' && r.success);
     const prevPre = JSON.parse(readFileSync(join(RUNS_DIR, '_discovery', 'preflight.json'), 'utf8'));
-    const expected = { arnTail: prevPre?.identity?.arnTail, accountMask: prevPre?.identity?.account, datasetHash: prevLedger?.datasetHash };
+    const expected = { arnTail: prevPre?.identity?.arnTail, accountMask: prevPre?.identity?.account, datasetHash: prevLedger?.datasetHash, recordedSpendUsd: recordedSpendUsd(RUNS_DIR).sum };
     preflightReport = await runPreflight(cfg);
-    const blockers = assertRunPreconditions({ preflight: preflightReport, cfg, datasetHash, expected, priorSpentUsd, priorSpentGiven });
+    const blockers = assertRunPreconditions({ preflight: preflightReport, cfg, datasetHash, expected, priorSpentUsd, priorSpentGiven, callLogBroken: loadCallLog().broken });
     mkdirSync(join(RUNS_DIR, runId), { recursive: true });
     writeFileSync(join(RUNS_DIR, runId, 'preflight_recheck.json'), JSON.stringify({ at: new Date().toISOString(), preflight: preflightReport, expected, datasetHash, blockers, passed: blockers.length === 0 }, null, 2));
     if (blockers.length) throw new Error(`実行前再確認に不合格(呼び出しゼロで停止): ${blockers.join(' / ')}`);
@@ -171,7 +181,7 @@ async function main() {
   const doneKeys = new Set(done.map((r) => `${r.modelId}::${r.caseId}`));
 
   writeFileSync(join(dir, 'run_manifest.json'), JSON.stringify({
-    runId, kind: 'production_prompt_fidelity', at: new Date().toISOString(), caseOffset,
+    runId, kind: 'production_prompt_fidelity', at: new Date().toISOString(), caseOffset, fresh, confirmRun, stopOnViolation, syntheticDataset,
     systemSource: PROMPTS_TS, systemLength: REPLY_SYSTEM.length,
     schemaDelivery: toolUse ? 'tool-use(Converse toolConfig=本番採用構成)' : 'text(本番はtool-use。相違点として明記)',
     cases: cases.map((c) => c.id),
@@ -182,6 +192,13 @@ async function main() {
   const creds = resolveCredentials()?.credentials ?? null;
   const ledger = loadLedger();
   let spentUsd = priorSpentUsd;
+  // 台帳外の呼び出しをなくす: 終端の無い STARTED(=UNKNOWN_OUTCOME)は worst-case で先に計上する
+  const callLog = loadCallLog();
+  const unknowns = unaccountedCalls(callLog.rows);
+  const unknownUsd = unaccountedWorstCaseUsd(callLog.rows);
+  spentUsd += unknownUsd;
+  if (unknowns.length) logWarn('費用不明の呼び出し(UNKNOWN_OUTCOME / 終端あり費用null)を worst-case で予算に計上', { count: unknowns.length, worstCaseUsd: formatUsd(unknownUsd), callIds: unknowns.map((u) => `${u.callId}:${u.reason}`) });
+  if (callLog.broken) throw new Error(`call_log に壊れた行が ${callLog.broken} 件。予算契約の一部なので修復するまで実行しない`);
 
   for (const model of models) {
     const client = createBedrockClient({ region: cfg.region, credentials: creds });
@@ -199,7 +216,7 @@ async function main() {
     let reused = 0;
     for (const c of cases) {
       if (doneKeys.has(`${model.modelId}::${c.id}`)) continue;
-      if (ledger.get(ledgerKey(hashesFor(c)))) { reused++; continue; }
+      if (!fresh && ledger.get(ledgerKey(hashesFor(c)))) { reused++; continue; }
       todo.push(c);
     }
     logInfo(`fidelity 実行開始 ${model.modelId}`, { todo: todo.length, reused, skipped: cases.length - todo.length - reused });
@@ -215,6 +232,8 @@ async function main() {
       for (let attemptNo = 1; attemptNo <= 1 + cfg.maxAutoRetries; attemptNo++) {
         const t0 = Date.now();
         let a;
+        let callId = null;
+        let resReceived = null; // converse が返した応答(パース例外でも課金済みとして扱うため保持)
         try {
           const body = buildConverseBody({
             system: REPLY_SYSTEM,
@@ -226,11 +245,14 @@ async function main() {
           });
           if (toolUse) {
             body.toolConfig = {
-              tools: [{ toolSpec: { name: 'reply_result', description: '状況分析・返信案・アドバイスの出力', inputSchema: { json: REPLY_SCHEMA } } }],
+              tools: [{ toolSpec: { name: 'reply_result', description: '状況分析・返信案・アドバイスの出力。返信案(replies)は必ずちょうど3件(4件以上・2件以下は禁止)', inputSchema: { json: REPLY_SCHEMA } } }],
               toolChoice: { tool: { name: 'reply_result' } },
             };
           }
+          const perAttemptWorst = (16000 / 1e6) * model.price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * model.price.outputPerMTokUsd;
+          callId = callStarted({ runId, caseId: c.id, modelId: model.modelId, attemptNo, worstCaseUsd: perAttemptWorst });
           const res = await client.converse(model.invocationTarget, body);
+          resReceived = res;
           let parsed;
           if (toolUse) {
             const input = extractToolUse(res, 'reply_result');
@@ -249,13 +271,20 @@ async function main() {
             parsed,
           };
         } catch (e) {
+          let usageAfterResponse = null;
+          if (resReceived) { try { usageAfterResponse = extractConverse(resReceived).usage ?? null; } catch { usageAfterResponse = null; } }
           a = {
-            attemptNo, latencyMs: Date.now() - t0, usage: null,
-            ok: false, failureKind: e.code === 'Timeout' ? 'timeout' : `http_${e.status || 'error'}`,
+            attemptNo, latencyMs: Date.now() - t0, usage: usageAfterResponse,
+            ok: false, failureKind: resReceived ? 'response_parse_error' : (e.code === 'Timeout' ? 'timeout' : `http_${e.status || 'error'}`),
             error: `${e.code || e.name}`, errorCode: e.code ?? e.name ?? null,
             sanitizedErrorMessage: sanitizeAwsMessage(e.message), httpStatus: e.status ?? null,
             requestId: e.requestId ?? null, apiOperation: e.operation ?? 'Converse', failureClass: 'system',
           };
+        }
+        // 呼び出し台帳を確定(応答があれば SUCCEEDED=課金対象、例外なら FAILED。費用は usage から)
+        if (callId) {
+          const gotResponse = resReceived != null || a.usage != null || (typeof a.httpStatus === 'number' && a.httpStatus < 400);
+          callEnded({ callId, status: gotResponse ? 'SUCCEEDED' : 'FAILED', costUsd: costUsdForAttempt(a.usage, model.price), requestId: a.requestId ?? null, httpStatus: a.httpStatus ?? null, failureKind: a.failureKind ?? null });
         }
         attempts.push(a);
         final = a;
@@ -279,7 +308,9 @@ async function main() {
       }
       const costs = attempts.map((x) => costUsdForAttempt(x.usage, model.price));
       const effective = costs.some((x) => x === null) ? null : costs.reduce((s, x) => s + x, 0);
-      if (effective != null) spentUsd += effective;
+      // 予算計上: 費用が分からない試行(usage 無し)は worst-case で数える(甘く見積もらない)
+      const perAttemptWorstUsd = (16000 / 1e6) * model.price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * model.price.outputPerMTokUsd;
+      spentUsd += costs.reduce((s, x) => s + (x == null ? perAttemptWorstUsd : x), 0);
 
       const row = {
         runId, kind: 'fidelity', caseId: c.id, category: c.category, imageCount: c.images.length,
@@ -298,7 +329,7 @@ async function main() {
         effectiveCostUsd: effective,
         production: final.ok ? final.parsed.data : null,
         // 違反時の出力本文(schema違反の原因調査用。成功時は production に入る)
-        invalidOutput: final.ok ? null : (final.parsed?.data ?? null),
+        invalidOutput: (!final.ok && syntheticDataset) ? (final.parsed?.data ?? null) : null,
         fidelity,
         at: new Date().toISOString(),
       };

@@ -1,147 +1,146 @@
-# Replier サーバー側プロキシ — 工程1: 設計書たたき台 v0.1(2026-09-01)
+# Replier サーバー側プロキシ — 工程1: 設計書たたき台 v0.2(2026-09-01 発注者決定反映)
 
-**位置づけ**: 実装には着手しない。工程0(STEP0_REQUIREMENTS_OPTIONS.md)の「推奨」を仮置きして書いた設計。§7 の決定が変われば書き直す。
-**仮置きした決定**: AWS 東京 / Cognito(メール OTP)/ Stripe Checkout+Portal / 非同期ジョブ / 回数は成功時のみ消費 / 初期リリースは**追加枠なし・上限到達=次回更新待ち**。
+**位置づけ**: 実装には着手しない。STEP0 v0.2 §0 の決定(AWS東京 / Regional REST API+Lambda / Cognito メール OTP / DynamoDB / S3 なし / 同期 / 履歴はブラウザ内 / CAPTCHA なし / 追加枠なし / 予約方式の回数制限 / サーバー側出力検査)を前提に書いた設計。
 
 ---
 
 ## 1. 全体構成
 
 ```
-[ブラウザ PWA(GitHub Pages, 静的)]
-   │ HTTPS(JWT: Cognito IdToken)
+[ブラウザ PWA  app.<所有ドメイン>(静的配信)]
+   │ HTTPS  Authorization: Bearer <Cognito IdToken>   Idempotency-Key: <uuid>
+   │ 画像はブラウザで圧縮(最大6枚・長辺1600px・JPEG/WebP)し、リクエスト全体 ≤ 4.5MB を送信前に検査
    ▼
-[Amazon API Gateway HTTP API (ap-northeast-1)] ── スロットリング(IP/ルート) ── JWT オーソライザ(Cognito)
-   │
-   ├─ POST /v1/jobs            → Lambda: create_job   (回数・レート検査 → DynamoDB jobs に PENDING → 非同期で worker を起動)
-   ├─ GET  /v1/jobs/{id}       → Lambda: get_job      (状態と結果を返す。DONE 後に結果は TTL 5分で消える)
-   ├─ GET  /v1/me              → Lambda: me           (プラン・残り回数・次回更新日時)
-   ├─ POST /v1/billing/checkout→ Lambda: checkout     (Stripe Checkout Session を作成)
-   ├─ POST /v1/billing/portal  → Lambda: portal       (Customer Portal URL)
-   └─ POST /v1/billing/webhook → Lambda: webhook      (Stripe 署名検証 → subscriptions を更新。認証なし・署名のみ)
+[AWS WAF] ── IP レート制限・サイズ制限 ── 
+[API Gateway Regional REST API  api.<所有ドメイン>  (ap-northeast-1)]
+   │ Cognito オーソライザ / 統合タイムアウト 60秒(上限緩和申請) / ペイロード検査
+   ├─ POST /v1/generate         → Lambda generate  (同期。予約→Bedrock→検査→確定/返却→応答)   timeout 75秒
+   ├─ POST /v1/profile          → Lambda generate  (同経路・kind=profile)
+   ├─ GET  /v1/me               → Lambda me        (プラン・残り回数・次回更新日時)
+   ├─ POST /v1/billing/checkout → Lambda billing   (Stripe Checkout Session)
+   ├─ POST /v1/billing/portal   → Lambda billing   (Customer Portal URL)
+   └─ POST /v1/billing/webhook  → Lambda webhook   (Stripe 署名検証のみ・認証なし)
 
-[Lambda: worker (非同期・timeout 90秒)] → Amazon Bedrock Converse (ap-northeast-1, Kimi K2.5, toolConfig, 非ストリーミング)
-                                       → 出力検査 → DynamoDB jobs を DONE/FAILED に更新 → 成功なら usage を原子的に加算
+[Lambda generate] → Amazon Bedrock Converse(ap-northeast-1・Kimi K2.5・toolConfig・非ストリーミング・SDK timeout 55秒)
+                  → 出力検査(共有パッケージ)→ 再生成は1回まで → 応答
+                  → 入力・出力はメモリ上のみ。DynamoDB/S3/ログに本文を書かない
 
-[DynamoDB]: users / subscriptions / usage / jobs(TTL) / events(メタデータのみ)
+[DynamoDB]: users / subscriptions / quota(予約・確定) / idempotency / events(メタデータのみ)
 [Secrets Manager]: Stripe 秘密鍵・Webhook 署名秘密
-[CloudWatch]: メトリクス(費用・遅延・失敗率)。ログに会話本文・画像・メールアドレス以外の個人情報を出さない
+[CloudWatch]: メトリクス(遅延 p50/p95・費用・失敗種別・試行数)。本文は出さない
 ```
 
-- 秘密はブラウザに置かない。Bedrock は Lambda の IAM ロールで呼ぶ(鍵の配布なし)
-- 推論は ap-northeast-1 のみ。他リージョンへのフォールバックは実装しない(方針違反になるため)
-- 静的 PWA は現行の React/Vite をそのまま使い、`api.ts` の呼び先を Anthropic 直叩きからこの API に差し替える(BYOK コードは削除)
+- 秘密はブラウザに置かない。Bedrock は Lambda 実行ロールで呼ぶ(`bedrock:InvokeModel` を Kimi と予備モデルの ARN に限定)
+- 推論・API・DB・認証はすべて ap-northeast-1。他リージョンへのフォールバックは実装しない
+- 静的 PWA は現行の React/Vite。`api.ts` の Anthropic 直叩き(BYOK)を削除し、この API へ差し替え。履歴・採用文・設定は現行どおりブラウザ内(localStorage)のみ
+- ドメインは設定値(`APP_ORIGIN` / `API_ORIGIN`)。CORS 許可オリジンは `APP_ORIGIN` のみ
 
-## 2. データモデル(DynamoDB・単一テーブル案)
+## 2. データモデル(DynamoDB・単一テーブル)
 
-| PK / SK | 主な属性 | 備考 |
+| PK / SK | 属性 | 備考 |
 |---|---|---|
-| `USER#<sub>` / `PROFILE` | email(ハッシュ化しない。連絡に必要)、createdAt、status(active/banned)、freeUsed(0〜3) | Cognito の sub が主キー |
-| `USER#<sub>` / `SUB` | stripeCustomerId、stripeSubscriptionId、status(active/past_due/canceled/none)、currentPeriodStart/End、priceId、launchPriceUntil | Webhook で更新。正本は Stripe |
-| `USER#<sub>` / `USAGE#<periodKey>` | count(月内成功回数)、periodEnd | periodKey = Stripe の請求期間開始日。条件付き更新で 150 を超えない |
-| `USER#<sub>` / `DAY#<yyyy-mm-dd JST>` | count | 20 を超えない。TTL 3日 |
-| `JOB#<uuid>` / `META` | userId、status(PENDING/RUNNING/DONE/FAILED)、createdAt、**request(本文・画像は入れない。入れるのは worker への受け渡しに必要な最小限=下記)**、result(検査後の JSON)、error(種別のみ)、ttl(作成+5分) | 本文・画像の受け渡しは §3.2 |
-| `EVENT#<yyyy-mm>` / `<ts>#<uuid>` | userId、kind(generate/profile)、modelId、inputTokens、outputTokens、costUsd、latencyMs、requestId、outcome | 原価集計用。TTL 400日 |
+| `USER#<sub>` / `PROFILE` | email、createdAt、status(active/banned)、freeUsed(0〜3) | Cognito の sub が主キー |
+| `USER#<sub>` / `SUB` | stripeCustomerId、stripeSubscriptionId、status、currentPeriodStart/End、priceId、launchPriceUntil、lastEventId | Webhook で更新。正本は Stripe |
+| `USER#<sub>` / `QUOTA#M#<periodKey>` | success(確定成功数 ≤150)、attempts(試行数 ≤180)、reserved(予約中 0/1) | periodKey = 請求期間開始日(無料は `FREE`) |
+| `USER#<sub>` / `QUOTA#D#<yyyy-mm-dd JST>` | success(≤20)、attempts(≤25)、TTL 3日 | |
+| `USER#<sub>` / `RESV#<reservationId>` | createdAt、TTL(5分)、state(RESERVED/CONFIRMED/RELEASED) | 返却漏れは TTL で自動返却(ストリーム or 次回参照時に精算) |
+| `IDEM#<sub>#<idempotencyKey>` / `META` | state(IN_PROGRESS/DONE/FAILED)、responseHash、**response(検査済み結果 JSON・TTL 10分)**、TTL | 同一 key の再送に同じ応答を返すためだけの短期保持。**本文保存の唯一の例外**。TTL で消える。採用するかは §7-1 |
+| `EVENT#<yyyy-mm>` / `<ts>#<uuid>` | userId、kind、modelId、attemptNo、inputTokens、outputTokens、costUsd、latencyMs、requestId、outcome(OK/REGENERATED/INVALID/TIMEOUT/ERROR)、validationFlags(trimmed/placeholder/forbidden/shortfall) | 原価・品質集計。本文なし。TTL 400日 |
 
-**会話・画像を保存しない(N2)との整合**: ジョブの入力(会話・画像)を DynamoDB に置くと「保存」になる。そこで入力は **create_job が Lambda の非同期 Invoke ペイロード(最大 256KB)** …では画像が入らないため、次のどちらか:
-- (a) 入力を S3 の一時バケット(SSE・TTL 10分・アクセスは worker ロールのみ)に置き、worker が読んで即削除 — 一時的な保存が発生(ポリシーに「処理のため最大10分保持」と明記)
-- (b) create_job 自身が同期で Bedrock を呼ぶが、API Gateway の30秒を超えるため不可
-- **(c) 推奨: クライアントが `POST /v1/jobs` を 2段階にせず、API Gateway → Lambda(create_job)を「非同期呼び出し」にし、create_job が受け取った本体をそのまま worker ロジックに渡す**(= create_job と worker を同一 Lambda にし、API Gateway 側は `InvocationType: Event` 相当の統合で即 202 を返す)。入力はメモリ上にしか存在しない。HTTP API の Lambda 非同期統合はペイロード 6MB→**非同期 Invoke は 256KB 上限**のため画像付きは不可 → **画像付きは (a)、テキストのみは (c)** の併用が現実解
-- 結論(たたき台): **入力は S3 一時バケット(SSE-KMS・ライフサイクル1日+worker が処理後に即削除)を経由**。DynamoDB には入力を置かない。プライバシーポリシーに「送信内容は処理のため最大10分間、東京リージョン内の暗号化ストレージに一時保持し、処理後に削除」と書く。ここは §7 の決定事項
+会話本文・画像・返信内容はどの項目にも入れない(IDEM.response を採用する場合のみ「検査済み結果を最長10分」— §7-1 で判断)。
 
 ## 3. API 仕様(抜粋)
 
 ### 3.1 認証
-- Cognito User Pool(メール OTP・パスワードレス)。JWT(IdToken)を `Authorization: Bearer` で送る。HTTP API の JWT オーソライザで検証
-- 未ログインでも「お試し」はさせない(無料3回もログイン後)。理由: 生涯3回を数えるにはアカウントが要る
+- Cognito User Pool(メール OTP・パスワードレス)。IdToken を `Authorization: Bearer`。REST API の Cognito オーソライザで検証
+- 無料3回もログイン後(生涯3回を数えるにはアカウントが要る)
 
-### 3.2 生成ジョブ
+### 3.2 生成(同期)
 ```
-POST /v1/jobs
-  body: { kind: "reply" | "profile", uploadId?: string, text?: {...現行 ReplyTab の入力...}, options: { goal, tone, split, extra, styleSample } }
-  → 202 { jobId, status: "PENDING", remaining: { month: 149, day: 19, free: 0 } }
-  → 402 { code: "SUBSCRIPTION_REQUIRED" }                   無料3回を使い切り・未課金
-  → 429 { code: "MONTHLY_LIMIT", resetAt: "2026-10-01T00:00:00+09:00" }   150回到達(次回更新日時を返す)
-  → 429 { code: "DAILY_LIMIT",   resetAt: "2026-09-02T00:00:00+09:00" }   20回到達
-  → 429 { code: "RATE_LIMITED" }                             1分5回超
-  → 413 { code: "PAYLOAD_TOO_LARGE" }                        画像合計 > 4.5MB(base64 前)/ 6枚超
-GET /v1/jobs/{jobId}
-  → 200 { status: "RUNNING", stage: "reading"|"analyzing"|"writing" }
-  → 200 { status: "DONE", result: { situation, replies[3], advice }, notes: ["shortfall"|"placeholder"|...] }
-  → 200 { status: "FAILED", code: "MODEL_INVALID_OUTPUT"|"MODEL_TIMEOUT"|"MODEL_ERROR", chargeable: false }
+POST /v1/generate
+  headers: Authorization, Idempotency-Key(必須・UUID)
+  body: { kind: "reply", images?: [{ mime, base64 }] (≤6・合計 ≤4.5MB), text?: {...現行 ReplyTab の入力...}, options: { goal, tone, split, extra, styleSample } }
+  → 200 { result: { situation, replies[≤3], advice }, notes: ["shortfall"?], remaining: { month, day, free }, resetAt }
+  → 400 { code: "INVALID_INPUT" }                       枚数/サイズ/MIME/必須項目
+  → 402 { code: "SUBSCRIPTION_REQUIRED" }               無料3回を使い切り・未課金
+  → 409 { code: "IN_PROGRESS" }                         同一ユーザーで生成中(同時1件)
+  → 413 { code: "PAYLOAD_TOO_LARGE" }                   4.5MB 超(API Gateway/WAF でも遮断)
+  → 429 { code: "MONTHLY_LIMIT"|"DAILY_LIMIT"|"ATTEMPT_LIMIT"|"RATE_LIMITED", resetAt }
+  → 502 { code: "MODEL_INVALID_OUTPUT"|"MODEL_TIMEOUT"|"MODEL_ERROR", charged: false }   再生成1回でも失敗。回数は消費しない
 ```
-- 画像付きは先に `POST /v1/uploads` で S3 の署名付き URL(PUT・10分)を得てアップロード → `uploadId` を渡す。サイズ・枚数・MIME はサーバーで再検査
-- ステージ表示(読み取り中→分析中→作成中)は現行 UI のまま。サーバーは経過秒数から擬似的に stage を返す(モデルは一括応答のため実際の段階は分からない — 現行と同じ演出)
+- 同じ `Idempotency-Key` の再送: IN_PROGRESS なら 409、DONE なら同じ応答、FAILED なら同じエラー(モデルを再度呼ばない)
+- タイムアウト設計: WAF/API 統合 60秒(申請) > Lambda 75秒(統合が先に切れても Lambda 側で予約返却を完了させるため長め) > Bedrock SDK 55秒。統合が先に切れた場合クライアントは 504 を受け、Lambda はバックグラウンドで返却処理を終える。**p95 を CloudWatch で監視し55秒超で代替案へ**
 
 ### 3.3 課金
-- `POST /v1/billing/checkout` → Stripe Checkout(mode=subscription、price=月1,480円、ローンチ期間中は coupon 980円×3か月を自動付与、`success_url`/`cancel_url` はアプリ)
+- `POST /v1/billing/checkout` → Stripe Checkout(mode=subscription、月1,480円、ローンチ期間中は coupon 980円×3か月、`success_url`/`cancel_url` は `APP_ORIGIN`)
 - `POST /v1/billing/portal` → Customer Portal(解約・カード変更)
-- Webhook: `checkout.session.completed` / `customer.subscription.updated|deleted` / `invoice.payment_failed` → `SUB` を更新。署名検証必須・冪等(event.id を保存)
-- `GET /v1/me` → `{ plan: "free"|"paid", remaining: { month, day, free }, periodEnd, launchPriceUntil, portalAvailable }`
+- Webhook: `checkout.session.completed` / `customer.subscription.updated|deleted` / `invoice.payment_failed` → `SUB` を更新。署名検証必須・冪等(event.id)
+- `GET /v1/me` → `{ plan, remaining: { month, day, free }, attemptsLeft: { month, day }, periodEnd, launchPriceUntil }`
 
-## 4. 回数制限のロジック(初期リリース)
+## 4. 回数制限(予約方式)
 
 ```
-canGenerate(user):
-  if user.status != active → 403
-  if 分間レート超過 → 429 RATE_LIMITED
-  if sub.status in (active, trialing) and now < sub.currentPeriodEnd:
-      if usage[period].count >= 150 → 429 MONTHLY_LIMIT (resetAt = currentPeriodEnd)   ← 追加枠の案内は出さない(初期)
-      if day[today].count  >= 20  → 429 DAILY_LIMIT   (resetAt = 翌日0時 JST)
-      return PAID
-  else:
-      if user.freeUsed >= 3 → 402 SUBSCRIPTION_REQUIRED
-      return FREE
-消費: worker が「検査済みの結果を DONE として書く」トランザクションの中で count/freeUsed を +1(条件付き更新で上限超えを拒否)。
-     FAILED(モデル起因・タイムアウト)では消費しない。
+generate(user, key):
+  idem = getOrCreate(IDEM#user#key)            // IN_PROGRESS を原子的に作成。既存なら §3.2 の再送規則
+  plan = paid if SUB.active && now < periodEnd else free
+  reserve:  TransactWrite(条件付き)
+     - RESV: 同一ユーザーの RESERVED が 0 件であること(同時1件)        → 違反 409 IN_PROGRESS
+     - QUOTA#M: success < 150(free: freeUsed < 3) かつ attempts < 180  → 違反 429 MONTHLY_LIMIT / ATTEMPT_LIMIT / 402
+     - QUOTA#D: success < 20 かつ attempts < 25                         → 違反 429 DAILY_LIMIT / ATTEMPT_LIMIT
+     - attempts += 1(試行は予約時点で確定。返却しても戻さない=原価上限)
+     - RESV を RESERVED で作成(TTL 5分)
+  result = callAndValidate(attempt 1)
+  if result.needsRegenerate: attempts += 1(上限内なら) → callAndValidate(attempt 2)
+  if result.ok:  TransactWrite: success += 1 / RESV=CONFIRMED / IDEM=DONE            → 200
+  else:          TransactWrite: RESV=RELEASED(success は増えない) / IDEM=FAILED        → 502(charged:false)
+  例外・タイムアウト時も finally で RELEASED。取りこぼしは RESV の TTL 切れで自動返却
 ```
-- 上限到達時のクライアント表示: 生成ボタン無効・「次回更新: 10月1日 0:00」・履歴と設定はそのまま使える。**追加購入の導線は表示しない**(将来の追加枠は `SUB` に `addon` 属性を足すだけで入れられる形にしておく)
-- 残り回数の表示は `GET /v1/me` を画面表示時と生成完了時に取得。残り30回/10回で画面内バナー
+- 「成功時のみ消費」= success は確定時のみ +1。attempts は試行ごと +1(原価上限 月180/日25 に効く)
+- 上限到達時のクライアント: 生成ボタン無効・「次回更新: 10月1日 0:00」・履歴と設定は使える・追加購入導線なし
+- 残り回数表示は `GET /v1/me` を画面表示時と生成完了時に取得。残り30回/10回で画面内バナー
 
-## 5. worker(Bedrock 呼び出しと出力検査)
+## 5. Lambda generate(呼び出しと出力検査)
 
-1. 入力を組み立てる: system = `prompts.ts` の REPLY_SYSTEM(除去後・4,6xx字)、user = 現行 ReplyTab と同じ節構成、画像は S3 から読んで Converse の image ブロックへ(最大6枚)
-2. `Converse`(非ストリーミング)+ `toolConfig: { tools:[reply_result(REPLY_SCHEMA)], toolChoice:{tool} }`、`maxTokens 1024`、`temperature 0.7`(評価と同一。変えるなら再評価)
-3. 出力検査(pricing_eval の `parseProductionReply` / `BANNED_RULES` と**同じ実装を共有パッケージ化**して使う。二重実装しない):
-   - toolUse 無し / JSON 不正 → 1回だけ再試行 → 失敗なら FAILED(MODEL_INVALID_OUTPUT・消費なし)
-   - replies > 3 → **先頭3件に切り詰め**(b2 run の6案事例への対処)、notes に `trimmed`
-   - replies < 3 → 再試行1回 → なお不足なら不足のまま DONE、notes に `shortfall`
-   - 各案の bubbles 1〜3件・why 必須。逸脱した案は除外
-   - スキーマ外の項目(interest_level 等)は削除
-   - 禁止出力(BANNED_RULES)に該当した案は除外。全案該当なら FAILED
-   - `○○`/`〇〇`/`△△` を含む案は notes に `placeholder`(画面で「○○を埋めてください」を表示)。除外はしない(§7-6)
-4. events にメタデータを書く(トークン・費用=公式単価×usage・遅延・requestId)。**本文は書かない**
-5. jobs を DONE(result)にし、同一トランザクションで usage を消費。S3 の入力を削除
+1. 入力検査: 画像 ≤6・各 MIME(JPEG/WebP/PNG)・デコード後サイズ・合計 ≤4.5MB(API Gateway/WAF の上限より先に自前で検査し 413)。テキスト長上限
+2. プロンプト: system = `prompts.ts` の REPLY_SYSTEM(3件固定・プレースホルダ禁止を含む版)、user = 現行 ReplyTab と同じ節構成、画像は Converse の image ブロック
+3. `Converse`(非ストリーミング)+ `toolConfig: { tools:[reply_result(REPLY_SCHEMA: replies minItems/maxItems=3)], toolChoice:{tool} }`、`maxTokens 1024`、`temperature 0.7`(評価と同一。変えるなら再評価)。tool 説明文「返信案は必ずちょうど3件(4件以上・2件以下は禁止)」
+4. **出力検査(共有パッケージ `reply-validate`。pricing_eval の `parseProductionReply` / `checkStyleRules(placeholder)` / `BANNED_RULES` と同一実装)** — モデル出力を無条件で信用しない:
+   - toolUse 無し / JSON 不正 / 必須欠落 → **再生成1回**
+   - 各案を内容検査: bubbles 1〜3件・why 必須・禁止出力なし(BANNED_RULES)・**プレースホルダなし(PLACEHOLDER_RE)** → 通らない案は除外
+   - 通った案が **4件以上 → 先頭3件**(events に `trimmed`)/ **ちょうど3件 → OK** / **3件未満 → 再生成1回**
+   - 再生成後も3件未満・禁止出力・プレースホルダ → **エラー(502)・予約返却・回数消費なし**。2件でも返さない(発注者決定: 再失敗はエラー表示)
+   - スキーマ外の項目(interest_level 等)は落とす
+   - `invalidOutput`(違反時の本文)は**保存しない**(合成評価データ限定の機能。本番禁止)
+5. events にメタデータ(トークン・費用=公式単価×usage・遅延・requestId・outcome・validationFlags)。本文なし
+6. 応答。入力・出力はここで破棄(メモリ)
 
-タイムアウト: worker 90秒。Bedrock 側 SDK タイムアウト 75秒。超過は FAILED(MODEL_TIMEOUT・消費なし)。
+タイムアウト: Bedrock SDK 55秒 → `MODEL_TIMEOUT`(消費なし)。Lambda 75秒。
 
 ## 6. セキュリティ・プライバシー
 
 | 項目 | 設計 |
 |---|---|
-| 秘密 | Stripe 鍵・Webhook 秘密は Secrets Manager。Bedrock は IAM ロール(`bedrock:InvokeModel` を Kimi と予備モデルの ARN に限定) |
-| CORS | 許可オリジンはアプリのオリジンのみ。CSP は現行公開ページと同様 |
-| ログ | 構造化ログにユーザーID(sub)・jobId・requestId・数値のみ。**会話本文・画像・メールアドレスを出さない**。テストで「本文の一部がログに現れたら落ちる」検査を入れる |
-| 保持 | 入力: S3 一時(処理後即削除・最長10分)。結果: jobs TTL 5分。events: 400日(本文なし)。Bedrock: retention none・呼び出しログ無効(公開前に本番アカウントで preflight) |
-| 悪用 | API Gateway スロットリング(IP)・アカウント別 1分5回・使い捨てメールドメイン拒否・登録時と無料枠の生成時に CAPTCHA(Cloudflare Turnstile か hCaptcha。どちらも外部送信先としてポリシーに記載) |
-| 削除要求 | ユーザーの退会でプロフィール・使用量・イベントの userId を削除(Stripe 顧客は Stripe 側で削除) |
+| 秘密 | Stripe 鍵・Webhook 秘密は Secrets Manager。Bedrock は IAM ロール(モデル ARN 限定) |
+| WAF | IP レート制限(例: 5分100リクエスト)・ボディサイズ上限・既知の悪性 IP リスト(マネージドルール)。CAPTCHA は使わない(初期) |
+| CORS/CSP | 許可オリジンは `APP_ORIGIN` のみ。CSP は現行公開ページと同様 |
+| ログ | 構造化ログに sub・idempotencyKey・requestId・数値・outcome のみ。**会話本文・画像・返信内容・メールアドレスを出さない**。テスト: 本文の一部がログ出力に現れたら落ちる |
+| 保持 | 本文: 保持なし(S3 なし・DB なし)。IDEM.response(採用時)は TTL 10分。events: 400日(本文なし)。Bedrock: retention none・呼び出しログ無効(本番アカウントで preflight) |
+| 悪用 | メール認証・WAF・アカウント別 1分5回・同時1件・idempotency key・試行上限 月180/日25・使い捨てメールドメイン拒否 |
+| 削除要求 | 退会でプロフィール・QUOTA・EVENT の userId を削除(Stripe 顧客は Stripe 側で削除) |
 
-## 7. 未決定(発注者判断・工程0 §7 と対応)
-1. 基盤 AWS 東京 / 認証 Cognito / 決済 Stripe — この前提でよいか
-2. **画像付き入力の一時保持(S3・最長10分)を許容するか**(許容しない場合、画像付きは同期経路が必要になり 30秒問題に戻る)
-3. 6案の対処 = 先頭3件に切り詰め でよいか(再試行で1回分の原価が増える案との比較)
-4. 「○○」プレースホルダ = 画面注記(除外しない)でよいか。あわせてプロンプトに「店名を知らないときは聞き返す/未経験の形にする」を足すか(足すなら再評価が要る)
-5. 回数消費 = 成功時のみ でよいか
-6. CAPTCHA のベンダー(外部送信先が1つ増える)
-7. ドメイン・事業者表記・サポート窓口
+## 7. 未決定(残り)
+1. **IDEM.response(検査済み結果を最長10分保持)を採用するか**。採用しない場合、同一 key の再送(画面更新)には 409/「もう一度」で対応し、結果はブラウザ側で保持する(本文をサーバーに一切置かない)。私の推奨: **採用しない**(方針が最も単純。再送の体験は落ちるが初期規模では許容)
+2. 所有ドメイン名・サポート窓口・特商法表記
+3. 統合タイムアウト60秒の上限緩和が認められなかった場合の判断時期(実装着手前に申請し、結果で経路を確定)
 
-## 8. 工程の見取り図(この設計が承認された後)
-- 工程2 詳細設計: OpenAPI 定義・DynamoDB キー設計・IAM ポリシー・Stripe 商品/価格/coupon の定義・失敗時のシーケンス図
-- 工程3 参考調査: Bedrock Converse の画像制限(Kimi の枚数・サイズ)公式値の確認、HTTP API の JWT オーソライザ制約、Cognito パスワードレスの設定、Stripe の日本向け Checkout 表示(税込・特商法リンク)
-- 工程4〜: 実装は**別 GO**。順序案: 認証+me → ジョブ(テキストのみ)→ 画像経路 → 課金 → 回数制限 → 出力検査の共有パッケージ化 → E2E → 破壊的検証(Codex)→ 本番アカウント preflight → プライバシーポリシー/規約/特商法 → 公開
-- 共通: すべての工程で「本文をログに出さないテスト」「回数上限の変異テスト(151回目が通ったら落ちる)」「Webhook 冪等テスト」を最初から書く
+## 8. 工程の見取り図(承認後・実装は別 GO)
+- 工程2 詳細設計: OpenAPI 定義・DynamoDB キー/TransactWrite 条件式・IAM ポリシー・WAF ルール・Stripe 商品/価格/coupon・失敗シーケンス(統合タイムアウト時の返却)
+- 工程3 参考調査: REST API 統合タイムアウト緩和の申請手順と実績、Cognito パスワードレス設定、Bedrock Converse の Kimi 画像制限(枚数・サイズ)公式値、Stripe 日本向け Checkout(税込・特商法リンク)
+- 実装順序案: 共有 `reply-validate` パッケージ(pricing_eval と共用・変異テスト付き)→ 認証+me → generate(テキストのみ)→ 画像経路(圧縮・4.5MB)→ 課金 → 予約方式の回数制限 → E2E → 破壊的検証(Codex)→ 本番 preflight → プライバシーポリシー/規約/特商法 → 公開
+- 最初から書くテスト: 本文非出力テスト・回数上限の変異テスト(151回目/181試行目が通ったら落ちる)・同時2件が通ったら落ちる・idempotency 再送でモデルが2回呼ばれたら落ちる・Webhook 冪等・6案入力を3件に切り詰める/2案入力を再生成する/プレースホルダ案を除外する
+- 公開前: 不安定 E2E(21e2)の原因特定か隔離
 
-## 9. この設計に影響する実測(2026-09-01・確証run b2・2ケースで停止)
-- TXT_SHORT_07: Kimi が tool-use でも **replies 6件** を返した(requestId a6499ef3-39d8-400b-8107-234643e75b37・出力本文は当時未保存)。→ §5-3 の切り詰め/再試行
-- TXT_SHORT_06: 店名を「○○」で出力(3案とも)。捏造はしていない(新規則どおり)が、そのまま送れない。→ §5-3 の placeholder 注記/§7-4
-- 同ケースで検出器が「カレー屋」「ミステリー」を誤検知 → 検出器側を修正済み(業態の一般語・ジャンル語を除外)
+## 9. この設計に影響する実測(2026-09-01)
+- 確証run b2 TXT_SHORT_07: Kimi が tool-use でも replies 6件(requestId a6499ef3…)→ §5-4 の検査・切り詰め・再生成
+- 同 TXT_SHORT_06: 店名・相手の名前を「○○」で出力(3案とも)→ プロンプトに置き換え規則を追加・§5-4 のプレースホルダ除外
+- 強制終了時に進行中の1呼び出しが台帳外になった → 評価器に「呼び出し直前 STARTED 永続化 / UNKNOWN_OUTCOME は worst-case 計上」を実装。本番でも同じ考え方(予約→確定/返却)を §4 に採用

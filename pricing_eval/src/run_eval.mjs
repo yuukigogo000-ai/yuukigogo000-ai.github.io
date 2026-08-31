@@ -24,6 +24,7 @@ import { createBedrockClient, resolveCredentials, buildConverseBody, extractConv
 import { validateReplies } from './validate_output.mjs';
 import { costUsdForAttempt, loadPricing, toJpy, bucketOf, formatUsd } from './calculate_cost.mjs';
 import { runPreflight } from './retention_preflight.mjs';
+import { callStarted, callEnded } from './lib/call_log.mjs';
 import { LEDGER_PATH, datasetHashOf, promptHashOf, configHashOf, ledgerKey, loadLedger, appendLedger } from './lib/ledger.mjs';
 
 const CASES_PATH = 'pricing_eval/cases.json';
@@ -65,9 +66,10 @@ export function readResults(path) {
 const keyOf = (modelKey, caseId) => `${modelKey}::${caseId}`;
 
 /** 1試行。例外は投げず結果として返す。 */
-async function attemptOnce({ client, cfg, model, testCase, attemptNo }) {
+async function attemptOnce({ client, cfg, model, testCase, attemptNo, price = null }) {
   const t0 = Date.now();
   const startedAt = new Date(t0).toISOString();
+  let callId = null;
   try {
     let text, usage, stopReason, requestId = null, httpStatus = null;
     if (client.synthetic) {
@@ -81,9 +83,15 @@ async function attemptOnce({ client, cfg, model, testCase, attemptNo }) {
         maxTokens: cfg.outputMaxTokens,
         temperature: cfg.temperature,
       });
+      // 呼び出し直前に STARTED を永続化(台帳外の呼び出しをなくす)。price 無しの実呼び出しは禁止
+      if (!price) throw new Error('official 価格が無いモデルは呼び出さない');
+      const worst = (16000 / 1e6) * price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * price.outputPerMTokUsd;
+      callId = callStarted({ runId: cfg.runId || 'run_eval', caseId: testCase.id, modelId: model.modelId, attemptNo, worstCaseUsd: worst });
       const res = await client.converse(model.invocationTarget || model.inferenceProfileId || model.modelId, body);
       const ex = extractConverse(res);
       text = ex.text; usage = ex.usage; stopReason = ex.stopReason;
+      callEnded({ callId, status: 'SUCCEEDED', costUsd: costUsdForAttempt(usage, price), requestId: res.$requestId ?? null, httpStatus: res.$httpStatus ?? null });
+      callId = null;
       // 成功時も requestId / HTTP status を記録する。取得できなければ null(捏造しない)
       requestId = res.$requestId ?? null;
       httpStatus = res.$httpStatus ?? null;
@@ -107,6 +115,8 @@ async function attemptOnce({ client, cfg, model, testCase, attemptNo }) {
       failureClass: parsed.ok ? null : 'model_output',
     };
   } catch (e) {
+    // 終端レコードの追記に失敗したら握りつぶさず停止(STARTED が残るのは「中断・不明」のときだけ、という意味を守る)
+    if (callId) callEnded({ callId, status: 'FAILED', costUsd: null, requestId: e.requestId ?? null, httpStatus: e.status ?? null, failureKind: e.code ?? e.name ?? null });
     return {
       attemptNo,
       latencyMs: Date.now() - t0,
@@ -163,7 +173,7 @@ export function contractStopError(row) {
 /** 1ケースを実行(自動再試行は最大1回) */
 export async function runCase({ client, cfg, model, testCase, price }) {
   const attempts = [];
-  let a = await attemptOnce({ client, cfg, model, testCase, attemptNo: 1 });
+  let a = await attemptOnce({ client, cfg, model, testCase, attemptNo: 1, price });
   attempts.push(a);
 
   // 再試行してよいのは 429 / 一時的5xx / タイムアウトのみ(各最大1回)
@@ -173,7 +183,7 @@ export async function runCase({ client, cfg, model, testCase, price }) {
   if (!a.ok && cfg.maxAutoRetries >= 1 && retryAllowed) {
     // rate limit / 5xx は指数backoff を挟む
     if (transient) await sleep(cfg.backoffMs ?? 1000);
-    const b = await attemptOnce({ client, cfg, model, testCase, attemptNo: 2 });
+    const b = await attemptOnce({ client, cfg, model, testCase, attemptNo: 2, price });
     attempts.push(b);
     a = b;
   }
@@ -348,6 +358,7 @@ async function main() {
 
   // --- run ディレクトリ / resume ---
   const runId = args['run-id'] || newRunId(stage);
+  cfg.runId = runId; // call_log の STARTED に run を刻む
   const dir = join(RUNS_DIR, runId);
   mkdirSync(dir, { recursive: true });
   const resultsPath = join(dir, 'results.jsonl');

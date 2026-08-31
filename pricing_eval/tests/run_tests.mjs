@@ -749,7 +749,8 @@ t('36. judgeAvailability: 全項目 AVAILABLE/AUTHORIZED のみ ok(変異検出)
 });
 
 console.log('\n== 本番プロンプト追従テスト(fidelity) ==');
-const { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse, fidelityStopReason } = await import('../src/lib/fidelity_checks.mjs');
+const { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse, fidelityStopReason, PLACEHOLDER_RE } = await import('../src/lib/fidelity_checks.mjs');
+const { callStarted, callEnded, loadCallLog, unknownOutcomes, unknownOutcomeWorstCaseUsd, unaccountedCalls, unaccountedWorstCaseUsd, recordedSpendUsd } = await import('../src/lib/call_log.mjs');
 const { findUngroundedNames, PROMPT_EXAMPLE_NAMES } = await import('../../reply-ai-app/src/lib/ungrounded.mjs');
 const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases, assertRunPreconditions } = await import('../src/fidelity_eval.mjs');
 
@@ -814,6 +815,16 @@ t('49. 捏造検出: 入力に無い固有名詞・例文名を検知し、根�
   assertEq(hit3.includes('カレー屋'), MUTATE ? true : false, '業態の一般語「カレー屋」を店名として誤検知');
   assert(!hit3.includes('ミステリー'), 'ジャンル語を誤検知');
   assert(hit3.includes('山田亭'), '固有名詞の店名を見逃した');
+  // 文脈規則(b2 recheck の実測 FP「1トピックに絞る」): 体験・場所の文脈が無いカタカナ語は挙げない。文脈があれば挙げる
+  const ctx = findUngroundedNames(['相手が短文なら次は1トピックに絞る', 'ルミナスって知ってます?'], grounding);
+  assertEq(ctx.length, MUTATE ? 1 : 0, `文脈なしのカタカナ語を誤検知: ${JSON.stringify(ctx)}`);
+  assert(findUngroundedNames(['駅前のルミナスでランチしました'], grounding).includes('ルミナス'), '場所語+固有名詞を見逃した');
+  assert(findUngroundedNames(['ルミナスに行ってきました'], grounding).includes('ルミナス'), '移動動詞つきの固有名詞を見逃した');
+  assert(findUngroundedNames(['先週ルミナスで飲んだんですけど'], grounding).includes('ルミナス'), '飲食動詞つきの固有名詞を見逃した');
+  // Codex r5 MEDIUM: 動詞なしの体験談(良かった/最高/この前の)も拾う
+  for (const t of ['アクアマリンめっちゃ良かった', 'アクアマリンで最高だった', 'この前のアクアマリン', 'アクアマリンの写真良かった']) {
+    assert(findUngroundedNames([t], grounding).includes('アクアマリン'), `体験談の言い回しを見逃した: ${t}`);
+  }
   // violations 形式のラッパー
   const v = checkUngroundedNames({ replies: [{ bubbles: ['アクアマリン行きました'], why: 'w' }], advice: 'a' }, grounding);
   assertEq(v.length, 1);
@@ -847,6 +858,63 @@ t('51. fidelityStopReason: schema違反/interest_level混入/捏造/禁止出力
   const sys = { success: false, failureKind: 'http_500', failureClass: 'system', attempts: [{ error: 'InternalServerException' }] };
   assertEq(fidelityStopReason(sys), null, 'システム系失敗を違反扱いにしている(contractStopErrorの領分)');
   assertEq(fidelityStopReason(null), null, 'null行');
+  const ph = { success: true, production: goodProd, fidelity: { violations: [{ rule: 'placeholder', detail: '案1通1: 「○○」' }] } };
+  assertEq(fidelityStopReason(ph)?.kind, 'placeholder', 'プレースホルダを停止理由にしない');
+});
+
+t('53. placeholder: ○○/〇〇/［店名］/〈場所〉/【店名】を検知し、通常文・単独の○は誤検知しない(変異検出)', () => {
+  const bad = checkStyleRules({ situation: 's', advice: 'a', replies: [
+    { bubbles: ['カレー屋は○○ってところです'], why: 'w' },
+    { bubbles: ['〇〇さんは読書派ですか', '［店名］おすすめです'], why: 'w' },
+    { bubbles: ['〈場所〉で待ち合わせしましょう', '【店名】行きません?', '(店名)が気になってて'], why: 'w' },
+  ] });
+  const hits = bad.violations.filter((v) => v.rule === 'placeholder');
+  assertEq(hits.length, MUTATE ? 5 : 6, `プレースホルダ検知数: ${JSON.stringify(hits)}`);
+  const clean = checkStyleRules({ situation: 's', advice: 'a', replies: [
+    { bubbles: ['気になるお店があるので今度行きません?'], why: 'w' },
+    { bubbles: ['最近読んだ本の話しましょ', '○はつけなくていいです笑'], why: 'w' },
+    { bubbles: ['[笑]じゃなくて笑でいいですよ', 'それ気になる', '週末どうですか'], why: 'w' },
+  ] });
+  assertEq(clean.violations.filter((v) => v.rule === 'placeholder').length, 0, `誤検知: ${JSON.stringify(clean.violations)}`);
+  assert(PLACEHOLDER_RE.test('△△に行こう') && PLACEHOLDER_RE.test('××駅'), '△△/××');
+  // Codex r4: ASCII 系は検知、括弧+通常語(場所による/名前負け)・(渋谷)・（例）は誤検知しない
+  for (const t of ['XXに行きません?', 'TBDです', '___駅で', '○○○さん']) assert(PLACEHOLDER_RE.test(t), `ASCII/連続記号を見逃した: ${t}`);
+  for (const t of ['(場所による)と思います', '(名前負け)ですね', '(渋谷)で集合', '（例）みたいな', 'Excelって', 'そのxは']) assert(!PLACEHOLDER_RE.test(t), `誤検知: ${t}`);
+});
+
+t('54. call_log: STARTED は終端が無ければ UNKNOWN_OUTCOME として worst-case 計上され、終端があれば計上されない(変異検出)', () => {
+  const tmp = join(TMP, `call_log_${Date.now()}.jsonl`);
+  const id1 = callStarted({ runId: 'r', caseId: 'C1', modelId: 'm', attemptNo: 1, worstCaseUsd: 0.015 }, tmp);
+  const id2 = callStarted({ runId: 'r', caseId: 'C2', modelId: 'm', attemptNo: 1, worstCaseUsd: 0.015 }, tmp);
+  callEnded({ callId: id1, status: 'SUCCEEDED', costUsd: 0.004, requestId: 'req', httpStatus: 200 }, tmp);
+  appendFileSync(tmp, '{broken json\n');
+  appendFileSync(tmp, JSON.stringify({ callId: 'manual', status: 'UNKNOWN_OUTCOME', runId: 'r', caseId: 'C3', modelId: 'm', worstCaseUsd: 0.02 }) + '\n');
+  const { rows, broken } = loadCallLog(tmp);
+  assertEq(broken, 1, '壊れた行を数えていない');
+  const unk = unknownOutcomes(rows);
+  assertEq(unk.map((u) => u.callId).sort().join(','), MUTATE ? id1 : ['manual', id2].sort().join(','), `UNKNOWN 判定: ${JSON.stringify(unk.map((u) => u.callId))}`);
+  assertEq(Math.round(unknownOutcomeWorstCaseUsd(rows) * 1e6), 35000, 'worst-case 合計');
+  // 台帳外の呼び出しを構造的に禁止: 必須項目欠落・worstCase 無しは throw
+  let threw = 0;
+  for (const bad of [{ runId: 'r', caseId: 'C', modelId: '', worstCaseUsd: 1 }, { runId: 'r', caseId: 'C', modelId: 'm', worstCaseUsd: 0 }]) {
+    try { callStarted(bad, tmp); } catch { threw++; }
+  }
+  assertEq(threw, 2, '不完全な STARTED を通している');
+  let threw2 = false; try { callEnded({ callId: id2, status: 'DONE' }, tmp); } catch { threw2 = true; }
+  assert(threw2, '不正な終端 status を通している');
+  // Codex r5 HIGH: 終端はあるが費用 null の呼び出しも worst-case で計上し続ける(再起動後も消えない)
+  const id3 = callStarted({ runId: 'r', caseId: 'C4', modelId: 'm', attemptNo: 1, worstCaseUsd: 0.01 }, tmp);
+  callEnded({ callId: id3, status: 'FAILED', costUsd: null, failureKind: 'timeout' }, tmp);
+  const rows2 = loadCallLog(tmp).rows;
+  const un = unaccountedCalls(rows2);
+  assert(un.some((u) => u.callId === id3 && u.reason === 'TERMINAL_COST_UNKNOWN'), '費用null の終端呼び出しを計上していない');
+  assert(!un.some((u) => u.callId === id1), '費用が分かっている呼び出しを計上している');
+  assertEq(Math.round(unaccountedWorstCaseUsd(rows2) * 1e6), MUTATE ? 35000 : 45000, '費用不明の合計(unknown 0.035 + null終端 0.01)');
+  // recordedSpendUsd は試行単位: 1試行が費用不明でも判明している試行の費用は数える(b3 TXT_SHORT_07: timeout+成功で effectiveCostUsd=null だった)
+  const rdir = join(TMP, `runs_${Date.now()}`); mkdirSync(join(rdir, 'x'), { recursive: true });
+  writeFileSync(join(rdir, 'x', 'results.jsonl'), JSON.stringify({ effectiveCostUsd: null, attempts: [{ costUsd: null }, { costUsd: 0.005 }] }) + '\n' + JSON.stringify({ effectiveCostUsd: 0.002, attempts: [{ costUsd: 0.002 }] }) + '\n');
+  writeFileSync(join(rdir, 'x', 'probe_results.jsonl'), JSON.stringify({ calculatedCostUsd: '0.001' }) + '\n');
+  assertEq(Math.round(recordedSpendUsd(rdir).sum * 1e6), MUTATE ? 3000 : 8000, '記録済み費用の合計(0.005+0.002+0.001)');
 });
 
 t('52. assertRunPreconditions: 全条件一致でのみ空、region/retention/IAM主体/アカウント/ケースハッシュ/予算/既発生費用のどれが崩れても blocker(変異検出)', () => {
@@ -855,6 +923,12 @@ t('52. assertRunPreconditions: 全条件一致でのみ空、region/retention/IA
   const expected = { arnTail: '...user/replier-eval-cli', accountMask: '****1901', datasetHash: 'abc' };
   const base = { preflight: pre, cfg, datasetHash: 'abc', expected, priorSpentUsd: 1.1, priorSpentGiven: true };
   assertEq(assertRunPreconditions(base).length, MUTATE ? 1 : 0, `正常条件で blocker: ${assertRunPreconditions(base).join(' / ')}`);
+  // prior は記録済み費用と一致しなければ blocker(二重計上・過少申告の両方)
+  const withRec = { ...base, expected: { ...expected, recordedSpendUsd: 1.1 } };
+  assertEq(assertRunPreconditions(withRec).length, 0, '一致する prior を弾いている');
+  assert(assertRunPreconditions({ ...withRec, priorSpentUsd: 1.1152064 }).length >= 1, 'UNKNOWN込みの prior(二重計上)を通している');
+  assert(assertRunPreconditions({ ...withRec, priorSpentUsd: 1.0 }).length >= 1, '過少な prior を通している');
+  assert(assertRunPreconditions({ ...base, callLogBroken: 1 }).length >= 1, 'call_log の壊れた行を通している');
   const variants = [
     { ...base, cfg: { ...cfg, region: 'us-east-1' } },
     { ...base, preflight: { ...pre, region: 'us-west-2' } },
@@ -883,6 +957,11 @@ await (async () => {
     assert(prod.REPLY_SCHEMA.required.includes('replies') && prod.REPLY_SCHEMA.required.includes('situation'), 'schema抽出');
     assertEq('interest_level' in prod.REPLY_SCHEMA.properties, MUTATE ? true : false, '除去済みinterest_levelがschemaに残っている');
     assertEq(/interest_level/.test(prod.REPLY_SYSTEM), false, '本番プロンプト本文に interest_level が残っている');
+    assertEq(prod.REPLY_SCHEMA.properties.replies.minItems, 3, 'replies.minItems=3 が無い');
+    assertEq(prod.REPLY_SCHEMA.properties.replies.maxItems, 3, 'replies.maxItems=3 が無い');
+    assert(/必ずちょうど3件/.test(prod.REPLY_SYSTEM), 'プロンプトに「必ずちょうど3件」が無い');
+    assert(/穴埋め記号を返信に入れない/.test(prod.REPLY_SYSTEM), 'プロンプトにプレースホルダ禁止が無い');
+    assert(/例文にある「〇〇」「△△」は説明用の記号/.test(prod.REPLY_SYSTEM), '例文の〇〇が説明用記号だという注記が無い');
     assert(/数値やパーセント・「脈あり\/脈なし」の断定で評価しない/.test(prod.REPLY_SYSTEM), '脈あり度の数値評価禁止の規則が本番プロンプトに無い');
   });
   t('47. buildProductionUserPrompt: ReplyTab.tsx と同じ節構成+schemaテキスト(変異検出)', () => {

@@ -16,6 +16,7 @@ import { BANNED_RULES } from '../validate_output.mjs';
  *  - schema違反(schema_failure / wrong_reply_count / json_parse_failure / no_tool_use_block)
  *  - interest_level の混入(除去済み項目の出力)
  *  - 捏造(ungrounded_name)
+ *  - 未解決プレースホルダ(placeholder: ○○・［店名］等。本番表示禁止)
  *  - 禁止出力(validate_output の critical 規則: 脈あり度・格付け・センシティブ推定・人物特定・操作・自動送信)を
  *    返信・situation・advice の全文に適用
  * システム系失敗(4xx/5xx/timeout)はここでは扱わない(contractStopError が担当)。
@@ -36,6 +37,8 @@ export function fidelityStopReason(row) {
   }
   const ung = (row.fidelity?.violations || []).filter((v) => v.rule === 'ungrounded_name');
   if (ung.length) return { kind: 'fabrication', detail: ung.map((v) => v.detail).join(' | ') };
+  const ph = (row.fidelity?.violations || []).filter((v) => v.rule === 'placeholder');
+  if (ph.length) return { kind: 'placeholder', detail: ph.map((v) => v.detail).join(' | ') };
   const texts = [];
   if (prod) {
     for (const r of prod.replies || []) for (const b of r.bubbles || []) texts.push(String(b));
@@ -112,6 +115,8 @@ const FORBIDDEN_PHRASES = [
   'よろしくお願いいたします', 'お仕事お疲れ様です', '尊敬します',
 ];
 const FORBIDDEN_EMOJI = ['😊', '😅', '💦', '✨', '❗', '🥺', '♪'];
+// 未解決プレースホルダ(本番表示禁止・2026-09-01 発注者決定)。○○/〇〇/◯◯/△△/××、［店名］/[店名]/〈場所〉/【店名】/(店名) のように括弧+穴埋め語。[笑] のような括弧+通常語は対象外
+export const PLACEHOLDER_RE = new RegExp('[○〇◯]{2,}|△△|▲▲|××|ＸＸ|□□|■■' + '|(?:^|[^A-Za-z])(?:XX+|xx+|TBD|NAME|PLACE)(?![A-Za-z])|_{2,}|＿{2,}' + '|［(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)］|\\[(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)\\]|〈(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)〉|《(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)》|【(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)】|[(（](?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)[)）]' + '|(?:店名|場所|地名|名前)を?(?:入力|記入|入れ)');
 const EMOJI_RE = /\p{Extended_Pictographic}/gu;
 
 /**
@@ -154,6 +159,8 @@ export function checkStyleRules(data) {
         if (b.includes(fe)) v.push({ rule: 'forbidden_emoji', detail: `案${i + 1}通${j + 1}: ${fe}` });
       }
       if (b.length > 120) v.push({ rule: 'bubble_too_long', detail: `案${i + 1}通${j + 1}: ${b.length}字` });
+      const ph = b.match(PLACEHOLDER_RE);
+      if (ph) v.push({ rule: 'placeholder', detail: `案${i + 1}通${j + 1}: 「${ph[0]}」(未解決プレースホルダ)` });
     }
   }
   return {

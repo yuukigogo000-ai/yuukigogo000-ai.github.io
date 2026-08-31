@@ -59,7 +59,7 @@ async function main() {
         temperature: cfg.temperature,
       });
       const toolCfg = (choice) => ({
-        tools: [{ toolSpec: { name: 'reply_result', description: '状況分析・返信案・アドバイスの出力', inputSchema: { json: REPLY_SCHEMA } } }],
+        tools: [{ toolSpec: { name: 'reply_result', description: '状況分析・返信案・アドバイスの出力。返信案(replies)は必ずちょうど3件(4件以上・2件以下は禁止)', inputSchema: { json: REPLY_SCHEMA } } }],
         toolChoice: choice,
       });
 
