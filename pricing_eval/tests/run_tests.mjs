@@ -965,6 +965,12 @@ t('55. recordedSpendUsd: 台帳に費用つき終端がある呼び出しは台�
   // 期待: 台帳 0.004+0.003+0.010 + results のうち台帳に無い 0.002 = 0.019(a/b を二重に数えない・d を落とさない・e は含めない)
   assertEq(Math.round(r.sum * 1e6), MUTATE ? 26000 : 19000, `突合結果 ${r.sum}`);
   assertEq(Math.round(r.fromCallLog * 1e6), 17000, '台帳側の合計');
+  // r7: 同じ callId の終端が重複しても1回だけ(費用の大きい方)。requestId 突合は modelId が一致するときだけ
+  const log2 = [...log, { callId: 'd', status: 'SUCCEEDED', costUsd: 0.012, requestId: 'rq-d' }, { callId: 'b', status: 'STARTED', modelId: 'mA' }];
+  const r2 = recordedSpendUsd(rdir, log2);
+  assertEq(Math.round(r2.fromCallLog * 1e6), MUTATE ? 29000 : 19000, `終端重複を畳めていない ${r2.fromCallLog}`);
+  writeFileSync(join(rdir, 'x', 'results.jsonl'), JSON.stringify({ modelId: 'mB', attempts: [{ requestId: 'rq-b', costUsd: 0.003 }] }) + '\n');
+  assertEq(Math.round(recordedSpendUsd(rdir, log2).sum * 1e6), 22000, '別モデルの試行を requestId だけで台帳に吸収している(0.019+0.003 になるべき)');
 });
 
 t('56. budgetAllows: 予約(reserved)込みで判定し、並行2件が同じ spent を見ても上限を超えない(変異検出)', () => {

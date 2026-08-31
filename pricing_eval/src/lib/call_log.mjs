@@ -67,10 +67,19 @@ export function unknownOutcomes(rows) {
 export function recordedSpendUsd(runsDir = 'pricing_eval/runs', callLogRows = loadCallLog().rows) {
   // 台帳(call_log)に費用つき終端がある呼び出しは台帳から数える。results.jsonl の試行は台帳に無いものだけ数える
   // (クラッシュで終端は書けたが results に届かなかった呼び出しを落とさない。Codex r6 HIGH)。同一呼び出しは callId か requestId で突合し1回だけ数える
-  const termCallIds = new Set(); const termReqIds = new Set(); let fromCallLog = 0;
+  // 終端は callId ごとに1件に畳む(重複行は費用の大きい方=保守的)。requestId での突合は STARTED の modelId が一致するときだけ
+  const startedById = new Map(callLogRows.filter((r) => r.status === 'STARTED' || r.status === 'UNKNOWN_OUTCOME').map((r) => [r.callId, r]));
+  const termByCallId = new Map();
   for (const r of callLogRows) {
     if (!TERMINAL.has(r.status) || typeof r.costUsd !== 'number' || !Number.isFinite(r.costUsd)) continue;
-    termCallIds.add(r.callId); if (r.requestId) termReqIds.add(r.requestId); fromCallLog += r.costUsd;
+    const prev = termByCallId.get(r.callId);
+    if (!prev || r.costUsd > prev.costUsd) termByCallId.set(r.callId, r);
+  }
+  const termCallIds = new Set(termByCallId.keys());
+  const termReqToModel = new Map(); let fromCallLog = 0;
+  for (const [cid, r] of termByCallId) {
+    fromCallLog += r.costUsd;
+    if (r.requestId) termReqToModel.set(r.requestId, startedById.get(cid)?.modelId ?? null);
   }
   let sum = fromCallLog; let rows = 0;
   for (const d of readdirSync(runsDir, { withFileTypes: true })) {
@@ -85,7 +94,9 @@ export function recordedSpendUsd(runsDir = 'pricing_eval/runs', callLogRows = lo
         // 試行単位で数える(ケースの effectiveCostUsd は「どれか1試行の費用が不明」で null になり、判明している試行の費用まで落ちる)
         if (Array.isArray(r.attempts) && r.attempts.length) {
           for (const a of r.attempts) {
-            if ((a.callId && termCallIds.has(a.callId)) || (a.requestId && termReqIds.has(a.requestId))) continue; // 台帳側で計上済み
+            const reqModel = a.requestId ? termReqToModel.get(a.requestId) : undefined;
+            const matchedByReq = reqModel !== undefined && (reqModel == null || reqModel === (a.modelId ?? r.modelId ?? null));
+            if ((a.callId && termCallIds.has(a.callId)) || matchedByReq) continue; // 台帳側で計上済み
             const c = a.costUsd ?? (a.calculatedCostUsd != null ? Number(a.calculatedCostUsd) : null);
             if (typeof c === 'number' && Number.isFinite(c)) sum += c;
           }

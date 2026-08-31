@@ -443,6 +443,16 @@ async function main() {
       let row;
       try { row = await runCase({ client, cfg, model, testCase, price }); }
       finally { if (guarded) reservedUsd -= perCallWorstUsd; }
+      // 実費の計上は runCase 直後(results 追記・台帳・契約停止判定より前)。後段が throw しても他ワーカーが過少な spent を見ない
+      // 費用が分かった試行は実費、分からない試行(usage 無し)は worst-case(甘く見積もらない)。USD 計上は価格があれば行う(為替の有無に依らない)
+      if (price) {
+        const perAttemptWorst = perCallWorstUsd / (1 + cfg.maxAutoRetries);
+        spentUsd += (row.attempts || []).reduce((s, x) => s + (typeof x.costUsd === 'number' ? x.costUsd : perAttemptWorst), 0);
+        if (cfg.usdJpy && spentUsd * cfg.usdJpy > cfg.maxBudgetJpy) {
+          appendFileSync(resultsPath, JSON.stringify({ ...row, runId, stage, finalFailure: !row.success }) + '\n');
+          throw new Error(`予算上限 ${cfg.maxBudgetJpy} 円に到達したため中断します`);
+        }
+      }
       row.runId = runId; row.stage = stage;
       row.finalFailure = !row.success; // 再試行後も失敗 = 確定失敗。resume で再実行しない。
       appendFileSync(resultsPath, JSON.stringify(row) + '\n');
@@ -462,14 +472,6 @@ async function main() {
       if (stopMsg) throw new Error(stopMsg);
       total++; if (!row.success) errors++;
       if (row.effectiveCostUsd == null) unknownCostRows++;
-      // 実費の計上: 費用が分かった試行は実費、分からない試行(usage 無し)は worst-case(甘く見積もらない)
-      if (guarded) {
-        const perAttemptWorst = perCallWorstUsd / (1 + cfg.maxAutoRetries);
-        spentUsd += (row.attempts || []).reduce((s, x) => s + (typeof x.costUsd === 'number' ? x.costUsd : perAttemptWorst), 0);
-        if (cfg.usdJpy && spentUsd * cfg.usdJpy > cfg.maxBudgetJpy) {
-          throw new Error(`予算上限 ${cfg.maxBudgetJpy} 円に到達したため中断します`);
-        }
-      }
     });
     smokeStats.set(model.key, { total, errors, errorRate: total ? errors / total : 0 });
   }
