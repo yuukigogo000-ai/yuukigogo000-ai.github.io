@@ -1,0 +1,17 @@
+{
+  "_comment": "Anthropic API(第一者)直接呼び出し用の公式価格。provider=anthropic のときだけ使う(Bedrock の原価計算には使わない)。出典は Anthropic 公式 Model pricing 表。cache 列は prompt caching の 5分 write(1.25x)/ read(0.1x)。",
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+  "fetchedAt": "2026-08-31T14:20:00Z",
+  "models": {
+    "claude-opus-5": {
+      "kind": "official_exact",
+      "provider": "anthropic",
+      "inputPerMTokUsd": 5.0,
+      "outputPerMTokUsd": 25.0,
+      "cacheWritePerMTokUsd": 6.25,
+      "cacheReadPerMTokUsd": 0.5,
+      "source": "https://platform.claude.com/docs/en/about-claude/pricing",
+      "fetchedAt": "2026-08-31T14:20:00Z"
+    }
+  }
+}

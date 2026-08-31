@@ -756,7 +756,9 @@ const { callStarted, callEnded, loadCallLog, unknownOutcomes, unknownOutcomeWors
 const { findUngroundedNames, findFabricationHints, PROMPT_EXAMPLE_NAMES, KNOWN_BRANDS, KNOWN_PLACES } = await import('../../reply-ai-app/src/lib/ungrounded.mjs');
 const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases, assertRunPreconditions, expandRepeats, percentiles, evaluateConfirmCriteria, parsePassCriteria, expectedDatasetHashFor, DEFAULT_DATASET, SYNTHETIC_GENERATORS } = await import('../src/fidelity_eval.mjs');
 const { generateFab10Cases, FAB10_CATEGORIES } = await import('../src/generate_cases_fab10.mjs');
-const { resolveModelPrice, ESTIMATE_SAFETY } = await import('../src/fidelity_eval.mjs');
+const { resolveModelPrice, ESTIMATE_SAFETY, assertAnthropicRunPreconditions, ANTHROPIC_PRICING_PATH } = await import('../src/fidelity_eval.mjs');
+const anth = await import('../src/adapters/anthropic.mjs');
+const { costUsdForAttempt: costAttempt } = await import('../src/calculate_cost.mjs');
 
 const goodProd = {
   situation: '会話は序盤で温度は普通', advice: '次は軽い質問で続ける',
@@ -886,6 +888,32 @@ t('63. resolveModelPrice: official が無いモデルは既定で呼び出し禁
   // official があれば allowEstimated でも official を使う(推定で上書きしない)
   assertEq(resolveModelPrice({ pricing, id: 'm.official', invocationTarget: 'm.official', allowEstimated: true }).priceKind, 'official_exact');
   assertEq(resolveModelPrice({ pricing, id: 'm.none', invocationTarget: 'm.none', allowEstimated: true }).price, null, '価格が無いモデルを通した');
+});
+
+t('64. Anthropic 直接アダプタ: api.ts と同じボディ(json_schema・cache_control・temperature)・usage 抽出・cache 課金・キー非漏洩・実行前再確認 fail-closed(変異検出)', () => {
+  const body = anth.buildMessagesBody({ model: 'claude-opus-5', system: 'SYS', userText: 'U', imagePaths: [], maxTokens: 1024, temperature: 0.2, schema: { type: 'object' } });
+  assertEq(body.output_config?.format?.type, MUTATE ? 'json' : 'json_schema', 'schema の縛り方が api.ts と違う');
+  assertEq(body.system?.[0]?.cache_control?.type, 'ephemeral', 'cache_control が api.ts と違う');
+  assertEq(body.temperature, 0.2); assertEq(body.messages[0].content.at(-1).text, 'U'); assertEq(body.model, 'claude-opus-5');
+  const ex = anth.extractMessages({ content: [{ type: 'text', text: '{"a":1}' }], stop_reason: 'end_turn', usage: { input_tokens: 500, output_tokens: 400, cache_read_input_tokens: 3500, cache_creation_input_tokens: 0 } });
+  assertEq(ex.text, '{"a":1}'); assertEq(ex.usage.inputTokens, 500); assertEq(ex.usage.cacheReadTokens, 3500); assertEq(ex.usage.cacheWriteTokens, 0);
+  const price = JSON.parse(readFileSync(ANTHROPIC_PRICING_PATH, 'utf8')).models['claude-opus-5'];
+  assert(price.source && price.fetchedAt && price.cacheReadPerMTokUsd != null, '価格表に出典/cache 単価が無い');
+  // 500×5 + 400×25 + 3500×0.5 = 0.0025+0.01+0.00175 = 0.01425
+  assertEq(Math.round(costAttempt(ex.usage, price) * 1e6), MUTATE ? 12500 : 14250, 'cache 読み取りが原価に入っていない');
+  assertEq(Math.round(costAttempt({ inputTokens: 500, outputTokens: 400, cacheReadTokens: null, cacheWriteTokens: null }, price) * 1e6), 12500, 'cache 無しの計算');
+  // キー: 環境変数優先→ファイル。値は source 以外に出さない。無ければ null
+  const kf = join(TMP, 'k.key'); mkdirSync(TMP, { recursive: true }); writeFileSync(kf, '\uFEFFsk-ant-testkey-abcdef\n');
+  const k1 = anth.loadAnthropicApiKey({ env: {}, keyFile: kf }); assertEq(k1.source, 'file'); assertEq(k1.apiKey, 'sk-ant-testkey-abcdef', 'BOM/改行を落とせていない');
+  assertEq(anth.loadAnthropicApiKey({ env: { ANTHROPIC_API_KEY: 'sk-ant-env' }, keyFile: kf }).source, 'env');
+  assertEq(anth.loadAnthropicApiKey({ env: {}, keyFile: join(TMP, 'nope.key') }), null);
+  assert(!anth.sanitizeAnthropicMessage('invalid x-api-key: sk-ant-api03-SECRETSECRETSECRET').includes('SECRET'), 'エラー文にキーが残る');
+  let threw = false; try { anth.createAnthropicClient({ apiKey: '' }); } catch { threw = true; } assert(threw, 'キー無しでクライアントを作れてしまう');
+  // 実行前再確認: 全部そろえば通る。1つ欠けるごとに止まる
+  const okArgs = { keySource: 'file', modelVerified: true, retentionAccepted: true, datasetHash: 'h1', expectedDatasetHash: 'h1', cfg: { maxBudgetJpy: 10000 }, priorSpentUsd: 1, priorSpentGiven: true, recordedSpend: 1, callLogBroken: 0, syntheticDataset: true };
+  assertEq(assertAnthropicRunPreconditions(okArgs).length, 0, `正常条件で止まる: ${assertAnthropicRunPreconditions(okArgs)}`);
+  const bad = [{ keySource: null }, { modelVerified: false }, { retentionAccepted: false }, { expectedDatasetHash: 'h2' }, { cfg: { maxBudgetJpy: 20000 } }, { priorSpentGiven: false }, { recordedSpend: 1.5 }, { callLogBroken: 1 }, { syntheticDataset: false }];
+  bad.forEach((b, i) => assert(assertAnthropicRunPreconditions({ ...okArgs, ...b }).length >= (MUTATE ? 2 : 1), `欠け ${i} で止まらない`));
 });
 
 t('61. confirm10: 合格条件セット(10件・再生成≤1)と dataset ハッシュ期待値(別datasetは --dataset-hash 必須)(変異検出)', () => {

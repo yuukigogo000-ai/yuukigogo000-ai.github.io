@@ -25,6 +25,7 @@ import { pathToFileURL } from 'node:url';
 import { loadConfig, parseArgs, isCliEntry } from './lib/config.mjs';
 import { logInfo, logWarn, logError } from './lib/log.mjs';
 import { createBedrockClient, resolveCredentials, buildConverseBody, extractConverse, sanitizeAwsMessage } from './adapters/bedrock.mjs';
+import { createAnthropicClient, loadAnthropicApiKey, buildMessagesBody, extractMessages, sanitizeAnthropicMessage } from './adapters/anthropic.mjs';
 import { costUsdForAttempt, loadPricing, formatUsd } from './calculate_cost.mjs';
 import { contractStopError, readResults } from './run_eval.mjs';
 import { parseProductionReply, checkStyleRules, checkUngroundedNames, checkFabricationHints, extractToolUse } from './lib/fidelity_checks.mjs';
@@ -79,6 +80,25 @@ export function resolveModelPrice({ pricing, id, invocationTarget, modelName, al
     priceKind: `derived_estimate(×${ESTIMATE_SAFETY} 安全係数・AWS公式未確認・出典 ${est.source})`,
   };
 }
+
+/**
+ * Anthropic 第一者API 経路の実行前再確認(fail-closed)。AWS の preflight(retention/主体/リージョン)の代わりに:
+ *  キーの出所あり / モデル実在(GET /v1/models で確認済み) / 保持ポリシーの明示受諾 / dataset ハッシュ / 予算 / 既発生費用の突合 / 台帳健全
+ */
+export function assertAnthropicRunPreconditions({ keySource, modelVerified, retentionAccepted, datasetHash, expectedDatasetHash, cfg, priorSpentUsd, priorSpentGiven, recordedSpend, callLogBroken = 0, syntheticDataset }) {
+  const b = [];
+  if (!keySource) b.push('Anthropic API キーが無い(環境変数 ANTHROPIC_API_KEY かキーファイル)');
+  if (modelVerified !== true) b.push('モデルの実在確認(GET /v1/models)が通っていない');
+  if (retentionAccepted !== true) b.push('--accept-provider-retention が無い(この経路は retention none ではない。合成データ限定で明示受諾が必要)');
+  if (syntheticDataset !== true) b.push('合成データでない');
+  if (!expectedDatasetHash || datasetHash !== expectedDatasetHash) b.push(`dataset のハッシュが期待値と異なる(${String(datasetHash).slice(0, 12)}… ≠ ${String(expectedDatasetHash).slice(0, 12)}…)`);
+  if (!(cfg?.maxBudgetJpy > 0) || cfg.maxBudgetJpy > 10000) b.push('予算上限が 0 < x ≤ 10,000 円でない');
+  if (!priorSpentGiven) b.push('--prior-spent-usd が未指定');
+  if (recordedSpend != null && Math.abs(priorSpentUsd - recordedSpend) > 1e-6) b.push(`--prior-spent-usd(${priorSpentUsd})が成果物の記録済み費用合計(${recordedSpend})と一致しない`);
+  if (callLogBroken) b.push(`call_log に壊れた行が ${callLogBroken} 件`);
+  return b;
+}
+export const ANTHROPIC_PRICING_PATH = 'pricing_eval/pricing_anthropic.json';
 
 /** 合格条件セット。confirm30 = 30件・再生成≤3(2026-09-01 A+C)/ confirm10 = 10件・再生成≤1(Qwen 限定評価) */
 export function parsePassCriteria(name) {
@@ -227,6 +247,9 @@ async function main() {
   if (maxFirstViolations != null && (!Number.isInteger(maxFirstViolations) || maxFirstViolations < 0)) throw new Error('max-first-violations は0以上の整数');
   const passCriteria = args['pass-criteria'] ? String(args['pass-criteria']) : null;
   const criteriaSpec = parsePassCriteria(passCriteria);
+  const provider = args.provider ? String(args.provider) : 'bedrock';
+  if (!['bedrock', 'anthropic'].includes(provider)) throw new Error(`未知の provider: ${provider}(bedrock / anthropic)`);
+  const retentionAccepted = args['accept-provider-retention'] === true;
   const datasetPath = args.dataset ? String(args.dataset) : DEFAULT_DATASET;
   const perCategory = args['per-category'] === undefined ? CASES_PER_CATEGORY : Number(args['per-category']);
   if (!Number.isInteger(perCategory) || perCategory < 1) throw new Error('per-category は1以上の整数');
@@ -252,7 +275,27 @@ async function main() {
   const datasetHash = datasetHashOf(casesRaw);
 
   let preflightReport = null;
-  if (confirmRun) {
+  let anthropicKey = null; let anthropicClient = null;
+  if (provider === 'anthropic') {
+    if (toolUse) throw new Error('provider=anthropic は本番同様 output_config(json_schema)で schema を縛る。--tool-use は付けない');
+    anthropicKey = loadAnthropicApiKey();
+    if (anthropicKey) anthropicClient = createAnthropicClient({ apiKey: anthropicKey.apiKey });
+  }
+  if (confirmRun && provider === 'anthropic') {
+    if (!stopOnViolation) throw new Error('--confirm-run は --stop-on-violation が必須');
+    const wantedIds = String(args.models || '').split(',').map((s) => s.trim()).filter(Boolean);
+    let modelVerified = false; let modelInfo = null;
+    if (anthropicClient && wantedIds.length === 1) {
+      try { modelInfo = await anthropicClient.getModel(wantedIds[0]); modelVerified = modelInfo?.id === wantedIds[0]; } catch (e) { modelInfo = { error: sanitizeAnthropicMessage(e.message), status: e.status ?? null }; }
+    }
+    const expectedHash = expectedDatasetHashFor({ datasetPath, datasetHashArg: args['dataset-hash'], prevLedgerHash: null });
+    const blockers = assertAnthropicRunPreconditions({ keySource: anthropicKey?.source ?? null, modelVerified, retentionAccepted, datasetHash, expectedDatasetHash: expectedHash, cfg, priorSpentUsd, priorSpentGiven, recordedSpend: recordedSpendUsd(RUNS_DIR).sum, callLogBroken: loadCallLog().broken, syntheticDataset });
+    preflightReport = { provider: 'anthropic', keySource: anthropicKey?.source ?? null, modelVerified, model: modelInfo && !modelInfo.error ? { id: modelInfo.id, display_name: modelInfo.display_name ?? null } : modelInfo, retention: { mode: 'provider_standard(not none)', accepted: retentionAccepted, note: '合成データ限定' } };
+    mkdirSync(join(RUNS_DIR, runId), { recursive: true });
+    writeFileSync(join(RUNS_DIR, runId, 'preflight_recheck.json'), JSON.stringify({ at: new Date().toISOString(), preflight: preflightReport, expected: { datasetHash: expectedHash }, datasetHash, blockers, passed: blockers.length === 0 }, null, 2));
+    if (blockers.length) throw new Error(`実行前再確認に不合格(呼び出しゼロで停止): ${blockers.join(' / ')}`);
+    logInfo('実行前再確認 PASS(anthropic)', { keySource: anthropicKey.source, model: wantedIds[0], datasetHash: datasetHash.slice(0, 12), maxBudgetJpy: cfg.maxBudgetJpy, priorSpentUsd });
+  } else if (confirmRun) {
     if (!toolUse || !stopOnViolation) throw new Error('--confirm-run は --tool-use と --stop-on-violation が必須');
     // 期待値は前回の確証run(fidelity_tooluse_kimi)の台帳と保存済み preflight から取る(手打ちしない)
     const prevLedger = readFileSync(join(RUNS_DIR, 'ledger.jsonl'), 'utf8').split('\n').filter(Boolean)
@@ -269,11 +312,17 @@ async function main() {
   }
 
   // 候補は discovery から(モデル名をコードに書かない)。価格必須。
-  const discovery = JSON.parse(readFileSync(join(RUNS_DIR, '_discovery', 'candidate_discovery.json'), 'utf8'));
+  const discovery = provider === 'anthropic' ? { candidates: [] } : JSON.parse(readFileSync(join(RUNS_DIR, '_discovery', 'candidate_discovery.json'), 'utf8'));
   const wanted = String(args.models || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (!wanted.length) throw new Error('--models=<modelId,...> を指定してください');
   const pricing = loadPricing();
+  const anthropicPricing = provider === 'anthropic' ? JSON.parse(readFileSync(ANTHROPIC_PRICING_PATH, 'utf8')) : null;
   const models = wanted.map((id) => {
+    if (provider === 'anthropic') {
+      const p = anthropicPricing?.models?.[id];
+      if (!p || p.inputPerMTokUsd == null || p.outputPerMTokUsd == null || !p.source || !p.fetchedAt) throw new Error(`${id} の Anthropic 公式価格が ${ANTHROPIC_PRICING_PATH} に無い(呼び出し禁止)`);
+      return { key: id, modelId: id, invocationTarget: id, price: p, priceKind: `official_exact(anthropic first-party・${p.source})`, destinations: ['anthropic_global'], domesticPath: null };
+    }
     const c = (discovery.candidates || []).find((x) => x.modelId === id);
     if (!c) throw new Error(`${id} が discovery に無い`);
     if (!c.evaluable) throw new Error(`${id} は Hard Gate 違反(${(c.fails || []).join(',')})`);
@@ -294,14 +343,16 @@ async function main() {
     dataset: datasetPath, datasetHash, perCategory, expectedCases,
     regenerateOnce, repeat, maxFirstViolations, passCriteria,
     systemSource: PROMPTS_TS, systemLength: REPLY_SYSTEM.length,
-    schemaDelivery: toolUse ? 'tool-use(Converse toolConfig=本番採用構成)' : 'text(本番はtool-use。相違点として明記)',
+    provider,
+    schemaDelivery: provider === 'anthropic' ? 'structured_output(Anthropic Messages API output_config json_schema=アプリ本来の api.ts と同一。cache_control ephemeral も同一)' : (toolUse ? 'tool-use(Converse toolConfig=本番採用構成)' : 'text(本番はtool-use。相違点として明記)'),
+    retention: provider === 'anthropic' ? 'provider_standard(not none)・合成データ限定・--accept-provider-retention 受諾' : 'bedrock retention none(preflight)',
     cases: cases.map((c) => c.id),
     models: models.map((m) => m.modelId),
     modelPricing: models.map((m) => ({ modelId: m.modelId, invocationTarget: m.invocationTarget, priceKind: m.priceKind, inputPerMTokUsd: m.price.inputPerMTokUsd, outputPerMTokUsd: m.price.outputPerMTokUsd, destinations: m.destinations, domesticPath: m.domesticPath })),
     config: { region: cfg.region, outputMaxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, maxAutoRetries: cfg.maxAutoRetries, usdJpy: cfg.usdJpy, maxBudgetJpy: cfg.maxBudgetJpy, priorSpentUsd },
   }, null, 2));
 
-  const creds = resolveCredentials()?.credentials ?? null;
+  const creds = provider === 'bedrock' ? (resolveCredentials()?.credentials ?? null) : null;
   const ledger = loadLedger();
   let spentUsd = priorSpentUsd;
   let firstViolationCount = 0; // 初回応答の違反件数(再生成で救えても数える)
@@ -314,12 +365,13 @@ async function main() {
   if (callLog.broken) throw new Error(`call_log に壊れた行が ${callLog.broken} 件。予算契約の一部なので修復するまで実行しない`);
 
   for (const model of models) {
-    const client = createBedrockClient({ region: cfg.region, credentials: creds });
+    const client = provider === 'anthropic' ? anthropicClient : createBedrockClient({ region: cfg.region, credentials: creds });
+    if (!client) throw new Error('クライアントを作れない(anthropic: API キー無し)');
     const hashesFor = (c) => ({
       modelId: model.modelId, caseId: c.id, datasetHash,
       promptHash: promptHashOf({
         // tool-use 時は schema テキスト無し+toolConfig 強制なので別プロンプト扱い(接頭辞で区別)
-        system: (toolUse ? 'TOOL_USE ' : '') + REPLY_SYSTEM,
+        system: (provider === 'anthropic' ? 'ANTHROPIC_STRUCTURED_OUTPUT ' : toolUse ? 'TOOL_USE ' : '') + REPLY_SYSTEM,
         userText: buildProductionUserPrompt(c, toolUse ? null : REPLY_SCHEMA),
         imageFiles: c.images,
       }),
@@ -371,10 +423,20 @@ async function main() {
           }
           const perAttemptWorst = (16000 / 1e6) * model.price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * model.price.outputPerMTokUsd;
           callId = callStarted({ runId, caseId: c.id, modelId: model.modelId, attemptNo, worstCaseUsd: perAttemptWorst });
-          const res = await client.converse(model.invocationTarget, body);
+          let res;
+          if (provider === 'anthropic') {
+            // 本番(api.ts)と同じ: output_config json_schema + system cache_control。schema テキストは user prompt に付けない
+            const mbody = buildMessagesBody({ model: model.invocationTarget, system: REPLY_SYSTEM, userText: buildProductionUserPrompt(c, null), imagePaths: c.images.map((f) => join('pricing_eval/screenshots', f)), maxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, schema: REPLY_SCHEMA });
+            res = await client.messages(mbody);
+          } else {
+            res = await client.converse(model.invocationTarget, body);
+          }
           resReceived = res;
           let parsed;
-          if (toolUse) {
+          if (provider === 'anthropic') {
+            const exm = extractMessages(res);
+            parsed = res.stop_reason === 'refusal' ? { ok: false, failureKind: 'refusal', error: 'stop_reason=refusal' } : parseProductionReply(exm.text);
+          } else if (toolUse) {
             const input = extractToolUse(res, 'reply_result');
             parsed = input
               ? parseProductionReply(JSON.stringify(input))
@@ -382,22 +444,22 @@ async function main() {
           } else {
             parsed = parseProductionReply(extractConverse(res).text);
           }
-          const ex = extractConverse(res);
+          const ex = provider === 'anthropic' ? extractMessages(res) : extractConverse(res);
           a = {
             attemptNo, latencyMs: Date.now() - t0, usage: ex.usage, httpStatus: res.$httpStatus ?? null,
-            requestId: res.$requestId ?? null, apiOperation: 'Converse',
+            requestId: res.$requestId ?? null, apiOperation: provider === 'anthropic' ? 'Messages' : 'Converse',
             ok: parsed.ok, failureKind: parsed.ok ? null : parsed.failureKind,
             error: parsed.ok ? null : parsed.error, failureClass: parsed.ok ? null : 'model_output',
             parsed, callId,
           };
         } catch (e) {
           let usageAfterResponse = null;
-          if (resReceived) { try { usageAfterResponse = extractConverse(resReceived).usage ?? null; } catch { usageAfterResponse = null; } }
+          if (resReceived) { try { usageAfterResponse = (provider === 'anthropic' ? extractMessages(resReceived) : extractConverse(resReceived)).usage ?? null; } catch { usageAfterResponse = null; } }
           a = {
             attemptNo, latencyMs: Date.now() - t0, usage: usageAfterResponse,
             ok: false, failureKind: resReceived ? 'response_parse_error' : (e.code === 'Timeout' ? 'timeout' : `http_${e.status || 'error'}`),
             error: `${e.code || e.name}`, errorCode: e.code ?? e.name ?? null,
-            sanitizedErrorMessage: sanitizeAwsMessage(e.message), httpStatus: e.status ?? null,
+            sanitizedErrorMessage: provider === 'anthropic' ? sanitizeAnthropicMessage(e.message) : sanitizeAwsMessage(e.message), httpStatus: e.status ?? null,
             requestId: e.requestId ?? null, apiOperation: e.operation ?? 'Converse', failureClass: 'system', callId,
           };
         }

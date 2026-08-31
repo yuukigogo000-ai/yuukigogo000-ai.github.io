@@ -95,6 +95,9 @@ export function costUsdForAttempt(usage, price) {
   let usd = (inTok / 1e6) * price.inputPerMTokUsd + (outTok / 1e6) * price.outputPerMTokUsd;
   // 画像が token ではなく固定課金のモデル向け
   if (price.imageUnitUsd != null && usage.imageUnits != null) usd += usage.imageUnits * price.imageUnitUsd;
+  // prompt caching(Anthropic 第一者API: input_tokens はキャッシュ分を含まないので別計上)。cache 単価が無い価格表では加算しない
+  if (price.cacheWritePerMTokUsd != null && usage.cacheWriteTokens != null) usd += (usage.cacheWriteTokens / 1e6) * price.cacheWritePerMTokUsd;
+  if (price.cacheReadPerMTokUsd != null && usage.cacheReadTokens != null) usd += (usage.cacheReadTokens / 1e6) * price.cacheReadPerMTokUsd;
   return usd;
 }
 
