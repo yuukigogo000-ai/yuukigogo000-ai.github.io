@@ -108,6 +108,7 @@ const profileResult = () => ({
   check('4a. 返信カード3枚表示', cards.length === 3, `count=${cards.length}`);
   check('4b. 脈あり度メーターを出さない(#meterPct不在・「脈あり」文言なし)', (await page.$('#meterPct')) === null && !(await page.textContent('#replyAnalysis')).includes('脈あり'));
   check('4c. アドバイス表示', (await page.textContent('#replyAdvice')).includes('アドバイス1'));
+  check('4c2. 常設の注意書き(AIによる返信案・事実確認)が結果と一緒に表示される', await page.isVisible('#aiNotice') && (await page.textContent('#aiNotice')).includes('事実と合っているか確認'));
   check('4d. 再生成ボタン出現', await page.isVisible('#regenerate'));
   check('4e. リクエスト: model正しい', lastBody.model === 'claude-opus-5');
   check('4f. リクエスト: 構造化出力指定', lastBody.output_config?.format?.type === 'json_schema');

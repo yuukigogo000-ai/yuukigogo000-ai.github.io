@@ -8,7 +8,7 @@
 // 規則は「本番指示に書いてあること」だけを検査する。ここで独自基準を発明しない。
 
 // 固有名詞の根拠検査は本番UIと同一実装を使う(乖離防止のため単一ソース)
-import { findUngroundedNames } from '../../../reply-ai-app/src/lib/ungrounded.mjs';
+import { findUngroundedNames, findFabricationHints } from '../../../reply-ai-app/src/lib/ungrounded.mjs';
 import { BANNED_RULES } from '../validate_output.mjs';
 
 /**
@@ -66,6 +66,18 @@ export function checkUngroundedNames(data, groundingText) {
   }));
 }
 
+/**
+ * 補助的な捏造候補(漢字/ひらがな店名・地名+店名・体験談の言い回し・有名ブランド)。rule='fabrication_hint'。
+ * 停止事由でも合格条件でもない(完全検出できないため)。人間確認ページで候補として表示する。
+ */
+export function checkFabricationHints(data, groundingText) {
+  const texts = [...data.replies.flatMap((r) => r.bubbles), data.advice || ''];
+  return findFabricationHints(texts, groundingText).map((h) => ({
+    rule: 'fabrication_hint',
+    detail: `候補(${h.kind}): ${h.text}`,
+  }));
+}
+
 /** Converse 応答から toolUse 入力を取り出す(無ければ null)。tool-use 形式の検証で使う */
 export function extractToolUse(res, toolName) {
   const blocks = res?.output?.message?.content || [];
@@ -116,7 +128,8 @@ const FORBIDDEN_PHRASES = [
 ];
 const FORBIDDEN_EMOJI = ['😊', '😅', '💦', '✨', '❗', '🥺', '♪'];
 // 未解決プレースホルダ(本番表示禁止・2026-09-01 発注者決定)。○○/〇〇/◯◯/△△/××、［店名］/[店名]/〈場所〉/【店名】/(店名) のように括弧+穴埋め語。[笑] のような括弧+通常語は対象外
-export const PLACEHOLDER_RE = new RegExp('[○〇◯]{2,}|△△|▲▲|××|ＸＸ|□□|■■' + '|(?:^|[^A-Za-z])(?:XX+|xx+|TBD|NAME|PLACE)(?![A-Za-z])|_{2,}|＿{2,}' + '|［(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)］|\\[(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)\\]|〈(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)〉|《(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)》|【(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)】|[(（](?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)[)）]' + '|(?:店名|場所|地名|名前)を?(?:入力|記入|入れ)');
+// 「相手さん」= 相手の名前が分からないときにモデルが入れた代名詞(実測: Qwen 10件 run で3ケース)。そのまま送れないので同じ扱い
+export const PLACEHOLDER_RE = new RegExp('[○〇◯]{2,}|△△|▲▲|××|ＸＸ|□□|■■' + '|(?:^|[^A-Za-z])(?:XX+|xx+|TBD|NAME|PLACE)(?![A-Za-z])|_{2,}|＿{2,}' + '|［(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)］|\\[(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)\\]|〈(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)〉|《(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)》|【(?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)】|[(（](?:店名|場所|地名|名前|お店|駅名|日付|日時|時間|相手の名前|名字|下の名前|自分の名前|地域)[)）]' + '|(?:店名|場所|地名|名前)を?(?:入力|記入|入れ)' + '|相手さん|お相手さん');
 const EMOJI_RE = /\p{Extended_Pictographic}/gu;
 
 /**

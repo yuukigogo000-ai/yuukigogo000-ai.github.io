@@ -27,7 +27,7 @@ import { logInfo, logWarn, logError } from './lib/log.mjs';
 import { createBedrockClient, resolveCredentials, buildConverseBody, extractConverse, sanitizeAwsMessage } from './adapters/bedrock.mjs';
 import { costUsdForAttempt, loadPricing, formatUsd } from './calculate_cost.mjs';
 import { contractStopError, readResults } from './run_eval.mjs';
-import { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse } from './lib/fidelity_checks.mjs';
+import { parseProductionReply, checkStyleRules, checkUngroundedNames, checkFabricationHints, extractToolUse } from './lib/fidelity_checks.mjs';
 import { datasetHashOf, promptHashOf, configHashOf, ledgerKey, loadLedger, appendLedger } from './lib/ledger.mjs';
 import { fidelityStopReason } from './lib/fidelity_checks.mjs';
 import { runPreflight } from './retention_preflight.mjs';
@@ -58,6 +58,31 @@ export function assertRunPreconditions({ preflight, cfg, datasetHash, expected, 
 const RUNS_DIR = 'pricing_eval/runs';
 const PROMPTS_TS = 'reply-ai-app/src/lib/prompts.ts';
 export const CASES_PER_CATEGORY = 5;
+export const DEFAULT_DATASET = 'pricing_eval/cases.json';
+// 合成データの生成器(これ以外の generated_by は実データ扱いで実行禁止)
+export const SYNTHETIC_GENERATORS = new Set(['generate_cases.mjs', 'generate_cases_fab10.mjs']);
+
+/** 合格条件セット。confirm30 = 30件・再生成≤3(2026-09-01 A+C)/ confirm10 = 10件・再生成≤1(Qwen 限定評価) */
+export function parsePassCriteria(name) {
+  if (name == null) return null;
+  const table = { confirm30: { expectedCases: 30, maxRegenerated: 3 }, confirm10: { expectedCases: 10, maxRegenerated: 1 } };
+  if (!table[name]) throw new Error(`未知の pass-criteria: ${name}(confirm30 / confirm10)`);
+  return { name, ...table[name] };
+}
+
+/**
+ * 確証runで照合する dataset ハッシュの期待値。既定 dataset は前回確証runの台帳から機械的に取る。
+ * 別 dataset(cases_fab10.json 等)は --dataset-hash(生成器が表示した sha256 の転記)が必須。無ければ実行しない。
+ */
+export function expectedDatasetHashFor({ datasetPath, datasetHashArg, prevLedgerHash }) {
+  if (datasetHashArg != null) {
+    const h = String(datasetHashArg).trim().toLowerCase();
+    if (!/^[0-9a-f]{64}$/.test(h)) throw new Error('--dataset-hash は sha256(16進64桁)で指定する');
+    return h;
+  }
+  if (datasetPath !== DEFAULT_DATASET) throw new Error(`既定以外の dataset(${datasetPath})の確証runには --dataset-hash が必須(生成器が表示した sha256 を転記)`);
+  return prevLedgerHash ?? null;
+}
 
 /** 同じケースを n 回並べる(repeatNo 1..n)。確証run「TXT_SHORT_07 を5回」用。台帳再利用は fresh で切ること */
 export function expandRepeats(cases, n = 1) {
@@ -90,6 +115,8 @@ export function evaluateConfirmCriteria(rows, { expectedCases = 30, maxRegenerat
     finalSystemFailures: rows.filter((r) => !r.success && r.failureClass !== 'model_output').length,
     placeholder: rows.filter((r) => r.success && finalViol(r, 'placeholder')).length,
     fabrication: rows.filter((r) => r.success && finalViol(r, 'ungrounded_name')).length,
+    // 補助検出器の候補(漢字/ひらがな店名・地名+店名・体験談の言い回し)。合格条件ではない=人間確認の入口
+    fabricationHints: rows.filter((r) => r.success && finalViol(r, 'fabrication_hint')).length,
     interestLevelEmitted: rows.filter((r) => r.production && Object.prototype.hasOwnProperty.call(r.production, 'interest_level')).length,
     firstAttemptViolations: rows.filter((r) => r.firstAttemptViolation).length,
     regenerated: rows.filter((r) => r.regenerated).length,
@@ -106,7 +133,7 @@ export function evaluateConfirmCriteria(rows, { expectedCases = 30, maxRegenerat
   if (c.interestLevelEmitted) failed.push(`interest_level 混入 ${c.interestLevelEmitted}`);
   if (c.regenerated > maxRegenerated) failed.push(`再生成 ${c.regenerated} > ${maxRegenerated}`);
   if (c.timeouts) failed.push(`120秒タイムアウト ${c.timeouts}`);
-  return { ...c, pass: failed.length === 0, failedConditions: failed, note: '自動評価の「捏造候補 0」は検出器の範囲内の話で、捏造ゼロの断定ではない。人間確認ページで全件を見ること' };
+  return { ...c, pass: failed.length === 0, failedConditions: failed, note: '自動評価の「捏造候補 0」は検出器の範囲内の話で、捏造ゼロの断定ではない(漢字・ひらがなの固有名詞・体験談は補助候補 fabricationHints で提示するだけで完全検出はできない)。人間確認ページで全件を見ること' };
 }
 
 /** prompts.ts(TypeScript)から REPLY_SYSTEM / REPLY_SCHEMA を無劣化で取り出す */
@@ -181,15 +208,22 @@ async function main() {
   const maxFirstViolations = args['max-first-violations'] === undefined ? null : Number(args['max-first-violations']);
   if (maxFirstViolations != null && (!Number.isInteger(maxFirstViolations) || maxFirstViolations < 0)) throw new Error('max-first-violations は0以上の整数');
   const passCriteria = args['pass-criteria'] ? String(args['pass-criteria']) : null;
+  const criteriaSpec = parsePassCriteria(passCriteria);
+  const datasetPath = args.dataset ? String(args.dataset) : DEFAULT_DATASET;
+  const perCategory = args['per-category'] === undefined ? CASES_PER_CATEGORY : Number(args['per-category']);
+  if (!Number.isInteger(perCategory) || perCategory < 1) throw new Error('per-category は1以上の整数');
+  const expectedCases = args['expected-cases'] === undefined ? 6 * CASES_PER_CATEGORY : Number(args['expected-cases']);
+  if (!Number.isInteger(expectedCases) || expectedCases < 1) throw new Error('expected-cases は1以上の整数');
+  if (criteriaSpec && criteriaSpec.expectedCases !== expectedCases && !args.cases && (args.repeat === undefined)) throw new Error(`pass-criteria ${passCriteria} は ${criteriaSpec.expectedCases} 件用。--expected-cases=${expectedCases} と食い違う`);
 
   const { REPLY_SYSTEM, REPLY_SCHEMA } = await loadProductionPrompts();
-  const casesRaw = readFileSync('pricing_eval/cases.json', 'utf8');
+  const casesRaw = readFileSync(datasetPath, 'utf8');
   // 違反時の出力本文(invalidOutput)を保存してよいのは合成評価データだけ。本番コードでは保存禁止(発注者決定 2026-09-01)
-  const syntheticDataset = JSON.parse(casesRaw).generated_by === 'generate_cases.mjs';
-  if (!syntheticDataset) throw new Error('cases.json が合成データ(generate_cases.mjs)でない。実データに対する fidelity 実行は禁止');
+  const syntheticDataset = SYNTHETIC_GENERATORS.has(JSON.parse(casesRaw).generated_by);
+  if (!syntheticDataset) throw new Error(`${datasetPath} が合成データ(${[...SYNTHETIC_GENERATORS].join('/')})でない。実データに対する fidelity 実行は禁止`);
   const caseOffset = args['case-offset'] === undefined ? 0 : Number(args['case-offset']);
-  let cases = pickFidelityCases(JSON.parse(casesRaw).cases, CASES_PER_CATEGORY, caseOffset);
-  if (cases.length !== 6 * CASES_PER_CATEGORY) throw new Error(`選定件数が30件でない(${cases.length}件・case-offset=${caseOffset})`);
+  let cases = pickFidelityCases(JSON.parse(casesRaw).cases, perCategory, caseOffset);
+  if (cases.length !== expectedCases) throw new Error(`選定件数が${expectedCases}件でない(${cases.length}件・per-category=${perCategory}・case-offset=${caseOffset})`);
   // スポット検証用: 指定ケースだけに絞る(選定30ケースの範囲内のみ)
   if (args.cases) {
     const want = String(args.cases).split(',').map((s) => s.trim()).filter(Boolean);
@@ -207,7 +241,7 @@ async function main() {
       .map((l) => { try { return JSON.parse(l); } catch { return null; } })
       .find((r) => r && r.runId === 'fidelity_tooluse_kimi' && r.success);
     const prevPre = JSON.parse(readFileSync(join(RUNS_DIR, '_discovery', 'preflight.json'), 'utf8'));
-    const expected = { arnTail: prevPre?.identity?.arnTail, accountMask: prevPre?.identity?.account, datasetHash: prevLedger?.datasetHash, recordedSpendUsd: recordedSpendUsd(RUNS_DIR).sum };
+    const expected = { arnTail: prevPre?.identity?.arnTail, accountMask: prevPre?.identity?.account, datasetHash: expectedDatasetHashFor({ datasetPath, datasetHashArg: args['dataset-hash'], prevLedgerHash: prevLedger?.datasetHash }), recordedSpendUsd: recordedSpendUsd(RUNS_DIR).sum };
     preflightReport = await runPreflight(cfg);
     const blockers = assertRunPreconditions({ preflight: preflightReport, cfg, datasetHash, expected, priorSpentUsd, priorSpentGiven, callLogBroken: loadCallLog().broken });
     mkdirSync(join(RUNS_DIR, runId), { recursive: true });
@@ -238,6 +272,7 @@ async function main() {
 
   writeFileSync(join(dir, 'run_manifest.json'), JSON.stringify({
     runId, kind: 'production_prompt_fidelity', at: new Date().toISOString(), caseOffset, fresh, confirmRun, stopOnViolation, syntheticDataset,
+    dataset: datasetPath, datasetHash, perCategory, expectedCases,
     regenerateOnce, repeat, maxFirstViolations, passCriteria,
     systemSource: PROMPTS_TS, systemLength: REPLY_SYSTEM.length,
     schemaDelivery: toolUse ? 'tool-use(Converse toolConfig=本番採用構成)' : 'text(本番はtool-use。相違点として明記)',
@@ -369,6 +404,8 @@ async function main() {
           ...(c.conversation || []).map((t) => t.text),
         ].join(' ');
         fidelity.violations.push(...checkUngroundedNames(final.parsed.data, grounding));
+        // 補助候補(停止事由・合格条件にしない。人間確認ページに並べる)
+        fidelity.violations.push(...checkFabricationHints(final.parsed.data, grounding));
       }
       for (const x of attempts) { x.generation = generation; allAttempts.push(x); }
       const genViolation = fidelityStopReason({ success: final.ok, failureKind: final.failureKind, failureClass: final.failureClass ?? null, attempts, production: final.ok ? final.parsed.data : null, invalidOutput: !final.ok ? (final.parsed?.data ?? null) : null, fidelity });
@@ -461,6 +498,7 @@ async function main() {
       for (const v of r.fidelity.violations) {
         s.violationsByRule[v.rule] = (s.violationsByRule[v.rule] || 0) + 1;
         if (['same_bubble_count', 'no_single_bubble_plan', 'too_many_triple_plans'].includes(v.rule)) s.structureViolations++;
+        else if (v.rule === 'fabrication_hint') s.fabricationHints = (s.fabricationHints || 0) + 1;
         else s.styleViolations++;
       }
       s.interestLevels.push(r.fidelity.stats.interestLevel);
@@ -473,8 +511,8 @@ async function main() {
     delete s.latencies;
     logInfo(`fidelity ${id}`, { cases: s.cases, schemaRate: s.schemaRate, style: s.styleViolations, structure: s.structureViolations, cost: s.calculatedCostUsd });
   }
-  const criteria = evaluateConfirmCriteria(rows, { expectedCases: passCriteria === 'confirm30' ? 30 : rows.length });
-  logInfo('確証指標', { finalSuccess: `${criteria.finalSuccess}/${criteria.cases}`, firstAttemptViolations: criteria.firstAttemptViolations, regenerated: criteria.regenerated, placeholder: criteria.placeholder, fabrication: criteria.fabrication, timeouts: criteria.timeouts, latency: criteria.latency });
+  const criteria = evaluateConfirmCriteria(rows, criteriaSpec ? { expectedCases: criteriaSpec.expectedCases, maxRegenerated: criteriaSpec.maxRegenerated } : { expectedCases: rows.length });
+  logInfo('確証指標', { finalSuccess: `${criteria.finalSuccess}/${criteria.cases}`, firstAttemptViolations: criteria.firstAttemptViolations, regenerated: criteria.regenerated, placeholder: criteria.placeholder, fabrication: criteria.fabrication, fabricationHints: criteria.fabricationHints, timeouts: criteria.timeouts, latency: criteria.latency });
   if (passCriteria) logInfo(`合格判定(${passCriteria})`, { pass: criteria.pass, failedConditions: criteria.failedConditions });
   writeFileSync(join(dir, 'fidelity_summary.json'), JSON.stringify({ at: new Date().toISOString(), runId, summary, criteria, passCriteria, cumulativeUsd: formatUsd(spentUsd) }, null, 2));
   logInfo('fidelity 完了', { runId, thisRunUsd: formatUsd(spentUsd - priorSpentUsd), cumulativeUsd: formatUsd(spentUsd) });

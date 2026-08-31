@@ -1,6 +1,6 @@
 // 確証run の全件を「人間確認用」に1ページへ並べる(自動評価だけで捏造ゼロと断定しないための工程)。
 //
-// 使い方: node pricing_eval/src/human_review_page.mjs --run-id=<runId> [--out=<path>]
+// 使い方: node pricing_eval/src/human_review_page.mjs --run-id=<runId> [--dataset=pricing_eval/cases.json] [--out=<path>]
 // 出力: pricing_eval/runs/_summary/human_review_<runId>.html(既定)
 //  - 入力(ゴール・相手プロフィール・文体サンプル・会話テキスト・スクショは ../../screenshots/ への相対リンク)
 //  - 出力(いまの状況・3案の吹き出しと理由・次の一手)
@@ -13,12 +13,13 @@ import { join } from 'node:path';
 import { parseArgs, isCliEntry } from './lib/config.mjs';
 import { readResults } from './run_eval.mjs';
 import { evaluateConfirmCriteria } from './fidelity_eval.mjs';
+import { findFabricationHints } from '../../reply-ai-app/src/lib/ungrounded.mjs';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
 
-export function renderHumanReview({ runId, rows, cases, screenshotsRel = '../../screenshots' }) {
+export function renderHumanReview({ runId, rows, cases, screenshotsRel = '../../screenshots', maxRegenerated = 3 }) {
   const byId = new Map(cases.map((c) => [c.id, c]));
-  const criteria = evaluateConfirmCriteria(rows, { expectedCases: rows.length });
+  const criteria = evaluateConfirmCriteria(rows, { expectedCases: rows.length, maxRegenerated });
   const head = `<!doctype html><meta charset="utf-8"><title>人間確認 ${esc(runId)}</title>
 <style>body{font-family:system-ui,sans-serif;max-width:1100px;margin:24px auto;padding:0 16px;color:#222}
 .case{border:1px solid #ccc;border-radius:8px;padding:14px;margin:18px 0}.case h2{margin:0 0 8px;font-size:16px}
@@ -28,9 +29,9 @@ export function renderHumanReview({ runId, rows, cases, screenshotsRel = '../../
 img{max-height:260px;margin:4px;border:1px solid #ddd}.check{border:2px dashed #999;padding:8px;margin-top:8px;font-size:13px}
 table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px 8px;font-size:13px}</style>`;
   const summary = `<h1>人間確認: ${esc(runId)}(${rows.length}件)</h1>
-<p>自動評価の要約(<b>捏造ゼロの断定ではない</b>。検出器はカタカナ語・施設接尾辞・例文名・プレースホルダしか見ていない。漢字の地名・人名・作品名・体験談は人が確認する):</p>
-<table><tr><th>最終成功</th><th>最終schema違反</th><th>placeholder</th><th>捏造候補(検出器)</th><th>初回違反→再生成</th><th>120秒timeout</th><th>latency p50/p90/p95/max(ms)</th></tr>
-<tr><td>${criteria.finalSuccess}/${criteria.cases}</td><td>${criteria.finalSchemaViolations}</td><td>${criteria.placeholder}</td><td>${criteria.fabrication}</td><td>${criteria.regenerated}</td><td>${criteria.timeouts}</td><td>${criteria.latency.p50}/${criteria.latency.p90}/${criteria.latency.p95}/${criteria.latency.max}</td></tr></table>
+<p>自動評価の要約(<b>捏造ゼロの断定ではない</b>。停止層の検出器はカタカナ語・施設接尾辞・例文名・有名チェーン/ブランドの固定リスト・プレースホルダしか見ていない。補助候補(地名+店名・体験談の言い回し)は<b>候補提示のみで、未知の漢字・ひらがな固有名詞を完全には検出できない</b>。漢字の地名・人名・作品名・体験談は人が確認する):</p>
+<table><tr><th>最終成功</th><th>最終schema違反</th><th>placeholder</th><th>捏造(停止層)</th><th>補助候補あり(件)</th><th>初回違反→再生成</th><th>120秒timeout</th><th>latency p50/p90/p95/max(ms)</th></tr>
+<tr><td>${criteria.finalSuccess}/${criteria.cases}</td><td>${criteria.finalSchemaViolations}</td><td>${criteria.placeholder}</td><td>${criteria.fabrication}</td><td>${criteria.fabricationHints}</td><td>${criteria.regenerated}</td><td>${criteria.timeouts}</td><td>${criteria.latency.p50}/${criteria.latency.p90}/${criteria.latency.p95}/${criteria.latency.max}</td></tr></table>
 <p>確認の観点(各ケースの下のチェック欄): ①入力に無い固有名詞(地名・店名・人物・作品)が無いか ②「行った/食べた/読んだ」等の自分の体験談を作っていないか ③○○などの穴埋めが無いか ④そのまま送れる文か ⑤相手の発言と噛み合っているか</p>`;
   const body = rows.map((r, idx) => {
     const c = byId.get(r.caseId) || {};
@@ -42,7 +43,14 @@ table{border-collapse:collapse}td,th{border:1px solid #ccc;padding:4px 8px;font-
     if (r.finalViolation) flags.push(`<span class="flag bad">最終違反: ${esc(r.finalViolation.kind)} ${esc(String(r.finalViolation.detail).slice(0, 80))}</span>`);
     if (!r.success) flags.push(`<span class="flag bad">最終失敗: ${esc(r.failureKind)}</span>`);
     if (r.timeoutCount) flags.push(`<span class="flag bad">timeout ${r.timeoutCount}</span>`);
-    for (const v of (r.fidelity?.violations || [])) flags.push(`<span class="flag ${['placeholder', 'ungrounded_name'].includes(v.rule) ? 'bad' : 'warn'}">${esc(v.rule)}: ${esc(v.detail)}</span>`);
+    for (const v of (r.fidelity?.violations || [])) flags.push(`<span class="flag ${['placeholder', 'ungrounded_name'].includes(v.rule) ? 'bad' : 'warn'}">${v.rule === 'fabrication_hint' ? '要確認' : esc(v.rule)}: ${esc(v.detail)}</span>`);
+    // 補助候補は最新の検出器で再計算(run 当時の検出器より後で足したパターンも人間確認の入口に出す)
+    const groundingLive = [c.goal, c.partner_profile ? `${c.partner_profile.nickname || ''} ${c.partner_profile.note || ''}` : '', c.style_sample || '', ...((c.conversation || []).map((t) => t.text))].join(' ');
+    const stored = new Set((r.fidelity?.violations || []).filter((v) => v.rule === 'fabrication_hint').map((v) => v.detail));
+    for (const h of findFabricationHints([...(prod.replies || []).flatMap((p) => p.bubbles || []), prod.advice || ''], groundingLive)) {
+      const d = `候補(${h.kind}): ${h.text}`;
+      if (!stored.has(d)) flags.push(`<span class="flag warn">要確認(再計算): ${esc(d)}</span>`);
+    }
     if (!flags.length) flags.push('<span class="flag ok">自動評価: フラグなし</span>');
     const replies = (prod.replies || []).map((p, i) => `<div><b>案${i + 1}</b><br>${(p.bubbles || []).map((b) => `<div class="bub">${esc(b)}</div>`).join('<br>')}<div class="why">理由: ${esc(p.why)}</div></div>`).join('');
     const lat = (r.attempts || []).map((a) => `g${a.generation ?? 1}#${a.attemptNo}:${a.latencyMs}ms${a.failureKind ? `(${a.failureKind})` : ''}`).join(' / ');
@@ -66,9 +74,9 @@ if (isCliEntry(import.meta.url)) {
   const runId = args['run-id'];
   if (!runId) { console.error('--run-id が必要'); process.exit(1); }
   const { rows } = readResults(join('pricing_eval/runs', runId, 'results.jsonl'));
-  const cases = JSON.parse(readFileSync('pricing_eval/cases.json', 'utf8')).cases;
+  const cases = JSON.parse(readFileSync(args.dataset ? String(args.dataset) : 'pricing_eval/cases.json', 'utf8')).cases;
   const out = args.out || join('pricing_eval/runs/_summary', `human_review_${runId}.html`);
   mkdirSync(join('pricing_eval/runs/_summary'), { recursive: true });
-  writeFileSync(out, renderHumanReview({ runId, rows, cases }));
+  writeFileSync(out, renderHumanReview({ runId, rows, cases, maxRegenerated: args['max-regenerated'] === undefined ? 3 : Number(args['max-regenerated']) }));
   console.log(`human review page: ${out} (${rows.length} cases)`);
 }

@@ -91,6 +91,24 @@ node pricing_eval/src/run_eval.mjs --stage=full  --adapter=mock --fault=two_repl
 `none` `http_429` `http_500` `timeout` `broken_json` `two_replies` `empty`
 `interest_score` `false_refusal` `fabrication` `six_images_fail` `usage_missing` `flaky_first_only`
 
+## 捏造耐性の限定評価(10ケース・別 dataset)
+
+```bash
+# 5分類×2件(飲食/旅行/本・映画/趣味・ブランド/個人体験)。出力後に sha256 が表示される
+node pricing_eval/src/generate_cases_fab10.mjs
+# 確証run(別 dataset は --dataset-hash 必須。合格条件 confirm10 = 10件・再生成≤1)
+node pricing_eval/src/fidelity_eval.mjs --models=<id> --dataset=pricing_eval/cases_fab10.json --dataset-hash=<sha256> \
+  --per-category=2 --expected-cases=10 --pass-criteria=confirm10 --confirm-run --tool-use --stop-on-violation \
+  --regenerate-once --max-first-violations=1 --temperature=0.2 --retry-transient-only --max-retries=1 \
+  --usd-jpy=160 --prior-spent-usd=<recordedSpendUsd()> --run-id=<新ID>
+# 人間確認ページ(全件。自動評価だけで捏造ゼロと断定しない)
+node pricing_eval/src/human_review_page.mjs --run-id=<新ID> --dataset=pricing_eval/cases_fab10.json --max-regenerated=1
+```
+
+検出器の層: 停止層(カタカナ語の体験文脈・施設接尾辞・例文名・有名チェーン/ブランドの固定リスト・プレースホルダ)と
+補助候補層(地名+店名・体験談の言い回し。`fabrication_hint`)。**補助候補は人間確認の入口であって、未知の漢字・ひらがな
+固有名詞を完全に検出できるものではない。**
+
 ## テスト
 
 ```bash

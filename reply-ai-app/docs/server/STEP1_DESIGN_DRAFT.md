@@ -1,4 +1,4 @@
-# Replier サーバー側プロキシ — 工程1: 設計書たたき台 v0.3(2026-09-01 発注者決定反映・API経路は条件付き・暗号化 idempotency 応答)
+# Replier サーバー側プロキシ — 工程1: 設計書たたき台 v0.4(2026-09-01 発注者決定反映・API経路は条件付き・暗号化 idempotency 応答・**モデル=Kimi不採用・Qwen3 VL再評価中**)
 
 **位置づけ**: 実装には着手しない。STEP0 v0.2 §0 の決定(AWS東京 / Regional REST API+Lambda / Cognito メール OTP / DynamoDB / S3 なし / 同期 / 履歴はブラウザ内 / CAPTCHA なし / 追加枠なし / 予約方式の回数制限 / サーバー側出力検査)を前提に書いた設計。
 
@@ -22,7 +22,7 @@
    ├─ POST /v1/generate/ack     → Lambda generate  (受領確認: 暗号化 idempotency 応答を即削除)
    └─ POST /v1/billing/webhook  → Lambda webhook   (Stripe 署名検証のみ・認証なし)
 
-[Lambda generate] → Amazon Bedrock Converse(ap-northeast-1・Kimi K2.5・toolConfig・非ストリーミング・SDK timeout 55秒)
+[Lambda generate] → Amazon Bedrock Converse(ap-northeast-1・採用モデル=設定値(Kimi K2.5 不採用・Qwen3 VL 235B 再評価中)・toolConfig・非ストリーミング・SDK timeout 55秒)
                   → 出力検査(共有パッケージ)→ 再生成は1回まで → 応答
                   → 入力・出力はメモリ上のみ。DynamoDB/S3/ログに本文を書かない
 
@@ -31,7 +31,7 @@
 [CloudWatch]: メトリクス(遅延 p50/p95・費用・失敗種別・試行数)。本文は出さない
 ```
 
-- 秘密はブラウザに置かない。Bedrock は Lambda 実行ロールで呼ぶ(`bedrock:InvokeModel` を Kimi と予備モデルの ARN に限定)
+- 秘密はブラウザに置かない。Bedrock は Lambda 実行ロールで呼ぶ(`bedrock:InvokeModel` を採用モデルと予備モデルの ARN に限定)
 - 推論・API・DB・認証はすべて ap-northeast-1。他リージョンへのフォールバックは実装しない
 - 静的 PWA は現行の React/Vite。`api.ts` の Anthropic 直叩き(BYOK)を削除し、この API へ差し替え。履歴・採用文・設定は現行どおりブラウザ内(localStorage)のみ
 - ドメインは設定値(`APP_ORIGIN` / `API_ORIGIN`)。CORS 許可オリジンは `APP_ORIGIN` のみ
@@ -105,7 +105,7 @@ generate(user, key):
 
 1. 入力検査: 画像 ≤6・各 MIME(JPEG/WebP/PNG)・デコード後サイズ・合計 ≤4.5MB(API Gateway/WAF の上限より先に自前で検査し 413)。テキスト長上限
 2. プロンプト: system = `prompts.ts` の REPLY_SYSTEM(3件固定・プレースホルダ禁止を含む版)、user = 現行 ReplyTab と同じ節構成、画像は Converse の image ブロック
-3. `Converse`(非ストリーミング)+ `toolConfig: { tools:[reply_result(REPLY_SCHEMA: replies minItems/maxItems=3)], toolChoice:{tool} }`、`maxTokens 1024`、**`temperature 0.2`**(2026-09-01 に 0.7 から変更。評価と同一。変えるなら再評価)。tool 説明文「返信案は必ずちょうど3件(4件以上・2件以下は禁止)」。プロンプトは「入力に無い固有名詞(地名・店名・人物・作家・作品・ブランド)と自分の体験談を足さない」規則を強化した版
+3. `Converse`(非ストリーミング)+ `toolConfig: { tools:[reply_result(REPLY_SCHEMA: replies minItems/maxItems=3)], toolChoice:{tool} }`、`maxTokens 1024`、**`temperature 0.2`**(2026-09-01 に 0.7 から変更。評価と同一。変えるなら再評価)。tool 説明文「返信案は必ずちょうど3件(4件以上・2件以下は禁止)」。プロンプトは「入力に無い固有名詞(地名・店名・人物・作家・作品・ブランド)と自分の体験談を足さない」規則を強化し、NG→OK 例を5分類(飲食/旅行/本・映画/趣味・ブランド/個人体験)で明記した版。**それでも機械検査は補助**(漢字・ひらがなの固有名詞・体験談は完全検出できない)なので、結果画面に「AIによる返信案です。内容が事実と合っているか確認してから使用してください。」を常設する
 4. **出力検査(共有パッケージ `reply-validate`。pricing_eval の `parseProductionReply` / `checkStyleRules(placeholder)` / `BANNED_RULES` と同一実装)** — モデル出力を無条件で信用しない:
    - toolUse 無し / JSON 不正 / 必須欠落 → **再生成1回**
    - 各案を内容検査: bubbles 1〜3件・why 必須・禁止出力なし(BANNED_RULES)・**プレースホルダなし(PLACEHOLDER_RE)** → 通らない案は除外
@@ -131,13 +131,14 @@ generate(user, key):
 | 削除要求 | 退会でプロフィール・QUOTA・EVENT の userId を削除(Stripe 顧客は Stripe 側で削除) |
 
 ## 7. 未決定(残り)
+0. **採用モデル**: 未定。Kimi K2.5 は不採用、Qwen3 VL 235B も10件評価で不合格(5件目停止・人間確認で4件中3件に捏造)(2026-09-01)。次候補・方針は発注者判断。設計はモデル非依存のまま進められる部分(認証・回数制限・課金・出力検査の枠)のみ
 1. **API 経路**(60秒同期 / 180秒申請 / 非同期)— 次の確証runの遅延計測で STEP0 §4.4 の判定表に当てて確定
 2. 所有ドメイン名・サポート窓口・特商法表記
 3. 暗号化 idempotency 応答の鍵配送の細部(ヘッダー名・鍵長・ack の再送時の扱い)は工程2で詰める。方針(暗号文のみ保持・最大10分・ack 即削除)は決定済み
 
 ## 8. 工程の見取り図(承認後・実装は別 GO)
 - 工程2 詳細設計: OpenAPI 定義・DynamoDB キー/TransactWrite 条件式・IAM ポリシー・WAF ルール・Stripe 商品/価格/coupon・失敗シーケンス(統合タイムアウト時の返却)
-- 工程3 参考調査: REST API 統合タイムアウト緩和の申請手順と実績、Cognito パスワードレス設定、Bedrock Converse の Kimi 画像制限(枚数・サイズ)公式値、Stripe 日本向け Checkout(税込・特商法リンク)
+- 工程3 参考調査: REST API 統合タイムアウト緩和の申請手順と実績、Cognito パスワードレス設定、Bedrock Converse の採用モデル(Qwen3 VL 候補)の画像制限(枚数・サイズ)公式値、Stripe 日本向け Checkout(税込・特商法リンク)
 - 実装順序案: 共有 `reply-validate` パッケージ(pricing_eval と共用・変異テスト付き)→ 認証+me → generate(テキストのみ)→ 画像経路(圧縮・4.5MB)→ 課金 → 予約方式の回数制限 → E2E → 破壊的検証(Codex)→ 本番 preflight → プライバシーポリシー/規約/特商法 → 公開
 - 最初から書くテスト: 本文非出力テスト・回数上限の変異テスト(151回目/181試行目が通ったら落ちる)・同時2件が通ったら落ちる・idempotency 再送でモデルが2回呼ばれたら落ちる・Webhook 冪等・6案入力を3件に切り詰める/2案入力を再生成する/プレースホルダ案を除外する
 - 公開前: 不安定 E2E(21e2)の原因特定か隔離

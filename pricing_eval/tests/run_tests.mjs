@@ -751,10 +751,11 @@ t('36. judgeAvailability: 全項目 AVAILABLE/AUTHORIZED のみ ok(変異検出)
 });
 
 console.log('\n== 本番プロンプト追従テスト(fidelity) ==');
-const { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse, fidelityStopReason, PLACEHOLDER_RE } = await import('../src/lib/fidelity_checks.mjs');
+const { parseProductionReply, checkStyleRules, checkUngroundedNames, checkFabricationHints, extractToolUse, fidelityStopReason, PLACEHOLDER_RE } = await import('../src/lib/fidelity_checks.mjs');
 const { callStarted, callEnded, loadCallLog, unknownOutcomes, unknownOutcomeWorstCaseUsd, unaccountedCalls, unaccountedWorstCaseUsd, recordedSpendUsd, budgetAllows, callLogPath } = await import('../src/lib/call_log.mjs');
-const { findUngroundedNames, PROMPT_EXAMPLE_NAMES } = await import('../../reply-ai-app/src/lib/ungrounded.mjs');
-const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases, assertRunPreconditions, expandRepeats, percentiles, evaluateConfirmCriteria } = await import('../src/fidelity_eval.mjs');
+const { findUngroundedNames, findFabricationHints, PROMPT_EXAMPLE_NAMES, KNOWN_BRANDS, KNOWN_PLACES } = await import('../../reply-ai-app/src/lib/ungrounded.mjs');
+const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases, assertRunPreconditions, expandRepeats, percentiles, evaluateConfirmCriteria, parsePassCriteria, expectedDatasetHashFor, DEFAULT_DATASET, SYNTHETIC_GENERATORS } = await import('../src/fidelity_eval.mjs');
+const { generateFab10Cases, FAB10_CATEGORIES } = await import('../src/generate_cases_fab10.mjs');
 
 const goodProd = {
   situation: '会話は序盤で温度は普通', advice: '次は軽い質問で続ける',
@@ -833,6 +834,89 @@ t('49. 捏造検出: 入力に無い固有名詞・例文名を検知し、根�
   assertEq(v[0].rule, 'ungrounded_name');
 });
 
+t('60. 捏造の補助候補: 有名チェーン(停止層)・地名+店名・体験談の言い回しを候補に挙げ、入力にあれば挙げない。停止事由・合格条件にはならない(変異検出)', () => {
+  const grounding = '相手: 焼き鳥が好きなんですけど、おすすめのお店あります? 自分: 僕もたまに行きます';
+  // 2026-09-01 Kimi 07×5 で人間確認だけが見つけた3型(当時の検出器は全部素通し)
+  const texts = ['自分は中目黒のとりきちが好きなんですけど、行ったことあります?', '自分は鳥貴族派です笑', '焼き鳥いいですね、実は先週行ったところがあって'];
+  const hints = findFabricationHints(texts, grounding);
+  const kinds = hints.map((h) => `${h.kind}:${h.text}`);
+  assert(kinds.includes('place_store:中目黒のとりきち'), `地名+店名を候補にしない: ${kinds}`);
+  assert(kinds.includes('known_brand:鳥貴族'), `有名チェーンを候補にしない: ${kinds}`);
+  assert(kinds.some((k) => k.startsWith('experience_claim:先週行った')), `体験談の言い回しを候補にしない: ${kinds}`);
+  // 有名チェーンは停止層(findUngroundedNames)にも入る。地名+店名・体験談は候補止まり(完全検出できないため)
+  const hard = findUngroundedNames(texts, grounding);
+  assert(hard.includes('鳥貴族'), '有名チェーンが停止層に無い');
+  assertEq(hard.includes('中目黒のとりきち'), MUTATE, '地名+店名(候補層)を停止層に入れている');
+  // Qwen 10件 run(2026-09-01)で人間確認だけが見つけた型: 短い地名・自分の習慣/経歴の自己申告
+  const q = findFabricationHints(['箱根とか気になってるけど、混んでそう', '自分はバリとハワイだけなんで、次は台湾狙ってます', '餃子好きなんですね!自分も週1で食べてます笑', '自分は焼き餃子派なんですが'], '相手: 台湾が好きで3回行ってます');
+  const qk = q.map((h) => `${h.kind}:${h.text}`);
+  for (const p of ['箱根', 'バリ', 'ハワイ']) assert(qk.includes(`known_place:${p}`), `地名 ${p} を候補にしない: ${qk}`);
+  assertEq(qk.includes('known_place:台湾'), MUTATE, '相手の発言にある地名(台湾)を候補にした');
+  assert(qk.some((k) => k.startsWith('self_claim:') && k.includes('週1')), `習慣の自己申告を候補にしない: ${qk}`);
+  assert(qk.some((k) => k.startsWith('self_claim:') && k.includes('派')), `好みの自己申告(〜派)を候補にしない: ${qk}`);
+  assert(KNOWN_PLACES.length > 50, '地名リストが短すぎる');
+  // 地名・自己申告は候補層のみ(停止層に入れない=完全検出できないものを停止事由にしない)
+  assertEq(findUngroundedNames(['箱根とか気になってる', '自分も週1で食べてます'], '').length, MUTATE ? 1 : 0, '候補層を停止層に入れている');
+  // 入力に出ている語は候補にしない
+  assertEq(findFabricationHints(['鳥貴族いいですよね'], '相手: 鳥貴族好きなんです').length, MUTATE ? 1 : 0, '入力にあるブランドを候補にした');
+  // 一般語と衝突する短い通称は停止層に入れない(誤停止防止)
+  for (const w of ['モス', 'コーチ', 'スイッチ', '王将', '無印', 'マック']) assert(!KNOWN_BRANDS.includes(w), `曖昧な短語 ${w} が停止層に入っている`);
+  // violations 形式・停止理由にならない・合格条件を崩さない
+  const v = checkFabricationHints({ replies: [{ bubbles: ['自分は中目黒のとりきちが好きで'], why: 'w' }], advice: 'a' }, grounding);
+  assert(v.length >= 1 && v.every((x) => x.rule === 'fabrication_hint'), 'violations 形式でない');
+  assert(v.some((x) => x.detail === '候補(place_store): 中目黒のとりきち'), `place_store の候補が無い: ${JSON.stringify(v)}`);
+  const row = { success: true, production: goodProd, fidelity: { violations: v } };
+  assertEq(fidelityStopReason(row), null, '補助候補を停止事由にしている');
+  const rows = Array.from({ length: 10 }, () => ({ success: true, production: goodProd, fidelity: { violations: v }, attempts: [{ latencyMs: 1000 }] }));
+  const c = evaluateConfirmCriteria(rows, { expectedCases: 10, maxRegenerated: 1 });
+  assertEq(c.fabricationHints, MUTATE ? 9 : 10, '補助候補の件数');
+  assertEq(c.pass, true, '補助候補だけで不合格にしている(人間確認に回すべき)');
+});
+
+t('61. confirm10: 合格条件セット(10件・再生成≤1)と dataset ハッシュ期待値(別datasetは --dataset-hash 必須)(変異検出)', () => {
+  assertEq(parsePassCriteria('confirm30').maxRegenerated, 3); assertEq(parsePassCriteria('confirm10').expectedCases, 10); assertEq(parsePassCriteria('confirm10').maxRegenerated, MUTATE ? 3 : 1);
+  assertEq(parsePassCriteria(null), null);
+  let threw = false; try { parsePassCriteria('confirm99'); } catch { threw = true; } assert(threw, '未知の pass-criteria を通した');
+  const okRow = () => ({ success: true, production: goodProd, fidelity: { violations: [] }, attempts: [{ latencyMs: 1200 }] });
+  const regen = () => ({ ...okRow(), regenerated: true, firstAttemptViolation: { kind: 'placeholder' } });
+  const one = [...Array.from({ length: 9 }, okRow), regen()];
+  const two = [...Array.from({ length: 8 }, okRow), regen(), regen()];
+  assertEq(evaluateConfirmCriteria(one, parsePassCriteria('confirm10')).pass, true, '再生成1件は合格のはず');
+  assertEq(evaluateConfirmCriteria(two, parsePassCriteria('confirm10')).pass, MUTATE, '再生成2件を合格にしている');
+  assertEq(evaluateConfirmCriteria(Array.from({ length: 9 }, okRow), parsePassCriteria('confirm10')).pass, false, '9件で合格にしている');
+  const h = 'a'.repeat(64);
+  assertEq(expectedDatasetHashFor({ datasetPath: 'pricing_eval/cases_fab10.json', datasetHashArg: h, prevLedgerHash: 'b'.repeat(64) }), h, '指定ハッシュを使わない');
+  assertEq(expectedDatasetHashFor({ datasetPath: DEFAULT_DATASET, datasetHashArg: undefined, prevLedgerHash: 'b'.repeat(64) }), 'b'.repeat(64), '既定 dataset は前回台帳の値');
+  threw = false; try { expectedDatasetHashFor({ datasetPath: 'pricing_eval/cases_fab10.json', datasetHashArg: undefined, prevLedgerHash: 'b'.repeat(64) }); } catch { threw = true; }
+  assertEq(threw, !MUTATE, '別 dataset をハッシュ指定なしで通した');
+  threw = false; try { expectedDatasetHashFor({ datasetPath: DEFAULT_DATASET, datasetHashArg: 'abc', prevLedgerHash: null }); } catch { threw = true; } assert(threw, '不正なハッシュ形式を通した');
+  // 期待値と実ハッシュが違えば実行前再確認が止める
+  const pre = { allowed: true, region: 'ap-northeast-1', retention: { mode: 'none' }, identity: { arnTail: 'user/replier-eval-cli', account: '****1901' } };
+  const cfg = { region: 'ap-northeast-1', maxBudgetJpy: 10000 };
+  const blockers = assertRunPreconditions({ preflight: pre, cfg, datasetHash: 'c'.repeat(64), expected: { arnTail: 'user/replier-eval-cli', accountMask: '****1901', datasetHash: h, recordedSpendUsd: 1 }, priorSpentUsd: 1, priorSpentGiven: true });
+  assert(blockers.some((b) => /ハッシュ/.test(b)), 'ハッシュ不一致で止まらない');
+});
+
+t('62. cases_fab10: 5分類×2件=10件・合成データ生成器として登録済み・画像なし・入力自体が停止層の検出器に引っかからない・NG例の題材(焼き物系/観光地/作家と作品/ブランド派/並んで諦めた)と重ならない(変異検出)', () => {
+  const cases = generateFab10Cases();
+  assertEq(cases.length, MUTATE ? 11 : 10, '件数');
+  const byCat = {}; for (const c of cases) byCat[c.category] = (byCat[c.category] || 0) + 1;
+  assertEq(Object.keys(byCat).sort().join(','), [...FAB10_CATEGORIES].sort().join(','), '分類');
+  for (const [k, n] of Object.entries(byCat)) assertEq(n, 2, `分類 ${k} の件数`);
+  assertEq(new Set(cases.map((c) => c.id)).size, 10, 'ID重複');
+  assert(SYNTHETIC_GENERATORS.has('generate_cases_fab10.mjs'), '合成生成器として未登録(実行が禁止される)');
+  assertEq(pickFidelityCases(cases, 2, 0).length, 10, 'per-category=2 で10件にならない');
+  for (const c of cases) {
+    assertEq(c.images.length, 0, `${c.id} に画像`);
+    assert(c.conversation.length >= 3 && c.conversation[c.conversation.length - 1].from === 'partner', `${c.id} は相手の発言で終わるべき`);
+    const all = [c.goal, ...(c.conversation.map((t) => t.text)), c.partner_profile?.note || '', c.style_sample || ''].join(' ');
+    assertEq(findUngroundedNames([all], '').filter((x) => x !== '台湾').length, 0, `${c.id} の入力自体が停止層に引っかかる: ${findUngroundedNames([all], '')}`);
+    for (const ng of ['焼き鳥', '焼き物', '観光地', '作家', '監督', '並びすぎ', '諦め']) assert(!all.includes(ng), `${c.id} が NG 例の題材(${ng})と重なる`);
+  }
+  // 生成は決定的(2回呼んで同一)
+  assertEq(JSON.stringify(generateFab10Cases()), JSON.stringify(cases), '生成が非決定的');
+});
+
 t('50. extractToolUse: toolUseブロックのinputを取り出し、無ければnull(捏造しない)(変異検出)', () => {
   const res = { output: { message: { content: [
     { text: '説明文' },
@@ -865,6 +949,9 @@ t('51. fidelityStopReason: schema違反/interest_level混入/捏造/禁止出力
 });
 
 t('53. placeholder: ○○/〇〇/［店名］/〈場所〉/【店名】を検知し、通常文・単独の○は誤検知しない(変異検出)', () => {
+  // Qwen 10件 run 実測: 相手の名前が分からず「相手さんは?」と書く=未解決の代名詞。そのまま送れないのでプレースホルダ扱い
+  assertEq(PLACEHOLDER_RE.test('自分は焼き餃子派なんですが、相手さんは?'), !MUTATE, '「相手さん」をプレースホルダにしない');
+  assertEq(PLACEHOLDER_RE.test('相手の話を広げる'), false, '「相手」単体を誤検知');
   const bad = checkStyleRules({ situation: 's', advice: 'a', replies: [
     { bubbles: ['カレー屋は○○ってところです'], why: 'w' },
     { bubbles: ['〇〇さんは読書派ですか', '［店名］おすすめです'], why: 'w' },

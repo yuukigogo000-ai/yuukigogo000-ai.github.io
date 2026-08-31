@@ -497,6 +497,10 @@ export function ReplyTab({
         ))}
       </div>
 
+      <p id="aiNotice" className="mt-2 px-1 text-label text-ink-muted" hidden={!shown || busy}>
+        AIによる返信案です。内容が事実と合っているか確認してから使用してください。
+      </p>
+
       <div
         id="replyAdvice"
         className="mt-3 rounded-md border-l-[3px] border-brand bg-brand-soft px-4 py-3.5"
