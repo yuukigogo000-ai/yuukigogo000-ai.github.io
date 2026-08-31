@@ -26,4 +26,5 @@ export function splitClauses(text: string): { text: string; isQuestion: boolean 
 export function findPersonalFacts(text: string, ctx?: FirewallContext): FirewallReason[];
 export function findProperNounRisks(text: string, ctx?: FirewallContext): FirewallReason[];
 export function checkFactFirewall(text: string, ctx?: FirewallContext): { verdict: FirewallVerdict; reasons: FirewallReason[] };
+export function findFactContradictions(text: string, factTexts?: string[]): FirewallReason[];
 export function isAllowedConversationalMove(text: string): boolean;

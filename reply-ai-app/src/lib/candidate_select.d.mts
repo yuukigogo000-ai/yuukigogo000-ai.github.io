@@ -45,6 +45,9 @@ export type PickedReply = {
   index: number | null;
   verdict: FirewallVerdict | null;
   reasons: FirewallReason[];
+
+  /** lane 選抜で soft_risk を選んだ後に ok へ差し替えた場合だけ true */
+  upgradedFromSoft?: boolean;
 };
 
 export const LANES: ReplyLane[];
@@ -54,6 +57,8 @@ export const FINAL_COUNT: number;
 export const MAX_TEXT_LEN: number;
 export const MIN_TEXT_LEN: number;
 export const SIMILARITY_LIMIT: number;
+export const MAX_SOFT_RISK_IN_FINAL: number;
+export const MAX_GENERATION_PASSES: number;
 export const FALLBACK_TEMPLATES: Record<ReplyLane, string[]>;
 
 export function similarity(a: string, b: string): number;
@@ -66,10 +71,25 @@ export function selectThree(candidates: unknown[], ctx?: SelectionContext): {
   picks: { lane: ReplyLane; text: string | null; source: string; index: number | null; verdict: FirewallVerdict | null; reasons: FirewallReason[] }[];
   results: (CandidateValidation & { index: number; candidate: unknown })[];
   missingLanes: ReplyLane[];
+  softPicked: number;
   softRisks: unknown[];
   rejected: unknown[];
 };
-export function finalizeReplies(args: { firstPass: unknown[]; secondPass?: unknown[] | null; ctx?: SelectionContext }): {
+
+/** 1リクエストぶんの集計(§5) */
+export type SelectionStats = {
+  generatedCandidateCount: number;
+  okCandidateCount: number;
+  softRiskCandidateCount: number;
+  hardRejectCandidateCount: number;
+  selectedOkCount: number;
+  selectedSoftRiskCount: number;
+  selectedFallbackCount: number;
+  regenerationCount: number;
+  finalReplyCount: number;
+};
+
+export type FinalizeResult = {
   replies: [string, string, string];
   picked: PickedReply[];
   regenerated: boolean;
@@ -77,4 +97,19 @@ export function finalizeReplies(args: { firstPass: unknown[]; secondPass?: unkno
   softRisks: unknown[];
   rejected: unknown[];
   needsRegeneration: boolean;
+  stats: SelectionStats;
+};
+
+/** passes を渡す場合は最大 MAX_GENERATION_PASSES 個(超えたら例外) */
+export function finalizeReplies(args: { firstPass?: unknown[]; secondPass?: unknown[] | null; passes?: unknown[][] | null; ctx?: SelectionContext }): FinalizeResult;
+
+/** 率の分母は reply 系=返信総数、request 系=リクエスト数。分母0のときは null */
+export function selectionMetrics(finalized: FinalizeResult[]): SelectionStats & {
+  requestCount: number;
+  requestsWithFallback: number;
+  requestsWithSoftRisk: number;
+  fallbackReplyRate: number | null;
+  fallbackRequestRate: number | null;
+  softRiskReplyRate: number | null;
+  regenerationRate: number | null;
 };

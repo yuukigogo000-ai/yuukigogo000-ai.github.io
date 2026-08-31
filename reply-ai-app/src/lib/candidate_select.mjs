@@ -22,6 +22,11 @@ export const FINAL_COUNT = 3;
 export const MAX_TEXT_LEN = 120;   // 1案の上限(既存の吹き出し規則に合わせる)
 export const MIN_TEXT_LEN = 2;
 export const SIMILARITY_LIMIT = 0.72;  // これ以上似ていれば同一内容の言い換えとみなす
+// §4(2026-09-01 FIX_REQUIRED): 最終3案の優先順位は ok > soft_risk > fallback。
+// soft_risk は最終3案で最大1件。2件以上必要になる場合は1回だけ再生成し、それでも足りなければ fallback を使う。
+export const MAX_SOFT_RISK_IN_FINAL = 1;
+// 生成は最初の1回 + 再生成1回まで(= 最大2パス)。3回目を渡したら例外にする(呼び出し回数を勝手に増やさない)
+export const MAX_GENERATION_PASSES = 2;
 
 // 不足 lane を埋める決定的テンプレート(各5種類)。固有名詞・個人事実・プレースホルダを含めない。
 export const FALLBACK_TEMPLATES = {
@@ -195,29 +200,58 @@ export function selectThree(candidates, ctx = {}) {
   const valid = results.filter((r) => r.ok);
   const picks = [];
   const usedIdx = new Set();
+  let softUsed = 0;
+  /** 既に選んだ案と書き出し・内容が被らないか */
+  const fits = (r, list) => list.every((p) => !p.text || (!sameOpening(p.text, r.text) && similarity(p.text, r.text) < SIMILARITY_LIMIT));
 
   for (const lane of LANES) {
     const pool = valid.filter((r) => !usedIdx.has(r.index) && r.derivedLane === lane);
     // ok を soft_risk より優先し、同点なら元の順
     pool.sort((a, b) => (a.verdict === b.verdict ? a.index - b.index : a.verdict === 'ok' ? -1 : 1));
-    const chosen = pool.find((r) => picks.every((p) => !sameOpening(p.text, r.text) && similarity(p.text, r.text) < SIMILARITY_LIMIT));
-    if (chosen) { picks.push({ lane, text: chosen.text, source: 'model', index: chosen.index, verdict: chosen.verdict, reasons: chosen.reasons }); usedIdx.add(chosen.index); }
-    else picks.push({ lane, text: null, source: 'missing', index: null, verdict: null, reasons: [] });
+    // §4: soft_risk は最終3案で最大 MAX_SOFT_RISK_IN_FINAL 件。超える分は採用せず fallback へ回す
+    const chosen = pool.find((r) => (r.verdict === 'ok' || softUsed < MAX_SOFT_RISK_IN_FINAL) && fits(r, picks));
+    if (chosen) {
+      if (chosen.verdict === 'soft_risk') softUsed++;
+      picks.push({ lane, text: chosen.text, source: 'model', index: chosen.index, verdict: chosen.verdict, reasons: chosen.reasons });
+      usedIdx.add(chosen.index);
+    } else picks.push({ lane, text: null, source: 'missing', index: null, verdict: null, reasons: [] });
+  }
+
+  // §4: ok 候補が余っているなら soft_risk は採用しない(lane の並びより ok を優先して差し替える)
+  for (const p of picks) {
+    if (p.verdict !== 'soft_risk') continue;
+    const alt = valid.find((r) => r.verdict === 'ok' && !usedIdx.has(r.index) && fits(r, picks.filter((x) => x !== p)));
+    if (!alt) continue;
+    usedIdx.delete(p.index);
+    usedIdx.add(alt.index);
+    p.text = alt.text; p.source = 'model'; p.index = alt.index; p.verdict = 'ok'; p.reasons = alt.reasons;
+    // lane 選抜の段階で ok を選べていれば差し替えは起きない。起きたこと自体を記録する(優先順位の逆転を観測できるように)
+    p.upgradedFromSoft = true;
+    softUsed--;
   }
 
   // 全3案が質問だけにならない(1案は疑問符で終わらない)
   const filled = picks.filter((p) => p.text);
   if (filled.length === FINAL_COUNT && filled.every((p) => isQuestionText(p.text))) {
     const alt = valid.find((r) => !usedIdx.has(r.index) && !isQuestionText(r.text)
+      && (r.verdict === 'ok' || softUsed < MAX_SOFT_RISK_IN_FINAL)
       && picks.every((p) => !p.text || (!sameOpening(p.text, r.text) && similarity(p.text, r.text) < SIMILARITY_LIMIT)));
     const slot = picks.find((p) => p.lane === 'reaction');
-    if (alt) { usedIdx.delete(slot.index); slot.text = alt.text; slot.source = 'model'; slot.index = alt.index; slot.verdict = alt.verdict; slot.reasons = alt.reasons; usedIdx.add(alt.index); }
-    else { slot.text = null; slot.source = 'missing'; slot.index = null; }   // fallback(reaction は疑問符で終わらない)へ回す
+    if (alt) {
+      usedIdx.delete(slot.index);
+      if (slot.verdict === 'soft_risk') softUsed--;
+      if (alt.verdict === 'soft_risk') softUsed++;
+      slot.text = alt.text; slot.source = 'model'; slot.index = alt.index; slot.verdict = alt.verdict; slot.reasons = alt.reasons; usedIdx.add(alt.index);
+    } else {
+      if (slot.verdict === 'soft_risk') softUsed--;
+      slot.text = null; slot.source = 'missing'; slot.index = null; slot.verdict = null;   // fallback(reaction は疑問符で終わらない)へ回す
+    }
   }
 
   return {
     picks,
     results,
+    softPicked: softUsed,
     missingLanes: picks.filter((p) => !p.text).map((p) => p.lane),
     softRisks: results.filter((r) => r.ok && r.verdict === 'soft_risk'),
     rejected: results.filter((r) => !r.ok),
@@ -229,12 +263,16 @@ export function selectThree(candidates, ctx = {}) {
  * @param {{firstPass:any[], secondPass?:any[]|null, ctx:object}} args
  *   secondPass = 再生成の候補(不要なら null)。ctx.idempotencyKey で fallback が決定的になる
  */
-export function finalizeReplies({ firstPass, secondPass = null, ctx = {} }) {
+export function finalizeReplies({ firstPass, secondPass = null, passes = null, ctx = {} }) {
   const key = ctx.idempotencyKey || 'no-key';
-  let sel = selectThree(firstPass, ctx);
+  // 生成パス(最初の1回 + 再生成1回まで)。3回目以降を渡したら例外(呼び出し回数を勝手に増やさない)
+  const list = passes ?? [Array.isArray(firstPass) ? firstPass : [], ...(secondPass ? [secondPass] : [])];
+  if (!Array.isArray(list) || list.length === 0) throw new Error('生成結果(passes)が空');
+  if (list.length > MAX_GENERATION_PASSES) throw new Error(`生成は最大 ${MAX_GENERATION_PASSES} 回まで(渡されたのは ${list.length} 回ぶん)`);
+  let sel = selectThree(list[0], ctx);
   let regenerated = false;
-  if (sel.missingLanes.length && secondPass) {
-    const merged = [...(firstPass || []), ...secondPass];
+  if (sel.missingLanes.length && list.length > 1) {
+    const merged = [...list[0], ...list[1]];
     const sel2 = selectThree(merged, ctx);
     if (sel2.missingLanes.length <= sel.missingLanes.length) { sel = sel2; regenerated = true; }
   }
@@ -265,6 +303,26 @@ export function finalizeReplies({ firstPass, secondPass = null, ctx = {} }) {
   if (replies.some((t) => typeof t !== 'string' || !t.trim())) throw new Error('最終案に空の返信がある');
   if (new Set(replies).size !== FINAL_COUNT) throw new Error('最終案に重複がある');
   if (replies.every((t) => isQuestionText(t))) throw new Error('最終案が全て質問になっている');
+  const selectedSoftRiskCount = out.filter((o) => o.verdict === 'soft_risk').length;
+  if (selectedSoftRiskCount > MAX_SOFT_RISK_IN_FINAL) {
+    throw new Error(`最終3案の soft_risk が ${selectedSoftRiskCount} 件(上限 ${MAX_SOFT_RISK_IN_FINAL} 件)`);
+  }
+  if (out.some((o) => o.verdict === 'hard_reject')) throw new Error('hard reject の候補が最終3案に混ざっている');
+
+  // §5 集計指標(1リクエストぶん)。渡された候補は全て「生成された」ものとして数える
+  const allCandidates = list.flat();
+  const graded = validateCandidates(allCandidates, ctx).results;
+  const stats = {
+    generatedCandidateCount: allCandidates.length,
+    okCandidateCount: graded.filter((r) => r.verdict === 'ok').length,
+    softRiskCandidateCount: graded.filter((r) => r.verdict === 'soft_risk').length,
+    hardRejectCandidateCount: graded.filter((r) => r.verdict === 'hard_reject').length,
+    selectedOkCount: out.filter((o) => o.source !== 'fallback' && o.verdict === 'ok').length,
+    selectedSoftRiskCount,
+    selectedFallbackCount: out.filter((o) => o.source === 'fallback').length,
+    regenerationCount: list.length - 1,        // 実際に追加生成した回数(0 or 1)
+    finalReplyCount: replies.length,
+  };
 
   return {
     replies,                                   // 利用者へ返すのはこれだけ
@@ -273,6 +331,42 @@ export function finalizeReplies({ firstPass, secondPass = null, ctx = {} }) {
     fallbackLanes,
     softRisks: sel.softRisks,
     rejected: sel.rejected,
-    needsRegeneration: sel.missingLanes.length > 0 && !secondPass,
+    needsRegeneration: sel.missingLanes.length > 0 && list.length < MAX_GENERATION_PASSES,
+    stats,
+  };
+}
+
+/**
+ * §5 集計指標。複数リクエスト(finalizeReplies の戻り値)をまとめる。
+ * 率の分母は「返信総数」と「リクエスト数」を取り違えないこと。分母0のときは null(0除算を作らない)。
+ */
+export function selectionMetrics(finalized = []) {
+  const sum = (f) => finalized.reduce((n, x) => n + (Number(f(x)) || 0), 0);
+  const requestCount = finalized.length;
+  const finalReplyCount = sum((x) => (x.replies || []).length);
+  const selectedFallbackCount = sum((x) => x.stats?.selectedFallbackCount);
+  const selectedSoftRiskCount = sum((x) => x.stats?.selectedSoftRiskCount);
+  const regenerationCount = sum((x) => x.stats?.regenerationCount);
+  const requestsWithFallback = finalized.filter((x) => (x.stats?.selectedFallbackCount || 0) > 0).length;
+  const requestsWithSoftRisk = finalized.filter((x) => (x.stats?.selectedSoftRiskCount || 0) > 0).length;
+  const rate = (num, den) => (den > 0 ? num / den : null);
+  return {
+    requestCount,
+    generatedCandidateCount: sum((x) => x.stats?.generatedCandidateCount),
+    okCandidateCount: sum((x) => x.stats?.okCandidateCount),
+    softRiskCandidateCount: sum((x) => x.stats?.softRiskCandidateCount),
+    hardRejectCandidateCount: sum((x) => x.stats?.hardRejectCandidateCount),
+    selectedOkCount: sum((x) => x.stats?.selectedOkCount),
+    selectedSoftRiskCount,
+    selectedFallbackCount,
+    requestsWithFallback,
+    requestsWithSoftRisk,
+    regenerationCount,
+    finalReplyCount,
+    // 率(分母を取り違えない: reply 系は返信総数、request 系はリクエスト数)
+    fallbackReplyRate: rate(selectedFallbackCount, finalReplyCount),
+    fallbackRequestRate: rate(requestsWithFallback, requestCount),
+    softRiskReplyRate: rate(selectedSoftRiskCount, finalReplyCount),
+    regenerationRate: rate(regenerationCount, requestCount),
   };
 }
