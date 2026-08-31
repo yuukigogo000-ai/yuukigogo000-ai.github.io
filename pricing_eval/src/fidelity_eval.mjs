@@ -59,6 +59,56 @@ const RUNS_DIR = 'pricing_eval/runs';
 const PROMPTS_TS = 'reply-ai-app/src/lib/prompts.ts';
 export const CASES_PER_CATEGORY = 5;
 
+/** 同じケースを n 回並べる(repeatNo 1..n)。確証run「TXT_SHORT_07 を5回」用。台帳再利用は fresh で切ること */
+export function expandRepeats(cases, n = 1) {
+  if (!Number.isInteger(n) || n < 1 || n > 10) throw new Error(`repeat は 1〜10(${n})`);
+  const out = [];
+  for (const c of cases) for (let r = 1; r <= n; r++) out.push({ ...c, repeatNo: r });
+  return out;
+}
+
+/** nearest-rank 法の分位点(ms)。空なら null */
+export function percentiles(values) {
+  const v = values.filter((x) => typeof x === 'number' && Number.isFinite(x)).sort((a, b) => a - b);
+  if (!v.length) return { n: 0, p50: null, p90: null, p95: null, max: null };
+  const at = (p) => v[Math.min(v.length - 1, Math.max(0, Math.ceil(p * v.length) - 1))];
+  return { n: v.length, p50: at(0.5), p90: at(0.9), p95: at(0.95), max: v[v.length - 1] };
+}
+
+/**
+ * 確証run(30件)の合格条件(2026-09-01 発注者決定): 最終成功 30/30・最終schema違反 0・placeholder 0・捏造 0・
+ * 初回違反→再生成 ≤3・120秒タイムアウト 0。latency は全モデル呼び出し(試行)単位で p50/p90/p95/max。
+ */
+export function evaluateConfirmCriteria(rows, { expectedCases = 30, maxRegenerated = 3, timeoutMs = 120000 } = {}) {
+  const finalViol = (r, rule) => (r.fidelity?.violations || []).some((v) => v.rule === rule);
+  const attempts = rows.flatMap((r) => r.attempts || []);
+  const timeouts = attempts.filter((a) => a.failureKind === 'timeout' || (typeof a.latencyMs === 'number' && a.latencyMs >= timeoutMs)).length;
+  const c = {
+    cases: rows.length,
+    finalSuccess: rows.filter((r) => r.success).length,
+    finalSchemaViolations: rows.filter((r) => !r.success && r.failureClass === 'model_output').length,
+    finalSystemFailures: rows.filter((r) => !r.success && r.failureClass !== 'model_output').length,
+    placeholder: rows.filter((r) => r.success && finalViol(r, 'placeholder')).length,
+    fabrication: rows.filter((r) => r.success && finalViol(r, 'ungrounded_name')).length,
+    interestLevelEmitted: rows.filter((r) => r.production && Object.prototype.hasOwnProperty.call(r.production, 'interest_level')).length,
+    firstAttemptViolations: rows.filter((r) => r.firstAttemptViolation).length,
+    regenerated: rows.filter((r) => r.regenerated).length,
+    timeouts,
+    modelCalls: attempts.length,
+    latency: percentiles(attempts.map((a) => a.latencyMs)),
+  };
+  const failed = [];
+  if (c.cases !== expectedCases) failed.push(`件数 ${c.cases}/${expectedCases}`);
+  if (c.finalSuccess !== expectedCases) failed.push(`最終成功 ${c.finalSuccess}/${expectedCases}`);
+  if (c.finalSchemaViolations) failed.push(`最終schema違反 ${c.finalSchemaViolations}`);
+  if (c.placeholder) failed.push(`placeholder ${c.placeholder}`);
+  if (c.fabrication) failed.push(`捏造候補 ${c.fabrication}`);
+  if (c.interestLevelEmitted) failed.push(`interest_level 混入 ${c.interestLevelEmitted}`);
+  if (c.regenerated > maxRegenerated) failed.push(`再生成 ${c.regenerated} > ${maxRegenerated}`);
+  if (c.timeouts) failed.push(`120秒タイムアウト ${c.timeouts}`);
+  return { ...c, pass: failed.length === 0, failedConditions: failed, note: '自動評価の「捏造候補 0」は検出器の範囲内の話で、捏造ゼロの断定ではない。人間確認ページで全件を見ること' };
+}
+
 /** prompts.ts(TypeScript)から REPLY_SYSTEM / REPLY_SCHEMA を無劣化で取り出す */
 export async function loadProductionPrompts(tsPath = PROMPTS_TS, tmpDir = join(RUNS_DIR, '_summary')) {
   const src = readFileSync(tsPath, 'utf8');
@@ -126,6 +176,11 @@ async function main() {
   const stopOnViolation = args['stop-on-violation'] === true;
   const confirmRun = args['confirm-run'] === true; // 確証run: 実行前 fail-closed 再確認+1件目の違反で停止
   const fresh = confirmRun || args.fresh === true; // 台帳の成功済みを再利用しない(確証runは独立した30件として数える)
+  const regenerateOnce = args['regenerate-once'] === true; // 本番同様: 初回応答に違反があれば1回だけ再生成(初回違反は独立に記録)
+  const repeat = args.repeat === undefined ? 1 : Number(args.repeat);
+  const maxFirstViolations = args['max-first-violations'] === undefined ? null : Number(args['max-first-violations']);
+  if (maxFirstViolations != null && (!Number.isInteger(maxFirstViolations) || maxFirstViolations < 0)) throw new Error('max-first-violations は0以上の整数');
+  const passCriteria = args['pass-criteria'] ? String(args['pass-criteria']) : null;
 
   const { REPLY_SYSTEM, REPLY_SCHEMA } = await loadProductionPrompts();
   const casesRaw = readFileSync('pricing_eval/cases.json', 'utf8');
@@ -141,6 +196,7 @@ async function main() {
     cases = cases.filter((c) => want.includes(c.id));
     if (cases.length !== want.length) throw new Error(`--cases に選定外/不明なIDが含まれています(${cases.length}/${want.length}件のみ一致)`);
   }
+  cases = expandRepeats(cases, repeat);
   const datasetHash = datasetHashOf(casesRaw);
 
   let preflightReport = null;
@@ -178,10 +234,11 @@ async function main() {
   mkdirSync(dir, { recursive: true });
   const resultsPath = join(dir, 'results.jsonl');
   const { rows: done } = readResults(resultsPath);
-  const doneKeys = new Set(done.map((r) => `${r.modelId}::${r.caseId}`));
+  const doneKeys = new Set(done.map((r) => `${r.modelId}::${r.caseId}#${r.repeatNo ?? 1}`));
 
   writeFileSync(join(dir, 'run_manifest.json'), JSON.stringify({
     runId, kind: 'production_prompt_fidelity', at: new Date().toISOString(), caseOffset, fresh, confirmRun, stopOnViolation, syntheticDataset,
+    regenerateOnce, repeat, maxFirstViolations, passCriteria,
     systemSource: PROMPTS_TS, systemLength: REPLY_SYSTEM.length,
     schemaDelivery: toolUse ? 'tool-use(Converse toolConfig=本番採用構成)' : 'text(本番はtool-use。相違点として明記)',
     cases: cases.map((c) => c.id),
@@ -192,6 +249,7 @@ async function main() {
   const creds = resolveCredentials()?.credentials ?? null;
   const ledger = loadLedger();
   let spentUsd = priorSpentUsd;
+  let firstViolationCount = 0; // 初回応答の違反件数(再生成で救えても数える)
   // 台帳外の呼び出しをなくす: 終端の無い STARTED(=UNKNOWN_OUTCOME)は worst-case で先に計上する
   const callLog = loadCallLog();
   const unknowns = unaccountedCalls(callLog.rows);
@@ -215,20 +273,27 @@ async function main() {
     const todo = [];
     let reused = 0;
     for (const c of cases) {
-      if (doneKeys.has(`${model.modelId}::${c.id}`)) continue;
+      if (doneKeys.has(`${model.modelId}::${c.id}#${c.repeatNo ?? 1}`)) continue;
       if (!fresh && ledger.get(ledgerKey(hashesFor(c)))) { reused++; continue; }
       todo.push(c);
     }
     logInfo(`fidelity 実行開始 ${model.modelId}`, { todo: todo.length, reused, skipped: cases.length - todo.length - reused });
 
     for (const c of todo) {
-      // 呼び出し前の予算検査(worst-case・再試行込み・既発生費用込み)
-      const perCallWorst = ((16000 / 1e6) * model.price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * model.price.outputPerMTokUsd) * (1 + cfg.maxAutoRetries);
+      // 呼び出し前の予算検査(worst-case・再試行込み・再生成込み・既発生費用込み)
+      const perCallWorst = ((16000 / 1e6) * model.price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * model.price.outputPerMTokUsd) * (1 + cfg.maxAutoRetries) * (regenerateOnce ? 2 : 1);
       if (cfg.usdJpy && (spentUsd + perCallWorst) * cfg.usdJpy > cfg.maxBudgetJpy) {
         throw new Error(`予算上限 ${cfg.maxBudgetJpy} 円に達するため呼び出し前に停止します`);
       }
-      const attempts = [];
+      const allAttempts = [];
+      const generations = [];
+      let attempts = [];
       let final = null;
+      let fidelity = null;
+      for (let generation = 1; generation <= (regenerateOnce ? 2 : 1); generation++) {
+      attempts = [];
+      final = null;
+      fidelity = null;
       for (let attemptNo = 1; attemptNo <= 1 + cfg.maxAutoRetries; attemptNo++) {
         const t0 = Date.now();
         let a;
@@ -293,7 +358,6 @@ async function main() {
         await new Promise((r) => setTimeout(r, 1000));
       }
 
-      let fidelity = null;
       if (final.ok) {
         fidelity = checkStyleRules(final.parsed.data);
         // 捏造検査: 入力(goal・プロフィール・文体・会話)に無い固有名詞。スクショケースも
@@ -306,7 +370,16 @@ async function main() {
         ].join(' ');
         fidelity.violations.push(...checkUngroundedNames(final.parsed.data, grounding));
       }
-      const costs = attempts.map((x) => costUsdForAttempt(x.usage, model.price));
+      for (const x of attempts) { x.generation = generation; allAttempts.push(x); }
+      const genViolation = fidelityStopReason({ success: final.ok, failureKind: final.failureKind, failureClass: final.failureClass ?? null, attempts, production: final.ok ? final.parsed.data : null, invalidOutput: !final.ok ? (final.parsed?.data ?? null) : null, fidelity });
+      generations.push({ generation, ok: final.ok, violation: genViolation, latencyMs: attempts.reduce((s, x) => s + x.latencyMs, 0), requestIds: attempts.map((x) => x.requestId).filter(Boolean) });
+      if (!genViolation || !regenerateOnce || generation === 2) break;
+      logInfo(`初回応答に違反 → 1回だけ再生成 ${c.id}`, { kind: genViolation.kind, detail: String(genViolation.detail).slice(0, 120) });
+      } // generation loop
+      const firstAttemptViolation = generations[0]?.violation ?? null;
+      const finalViolation = generations[generations.length - 1]?.violation ?? null;
+      if (firstAttemptViolation) firstViolationCount++;
+      const costs = allAttempts.map((x) => costUsdForAttempt(x.usage, model.price));
       const effective = costs.some((x) => x === null) ? null : costs.reduce((s, x) => s + x, 0);
       // 予算計上: 費用が分からない試行(usage 無し)は worst-case で数える(甘く見積もらない)
       const perAttemptWorstUsd = (16000 / 1e6) * model.price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * model.price.outputPerMTokUsd;
@@ -316,21 +389,24 @@ async function main() {
         runId, kind: 'fidelity', caseId: c.id, category: c.category, imageCount: c.images.length,
         modelKey: model.key, modelId: model.modelId, invocationTarget: model.invocationTarget,
         success: final.ok, failureKind: final.failureKind, failureClass: final.failureClass ?? null,
-        retried: attempts.length > 1,
-        attempts: attempts.map((x, i) => ({
-          attemptNo: x.attemptNo, latencyMs: x.latencyMs, usage: x.usage, ok: x.ok, callId: x.callId ?? null,
+        retried: allAttempts.some((x) => x.attemptNo > 1),
+        attempts: allAttempts.map((x, i) => ({
+          attemptNo: x.attemptNo, generation: x.generation ?? 1, latencyMs: x.latencyMs, usage: x.usage, ok: x.ok, callId: x.callId ?? null,
           failureKind: x.failureKind, error: x.error ?? null, errorCode: x.errorCode ?? null,
           sanitizedErrorMessage: x.sanitizedErrorMessage ?? null, httpStatus: x.httpStatus ?? null,
           requestId: x.requestId ?? null, modelId: model.modelId, caseId: c.id, apiOperation: x.apiOperation ?? null,
           inputTokens: x.usage?.inputTokens ?? null, outputTokens: x.usage?.outputTokens ?? null,
           costUsd: costs[i], calculatedCostUsd: formatUsd(costs[i]),
         })),
-        totalLatencyMs: attempts.reduce((s, x) => s + x.latencyMs, 0),
+        totalLatencyMs: allAttempts.reduce((s, x) => s + x.latencyMs, 0),
         effectiveCostUsd: effective,
         production: final.ok ? final.parsed.data : null,
         // 違反時の出力本文(schema違反の原因調査用。成功時は production に入る)
         invalidOutput: (!final.ok && syntheticDataset) ? (final.parsed?.data ?? null) : null,
         fidelity,
+        // 再生成の記録(本番同様1回まで)。初回違反は最終結果と独立に残す
+        repeatNo: c.repeatNo ?? 1, regenerated: generations.length > 1, firstAttemptViolation, finalViolation, generations,
+        timeoutCount: allAttempts.filter((x) => x.failureKind === 'timeout').length,
         at: new Date().toISOString(),
       };
       appendFileSync(resultsPath, JSON.stringify(row) + '\n');
@@ -359,6 +435,11 @@ async function main() {
           writeFileSync(join(dir, 'stop_reason.json'), JSON.stringify(saved, null, 2));
           throw new Error(`確証run停止(1件目の違反): ${c.id} ${why.kind} — ${why.detail}(原因を stop_reason.json に保存)`);
         }
+      }
+      if (maxFirstViolations != null && firstViolationCount > maxFirstViolations) {
+        const saved = { at: row.at, runId, caseId: c.id, kind: 'first_violation_limit', detail: `初回違反 ${firstViolationCount} 件 > 上限 ${maxFirstViolations}`, firstAttemptViolation, completedBeforeStop: readResults(resultsPath).rows.length, cumulativeUsd: formatUsd(spentUsd) };
+        writeFileSync(join(dir, 'stop_reason.json'), JSON.stringify(saved, null, 2));
+        throw new Error(`確証run停止(初回違反の上限超過): ${saved.detail}(原因を stop_reason.json に保存)`);
       }
     }
   }
@@ -392,7 +473,10 @@ async function main() {
     delete s.latencies;
     logInfo(`fidelity ${id}`, { cases: s.cases, schemaRate: s.schemaRate, style: s.styleViolations, structure: s.structureViolations, cost: s.calculatedCostUsd });
   }
-  writeFileSync(join(dir, 'fidelity_summary.json'), JSON.stringify({ at: new Date().toISOString(), runId, summary, cumulativeUsd: formatUsd(spentUsd) }, null, 2));
+  const criteria = evaluateConfirmCriteria(rows, { expectedCases: passCriteria === 'confirm30' ? 30 : rows.length });
+  logInfo('確証指標', { finalSuccess: `${criteria.finalSuccess}/${criteria.cases}`, firstAttemptViolations: criteria.firstAttemptViolations, regenerated: criteria.regenerated, placeholder: criteria.placeholder, fabrication: criteria.fabrication, timeouts: criteria.timeouts, latency: criteria.latency });
+  if (passCriteria) logInfo(`合格判定(${passCriteria})`, { pass: criteria.pass, failedConditions: criteria.failedConditions });
+  writeFileSync(join(dir, 'fidelity_summary.json'), JSON.stringify({ at: new Date().toISOString(), runId, summary, criteria, passCriteria, cumulativeUsd: formatUsd(spentUsd) }, null, 2));
   logInfo('fidelity 完了', { runId, thisRunUsd: formatUsd(spentUsd - priorSpentUsd), cumulativeUsd: formatUsd(spentUsd) });
 }
 

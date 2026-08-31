@@ -61,7 +61,8 @@ export function loadConfig(args = parseArgs()) {
     // EOL 猶予の最低日数。黙って固定しない(設定・CLIで変更可)。推奨比較は 90 日。
     minimumEolHeadroomDays: num(args['min-eol-headroom-days'] ?? file.minimumEolHeadroomDays) ?? 90,
     outputMaxTokens: num(file.outputMaxTokens) ?? 1024,
-    temperature: file.temperature ?? 0.7,
+    // 2026-09-01 発注者決定: 確証run/本番は 0.2(初回応答のプレースホルダ・構造ゆれ対策)。CLI で上書き可・設定ファイルが既定
+    temperature: num(args.temperature) ?? file.temperature ?? 0.7,
     concurrency: num(args.concurrency ?? file.concurrency) ?? 2,
     // 明示的に候補を絞りたい場合のみ。既定は探索結果すべて。
     modelsFilter: args.models ? String(args.models).split(',').map((s) => s.trim()).filter(Boolean) : null,

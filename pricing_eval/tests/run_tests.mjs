@@ -754,7 +754,7 @@ console.log('\n== 本番プロンプト追従テスト(fidelity) ==');
 const { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse, fidelityStopReason, PLACEHOLDER_RE } = await import('../src/lib/fidelity_checks.mjs');
 const { callStarted, callEnded, loadCallLog, unknownOutcomes, unknownOutcomeWorstCaseUsd, unaccountedCalls, unaccountedWorstCaseUsd, recordedSpendUsd, budgetAllows, callLogPath } = await import('../src/lib/call_log.mjs');
 const { findUngroundedNames, PROMPT_EXAMPLE_NAMES } = await import('../../reply-ai-app/src/lib/ungrounded.mjs');
-const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases, assertRunPreconditions } = await import('../src/fidelity_eval.mjs');
+const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases, assertRunPreconditions, expandRepeats, percentiles, evaluateConfirmCriteria } = await import('../src/fidelity_eval.mjs');
 
 const goodProd = {
   situation: '会話は序盤で温度は普通', advice: '次は軽い質問で続ける',
@@ -980,6 +980,45 @@ t('56. budgetAllows: 予約(reserved)込みで判定し、並行2件が同じ sp
   assert(!budgetAllows({ spentUsd: 0.6, reservedUsd: 0, nextWorstUsd: 0.1, ...cfg }), '超過を通している');
   assert(!budgetAllows({ spentUsd: 0, reservedUsd: 0, nextWorstUsd: 0.1, usdJpy: 0, maxBudgetJpy: 100 }), 'usdJpy 未設定で通している');
   assert(!budgetAllows({ spentUsd: 0, reservedUsd: 0, nextWorstUsd: 0.1, usdJpy: 160, maxBudgetJpy: 0 }), '上限 0 で通している');
+});
+
+t('57. temperature: CLI --temperature が設定ファイルを上書きし、既定は設定ファイル(0.2)(変異検出)', () => {
+  assertEq(loadConfig({ temperature: '0.5' }).temperature, MUTATE ? 0.7 : 0.5, 'CLI 上書き');
+  assertEq(loadConfig({}).temperature, 0.2, '設定ファイルの 0.2 が既定でない');
+});
+
+t('58. expandRepeats: n回複製(repeatNo 1..n)・範囲外は拒否(変異検出)', () => {
+  const base = [{ id: 'A' }, { id: 'B' }];
+  const r5 = expandRepeats(base, 5);
+  assertEq(r5.length, MUTATE ? 11 : 10, '件数');
+  assertEq(r5.filter((c) => c.id === 'A').map((c) => c.repeatNo).join(','), '1,2,3,4,5', 'repeatNo');
+  assertEq(expandRepeats(base, 1).map((c) => c.repeatNo).join(','), '1,1', 'n=1');
+  let threw = 0; for (const n of [0, 11, 1.5]) { try { expandRepeats(base, n); } catch { threw++; } }
+  assertEq(threw, 3, '範囲外を通している');
+});
+
+t('59. percentiles/evaluateConfirmCriteria: 分位点は nearest-rank、合格条件はどれか1つ崩れても不合格(変異検出)', () => {
+  const p = percentiles([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
+  assertEq(`${p.p50}/${p.p90}/${p.p95}/${p.max}`, MUTATE ? '60/90/100/100' : '50/90/100/100', 'nearest-rank');
+  assertEq(percentiles([]).p95, null, '空配列');
+  const okRow = (i) => ({ success: true, failureClass: null, production: { replies: [] }, fidelity: { violations: [] }, attempts: [{ latencyMs: 1000 + i, failureKind: null }], regenerated: false, firstAttemptViolation: null });
+  const rows = Array.from({ length: 30 }, (_, i) => okRow(i));
+  const good = evaluateConfirmCriteria(rows);
+  assertEq(good.pass, true, `全条件を満たすのに不合格: ${good.failedConditions}`);
+  const variants = [
+    rows.slice(0, 29),
+    [...rows.slice(0, 29), { ...okRow(0), success: false, failureClass: 'model_output' }],
+    [...rows.slice(0, 29), { ...okRow(0), fidelity: { violations: [{ rule: 'placeholder' }] } }],
+    [...rows.slice(0, 29), { ...okRow(0), fidelity: { violations: [{ rule: 'ungrounded_name' }] } }],
+    [...rows.slice(0, 29), { ...okRow(0), production: { interest_level: 50 } }],
+    [...rows.slice(0, 26), ...Array.from({ length: 4 }, (_, i) => ({ ...okRow(i), regenerated: true, firstAttemptViolation: { kind: 'placeholder' } }))],
+    [...rows.slice(0, 29), { ...okRow(0), attempts: [{ latencyMs: 120014, failureKind: 'timeout' }, { latencyMs: 30000, failureKind: null }] }],
+  ];
+  variants.forEach((v, i) => assert(!evaluateConfirmCriteria(v).pass, `変異 ${i} が合格になる`));
+  const three = [...rows.slice(0, 27), ...Array.from({ length: 3 }, (_, i) => ({ ...okRow(i), regenerated: true, firstAttemptViolation: { kind: 'x' } }))];
+  assertEq(evaluateConfirmCriteria(three).pass, true, '再生成3件は合格のはず');
+  assertEq(evaluateConfirmCriteria(three).regenerated, 3, '再生成件数');
+  assertEq(evaluateConfirmCriteria(three).firstAttemptViolations, 3, '初回違反件数');
 });
 
 await (async () => {

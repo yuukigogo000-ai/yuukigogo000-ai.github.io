@@ -58,6 +58,8 @@ export async function callClaude<T>(
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 16000,
+        // 2026-09-01: 初回応答のプレースホルダ/構造ゆれ対策で 0.2(評価と同一値。変えるなら再評価)
+        temperature: 0.2,
         output_config: { format: { type: 'json_schema', schema } },
         // 指示書は毎回同じなのでキャッシュさせる(5分以内の連続利用で入力トークン代が下がる)
         system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
