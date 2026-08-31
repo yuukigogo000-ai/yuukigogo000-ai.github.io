@@ -63,8 +63,11 @@ export function buildProductionUserPrompt(c, schema) {
   p += `## トーン\n${TONE_AUTO}\n`;
   p += `\n## 吹き出しの分け方\n${SPLIT_AUTO}\n`;
   p += `\nこの状況に最適な返信を3案提案してください。`;
-  // 本番は tool-use で schema を強制する。汎用モデルにはテキストで渡す(相違点・レポート明記)
-  p += `\n\n## 出力形式(厳守)\n次の JSON Schema に適合する JSON オブジェクトだけを出力する。説明文やコードブロック記号を前後に付けない。\n${JSON.stringify(schema)}`;
+  // 本番は tool-use で schema を強制する。汎用モデルにはテキストで渡す(相違点・レポート明記)。
+  // toolConfig 検証時は schema を渡さない(本番と同じく tool 側で強制するため)。
+  if (schema) {
+    p += `\n\n## 出力形式(厳守)\n次の JSON Schema に適合する JSON オブジェクトだけを出力する。説明文やコードブロック記号を前後に付けない。\n${JSON.stringify(schema)}`;
+  }
   return p;
 }
 
