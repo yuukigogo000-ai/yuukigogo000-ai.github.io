@@ -92,7 +92,7 @@ export function createAnthropicClient({ apiKey, fetchImpl = globalThis.fetch, ti
 
 /**
  * api.ts と同じ形のリクエストボディ。違いは max_tokens(評価は cfg.outputMaxTokens・本番は16000)と
- * 画像の media_type(評価のスクショは png・本番は jpeg)だけ。
+ * 画像の media_type(評価のスクショは png・本番は jpeg)だけ。temperature は null で省略(Opus 5 は非対応)。
  */
 export function buildMessagesBody({ model, system, userText, imagePaths, maxTokens, temperature, schema }) {
   const content = [];
@@ -100,14 +100,16 @@ export function buildMessagesBody({ model, system, userText, imagePaths, maxToke
     content.push({ type: 'image', source: { type: 'base64', media_type: 'image/png', data: readFileSync(p).toString('base64') } });
   }
   content.push({ type: 'text', text: userText });
-  return {
+  const body = {
     model,
     max_tokens: maxTokens,
-    temperature,
     output_config: { format: { type: 'json_schema', schema } },
     system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
     messages: [{ role: 'user', content }],
   };
+  // Claude 5 系は temperature 非対応(400)。null/undefined なら送らない(本番 api.ts も送らない)
+  if (temperature != null) body.temperature = temperature;
+  return body;
 }
 
 /** 応答から本文と usage。input_tokens はキャッシュ分を含まない(Anthropic 仕様)ので cache 列を別に持つ */

@@ -821,6 +821,8 @@ t('49. 捏造検出: 入力に無い固有名詞・例文名を検知し、根�
   assertEq(hit3.includes('カレー屋'), MUTATE ? true : false, '業態の一般語「カレー屋」を店名として誤検知');
   assert(!hit3.includes('ミステリー'), 'ジャンル語を誤検知');
   assert(hit3.includes('山田亭'), '固有名詞の店名を見逃した');
+  // Opus 5 実射(2026-08-31)の誤停止: 「自分パン屋巡り好きで」→「自分パン屋」。業態語で終わる一致は店名でない
+  assertEq(findUngroundedNames(['自分パン屋巡り好きで、気になる店多いです'], grounding).length, MUTATE ? 1 : 0, '「自分パン屋」を店名として誤検知');
   // 文脈規則(b2 recheck の実測 FP「1トピックに絞る」): 体験・場所の文脈が無いカタカナ語は挙げない。文脈があれば挙げる
   const ctx = findUngroundedNames(['相手が短文なら次は1トピックに絞る', 'ルミナスって知ってます?'], grounding);
   assertEq(ctx.length, MUTATE ? 1 : 0, `文脈なしのカタカナ語を誤検知: ${JSON.stringify(ctx)}`);
@@ -890,11 +892,23 @@ t('63. resolveModelPrice: official が無いモデルは既定で呼び出し禁
   assertEq(resolveModelPrice({ pricing, id: 'm.none', invocationTarget: 'm.none', allowEstimated: true }).price, null, '価格が無いモデルを通した');
 });
 
-t('64. Anthropic 直接アダプタ: api.ts と同じボディ(json_schema・cache_control・temperature)・usage 抽出・cache 課金・キー非漏洩・実行前再確認 fail-closed(変異検出)', () => {
+const PROD_PROMPTS = await loadProductionPrompts(); // t() は同期ランナーなので先に読んでおく
+const { toStructuredOutputSchema: toSO } = await import('../../reply-ai-app/src/lib/schema_compat.mjs');
+t('64. Anthropic 直接アダプタ: api.ts と同じボディ(json_schema・cache_control・temperature)・schema の API 適合変換・usage 抽出・cache 課金・キー非漏洩・実行前再確認 fail-closed(変異検出)', () => {
+  // 本番 schema を API に通る形へ(正本は不変・minItems>1→1・maxItems 削除・入れ子も)
+  const { REPLY_SCHEMA: RS } = PROD_PROMPTS;
+  const so = toSO(RS);
+  assertEq(so.properties.replies.minItems, MUTATE ? 3 : 1, 'minItems を 0/1 に落としていない');
+  assertEq('maxItems' in so.properties.replies, false, 'maxItems が残っている');
+  assertEq(RS.properties.replies.minItems, 3, '正本 schema を書き換えた'); assertEq(RS.properties.replies.maxItems, 3);
+  assertEq(JSON.stringify(toSO({ a: [{ minItems: 5, maxItems: 9, items: { minItems: 0 } }] })), JSON.stringify({ a: [{ minItems: 1, items: { minItems: 0 } }] }), '入れ子の変換');
   const body = anth.buildMessagesBody({ model: 'claude-opus-5', system: 'SYS', userText: 'U', imagePaths: [], maxTokens: 1024, temperature: 0.2, schema: { type: 'object' } });
   assertEq(body.output_config?.format?.type, MUTATE ? 'json' : 'json_schema', 'schema の縛り方が api.ts と違う');
   assertEq(body.system?.[0]?.cache_control?.type, 'ephemeral', 'cache_control が api.ts と違う');
   assertEq(body.temperature, 0.2); assertEq(body.messages[0].content.at(-1).text, 'U'); assertEq(body.model, 'claude-opus-5');
+  // Opus 5: temperature を送ると 400(実射)。null なら項目ごと省略
+  const noTemp = anth.buildMessagesBody({ model: 'claude-opus-5', system: 'S', userText: 'U', imagePaths: [], maxTokens: 10, temperature: null, schema: { type: 'object' } });
+  assertEq('temperature' in noTemp, MUTATE, 'temperature=null でも項目が残る');
   const ex = anth.extractMessages({ content: [{ type: 'text', text: '{"a":1}' }], stop_reason: 'end_turn', usage: { input_tokens: 500, output_tokens: 400, cache_read_input_tokens: 3500, cache_creation_input_tokens: 0 } });
   assertEq(ex.text, '{"a":1}'); assertEq(ex.usage.inputTokens, 500); assertEq(ex.usage.cacheReadTokens, 3500); assertEq(ex.usage.cacheWriteTokens, 0);
   const price = JSON.parse(readFileSync(ANTHROPIC_PRICING_PATH, 'utf8')).models['claude-opus-5'];

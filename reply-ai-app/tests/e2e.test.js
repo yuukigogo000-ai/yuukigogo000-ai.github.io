@@ -112,6 +112,9 @@ const profileResult = () => ({
   check('4d. 再生成ボタン出現', await page.isVisible('#regenerate'));
   check('4e. リクエスト: model正しい', lastBody.model === 'claude-opus-5');
   check('4f. リクエスト: 構造化出力指定', lastBody.output_config?.format?.type === 'json_schema');
+  check('4f2. 送信schemaにAPI未対応の配列制約が無い(maxItems無し・minItems<=1。2026-08-31実射で400を確認)',
+    !JSON.stringify(lastBody.output_config?.format?.schema ?? {}).includes('maxItems') && (lastBody.output_config?.format?.schema?.properties?.replies?.minItems ?? 0) <= 1
+      && (lastBody.output_config?.format?.schema?.properties?.replies?.description ?? '').includes('3件'));
   check('4g. リクエスト: 会話が含まれる', JSON.stringify(lastBody.messages).includes('テストやで'));
   check('4h. エラー欄が空', (await page.textContent('#error')) === '');
 

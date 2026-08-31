@@ -105,6 +105,19 @@ node pricing_eval/src/fidelity_eval.mjs --models=<id> --dataset=pricing_eval/cas
 node pricing_eval/src/human_review_page.mjs --run-id=<新ID> --dataset=pricing_eval/cases_fab10.json --max-regenerated=1
 ```
 
+### Anthropic API 直接(アプリ本来の経路・Opus 5)
+
+```bash
+# キー: 環境変数 ANTHROPIC_API_KEY か ~/.anthropic/replier_eval.key(値はログ・成果物に出ない)。価格は pricing_anthropic.json(公式・cache 単価つき)
+node pricing_eval/src/fidelity_eval.mjs --provider=anthropic --models=claude-opus-5 --accept-provider-retention --omit-temperature --output-max-tokens=16000 \
+  --dataset=pricing_eval/cases_fab10.json --dataset-hash=<sha256> --per-category=2 --expected-cases=10 --pass-criteria=confirm10 \
+  --confirm-run --stop-on-violation --regenerate-once --max-first-violations=1 --retry-transient-only --max-retries=1 \
+  --usd-jpy=160 --prior-spent-usd=<recordedSpendUsd()> --run-id=<新ID>
+```
+- schema は本番 api.ts と同じ `output_config json_schema`(`toStructuredOutputSchema` で minItems>1/maxItems を落とす。落とさないと 400)
+- `--omit-temperature`: claude-opus-5 は temperature を受け付けない(400)。`--output-max-tokens=16000` は本番と同値(既定 1024 は途中切れ=`max_tokens_truncated`)
+- この経路は retention none ではない(Anthropic 標準)。合成データ限定・`--accept-provider-retention` 必須
+
 価格が AWS 公式ページから機械取得できないモデル(Anthropic 系)は、`pricing_override.json` に `kind: derived_estimate`(出典URL必須)を置き、
 `--allow-estimated-price` を明示したときだけ安全係数 1.1 を掛けて予算計上する(manifest/summary に推定である旨が残る)。既定では呼び出し禁止のまま。
 

@@ -26,6 +26,7 @@ import { loadConfig, parseArgs, isCliEntry } from './lib/config.mjs';
 import { logInfo, logWarn, logError } from './lib/log.mjs';
 import { createBedrockClient, resolveCredentials, buildConverseBody, extractConverse, sanitizeAwsMessage } from './adapters/bedrock.mjs';
 import { createAnthropicClient, loadAnthropicApiKey, buildMessagesBody, extractMessages, sanitizeAnthropicMessage } from './adapters/anthropic.mjs';
+import { toStructuredOutputSchema } from '../../reply-ai-app/src/lib/schema_compat.mjs'; // 本番 api.ts と同一実装
 import { costUsdForAttempt, loadPricing, formatUsd } from './calculate_cost.mjs';
 import { contractStopError, readResults } from './run_eval.mjs';
 import { parseProductionReply, checkStyleRules, checkUngroundedNames, checkFabricationHints, extractToolUse } from './lib/fidelity_checks.mjs';
@@ -250,6 +251,10 @@ async function main() {
   const provider = args.provider ? String(args.provider) : 'bedrock';
   if (!['bedrock', 'anthropic'].includes(provider)) throw new Error(`未知の provider: ${provider}(bedrock / anthropic)`);
   const retentionAccepted = args['accept-provider-retention'] === true;
+  // Opus 5 は temperature を受け付けない(400)。本番 api.ts も送らないので、評価も省略する(記録に残す)
+  const omitTemperature = args['omit-temperature'] === true;
+  if (omitTemperature && provider !== 'anthropic') throw new Error('--omit-temperature は provider=anthropic 専用');
+  const effectiveTemperature = omitTemperature ? null : cfg.temperature;
   const datasetPath = args.dataset ? String(args.dataset) : DEFAULT_DATASET;
   const perCategory = args['per-category'] === undefined ? CASES_PER_CATEGORY : Number(args['per-category']);
   if (!Number.isInteger(perCategory) || perCategory < 1) throw new Error('per-category は1以上の整数');
@@ -349,7 +354,7 @@ async function main() {
     cases: cases.map((c) => c.id),
     models: models.map((m) => m.modelId),
     modelPricing: models.map((m) => ({ modelId: m.modelId, invocationTarget: m.invocationTarget, priceKind: m.priceKind, inputPerMTokUsd: m.price.inputPerMTokUsd, outputPerMTokUsd: m.price.outputPerMTokUsd, destinations: m.destinations, domesticPath: m.domesticPath })),
-    config: { region: cfg.region, outputMaxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, maxAutoRetries: cfg.maxAutoRetries, usdJpy: cfg.usdJpy, maxBudgetJpy: cfg.maxBudgetJpy, priorSpentUsd },
+    config: { region: cfg.region, outputMaxTokens: cfg.outputMaxTokens, temperature: effectiveTemperature, temperatureNote: omitTemperature ? 'omitted(model deprecates temperature; 本番 api.ts も送らない)' : null, maxAutoRetries: cfg.maxAutoRetries, usdJpy: cfg.usdJpy, maxBudgetJpy: cfg.maxBudgetJpy, priorSpentUsd },
   }, null, 2));
 
   const creds = provider === 'bedrock' ? (resolveCredentials()?.credentials ?? null) : null;
@@ -375,7 +380,7 @@ async function main() {
         userText: buildProductionUserPrompt(c, toolUse ? null : REPLY_SCHEMA),
         imageFiles: c.images,
       }),
-      configHash: configHashOf({ region: cfg.region, invocationTarget: model.invocationTarget, outputMaxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, maxImages: cfg.maxImages }),
+      configHash: configHashOf({ region: cfg.region, invocationTarget: model.invocationTarget, outputMaxTokens: cfg.outputMaxTokens, temperature: effectiveTemperature, maxImages: cfg.maxImages }),
     });
     const todo = [];
     let reused = 0;
@@ -426,7 +431,7 @@ async function main() {
           let res;
           if (provider === 'anthropic') {
             // 本番(api.ts)と同じ: output_config json_schema + system cache_control。schema テキストは user prompt に付けない
-            const mbody = buildMessagesBody({ model: model.invocationTarget, system: REPLY_SYSTEM, userText: buildProductionUserPrompt(c, null), imagePaths: c.images.map((f) => join('pricing_eval/screenshots', f)), maxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, schema: REPLY_SCHEMA });
+            const mbody = buildMessagesBody({ model: model.invocationTarget, system: REPLY_SYSTEM, userText: buildProductionUserPrompt(c, null), imagePaths: c.images.map((f) => join('pricing_eval/screenshots', f)), maxTokens: cfg.outputMaxTokens, temperature: effectiveTemperature, schema: toStructuredOutputSchema(REPLY_SCHEMA) });
             res = await client.messages(mbody);
           } else {
             res = await client.converse(model.invocationTarget, body);
@@ -435,7 +440,9 @@ async function main() {
           let parsed;
           if (provider === 'anthropic') {
             const exm = extractMessages(res);
-            parsed = res.stop_reason === 'refusal' ? { ok: false, failureKind: 'refusal', error: 'stop_reason=refusal' } : parseProductionReply(exm.text);
+            if (res.stop_reason === 'refusal') parsed = { ok: false, failureKind: 'refusal', error: 'stop_reason=refusal' };
+            else if (res.stop_reason === 'max_tokens') parsed = { ok: false, failureKind: 'max_tokens_truncated', error: `max_tokens(${cfg.outputMaxTokens})で途中切れ(本番 api.ts は 16000)` };
+            else parsed = parseProductionReply(exm.text);
           } else if (toolUse) {
             const input = extractToolUse(res, 'reply_result');
             parsed = input
@@ -491,7 +498,9 @@ async function main() {
       }
       for (const x of attempts) { x.generation = generation; allAttempts.push(x); }
       const genViolation = fidelityStopReason({ success: final.ok, failureKind: final.failureKind, failureClass: final.failureClass ?? null, attempts, production: final.ok ? final.parsed.data : null, invalidOutput: !final.ok ? (final.parsed?.data ?? null) : null, fidelity });
-      generations.push({ generation, ok: final.ok, violation: genViolation, latencyMs: attempts.reduce((s, x) => s + x.latencyMs, 0), requestIds: attempts.map((x) => x.requestId).filter(Boolean) });
+      generations.push({ generation, ok: final.ok, violation: genViolation, latencyMs: attempts.reduce((s, x) => s + x.latencyMs, 0), requestIds: attempts.map((x) => x.requestId).filter(Boolean),
+        // 世代ごとの出力本文(人間確認用。合成データのみ。本番コードでは保存禁止)
+        production: syntheticDataset ? (final.parsed?.data ?? null) : null });
       if (!genViolation || !regenerateOnce || generation === 2) break;
       logInfo(`初回応答に違反 → 1回だけ再生成 ${c.id}`, { kind: genViolation.kind, detail: String(genViolation.detail).slice(0, 120) });
       } // generation loop

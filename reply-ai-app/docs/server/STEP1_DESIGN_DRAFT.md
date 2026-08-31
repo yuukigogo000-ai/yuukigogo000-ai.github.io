@@ -105,7 +105,7 @@ generate(user, key):
 
 1. 入力検査: 画像 ≤6・各 MIME(JPEG/WebP/PNG)・デコード後サイズ・合計 ≤4.5MB(API Gateway/WAF の上限より先に自前で検査し 413)。テキスト長上限
 2. プロンプト: system = `prompts.ts` の REPLY_SYSTEM(3件固定・プレースホルダ禁止を含む版)、user = 現行 ReplyTab と同じ節構成、画像は Converse の image ブロック
-3. `Converse`(非ストリーミング)+ `toolConfig: { tools:[reply_result(REPLY_SCHEMA: replies minItems/maxItems=3)], toolChoice:{tool} }`、`maxTokens 1024`、**`temperature 0.2`**(2026-09-01 に 0.7 から変更。評価と同一。変えるなら再評価)。tool 説明文「返信案は必ずちょうど3件(4件以上・2件以下は禁止)」。プロンプトは「入力に無い固有名詞(地名・店名・人物・作家・作品・ブランド)と自分の体験談を足さない」規則を強化し、NG→OK 例を5分類(飲食/旅行/本・映画/趣味・ブランド/個人体験)で明記した版。**それでも機械検査は補助**(漢字・ひらがなの固有名詞・体験談は完全検出できない)なので、結果画面に「AIによる返信案です。内容が事実と合っているか確認してから使用してください。」を常設する
+3. `Converse`(非ストリーミング)+ `toolConfig: { tools:[reply_result(REPLY_SCHEMA: replies minItems/maxItems=3)], toolChoice:{tool} }`、`maxTokens 1024`、**`temperature 0.2`**(2026-09-01 に 0.7 から変更。評価と同一。変えるなら再評価。**claude-opus-5 は temperature 非対応(400)なので Opus 5 採用時は送らない**)。tool 説明文「返信案は必ずちょうど3件(4件以上・2件以下は禁止)」。プロンプトは「入力に無い固有名詞(地名・店名・人物・作家・作品・ブランド)と自分の体験談を足さない」規則を強化し、NG→OK 例を5分類(飲食/旅行/本・映画/趣味・ブランド/個人体験)で明記した版。**それでも機械検査は補助**(漢字・ひらがなの固有名詞・体験談は完全検出できない)なので、結果画面に「AIによる返信案です。内容が事実と合っているか確認してから使用してください。」を常設する
 4. **出力検査(共有パッケージ `reply-validate`。pricing_eval の `parseProductionReply` / `checkStyleRules(placeholder)` / `BANNED_RULES` と同一実装)** — モデル出力を無条件で信用しない:
    - toolUse 無し / JSON 不正 / 必須欠落 → **再生成1回**
    - 各案を内容検査: bubbles 1〜3件・why 必須・禁止出力なし(BANNED_RULES)・**プレースホルダなし(PLACEHOLDER_RE)** → 通らない案は除外
@@ -131,7 +131,7 @@ generate(user, key):
 | 削除要求 | 退会でプロフィール・QUOTA・EVENT の userId を削除(Stripe 顧客は Stripe 側で削除) |
 
 ## 7. 未決定(残り)
-0. **採用モデル**: 未定。Kimi K2.5 は不採用、Qwen3 VL 235B も10件評価で不合格(5件目停止・人間確認で4件中3件に捏造)(2026-09-01)。次候補・方針は発注者判断。設計はモデル非依存のまま進められる部分(認証・回数制限・課金・出力検査の枠)のみ
+0. **採用モデル**: 未定。Kimi K2.5 は不採用、Qwen3 VL 235B も10件評価で不合格(5件目停止・人間確認で4件中3件に捏造)(2026-09-01)。**Opus 5(Anthropic API 直接)は自動10/10・固有名詞捏造0**(軽い自己事実の作り込み5/10・約4.8円/回・p95 29.5秒)。採用は発注者判断。Opus 5 なら §3 の Bedrock 呼び出しは Anthropic Messages API(Lambda→api.anthropic.com・キーは Secrets Manager・`toStructuredOutputSchema`・temperature 送らない・プロンプトキャッシュ)に置き換える。設計はモデル非依存のまま進められる部分(認証・回数制限・課金・出力検査の枠)のみ
 1. **API 経路**(60秒同期 / 180秒申請 / 非同期)— 次の確証runの遅延計測で STEP0 §4.4 の判定表に当てて確定
 2. 所有ドメイン名・サポート窓口・特商法表記
 3. 暗号化 idempotency 応答の鍵配送の細部(ヘッダー名・鍵長・ack の再送時の扱い)は工程2で詰める。方針(暗号文のみ保持・最大10分・ack 即削除)は決定済み

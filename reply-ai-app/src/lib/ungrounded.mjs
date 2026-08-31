@@ -73,7 +73,11 @@ export function extractNameTokens(text) {
     if (inExperienceContext(t, m[0])) out.add(m[0]);
   }
   for (const m of t.matchAll(FACILITY_RE)) {
-    if (!GENERIC_FACILITY.has(m[0])) out.add(m[0]);
+    // 一致全体が業態語、または業態語で終わる(例「自分パン屋巡り」→「自分パン屋」。Opus 5 実射で誤停止)ものは店名ではない
+    if (GENERIC_FACILITY.has(m[0])) continue;
+    let generic = false;
+    for (const g of GENERIC_FACILITY) if (m[0].endsWith(g)) { generic = true; break; }
+    if (!generic) out.add(m[0]);
   }
   for (const name of PROMPT_EXAMPLE_NAMES) if (t.includes(name)) out.add(name);
   // 有名チェーン・ブランド名(固定リスト)は文脈に関係なく挙げる(実在名の完全一致なので誤検知は少ない)

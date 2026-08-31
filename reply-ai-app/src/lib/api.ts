@@ -5,6 +5,8 @@ export type ContentBlock =
   | { type: 'text'; text: string }
   | { type: 'image'; source: { type: 'base64'; media_type: 'image/jpeg'; data: string } };
 
+import { toStructuredOutputSchema } from './schema_compat.mjs';
+
 const MODEL = 'claude-opus-5';
 const DEFAULT_TIMEOUT_MS = 120_000;
 
@@ -58,9 +60,10 @@ export async function callClaude<T>(
       body: JSON.stringify({
         model: MODEL,
         max_tokens: 16000,
-        // 2026-09-01: 初回応答のプレースホルダ/構造ゆれ対策で 0.2(評価と同一値。変えるなら再評価)
-        temperature: 0.2,
-        output_config: { format: { type: 'json_schema', schema } },
+        // temperature は送らない: claude-opus-5 は `temperature` を受け付けない(2026-08-31 実射で 400
+        // "`temperature` is deprecated for this model")。0.2 の決定(2026-09-01)は Bedrock 側モデルにのみ適用
+        // minItems>1 / maxItems は API が 400 にするので落として送る(件数は受信側で検査)
+        output_config: { format: { type: 'json_schema', schema: toStructuredOutputSchema(schema) } },
         // 指示書は毎回同じなのでキャッシュさせる(5分以内の連続利用で入力トークン代が下がる)
         system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
         messages: [{ role: 'user', content }],
