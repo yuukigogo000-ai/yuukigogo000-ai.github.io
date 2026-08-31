@@ -6,6 +6,24 @@
 //
 // 規則は「本番指示に書いてあること」だけを検査する。ここで独自基準を発明しない。
 
+// 固有名詞の根拠検査は本番UIと同一実装を使う(乖離防止のため単一ソース)
+import { findUngroundedNames } from '../../../reply-ai-app/src/lib/ungrounded.mjs';
+
+/**
+ * 生成結果から「入力に無い固有名詞らしき語」を violations 形式で返す。
+ * grounding = 会話・goal・プロフィール・文体サンプルの全文。
+ */
+export function checkUngroundedNames(data, groundingText) {
+  const texts = [
+    ...data.replies.flatMap((r) => r.bubbles),
+    data.advice || '',
+  ];
+  return findUngroundedNames(texts, groundingText).map((tok) => ({
+    rule: 'ungrounded_name',
+    detail: `入力に無い固有名詞: ${tok}`,
+  }));
+}
+
 /** 応答テキストから本番スキーマの JSON を取り出して検証する。失敗は失敗として返す。 */
 export function parseProductionReply(text) {
   if (typeof text !== 'string' || !text.trim()) {

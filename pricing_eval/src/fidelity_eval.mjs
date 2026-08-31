@@ -24,7 +24,7 @@ import { logInfo, logWarn, logError } from './lib/log.mjs';
 import { createBedrockClient, resolveCredentials, buildConverseBody, extractConverse, sanitizeAwsMessage } from './adapters/bedrock.mjs';
 import { costUsdForAttempt, loadPricing, formatUsd } from './calculate_cost.mjs';
 import { contractStopError, readResults } from './run_eval.mjs';
-import { parseProductionReply, checkStyleRules } from './lib/fidelity_checks.mjs';
+import { parseProductionReply, checkStyleRules, checkUngroundedNames } from './lib/fidelity_checks.mjs';
 import { datasetHashOf, promptHashOf, configHashOf, ledgerKey, loadLedger, appendLedger } from './lib/ledger.mjs';
 
 const RUNS_DIR = 'pricing_eval/runs';
@@ -91,7 +91,13 @@ async function main() {
 
   const { REPLY_SYSTEM, REPLY_SCHEMA } = await loadProductionPrompts();
   const casesRaw = readFileSync('pricing_eval/cases.json', 'utf8');
-  const cases = pickFidelityCases(JSON.parse(casesRaw).cases);
+  let cases = pickFidelityCases(JSON.parse(casesRaw).cases);
+  // スポット検証用: 指定ケースだけに絞る(選定30ケースの範囲内のみ)
+  if (args.cases) {
+    const want = String(args.cases).split(',').map((s) => s.trim()).filter(Boolean);
+    cases = cases.filter((c) => want.includes(c.id));
+    if (cases.length !== want.length) throw new Error(`--cases に選定外/不明なIDが含まれています(${cases.length}/${want.length}件のみ一致)`);
+  }
   const datasetHash = datasetHashOf(casesRaw);
 
   // 候補は discovery から(モデル名をコードに書かない)。価格必須。
@@ -188,7 +194,19 @@ async function main() {
         await new Promise((r) => setTimeout(r, 1000));
       }
 
-      const fidelity = final.ok ? checkStyleRules(final.parsed.data) : null;
+      let fidelity = null;
+      if (final.ok) {
+        fidelity = checkStyleRules(final.parsed.data);
+        // 捏造検査: 入力(goal・プロフィール・文体・会話)に無い固有名詞。スクショケースも
+        // 会話テキスト(スクショの描画元)が cases.json にあるので照合できる
+        const grounding = [
+          c.goal,
+          c.partner_profile ? `${c.partner_profile.nickname} ${c.partner_profile.note}` : '',
+          c.style_sample || '',
+          ...(c.conversation || []).map((t) => t.text),
+        ].join(' ');
+        fidelity.violations.push(...checkUngroundedNames(final.parsed.data, grounding));
+      }
       const costs = attempts.map((x) => costUsdForAttempt(x.usage, model.price));
       const effective = costs.some((x) => x === null) ? null : costs.reduce((s, x) => s + x, 0);
       if (effective != null) spentUsd += effective;

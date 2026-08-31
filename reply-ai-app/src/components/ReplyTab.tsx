@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { ChevronDown, Compass, RefreshCw, Trash2 } from 'lucide-react';
 import { AutoTextarea } from './AutoTextarea';
 import { Chips, type ChipOption } from './Chips';
@@ -8,6 +8,7 @@ import { ReplyCard } from './ReplyCard';
 import { CanceledError, callClaude, type ReplyResult } from '../lib/api';
 import { imageBlocks, type PickedImage } from '../lib/images';
 import { REPLY_SCHEMA, REPLY_SYSTEM } from '../lib/prompts';
+import { findUngroundedNames } from '../lib/ungrounded.mjs';
 import { SAMPLES } from '../lib/samples';
 import type { Runner } from '../lib/types';
 
@@ -257,6 +258,18 @@ export function ReplyTab({
   // 表示中の提案が「今の入力に対するもの」でなくなったら、出しっぱなしにしない
   const stale = result !== null && resultSig !== inputsRef.current;
   const shown = stale ? null : result;
+
+  // 入力(会話・プロフィール・文体サンプル等)に見当たらない固有名詞の警告。
+  // スクショ内の文字は照合できないため、ブロックせず「送信前に確認」を促すだけにする。
+  const ungrounded = useMemo(() => {
+    if (!shown) return [];
+    const grounding = [conversation, partnerProfile, styleSample, extra, goal, ...adopted].join(' ');
+    const texts = [
+      ...shown.replies.flatMap((r) => normalizeBubbles(r)),
+      shown.advice ?? '',
+    ];
+    return findUngroundedNames(texts, grounding);
+  }, [shown, conversation, partnerProfile, styleSample, extra, goal, adopted]);
   // 結果が出ている間、入力は1行のサマリに畳む(見本B)
   const collapsed = shown !== null && !editing;
 
@@ -471,6 +484,12 @@ export function ReplyTab({
             「分けて送る」を選びましたが、AIは1通で返しました(この場面では分けない方が自然と判断されています)。
           </p>
         )}
+      {shown && !busy && ungrounded.length > 0 && (
+        <p id="ungroundedNote" className="mb-2 px-1 text-label text-ink-muted">
+          ⚠ 会話に見当たらない固有名詞: {ungrounded.join('・')}
+          。スクショ内に出ていた名前なら問題ありません。行ったことのない店・場所を自分の体験として送らないよう、送信前に確認してください。
+        </p>
+      )}
       <div id="replyResults" className="space-y-3" hidden={!shown || busy}>
         {(shown?.replies ?? []).map((r, i) => (
           <ReplyCard

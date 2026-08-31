@@ -749,7 +749,8 @@ t('36. judgeAvailability: 全項目 AVAILABLE/AUTHORIZED のみ ok(変異検出)
 });
 
 console.log('\n== 本番プロンプト追従テスト(fidelity) ==');
-const { parseProductionReply, checkStyleRules } = await import('../src/lib/fidelity_checks.mjs');
+const { parseProductionReply, checkStyleRules, checkUngroundedNames } = await import('../src/lib/fidelity_checks.mjs');
+const { findUngroundedNames, PROMPT_EXAMPLE_NAMES } = await import('../../reply-ai-app/src/lib/ungrounded.mjs');
 const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases } = await import('../src/fidelity_eval.mjs');
 
 const goodProd = {
@@ -790,6 +791,28 @@ t('45. checkStyleRules: 本番指示の禁止事項を検知し、許可され�
     replies: [{ bubbles: ['a', 'b'], why: 'w' }, { bubbles: ['c', 'd'], why: 'w' }, { bubbles: ['e', 'f'], why: 'w' }] });
   const stRules = new Set(st.violations.map((v) => v.rule));
   assert(stRules.has('same_bubble_count') && stRules.has('no_single_bubble_plan'), '吹き出し構造の規則を検知できない');
+});
+
+t('49. 捏造検出: 入力に無い固有名詞・例文名を検知し、根拠のある名前・日常語を誤検知しない(変異検出)', () => {
+  const grounding = '週末はだいたい水族館にいることが多いかも 商店街もよく行きます サンシャイン水族館の年パス持ってます';
+  // 実測事例そのもの: アクアマリン(入力に無い施設名)は検知する
+  const hit = findUngroundedNames(['最近アクアマリンを行ってきたんですけど、アザラシの写真ばっかり撮ってました笑'], grounding);
+  assertEq(hit.includes('アクアマリン'), MUTATE ? false : true, 'アクアマリンを検知できない');
+  assert(!hit.includes('アザラシ'), '日常語(動物名)を誤検知');
+  // 根拠がある名前は挙げない
+  assertEq(findUngroundedNames(['サンシャイン水族館また行きたいです'], grounding).length, 0, '入力にある施設名を誤検知');
+  // REPLY_SYSTEM例文名は必ず挙げる(3モデルで混入を実測済み)
+  for (const n of PROMPT_EXAMPLE_NAMES) {
+    assert(findUngroundedNames([`先月${n}行ってきました`], grounding).includes(n), `例文名 ${n} を検知できない`);
+  }
+  // 「〜屋」の施設接尾辞は検知、単体の一般語(コンビニ・バーベキュー)は挙げない
+  const hit2 = findUngroundedNames(['駅前のチーズタッカルビ屋行きません?コンビニでバーベキューの買い出しもしましょう'], grounding);
+  assert(hit2.includes('チーズタッカルビ屋'), '施設接尾辞を検知できない');
+  assert(!hit2.includes('コンビニ') && !hit2.includes('バーベキュー'), '日常語を誤検知');
+  // violations 形式のラッパー
+  const v = checkUngroundedNames({ replies: [{ bubbles: ['アクアマリン行きました'], why: 'w' }], advice: 'a' }, grounding);
+  assertEq(v.length, 1);
+  assertEq(v[0].rule, 'ungrounded_name');
 });
 
 await (async () => {

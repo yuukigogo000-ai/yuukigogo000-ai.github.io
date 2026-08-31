@@ -195,6 +195,26 @@ const profileResult = () => ({
   const xss = await page.evaluate(() => window.__xss);
   check('12. XSS耐性(HTMLがそのまま文字として表示)', xss === undefined, `__xss=${xss}`);
 
+  // --- 12b. 捏造警告: 会話に無い固有名詞(店名・施設名)は警告し、会話にある名前では出さない ---
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
+    situation: '序盤', interest_level: 50,
+    replies: [{ bubbles: ['最近アクアマリン行ってきたんですけど良かったです笑'], why: 'w' }, { bubbles: ['a'], why: 'b' }, { bubbles: ['c'], why: 'd' }],
+    advice: '次は軽く' }) }] } });
+  await page.click('#generate');
+  await page.waitForSelector('#ungroundedNote', { timeout: 5000 });
+  const noteText = await page.textContent('#ungroundedNote');
+  check('12b. 会話に無い施設名で警告バッジが出る', noteText.includes('アクアマリン'), `note="${noteText}"`);
+  // 会話に出ている名前なら警告しない
+  await openInputs();
+  await page.fill('#conversation', '相手: サンシャイン水族館よく行きます');
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
+    situation: '序盤', interest_level: 50,
+    replies: [{ bubbles: ['サンシャイン水族館いいですよね!'], why: 'w' }, { bubbles: ['a'], why: 'b' }, { bubbles: ['c'], why: 'd' }],
+    advice: '次は軽く' }) }] } });
+  await page.click('#generate');
+  await page.waitForFunction(() => document.querySelector('#replyResults')?.textContent.includes('サンシャイン'));
+  check('12c. 会話に出ている施設名では警告が出ない', !(await page.isVisible('#ungroundedNote')));
+
   // --- 13. プロフィールタブ ---
   await page.click('#tabBtnProfile');
   check('13a. タブ切替でプロフ画面表示', await page.isVisible('#profGenerate') && !(await page.isVisible('#generate')));
