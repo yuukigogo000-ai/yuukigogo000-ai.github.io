@@ -912,6 +912,13 @@ t('54. call_log: STARTED は終端が無ければ UNKNOWN_OUTCOME として wors
   assert(un.some((u) => u.callId === id3 && u.reason === 'TERMINAL_COST_UNKNOWN'), '費用null の終端呼び出しを計上していない');
   assert(!un.some((u) => u.callId === id1), '費用が分かっている呼び出しを計上している');
   assertEq(Math.round(unaccountedWorstCaseUsd(rows2) * 1e6), MUTATE ? 35000 : 45000, '費用不明の合計(unknown 0.035 + null終端 0.01)');
+  // r8 HIGH: 同じ callId に費用つき終端と null 終端の両方があれば null 側は数えない。null 終端の重複も1回だけ
+  callEnded({ callId: id3, status: 'FAILED', costUsd: null }, tmp);            // id3 の null 終端がもう1行
+  callEnded({ callId: id1, status: 'FAILED', costUsd: null }, tmp);            // id1 は費用つき終端あり → 無視されるべき
+  const rows3 = loadCallLog(tmp).rows;
+  assertEq(unaccountedCalls(rows3).filter((u) => u.callId === id3).length, 1, 'null 終端の重複を二重計上');
+  assertEq(unaccountedCalls(rows3).filter((u) => u.callId === id1).length, 0, '費用判明済みの呼び出しを null 終端で二重計上');
+  assertEq(Math.round(unaccountedWorstCaseUsd(rows3) * 1e6), 45000, '重複後の合計が変わった');
   // recordedSpendUsd は試行単位: 1試行が費用不明でも判明している試行の費用は数える(b3 TXT_SHORT_07: timeout+成功で effectiveCostUsd=null だった)
   const rdir = join(TMP, `runs_${Date.now()}`); mkdirSync(join(rdir, 'x'), { recursive: true });
   writeFileSync(join(rdir, 'x', 'results.jsonl'), JSON.stringify({ effectiveCostUsd: null, attempts: [{ costUsd: null }, { costUsd: 0.005 }] }) + '\n' + JSON.stringify({ effectiveCostUsd: 0.002, attempts: [{ costUsd: 0.002 }] }) + '\n');
@@ -953,9 +960,10 @@ t('52. assertRunPreconditions: 全条件一致でのみ空、region/retention/IA
 t('55. recordedSpendUsd: 台帳に費用つき終端がある呼び出しは台帳から1回だけ数え、results に届かなかった終端も落とさない(変異検出)', () => {
   const rdir = join(TMP, `runs55_${Date.now()}`); mkdirSync(join(rdir, 'x'), { recursive: true });
   // results: 試行A(callId=a, 0.004)・試行B(requestId=rq-b, 0.003)・試行C(台帳に無い, 0.002)
-  writeFileSync(join(rdir, 'x', 'results.jsonl'), JSON.stringify({ attempts: [{ callId: 'a', costUsd: 0.004 }, { requestId: 'rq-b', costUsd: 0.003 }, { costUsd: 0.002 }] }) + '\n');
+  writeFileSync(join(rdir, 'x', 'results.jsonl'), JSON.stringify({ modelId: 'mA', attempts: [{ callId: 'a', costUsd: 0.004 }, { requestId: 'rq-b', costUsd: 0.003 }, { costUsd: 0.002 }] }) + '\n');
   // 台帳: a(0.004)・b(requestId=rq-b, 0.003)・d(0.010・results に無い=クラッシュで落ちた呼び出し)・e(null 終端=unaccounted 側で数える)
   const log = [
+    { callId: 'b', status: 'STARTED', modelId: 'mA', worstCaseUsd: 0.01 }, // requestId 突合には STARTED の modelId が要る(r8)
     { callId: 'a', status: 'SUCCEEDED', costUsd: 0.004, requestId: 'rq-a' },
     { callId: 'b', status: 'SUCCEEDED', costUsd: 0.003, requestId: 'rq-b' },
     { callId: 'd', status: 'SUCCEEDED', costUsd: 0.010, requestId: 'rq-d' },
@@ -971,6 +979,13 @@ t('55. recordedSpendUsd: 台帳に費用つき終端がある呼び出しは台�
   assertEq(Math.round(r2.fromCallLog * 1e6), MUTATE ? 29000 : 19000, `終端重複を畳めていない ${r2.fromCallLog}`);
   writeFileSync(join(rdir, 'x', 'results.jsonl'), JSON.stringify({ modelId: 'mB', attempts: [{ requestId: 'rq-b', costUsd: 0.003 }] }) + '\n');
   assertEq(Math.round(recordedSpendUsd(rdir, log2).sum * 1e6), 22000, '別モデルの試行を requestId だけで台帳に吸収している(0.019+0.003 になるべき)');
+  // r8 MED: STARTED が無い終端(modelId 不明)は requestId 突合に使わない → results の試行は独立に数える
+  writeFileSync(join(rdir, 'x', 'results.jsonl'), JSON.stringify({ modelId: 'mA', attempts: [{ requestId: 'rq-d', costUsd: 0.010 }] }) + '\n');
+  assertEq(Math.round(recordedSpendUsd(rdir, log2).sum * 1e6), MUTATE ? 19000 : 29000, 'STARTED 無しの終端に requestId で吸収されている(緩い一致)');
+  // r8 MED: 同じ requestId が別モデルに現れたら曖昧として突合しない
+  const log3 = [...log2, { callId: 'b2', status: 'STARTED', modelId: 'mZ', worstCaseUsd: 0.01 }, { callId: 'b2', status: 'SUCCEEDED', costUsd: 0.001, requestId: 'rq-b' }];
+  writeFileSync(join(rdir, 'x', 'results.jsonl'), JSON.stringify({ modelId: 'mA', attempts: [{ requestId: 'rq-b', costUsd: 0.003 }] }) + '\n');
+  assertEq(Math.round(recordedSpendUsd(rdir, log3).sum * 1e6), 23000, '曖昧な requestId(複数モデル)で突合している(台帳0.020+results0.003 になるべき)');
 });
 
 t('56. budgetAllows: 予約(reserved)込みで判定し、並行2件が同じ spent を見ても上限を超えない(変異検出)', () => {

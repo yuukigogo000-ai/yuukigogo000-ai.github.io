@@ -1,4 +1,4 @@
-# Replier サーバー側プロキシ化 — 工程0: 要件・制約・選択肢整理(v0.2 / 2026-09-01 発注者決定反映)
+# Replier サーバー側プロキシ化 — 工程0: 要件・制約・選択肢整理(v0.3 / 2026-09-01 発注者決定反映・API経路は条件付きへ)
 
 **位置づけ**: 実装には着手しない。v0.1 の選択肢整理に対する発注者決定(§0)を固定し、以後の設計(STEP1)の前提にする。数値は PRICING.md v3.1 と pricing_eval の実測を正本にし、ここで新しい数字は作らない。
 
@@ -7,21 +7,22 @@
 | 項目 | 決定 |
 |---|---|
 | 基盤 | AWS 東京(ap-northeast-1) |
-| API | **API Gateway Regional REST API + Lambda**(HTTP API ではない。統合タイムアウト 29秒超への上限緩和申請を前提。まず60秒で申請) |
-| Bedrock | Converse 非ストリーミング・Kimi K2.5(toolConfig で REPLY_SCHEMA を強制) |
+| API | **API Gateway Regional REST API + Lambda(条件付き)**。60秒同期は確定ではなく、**次の確証run(30件)で p50/p90/p95/最大と120秒タイムアウト率を計測してから判定**(§4.4 判定表) |
+| Bedrock | Converse 非ストリーミング・Kimi K2.5(toolConfig で REPLY_SCHEMA を強制)・**temperature 0.2**(2026-09-01 に 0.7 から変更。評価と同一値) |
 | 認証 | Amazon Cognito メール OTP |
 | DB | DynamoDB。**本文・画像・返信内容は保存しない** |
 | 一時画像保存 | **初期版では S3 保存なし**(同期構成。画像はリクエスト本文で Lambda まで渡し、メモリ上で処理して破棄) |
 | 履歴 | ブラウザ内のみ。サーバー同期なし |
+| idempotency 応答 | 採用: **ブラウザ保有鍵で暗号化した応答だけ**を DynamoDB に最大10分保持(平文・鍵・入力画像は保存しない)。受領確認(ack)で即削除+TTL の併用(STEP1 §2/§3.4) |
 | CAPTCHA | 初期版なし。AWS WAF のレート制限を先行 |
 | 追加枠販売 | 初期版なし。月間上限到達=次回更新待ち |
 | ドメイン | `app.<所有ドメイン>` と `api.<所有ドメイン>`。具体名は設定値化 |
 | 回数 | 月150成功・日20成功(成功時のみ消費)+ **モデル試行の原価上限 月180・日25** + 同一ユーザー同時生成1件 + idempotency key |
 | 出力検査 | サーバー側で独立に schema 検証(モデル出力を無条件で信用しない)。4件以上は内容検査を通った先頭3件を返す。3件未満・禁止出力・未解決プレースホルダは1回だけ再生成、再失敗はエラー(回数は消費しない) |
-| 非同期+S3 | **代替案**。統合タイムアウト緩和が認められない、または実測 p95 が55秒を超える場合のみ移行 |
+| 非同期+S3 | **代替案**。統合タイムアウト緩和が認められない、または計測で**120秒超が再発**した場合に移行(p95 55〜110秒はまず180秒申請を検討) |
 | 本文保存 | `invalidOutput` 等の出力本文保存は合成評価データ限定。本番コードでは禁止 |
 
-「43秒だから非同期必須」という v0.1 の判断は誤りだった(HTTP API は30秒固定だが Regional REST API は上限緩和申請が可能。[API Gateway quotas](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-execution-service-limits-table.html))。
+「43秒だから非同期必須」という v0.1 の判断は誤りだった(HTTP API は30秒固定だが Regional REST API は上限緩和申請が可能。[API Gateway quotas](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-execution-service-limits-table.html))。v0.2 で「60秒同期を確定」としたのも早計で、同日の確証runで **120秒タイムアウト1件・50秒台が複数**観測されたため、v0.3 では**計測してから決める**に戻した。
 
 ## 1. なぜサーバー側プロキシが必要か
 
@@ -49,7 +50,7 @@
 ### 2.2 非機能要件
 - N1. **AI 推論は東京リージョン内で完結**(Bedrock ap-northeast-1・retention none・呼び出しログ無効。評価アカウントで実測済み。本番アカウントでも公開前に preflight で再確認し、結果を保存)
 - N2. **会話・画像・返信内容をサーバーに保存しない**。S3 も使わない(初期版)。保存するのはメタデータのみ(ユーザーID・時刻・トークン数・費用・遅延・requestId・成否・失敗種別)。ログにも本文を出さない(テストで検査)
-- N3. 応答時間: 実測 平均9.5秒・最大43.6秒(Kimi・tool-use)。**同期構成**で通す: Regional REST API の統合タイムアウトを60秒へ上限緩和申請、Lambda タイムアウト 75秒、Bedrock SDK タイムアウト 55秒。**p95 を計測し55秒超なら代替案(§4.4)へ**
+- N3. 応答時間: 実測 平均9.5秒・最大43.6秒(Kimi・tool-use・8/31 昼)。同日夕方の確証runでは **50.9秒・51.6秒・120秒タイムアウト1件**。**次の確証run(30件・temperature 0.2)で p50/p90/p95/最大・120秒タイムアウト率を計測し、§4.4 の判定表で経路を確定する**。設計上の仮置き=Regional REST API 統合60秒・Lambda 75秒・Bedrock SDK 55秒
 - N4. ペイロード: Lambda 同期リクエスト上限 6MB([Lambda quotas](https://docs.aws.amazon.com/lambda/latest/dg/gettingstarted-limits.html))。API Gateway は10MBだが実際のボトルネックは Lambda。**ブラウザ側で強制**: 画像最大6枚・長辺最大1600px・JPEG/WebP 圧縮・**最終 JSON リクエスト全体 4.5MB 以下**・超過時は送信前に再圧縮・それでも超えたら明確なエラー。サーバー側でも枚数・サイズ・MIME を再検査
 - N5. **出力の機械検査をサーバー側でも行う**。根拠: 確証run b2 で Kimi が tool-use でも6案を返した(TXT_SHORT_07・requestId a6499ef3…)。`minItems/maxItems` はモデルへの制約であって絶対保証ではない
 - N6. 秘密(AWS 認証・Stripe 秘密鍵・Webhook 署名)はサーバー側の Secrets 管理に置き、Git・ブラウザ・ログに出さない
@@ -94,10 +95,16 @@ Cloudflare Workers / Vercel+Supabase は「AI 推論以外の処理場所」の�
 
 ### 4.3 認証 → **Cognito メール OTP(決定)**。決済 → **Stripe Checkout + Portal + Webhook**(PRICING §2 の料率)
 
-### 4.4 長い応答の通し方 → **同期(決定)**、代替は非同期
-- 一次: Regional REST API 統合60秒 + Lambda 75秒 + Bedrock SDK 55秒。クライアントは現行の段階表示(読み取り中→分析中→作成中)を経過時間で演出
-- **代替へ移行する条件(どちらか)**: ①統合タイムアウト緩和が認められない ②本番実測 p95 > 55秒
-- 代替: S3 一時保存(SSE・処理後即削除・最長10分)+ 非同期ジョブ(POST→202→ポーリング)。移行時はプライバシーポリシーに一時保持を追記
+### 4.4 長い応答の通し方 → **条件付き(計測で確定)**
+
+| 次の確証run(30件)の計測結果 | 経路 |
+|---|---|
+| p95 ≤ 55秒 **かつ** 120秒超 0件 | **60秒同期候補**(Regional REST API 統合60秒の上限緩和を申請・Lambda 75秒・Bedrock SDK 55秒) |
+| p95 が 55〜110秒 | **180秒への上限緩和申請を検討**(認められなければ非同期へ) |
+| 120秒超が再発 | **非同期構成へ変更**(S3 一時保存 SSE・処理後即削除・最長10分 + POST→202→ポーリング。プライバシーポリシーに一時保持を追記) |
+
+- 計測は評価器が試行単位で記録する(`fidelity_summary.json` の `criteria.latency` = p50/p90/p95/max・`timeouts`)。本番でも同じ指標を CloudWatch に出す
+- 同期案のクライアントは現行の段階表示(読み取り中→分析中→作成中)を経過時間で演出
 
 ### 4.5 回数制限 → **予約方式(決定)**
 
@@ -158,3 +165,4 @@ Cloudflare Workers / Vercel+Supabase は「AI 推論以外の処理場所」の�
 3. Regional REST API 統合タイムアウト上限緩和の申請(AWS サポートケース。実装工程で最初に出す)
 4. Moonshot 規約・Bedrock third-party terms の確認
 5. 本番 AWS アカウントの preflight(retention none・呼び出しログ無効)
+6. **API 経路の確定**(次の確証runの遅延計測 → §4.4 判定表)

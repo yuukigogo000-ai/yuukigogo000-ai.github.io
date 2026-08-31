@@ -79,7 +79,10 @@ export function recordedSpendUsd(runsDir = 'pricing_eval/runs', callLogRows = lo
   const termReqToModel = new Map(); let fromCallLog = 0;
   for (const [cid, r] of termByCallId) {
     fromCallLog += r.costUsd;
-    if (r.requestId) termReqToModel.set(r.requestId, startedById.get(cid)?.modelId ?? null);
+    const mid = startedById.get(cid)?.modelId ?? null;
+    if (!r.requestId || mid == null) continue; // STARTED が無く modelId 不明の終端は requestId 突合に使わない(緩い一致を作らない)
+    if (termReqToModel.has(r.requestId) && termReqToModel.get(r.requestId) !== mid) termReqToModel.set(r.requestId, '__AMBIGUOUS__');
+    else if (!termReqToModel.has(r.requestId)) termReqToModel.set(r.requestId, mid);
   }
   let sum = fromCallLog; let rows = 0;
   for (const d of readdirSync(runsDir, { withFileTypes: true })) {
@@ -95,7 +98,8 @@ export function recordedSpendUsd(runsDir = 'pricing_eval/runs', callLogRows = lo
         if (Array.isArray(r.attempts) && r.attempts.length) {
           for (const a of r.attempts) {
             const reqModel = a.requestId ? termReqToModel.get(a.requestId) : undefined;
-            const matchedByReq = reqModel !== undefined && (reqModel == null || reqModel === (a.modelId ?? r.modelId ?? null));
+            const attemptModel = a.modelId ?? r.modelId ?? null;
+            const matchedByReq = reqModel !== undefined && reqModel !== '__AMBIGUOUS__' && attemptModel != null && reqModel === attemptModel;
             if ((a.callId && termCallIds.has(a.callId)) || matchedByReq) continue; // 台帳側で計上済み
             const c = a.costUsd ?? (a.calculatedCostUsd != null ? Number(a.calculatedCostUsd) : null);
             if (typeof c === 'number' && Number.isFinite(c)) sum += c;
@@ -126,8 +130,13 @@ export function budgetAllows({ spentUsd, reservedUsd = 0, nextWorstUsd, usdJpy, 
 export function unaccountedCalls(rows) {
   const started = new Map(rows.filter((r) => r.status === 'STARTED' || r.status === 'UNKNOWN_OUTCOME').map((r) => [r.callId, r]));
   const out = unknownOutcomes(rows).map((u) => ({ ...u, reason: 'UNKNOWN_OUTCOME' }));
+  // 費用つき終端がある callId は recordedSpendUsd 側で数える(同じ呼び出しを null 終端で二重計上しない。Codex r8 HIGH)
+  const hasNumeric = new Set(rows.filter((r) => TERMINAL.has(r.status) && typeof r.costUsd === 'number' && Number.isFinite(r.costUsd)).map((r) => r.callId));
+  const seenNull = new Set();
   for (const r of rows) {
     if (!TERMINAL.has(r.status) || r.costUsd != null) continue;
+    if (hasNumeric.has(r.callId) || seenNull.has(r.callId)) continue; // 費用判明済み / 同一 callId の null 終端は1回だけ
+    seenNull.add(r.callId);
     const st = started.get(r.callId);
     out.push({ ...(st || {}), callId: r.callId, status: r.status, costUsd: null, reason: 'TERMINAL_COST_UNKNOWN', worstCaseUsd: st?.worstCaseUsd });
   }

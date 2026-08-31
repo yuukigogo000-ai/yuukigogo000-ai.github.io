@@ -442,6 +442,11 @@ async function main() {
       }
       let row;
       try { row = await runCase({ client, cfg, model, testCase, price }); }
+      catch (e) {
+        // runCase が例外で落ちた場合、課金の有無が分からない → worst-case を計上してから投げる(他ワーカーが過少な spent を見ない)
+        if (price) spentUsd += perCallWorstUsd;
+        throw e;
+      }
       finally { if (guarded) reservedUsd -= perCallWorstUsd; }
       // 実費の計上は runCase 直後(results 追記・台帳・契約停止判定より前)。後段が throw しても他ワーカーが過少な spent を見ない
       // 費用が分かった試行は実費、分からない試行(usage 無し)は worst-case(甘く見積もらない)。USD 計上は価格があれば行う(為替の有無に依らない)

@@ -1,4 +1,4 @@
-# Replier サーバー側プロキシ — 工程1: 設計書たたき台 v0.2(2026-09-01 発注者決定反映)
+# Replier サーバー側プロキシ — 工程1: 設計書たたき台 v0.3(2026-09-01 発注者決定反映・API経路は条件付き・暗号化 idempotency 応答)
 
 **位置づけ**: 実装には着手しない。STEP0 v0.2 §0 の決定(AWS東京 / Regional REST API+Lambda / Cognito メール OTP / DynamoDB / S3 なし / 同期 / 履歴はブラウザ内 / CAPTCHA なし / 追加枠なし / 予約方式の回数制限 / サーバー側出力検査)を前提に書いた設計。
 
@@ -13,12 +13,13 @@
    ▼
 [AWS WAF] ── IP レート制限・サイズ制限 ── 
 [API Gateway Regional REST API  api.<所有ドメイン>  (ap-northeast-1)]
-   │ Cognito オーソライザ / 統合タイムアウト 60秒(上限緩和申請) / ペイロード検査
+   │ Cognito オーソライザ / 統合タイムアウト 60秒(条件付き: 計測で確定・STEP0 §4.4) / ペイロード検査
    ├─ POST /v1/generate         → Lambda generate  (同期。予約→Bedrock→検査→確定/返却→応答)   timeout 75秒
    ├─ POST /v1/profile          → Lambda generate  (同経路・kind=profile)
    ├─ GET  /v1/me               → Lambda me        (プラン・残り回数・次回更新日時)
    ├─ POST /v1/billing/checkout → Lambda billing   (Stripe Checkout Session)
    ├─ POST /v1/billing/portal   → Lambda billing   (Customer Portal URL)
+   ├─ POST /v1/generate/ack     → Lambda generate  (受領確認: 暗号化 idempotency 応答を即削除)
    └─ POST /v1/billing/webhook  → Lambda webhook   (Stripe 署名検証のみ・認証なし)
 
 [Lambda generate] → Amazon Bedrock Converse(ap-northeast-1・Kimi K2.5・toolConfig・非ストリーミング・SDK timeout 55秒)
@@ -44,10 +45,10 @@
 | `USER#<sub>` / `QUOTA#M#<periodKey>` | success(確定成功数 ≤150)、attempts(試行数 ≤180)、reserved(予約中 0/1) | periodKey = 請求期間開始日(無料は `FREE`) |
 | `USER#<sub>` / `QUOTA#D#<yyyy-mm-dd JST>` | success(≤20)、attempts(≤25)、TTL 3日 | |
 | `USER#<sub>` / `RESV#<reservationId>` | createdAt、TTL(5分)、state(RESERVED/CONFIRMED/RELEASED) | 返却漏れは TTL で自動返却(ストリーム or 次回参照時に精算) |
-| `IDEM#<sub>#<idempotencyKey>` / `META` | state(IN_PROGRESS/DONE/FAILED)、responseHash、**response(検査済み結果 JSON・TTL 10分)**、TTL | 同一 key の再送に同じ応答を返すためだけの短期保持。**本文保存の唯一の例外**。TTL で消える。採用するかは §7-1 |
+| `IDEM#<sub>#<idempotencyKey>` / `META` | state(IN_PROGRESS/DONE/FAILED)、**encResponse**(検査済み結果を**ブラウザ保有鍵**で AES-256-GCM 暗号化した暗号文+IV+認証タグ)、responseHash、TTL(**最大10分**) | 同一 key の再送(画面更新・回線断)に同じ応答を返すための短期保持。**平文・鍵・入力画像は保存しない**(サーバーが持つのは暗号文だけ)。受領確認(`/v1/generate/ack`)で**即削除**+TTL の併用 |
 | `EVENT#<yyyy-mm>` / `<ts>#<uuid>` | userId、kind、modelId、attemptNo、inputTokens、outputTokens、costUsd、latencyMs、requestId、outcome(OK/REGENERATED/INVALID/TIMEOUT/ERROR)、validationFlags(trimmed/placeholder/forbidden/shortfall) | 原価・品質集計。本文なし。TTL 400日 |
 
-会話本文・画像・返信内容はどの項目にも入れない(IDEM.response を採用する場合のみ「検査済み結果を最長10分」— §7-1 で判断)。
+会話本文・画像・返信内容はどの項目にも平文で入れない。唯一の例外が `IDEM.encResponse`(ブラウザ保有鍵で暗号化した検査済み結果・最大10分・ack で即削除)で、サーバー側には鍵が無いので読めない。
 
 ## 3. API 仕様(抜粋)
 
@@ -68,8 +69,9 @@ POST /v1/generate
   → 429 { code: "MONTHLY_LIMIT"|"DAILY_LIMIT"|"ATTEMPT_LIMIT"|"RATE_LIMITED", resetAt }
   → 502 { code: "MODEL_INVALID_OUTPUT"|"MODEL_TIMEOUT"|"MODEL_ERROR", charged: false }   再生成1回でも失敗。回数は消費しない
 ```
-- 同じ `Idempotency-Key` の再送: IN_PROGRESS なら 409、DONE なら同じ応答、FAILED なら同じエラー(モデルを再度呼ばない)
-- タイムアウト設計: WAF/API 統合 60秒(申請) > Lambda 75秒(統合が先に切れても Lambda 側で予約返却を完了させるため長め) > Bedrock SDK 55秒。統合が先に切れた場合クライアントは 504 を受け、Lambda はバックグラウンドで返却処理を終える。**p95 を CloudWatch で監視し55秒超で代替案へ**
+- 同じ `Idempotency-Key` の再送: IN_PROGRESS なら 409、DONE なら保存済み暗号文を**リクエストの鍵で復号して**同じ応答、FAILED なら同じエラー(モデルを再度呼ばない)。鍵が違えば 404(復号不能=別クライアント)
+- 暗号化 idempotency 応答(§3.4): ブラウザが要求ごとに 256bit 鍵を生成し `X-Response-Key`(base64)で送る。サーバーは応答生成後、その鍵で暗号化して `IDEM.encResponse` に保存し、鍵はメモリから破棄。ブラウザは応答受領後に `POST /v1/generate/ack {idempotencyKey}` を送り、サーバーは該当行を即削除(ack が届かなくても TTL 10分で消える)
+- タイムアウト設計(**条件付き**。STEP0 §4.4 の判定表で経路を確定してから数値を固定): 同期案は WAF/API 統合 60秒 > Lambda 75秒(統合が先に切れても予約返却を完了させるため長め) > Bedrock SDK 55秒。統合が先に切れた場合クライアントは 504 を受け、Lambda はバックグラウンドで返却処理を終え、暗号化 idempotency 応答を保存する(クライアントは同じ key で再取得できる)。**p50/p90/p95/最大・120秒超率を CloudWatch に出す**
 
 ### 3.3 課金
 - `POST /v1/billing/checkout` → Stripe Checkout(mode=subscription、月1,480円、ローンチ期間中は coupon 980円×3か月、`success_url`/`cancel_url` は `APP_ORIGIN`)
@@ -103,7 +105,7 @@ generate(user, key):
 
 1. 入力検査: 画像 ≤6・各 MIME(JPEG/WebP/PNG)・デコード後サイズ・合計 ≤4.5MB(API Gateway/WAF の上限より先に自前で検査し 413)。テキスト長上限
 2. プロンプト: system = `prompts.ts` の REPLY_SYSTEM(3件固定・プレースホルダ禁止を含む版)、user = 現行 ReplyTab と同じ節構成、画像は Converse の image ブロック
-3. `Converse`(非ストリーミング)+ `toolConfig: { tools:[reply_result(REPLY_SCHEMA: replies minItems/maxItems=3)], toolChoice:{tool} }`、`maxTokens 1024`、`temperature 0.7`(評価と同一。変えるなら再評価)。tool 説明文「返信案は必ずちょうど3件(4件以上・2件以下は禁止)」
+3. `Converse`(非ストリーミング)+ `toolConfig: { tools:[reply_result(REPLY_SCHEMA: replies minItems/maxItems=3)], toolChoice:{tool} }`、`maxTokens 1024`、**`temperature 0.2`**(2026-09-01 に 0.7 から変更。評価と同一。変えるなら再評価)。tool 説明文「返信案は必ずちょうど3件(4件以上・2件以下は禁止)」。プロンプトは「入力に無い固有名詞(地名・店名・人物・作家・作品・ブランド)と自分の体験談を足さない」規則を強化した版
 4. **出力検査(共有パッケージ `reply-validate`。pricing_eval の `parseProductionReply` / `checkStyleRules(placeholder)` / `BANNED_RULES` と同一実装)** — モデル出力を無条件で信用しない:
    - toolUse 無し / JSON 不正 / 必須欠落 → **再生成1回**
    - 各案を内容検査: bubbles 1〜3件・why 必須・禁止出力なし(BANNED_RULES)・**プレースホルダなし(PLACEHOLDER_RE)** → 通らない案は除外
@@ -124,14 +126,14 @@ generate(user, key):
 | WAF | IP レート制限(例: 5分100リクエスト)・ボディサイズ上限・既知の悪性 IP リスト(マネージドルール)。CAPTCHA は使わない(初期) |
 | CORS/CSP | 許可オリジンは `APP_ORIGIN` のみ。CSP は現行公開ページと同様 |
 | ログ | 構造化ログに sub・idempotencyKey・requestId・数値・outcome のみ。**会話本文・画像・返信内容・メールアドレスを出さない**。テスト: 本文の一部がログ出力に現れたら落ちる |
-| 保持 | 本文: 保持なし(S3 なし・DB なし)。IDEM.response(採用時)は TTL 10分。events: 400日(本文なし)。Bedrock: retention none・呼び出しログ無効(本番アカウントで preflight) |
+| 保持 | 本文: 保持なし(S3 なし・DB なし)。IDEM.encResponse は**暗号文のみ**・最大10分(ack で即削除)。events: 400日(本文なし)。Bedrock: retention none・呼び出しログ無効(本番アカウントで preflight) |
 | 悪用 | メール認証・WAF・アカウント別 1分5回・同時1件・idempotency key・試行上限 月180/日25・使い捨てメールドメイン拒否 |
 | 削除要求 | 退会でプロフィール・QUOTA・EVENT の userId を削除(Stripe 顧客は Stripe 側で削除) |
 
 ## 7. 未決定(残り)
-1. **IDEM.response(検査済み結果を最長10分保持)を採用するか**。採用しない場合、同一 key の再送(画面更新)には 409/「もう一度」で対応し、結果はブラウザ側で保持する(本文をサーバーに一切置かない)。私の推奨: **採用しない**(方針が最も単純。再送の体験は落ちるが初期規模では許容)
+1. **API 経路**(60秒同期 / 180秒申請 / 非同期)— 次の確証runの遅延計測で STEP0 §4.4 の判定表に当てて確定
 2. 所有ドメイン名・サポート窓口・特商法表記
-3. 統合タイムアウト60秒の上限緩和が認められなかった場合の判断時期(実装着手前に申請し、結果で経路を確定)
+3. 暗号化 idempotency 応答の鍵配送の細部(ヘッダー名・鍵長・ack の再送時の扱い)は工程2で詰める。方針(暗号文のみ保持・最大10分・ack 即削除)は決定済み
 
 ## 8. 工程の見取り図(承認後・実装は別 GO)
 - 工程2 詳細設計: OpenAPI 定義・DynamoDB キー/TransactWrite 条件式・IAM ポリシー・WAF ルール・Stripe 商品/価格/coupon・失敗シーケンス(統合タイムアウト時の返却)
@@ -144,3 +146,4 @@ generate(user, key):
 - 確証run b2 TXT_SHORT_07: Kimi が tool-use でも replies 6件(requestId a6499ef3…)→ §5-4 の検査・切り詰め・再生成
 - 同 TXT_SHORT_06: 店名・相手の名前を「○○」で出力(3案とも)→ プロンプトに置き換え規則を追加・§5-4 のプレースホルダ除外
 - 強制終了時に進行中の1呼び出しが台帳外になった → 評価器に「呼び出し直前 STARTED 永続化 / UNKNOWN_OUTCOME は worst-case 計上」を実装。本番でも同じ考え方(予約→確定/返却)を §4 に採用
+- 確証run b3(temperature 0.7): 50.9秒・51.6秒・**120秒タイムアウト1件**、再試行応答に「○○」→停止。→ temperature 0.2+1回再生成(初回違反は独立記録)へ変更し、遅延の p50/p90/p95/最大・120秒超率を次runで計測(STEP0 §4.4)
