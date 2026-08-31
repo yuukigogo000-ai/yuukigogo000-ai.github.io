@@ -13,7 +13,6 @@ const replyResult = (tag) => ({
     { type: 'thinking', thinking: '' },
     { type: 'text', text: JSON.stringify({
         situation: `状況分析${tag}`,
-        interest_level: 72,
         replies: [
           { bubbles: [`返信案A-${tag}`, `二通目A-${tag}`], why: '理由1' },
           { bubbles: [`返信案B-${tag}`], why: '理由2' },
@@ -107,7 +106,7 @@ const profileResult = () => ({
   await page.waitForSelector('#replyResults .card');
   const cards = await page.$$('#replyResults .card');
   check('4a. 返信カード3枚表示', cards.length === 3, `count=${cards.length}`);
-  check('4b. 脈あり度72%表示', (await page.textContent('#meterPct')) === '72%');
+  check('4b. 脈あり度メーターを出さない(#meterPct不在・「脈あり」文言なし)', (await page.$('#meterPct')) === null && !(await page.textContent('#replyAnalysis')).includes('脈あり'));
   check('4c. アドバイス表示', (await page.textContent('#replyAdvice')).includes('アドバイス1'));
   check('4d. 再生成ボタン出現', await page.isVisible('#regenerate'));
   check('4e. リクエスト: model正しい', lastBody.model === 'claude-opus-5');
@@ -186,7 +185,7 @@ const profileResult = () => ({
 
   // --- 12. XSS: AI応答に悪意あるHTML ---
   mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
-    situation: '<img src=x onerror="window.__xss=1">', interest_level: 50,
+    situation: '<img src=x onerror="window.__xss=1">',
     replies: [{ bubbles: ['<script>window.__xss=2<\/script>案'], why: '<b onclick=1>理由' }, { bubbles: ['a'], why: 'b' }, { bubbles: ['c'], why: 'd' }],
     advice: '<svg onload="window.__xss=3">' }) }] } });
   await page.click('#generate');
@@ -197,7 +196,7 @@ const profileResult = () => ({
 
   // --- 12b. 捏造警告: 会話に無い固有名詞(店名・施設名)は警告し、会話にある名前では出さない ---
   mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
-    situation: '序盤', interest_level: 50,
+    situation: '序盤',
     replies: [{ bubbles: ['最近アクアマリン行ってきたんですけど良かったです笑'], why: 'w' }, { bubbles: ['a'], why: 'b' }, { bubbles: ['c'], why: 'd' }],
     advice: '次は軽く' }) }] } });
   await page.click('#generate');
@@ -208,7 +207,7 @@ const profileResult = () => ({
   await openInputs();
   await page.fill('#conversation', '相手: サンシャイン水族館よく行きます');
   mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
-    situation: '序盤', interest_level: 50,
+    situation: '序盤',
     replies: [{ bubbles: ['サンシャイン水族館いいですよね!'], why: 'w' }, { bubbles: ['a'], why: 'b' }, { bubbles: ['c'], why: 'd' }],
     advice: '次は軽く' }) }] } });
   await page.click('#generate');
@@ -301,13 +300,13 @@ const profileResult = () => ({
   const cleared = await page.evaluate(() => localStorage.getItem('reply_ai_adopted'));
   check('17l. 採用履歴クリアできる', cleared === null);
   // 旧形式(text)の応答でも壊れない(後方互換)
-  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ situation: 's', interest_level: 40,
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ situation: 's',
     replies: [{ text: '旧形式1', why: 'w' }, { text: '旧形式2', why: 'w' }, { text: '旧形式3', why: 'w' }], advice: 'アドバイスOLD' }) }] } });
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスOLD'));
   check('17m. 旧形式(text)応答でも3案描画', (await page.$$('#replyResults .card')).length === 3 && (await page.textContent('#replyResults')).includes('旧形式1'));
   // 4案以上返っても3案に丸める(「3案」という約束を壊さない)
-  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ situation: 's', interest_level: 40,
+  mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ situation: 's',
     replies: [1,2,3,4,5].map(n => ({ bubbles: [`多すぎ${n}`], why: 'w' })), advice: 'アドバイスOVER' }) }] } });
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスOVER'));
@@ -416,14 +415,14 @@ const profileResult = () => ({
 
   // 21c. 3案未満でも壊れない(注記を出す)
   mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
-    situation: 's', interest_level: 50, replies: [{ bubbles: ['1案だけ'], why: 'w' }], advice: 'アドバイスFEW' }) }] } });
+    situation: 's', replies: [{ bubbles: ['1案だけ'], why: 'w' }], advice: 'アドバイスFEW' }) }] } });
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスFEW'));
   check('21c. 3案未満は注記つきで表示', (await page.$$('#replyResults .card')).length === 1 && await page.isVisible('#shortfallNote'));
 
   // 21d. 0案は明示エラー(空の結果を出さない)
   mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
-    situation: 's', interest_level: 50, replies: [], advice: 'から' }) }] } });
+    situation: 's', replies: [], advice: 'から' }) }] } });
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#error').textContent.includes('提案が返って'));
   check('21d. 0案は明示エラー', (await page.textContent('#error')).includes('提案が返ってきませんでした'));
@@ -502,7 +501,7 @@ const profileResult = () => ({
 
   // 22b. AI応答のHTMLは「実行されない」だけでなく「要素として入らない」
   mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
-    situation: 'x', interest_level: 50,
+    situation: 'x',
     replies: [{ bubbles: ['<b>太字</b><script>window.__xss2=1<\/script>'], why: '<i>理由' }, { bubbles: ['a'], why: 'b' }, { bubbles: ['c'], why: 'd' }],
     advice: '<img src=x onerror="window.__xss2=2">アドバイスINJ' }) }] } });
   await page.click('#generate');
@@ -633,7 +632,7 @@ const profileResult = () => ({
   await openGoals();
   await page.click('label[for="b2"]');
   mock = () => ({ status: 200, body: { stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({
-    situation: 's', interest_level: 60,
+    situation: 's',
     replies: [1,2,3].map(n => ({ bubbles: [`1通だけ${n}`], why: 'w' })), advice: 'アドバイスSPLIT' }) }] } });
   await page.click('#generate');
   await page.waitForFunction(() => document.querySelector('#replyAdvice').textContent.includes('アドバイスSPLIT'));

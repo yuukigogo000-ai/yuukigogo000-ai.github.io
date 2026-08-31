@@ -754,18 +754,18 @@ const { findUngroundedNames, PROMPT_EXAMPLE_NAMES } = await import('../../reply-
 const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases } = await import('../src/fidelity_eval.mjs');
 
 const goodProd = {
-  situation: '会話は序盤で温度は普通', interest_level: 55, advice: '次は軽い質問で続ける',
+  situation: '会話は序盤で温度は普通', advice: '次は軽い質問で続ける',
   replies: [
     { bubbles: ['おつかれです!今日は早めに帰れました笑'], why: '共感と自己開示' },
     { bubbles: ['それ気になってました', '何系のお店でした?'], why: '軽い興味' },
     { bubbles: ['週末どこか出ました?', '自分は映画でした', 'ゆるく過ごせました〜'], why: '生活感' },
   ],
 };
-t('44. parseProductionReply: 本番schema(situation/interest_level/replies.bubbles+why/advice)を検証する(変異検出)', () => {
+t('44. parseProductionReply: 本番schema(situation/replies.bubbles+why/advice)を検証し、除去済みinterest_levelの出力を落とす(変異検出)', () => {
   const ok = parseProductionReply(JSON.stringify(goodProd));
   assertEq(ok.ok, MUTATE ? false : true, `正常JSONが通らない: ${ok.error}`);
-  assertEq(parseProductionReply(JSON.stringify({ ...goodProd, interest_level: undefined })).failureKind, 'schema_failure', 'interest_level欠落');
-  assertEq(parseProductionReply(JSON.stringify({ ...goodProd, interest_level: 150 })).failureKind, 'schema_failure', '範囲外interest_level');
+  assertEq(parseProductionReply(JSON.stringify({ ...goodProd, situation: '' })).failureKind, 'schema_failure', 'situation空');
+  assertEq(parseProductionReply(JSON.stringify({ ...goodProd, interest_level: 55 })).failureKind, 'schema_failure', '除去済みinterest_levelの出力を通している');
   assertEq(parseProductionReply(JSON.stringify({ ...goodProd, replies: goodProd.replies.slice(0, 2) })).failureKind, 'wrong_reply_count', '2案を通している');
   assertEq(parseProductionReply(JSON.stringify({ ...goodProd, replies: [{ bubbles: [], why: 'x' }, ...goodProd.replies.slice(1)] })).failureKind, 'schema_failure', '空bubbles');
   assertEq(parseProductionReply('```json\n' + JSON.stringify(goodProd) + '\n```').ok, true, 'コードフェンス剥がし');
@@ -775,7 +775,7 @@ t('45. checkStyleRules: 本番指示の禁止事項を検知し、許可され�
   const clean = checkStyleRules(goodProd);
   assertEq(clean.violations.length, MUTATE ? 1 : 0, `正常出力を誤検知: ${JSON.stringify(clean.violations)}`);
   const bad = checkStyleRules({
-    situation: 's', interest_level: 50, advice: 'a',
+    situation: 's', advice: 'a',
     replies: [
       { bubbles: ['プロフィール拝見しました!よろしくお願いいたします。'], why: 'w' },  // 禁止句2+文末。
       { bubbles: ['うけるwww😊✨', 'それで、どうでしたか?何時ですか?'], why: 'w' },   // www+禁止絵文字+絵文字2+質問2
@@ -787,7 +787,7 @@ t('45. checkStyleRules: 本番指示の禁止事項を検知し、許可され�
     assert(rules.has(r), `${r} を検知できない`);
   }
   // 吹き出し構造: 全案同数・1通案なし
-  const st = checkStyleRules({ situation: 's', interest_level: 50, advice: 'a',
+  const st = checkStyleRules({ situation: 's', advice: 'a',
     replies: [{ bubbles: ['a', 'b'], why: 'w' }, { bubbles: ['c', 'd'], why: 'w' }, { bubbles: ['e', 'f'], why: 'w' }] });
   const stRules = new Set(st.violations.map((v) => v.rule));
   assert(stRules.has('same_bubble_count') && stRules.has('no_single_bubble_plan'), '吹き出し構造の規則を検知できない');
@@ -818,10 +818,10 @@ t('49. 捏造検出: 入力に無い固有名詞・例文名を検知し、根�
 t('50. extractToolUse: toolUseブロックのinputを取り出し、無ければnull(捏造しない)(変異検出)', () => {
   const res = { output: { message: { content: [
     { text: '説明文' },
-    { toolUse: { name: 'reply_result', input: { situation: 's', interest_level: 50 } } },
+    { toolUse: { name: 'reply_result', input: { situation: 's', n: 50 } } },
   ] } } };
   const input = extractToolUse(res, 'reply_result');
-  assertEq(input?.interest_level, MUTATE ? 51 : 50, 'toolUse input を取り出せない');
+  assertEq(input?.n, MUTATE ? 51 : 50, 'toolUse input を取り出せない');
   assertEq(extractToolUse(res, 'other_tool'), null, '別名toolを誤取得');
   assertEq(extractToolUse({ output: { message: { content: [{ text: 'no tool' }] } } }, 'reply_result'), null, 'toolUse無しでnullでない');
   assertEq(extractToolUse(null, 'reply_result'), null, 'null応答');
@@ -834,7 +834,10 @@ await (async () => {
     const m = raw.match(/REPLY_SYSTEM = `([\s\S]*?)`;/);
     assert(m, 'prompts.ts から原文を特定できない');
     assertEq(prod.REPLY_SYSTEM === m[1], MUTATE ? false : true, '抽出結果が原文と一致しない(劣化)');
-    assert(prod.REPLY_SCHEMA.required.includes('interest_level'), 'schema抽出');
+    assert(prod.REPLY_SCHEMA.required.includes('replies') && prod.REPLY_SCHEMA.required.includes('situation'), 'schema抽出');
+    assertEq('interest_level' in prod.REPLY_SCHEMA.properties, MUTATE ? true : false, '除去済みinterest_levelがschemaに残っている');
+    assertEq(/interest_level/.test(prod.REPLY_SYSTEM), false, '本番プロンプト本文に interest_level が残っている');
+    assert(/数値やパーセント・「脈あり\/脈なし」の断定で評価しない/.test(prod.REPLY_SYSTEM), '脈あり度の数値評価禁止の規則が本番プロンプトに無い');
   });
   t('47. buildProductionUserPrompt: ReplyTab.tsx と同じ節構成+schemaテキスト(変異検出)', () => {
     const c = cases.find((x) => x.images.length > 0);

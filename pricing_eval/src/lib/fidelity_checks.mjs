@@ -1,7 +1,8 @@
 // 本番プロンプト追従テストの機械検査。
 //
 // 検査対象は2層:
-//   1) 本番 REPLY_SCHEMA(situation / interest_level / replies[].bubbles+why / advice)への適合
+//   1) 本番 REPLY_SCHEMA(situation / replies[].bubbles+why / advice)への適合
+//      ※ interest_level(脈あり度)は 2026-09-01 に製品から除去。出力に含まれていたら schema_failure(禁止出力)
 //   2) RESEARCH_LINE_STYLE.md 由来の機械検査可能な文体規則(REPLY_SYSTEM に明文がある禁止事項のみ)
 //
 // 規則は「本番指示に書いてあること」だけを検査する。ここで独自基準を発明しない。
@@ -47,7 +48,7 @@ export function parseProductionReply(text) {
 
   const miss = [];
   if (typeof obj.situation !== 'string' || !obj.situation.trim()) miss.push('situation');
-  if (!Number.isInteger(obj.interest_level) || obj.interest_level < 0 || obj.interest_level > 100) miss.push('interest_level(0〜100の整数)');
+  if ('interest_level' in obj) miss.push('interest_level(脈あり度は除去済み・出力禁止)');
   if (!Array.isArray(obj.replies) || !obj.replies.length) miss.push('replies');
   if (typeof obj.advice !== 'string' || !obj.advice.trim()) miss.push('advice');
   if (miss.length) return { ok: false, failureKind: 'schema_failure', error: `欠落/不正: ${miss.join(',')}`, data: obj };
@@ -121,7 +122,6 @@ export function checkStyleRules(data) {
     violations: v,
     stats: {
       bubbleCounts,
-      interestLevel: data.interest_level,
       adviceLen: data.advice.length,
       situationLen: data.situation.length,
     },

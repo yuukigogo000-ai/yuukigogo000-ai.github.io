@@ -12,7 +12,6 @@ const result = {
       text: JSON.stringify({
         situation:
           'サウナと中目黒で共通の話題が出て、相手からも質問が返ってきている。会話は10往復目で温度は高い。',
-        interest_level: 74,
         replies: [
           {
             bubbles: ['サウナ仲間じゃないですか笑', '中目黒のそこ、名前思い出せます?'],
@@ -37,7 +36,7 @@ const result = {
   ],
 };
 
-const browser = await chromium.launch();
+const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || undefined });
 
 async function shoot(name, colorScheme) {
   const context = await browser.newContext({

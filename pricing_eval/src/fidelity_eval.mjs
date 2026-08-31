@@ -43,7 +43,8 @@ export async function loadProductionPrompts(tsPath = PROMPTS_TS, tmpDir = join(R
   writeFileSync(tmp, js);
   const mod = await import(pathToFileURL(tmp).href + `?t=${Date.now()}`);
   if (!mod.REPLY_SYSTEM || mod.REPLY_SYSTEM.length < 3000) throw new Error('REPLY_SYSTEM の抽出に失敗(短すぎる)');
-  if (!mod.REPLY_SCHEMA?.properties?.interest_level) throw new Error('REPLY_SCHEMA の抽出に失敗');
+  if (!mod.REPLY_SCHEMA?.properties?.replies || !mod.REPLY_SCHEMA?.properties?.situation) throw new Error('REPLY_SCHEMA の抽出に失敗');
+  if (mod.REPLY_SCHEMA.properties.interest_level || (mod.REPLY_SCHEMA.required || []).includes('interest_level')) throw new Error('REPLY_SCHEMA に除去済みの interest_level が残っている');
   return { REPLY_SYSTEM: mod.REPLY_SYSTEM, REPLY_SCHEMA: mod.REPLY_SCHEMA };
 }
 
@@ -180,7 +181,7 @@ async function main() {
           });
           if (toolUse) {
             body.toolConfig = {
-              tools: [{ toolSpec: { name: 'reply_result', description: '返信案・脈あり度・アドバイスの出力', inputSchema: { json: REPLY_SCHEMA } } }],
+              tools: [{ toolSpec: { name: 'reply_result', description: '状況分析・返信案・アドバイスの出力', inputSchema: { json: REPLY_SCHEMA } } }],
               toolChoice: { tool: { name: 'reply_result' } },
             };
           }

@@ -3,7 +3,6 @@ import { ChevronDown, Compass, RefreshCw, Trash2 } from 'lucide-react';
 import { AutoTextarea } from './AutoTextarea';
 import { Chips, type ChipOption } from './Chips';
 import { Dropzone } from './Dropzone';
-import { Meter } from './Meter';
 import { ReplyCard } from './ReplyCard';
 import { CanceledError, callClaude, type ReplyResult } from '../lib/api';
 import { imageBlocks, type PickedImage } from '../lib/images';
@@ -457,16 +456,9 @@ export function ReplyTab({
 
       <div id="replyAnalysis" className="card mt-4 scroll-mt-20 p-4" hidden={!shown}>
         <h2 className="mb-1.5 text-label font-bold tracking-wide text-ink-muted">いまの状況</h2>
-        <p id="situation" className="mb-3 text-sub leading-relaxed">
+        <p id="situation" className="text-sub leading-relaxed">
           {shown?.situation ?? ''}
         </p>
-        <Meter
-          barId="meterBar"
-          pctId="meterPct"
-          label="脈あり度"
-          value={shown?.interest_level ?? 0}
-          suffix="%"
-        />
       </div>
 
       <div className="mt-4 mb-2 px-1" hidden={!shown || busy}>

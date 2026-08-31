@@ -59,7 +59,7 @@ async function main() {
         temperature: cfg.temperature,
       });
       const toolCfg = (choice) => ({
-        tools: [{ toolSpec: { name: 'reply_result', description: '返信案・脈あり度・アドバイスの出力', inputSchema: { json: REPLY_SCHEMA } } }],
+        tools: [{ toolSpec: { name: 'reply_result', description: '状況分析・返信案・アドバイスの出力', inputSchema: { json: REPLY_SCHEMA } } }],
         toolChoice: choice,
       });
 
@@ -82,7 +82,6 @@ async function main() {
             toolUseReturned: !!input, schemaOk: parsed.ok,
             failureKind: parsed.ok ? null : parsed.failureKind,
             violations: parsed.ok ? checkStyleRules(parsed.data).violations.length : null,
-            interestLevel: parsed.ok ? parsed.data.interest_level : null,
             stopReason: res.stopReason ?? null, latencyMs: Date.now() - t0,
             inputTokens: usage?.inputTokens ?? null, outputTokens: usage?.outputTokens ?? null,
             calculatedCostUsd: formatUsd(cost), requestId: res.$requestId ?? null,

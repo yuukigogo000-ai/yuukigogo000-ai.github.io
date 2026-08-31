@@ -104,7 +104,6 @@ export async function callClaude<T>(
 
 export type ReplyResult = {
   situation: string;
-  interest_level: number;
   replies: { bubbles?: string[]; text?: string; why: string }[];
   advice: string;
 };
