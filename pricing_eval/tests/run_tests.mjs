@@ -756,6 +756,7 @@ const { callStarted, callEnded, loadCallLog, unknownOutcomes, unknownOutcomeWors
 const { findUngroundedNames, findFabricationHints, PROMPT_EXAMPLE_NAMES, KNOWN_BRANDS, KNOWN_PLACES } = await import('../../reply-ai-app/src/lib/ungrounded.mjs');
 const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases, assertRunPreconditions, expandRepeats, percentiles, evaluateConfirmCriteria, parsePassCriteria, expectedDatasetHashFor, DEFAULT_DATASET, SYNTHETIC_GENERATORS } = await import('../src/fidelity_eval.mjs');
 const { generateFab10Cases, FAB10_CATEGORIES } = await import('../src/generate_cases_fab10.mjs');
+const { resolveModelPrice, ESTIMATE_SAFETY } = await import('../src/fidelity_eval.mjs');
 
 const goodProd = {
   situation: '会話は序盤で温度は普通', advice: '次は軽い質問で続ける',
@@ -871,6 +872,20 @@ t('60. 捏造の補助候補: 有名チェーン(停止層)・地名+店名・�
   const c = evaluateConfirmCriteria(rows, { expectedCases: 10, maxRegenerated: 1 });
   assertEq(c.fabricationHints, MUTATE ? 9 : 10, '補助候補の件数');
   assertEq(c.pass, true, '補助候補だけで不合格にしている(人間確認に回すべき)');
+});
+
+t('63. resolveModelPrice: official が無いモデルは既定で呼び出し禁止(null)。--allow-estimated-price のときだけ derived_estimate を安全係数つきで使い、推定である旨を返す(変異検出)', () => {
+  const pricing = { models: { 'm.official': { inputPerMTokUsd: 1, outputPerMTokUsd: 2, kind: 'official_exact' } }, derivedEstimates: { 'm.est': { inputPerMTokUsd: 5, outputPerMTokUsd: 25, source: 'https://example.invalid/pricing' } } };
+  assertEq(resolveModelPrice({ pricing, id: 'm.official', invocationTarget: 'm.official' }).priceKind, 'official_exact');
+  assertEq(resolveModelPrice({ pricing, id: 'm.est', invocationTarget: 'm.est' }).price, null, '推定価格を無断で使っている');
+  const r = resolveModelPrice({ pricing, id: 'm.est', invocationTarget: 'm.est', allowEstimated: true });
+  assert(r.price && /derived_estimate/.test(r.priceKind), '推定である旨が無い');
+  assertEq(Math.round(r.price.inputPerMTokUsd * 1000), Math.round((MUTATE ? 5 : 5 * ESTIMATE_SAFETY) * 1000), '安全係数が掛かっていない');
+  assertEq(Math.round(r.price.outputPerMTokUsd * 1000), Math.round(25 * ESTIMATE_SAFETY * 1000));
+  assert(ESTIMATE_SAFETY > 1, '安全係数が1以下');
+  // official があれば allowEstimated でも official を使う(推定で上書きしない)
+  assertEq(resolveModelPrice({ pricing, id: 'm.official', invocationTarget: 'm.official', allowEstimated: true }).priceKind, 'official_exact');
+  assertEq(resolveModelPrice({ pricing, id: 'm.none', invocationTarget: 'm.none', allowEstimated: true }).price, null, '価格が無いモデルを通した');
 });
 
 t('61. confirm10: 合格条件セット(10件・再生成≤1)と dataset ハッシュ期待値(別datasetは --dataset-hash 必須)(変異検出)', () => {

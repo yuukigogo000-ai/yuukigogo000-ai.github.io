@@ -62,6 +62,24 @@ export const DEFAULT_DATASET = 'pricing_eval/cases.json';
 // 合成データの生成器(これ以外の generated_by は実データ扱いで実行禁止)
 export const SYNTHETIC_GENERATORS = new Set(['generate_cases.mjs', 'generate_cases_fab10.mjs']);
 
+/**
+ * モデル価格の解決。既定は official_exact のみ(無ければ呼び出し禁止)。
+ * allowEstimated=true のときだけ pricing_override.json の derived_estimate を使い、安全係数 ESTIMATE_SAFETY を掛けて計上する
+ * (AWS 公式ページが機械取得できない Anthropic 系モデル用。推定である旨を manifest/summary に残す)。
+ */
+export const ESTIMATE_SAFETY = 1.1;
+export function resolveModelPrice({ pricing, id, invocationTarget, modelName, allowEstimated = false }) {
+  const official = pricing.models[id] || pricing.models[invocationTarget] || (modelName ? pricing.models[modelName] : null);
+  if (official && official.inputPerMTokUsd != null) return { price: official, priceKind: 'official_exact' };
+  if (!allowEstimated) return { price: null, priceKind: null };
+  const est = (pricing.derivedEstimates || {})[id] || (pricing.derivedEstimates || {})[invocationTarget] || null;
+  if (!est || est.inputPerMTokUsd == null || est.outputPerMTokUsd == null) return { price: null, priceKind: null };
+  return {
+    price: { ...est, inputPerMTokUsd: est.inputPerMTokUsd * ESTIMATE_SAFETY, outputPerMTokUsd: est.outputPerMTokUsd * ESTIMATE_SAFETY },
+    priceKind: `derived_estimate(×${ESTIMATE_SAFETY} 安全係数・AWS公式未確認・出典 ${est.source})`,
+  };
+}
+
 /** 合格条件セット。confirm30 = 30件・再生成≤3(2026-09-01 A+C)/ confirm10 = 10件・再生成≤1(Qwen 限定評価) */
 export function parsePassCriteria(name) {
   if (name == null) return null;
@@ -259,9 +277,10 @@ async function main() {
     const c = (discovery.candidates || []).find((x) => x.modelId === id);
     if (!c) throw new Error(`${id} が discovery に無い`);
     if (!c.evaluable) throw new Error(`${id} は Hard Gate 違反(${(c.fails || []).join(',')})`);
-    const price = pricing.models[id] || pricing.models[c.invocationTarget] || (c.modelName ? pricing.models[c.modelName] : null);
-    if (!price || price.inputPerMTokUsd == null) throw new Error(`${id} の official 価格が無い(呼び出し禁止)`);
-    return { key: c.invocationTarget || id, modelId: id, invocationTarget: c.invocationTarget || id, price };
+    const { price, priceKind } = resolveModelPrice({ pricing, id, invocationTarget: c.invocationTarget, modelName: c.modelName, allowEstimated: args['allow-estimated-price'] === true });
+    if (!price) throw new Error(`${id} の official 価格が無い(呼び出し禁止。推定価格で回すなら pricing_override.json に derived_estimate を置き --allow-estimated-price を明示)`);
+    if (priceKind !== 'official_exact') logWarn(`${id} の価格は推定値で計上する`, { priceKind, inputPerMTokUsd: price.inputPerMTokUsd, outputPerMTokUsd: price.outputPerMTokUsd });
+    return { key: c.invocationTarget || id, modelId: id, invocationTarget: c.invocationTarget || id, price, priceKind, destinations: c.destinations || null, domesticPath: c.domesticPath ?? null };
   });
 
   const dir = join(RUNS_DIR, runId);
@@ -278,6 +297,7 @@ async function main() {
     schemaDelivery: toolUse ? 'tool-use(Converse toolConfig=本番採用構成)' : 'text(本番はtool-use。相違点として明記)',
     cases: cases.map((c) => c.id),
     models: models.map((m) => m.modelId),
+    modelPricing: models.map((m) => ({ modelId: m.modelId, invocationTarget: m.invocationTarget, priceKind: m.priceKind, inputPerMTokUsd: m.price.inputPerMTokUsd, outputPerMTokUsd: m.price.outputPerMTokUsd, destinations: m.destinations, domesticPath: m.domesticPath })),
     config: { region: cfg.region, outputMaxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, maxAutoRetries: cfg.maxAutoRetries, usdJpy: cfg.usdJpy, maxBudgetJpy: cfg.maxBudgetJpy, priorSpentUsd },
   }, null, 2));
 
@@ -514,7 +534,7 @@ async function main() {
   const criteria = evaluateConfirmCriteria(rows, criteriaSpec ? { expectedCases: criteriaSpec.expectedCases, maxRegenerated: criteriaSpec.maxRegenerated } : { expectedCases: rows.length });
   logInfo('確証指標', { finalSuccess: `${criteria.finalSuccess}/${criteria.cases}`, firstAttemptViolations: criteria.firstAttemptViolations, regenerated: criteria.regenerated, placeholder: criteria.placeholder, fabrication: criteria.fabrication, fabricationHints: criteria.fabricationHints, timeouts: criteria.timeouts, latency: criteria.latency });
   if (passCriteria) logInfo(`合格判定(${passCriteria})`, { pass: criteria.pass, failedConditions: criteria.failedConditions });
-  writeFileSync(join(dir, 'fidelity_summary.json'), JSON.stringify({ at: new Date().toISOString(), runId, summary, criteria, passCriteria, cumulativeUsd: formatUsd(spentUsd) }, null, 2));
+  writeFileSync(join(dir, 'fidelity_summary.json'), JSON.stringify({ at: new Date().toISOString(), runId, summary, criteria, passCriteria, cumulativeUsd: formatUsd(spentUsd), modelPricing: models.map((m) => ({ modelId: m.modelId, priceKind: m.priceKind })) }, null, 2));
   logInfo('fidelity 完了', { runId, thisRunUsd: formatUsd(spentUsd - priorSpentUsd), cumulativeUsd: formatUsd(spentUsd) });
 }
 

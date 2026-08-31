@@ -105,6 +105,9 @@ node pricing_eval/src/fidelity_eval.mjs --models=<id> --dataset=pricing_eval/cas
 node pricing_eval/src/human_review_page.mjs --run-id=<新ID> --dataset=pricing_eval/cases_fab10.json --max-regenerated=1
 ```
 
+価格が AWS 公式ページから機械取得できないモデル(Anthropic 系)は、`pricing_override.json` に `kind: derived_estimate`(出典URL必須)を置き、
+`--allow-estimated-price` を明示したときだけ安全係数 1.1 を掛けて予算計上する(manifest/summary に推定である旨が残る)。既定では呼び出し禁止のまま。
+
 検出器の層: 停止層(カタカナ語の体験文脈・施設接尾辞・例文名・有名チェーン/ブランドの固定リスト・プレースホルダ)と
 補助候補層(地名+店名・体験談の言い回し。`fabrication_hint`)。**補助候補は人間確認の入口であって、未知の漢字・ひらがな
 固有名詞を完全に検出できるものではない。**
