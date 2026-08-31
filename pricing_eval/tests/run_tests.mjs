@@ -20,6 +20,8 @@ function assert(cond, msg) { if (!cond) throw new Error(msg || '条件を満た�
 function assertEq(a, b, msg) { if (a !== b) throw new Error(`${msg || ''} 期待 ${JSON.stringify(b)} / 実際 ${JSON.stringify(a)}`); }
 
 const TMP = 'pricing_eval/runs/_test_tmp';
+// テストは本番の呼び出し台帳(call_log.jsonl)に書かない(Codex r6 MEDIUM)。callLogPath() は呼び出し時に env を読む
+process.env.PRICING_EVAL_CALL_LOG = join(TMP, 'call_log_tests.jsonl');
 
 const { validateDataset } = await import('../src/validate_dataset.mjs');
 const { parseReplies, SYSTEM_INSTRUCTION, buildUserText } = await import('../src/adapters/contract.mjs');
@@ -750,7 +752,7 @@ t('36. judgeAvailability: 全項目 AVAILABLE/AUTHORIZED のみ ok(変異検出)
 
 console.log('\n== 本番プロンプト追従テスト(fidelity) ==');
 const { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse, fidelityStopReason, PLACEHOLDER_RE } = await import('../src/lib/fidelity_checks.mjs');
-const { callStarted, callEnded, loadCallLog, unknownOutcomes, unknownOutcomeWorstCaseUsd, unaccountedCalls, unaccountedWorstCaseUsd, recordedSpendUsd } = await import('../src/lib/call_log.mjs');
+const { callStarted, callEnded, loadCallLog, unknownOutcomes, unknownOutcomeWorstCaseUsd, unaccountedCalls, unaccountedWorstCaseUsd, recordedSpendUsd, budgetAllows, callLogPath } = await import('../src/lib/call_log.mjs');
 const { findUngroundedNames, PROMPT_EXAMPLE_NAMES } = await import('../../reply-ai-app/src/lib/ungrounded.mjs');
 const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases, assertRunPreconditions } = await import('../src/fidelity_eval.mjs');
 
@@ -914,7 +916,8 @@ t('54. call_log: STARTED は終端が無ければ UNKNOWN_OUTCOME として wors
   const rdir = join(TMP, `runs_${Date.now()}`); mkdirSync(join(rdir, 'x'), { recursive: true });
   writeFileSync(join(rdir, 'x', 'results.jsonl'), JSON.stringify({ effectiveCostUsd: null, attempts: [{ costUsd: null }, { costUsd: 0.005 }] }) + '\n' + JSON.stringify({ effectiveCostUsd: 0.002, attempts: [{ costUsd: 0.002 }] }) + '\n');
   writeFileSync(join(rdir, 'x', 'probe_results.jsonl'), JSON.stringify({ calculatedCostUsd: '0.001' }) + '\n');
-  assertEq(Math.round(recordedSpendUsd(rdir).sum * 1e6), MUTATE ? 3000 : 8000, '記録済み費用の合計(0.005+0.002+0.001)');
+  assertEq(Math.round(recordedSpendUsd(rdir, []).sum * 1e6), MUTATE ? 3000 : 8000, '記録済み費用の合計(0.005+0.002+0.001)');
+  assert(callLogPath().includes('_test_tmp'), 'テストが本番台帳に向いている');
 });
 
 t('52. assertRunPreconditions: 全条件一致でのみ空、region/retention/IAM主体/アカウント/ケースハッシュ/予算/既発生費用のどれが崩れても blocker(変異検出)', () => {
@@ -945,6 +948,32 @@ t('52. assertRunPreconditions: 全条件一致でのみ空、region/retention/IA
     { ...base, preflight: null },
   ];
   variants.forEach((v, i) => assert(assertRunPreconditions(v).length >= 1, `変異 ${i} が fail closed にならない`));
+});
+
+t('55. recordedSpendUsd: 台帳に費用つき終端がある呼び出しは台帳から1回だけ数え、results に届かなかった終端も落とさない(変異検出)', () => {
+  const rdir = join(TMP, `runs55_${Date.now()}`); mkdirSync(join(rdir, 'x'), { recursive: true });
+  // results: 試行A(callId=a, 0.004)・試行B(requestId=rq-b, 0.003)・試行C(台帳に無い, 0.002)
+  writeFileSync(join(rdir, 'x', 'results.jsonl'), JSON.stringify({ attempts: [{ callId: 'a', costUsd: 0.004 }, { requestId: 'rq-b', costUsd: 0.003 }, { costUsd: 0.002 }] }) + '\n');
+  // 台帳: a(0.004)・b(requestId=rq-b, 0.003)・d(0.010・results に無い=クラッシュで落ちた呼び出し)・e(null 終端=unaccounted 側で数える)
+  const log = [
+    { callId: 'a', status: 'SUCCEEDED', costUsd: 0.004, requestId: 'rq-a' },
+    { callId: 'b', status: 'SUCCEEDED', costUsd: 0.003, requestId: 'rq-b' },
+    { callId: 'd', status: 'SUCCEEDED', costUsd: 0.010, requestId: 'rq-d' },
+    { callId: 'e', status: 'STARTED', worstCaseUsd: 0.015 }, { callId: 'e', status: 'FAILED', costUsd: null },
+  ];
+  const r = recordedSpendUsd(rdir, log);
+  // 期待: 台帳 0.004+0.003+0.010 + results のうち台帳に無い 0.002 = 0.019(a/b を二重に数えない・d を落とさない・e は含めない)
+  assertEq(Math.round(r.sum * 1e6), MUTATE ? 26000 : 19000, `突合結果 ${r.sum}`);
+  assertEq(Math.round(r.fromCallLog * 1e6), 17000, '台帳側の合計');
+});
+
+t('56. budgetAllows: 予約(reserved)込みで判定し、並行2件が同じ spent を見ても上限を超えない(変異検出)', () => {
+  const cfg = { usdJpy: 160, maxBudgetJpy: 100 }; // 上限 100円 = 0.625 USD
+  assert(budgetAllows({ spentUsd: 0.5, reservedUsd: 0, nextWorstUsd: 0.1, ...cfg }), '余裕があるのに拒否');
+  assertEq(budgetAllows({ spentUsd: 0.5, reservedUsd: 0.1, nextWorstUsd: 0.1, ...cfg }), MUTATE ? true : false, '予約分を無視して2件目を通している(競合)');
+  assert(!budgetAllows({ spentUsd: 0.6, reservedUsd: 0, nextWorstUsd: 0.1, ...cfg }), '超過を通している');
+  assert(!budgetAllows({ spentUsd: 0, reservedUsd: 0, nextWorstUsd: 0.1, usdJpy: 0, maxBudgetJpy: 100 }), 'usdJpy 未設定で通している');
+  assert(!budgetAllows({ spentUsd: 0, reservedUsd: 0, nextWorstUsd: 0.1, usdJpy: 160, maxBudgetJpy: 0 }), '上限 0 で通している');
 });
 
 await (async () => {

@@ -24,7 +24,7 @@ import { createBedrockClient, resolveCredentials, buildConverseBody, extractConv
 import { validateReplies } from './validate_output.mjs';
 import { costUsdForAttempt, loadPricing, toJpy, bucketOf, formatUsd } from './calculate_cost.mjs';
 import { runPreflight } from './retention_preflight.mjs';
-import { callStarted, callEnded } from './lib/call_log.mjs';
+import { callStarted, callEnded, budgetAllows } from './lib/call_log.mjs';
 import { LEDGER_PATH, datasetHashOf, promptHashOf, configHashOf, ledgerKey, loadLedger, appendLedger } from './lib/ledger.mjs';
 
 const CASES_PATH = 'pricing_eval/cases.json';
@@ -70,6 +70,7 @@ async function attemptOnce({ client, cfg, model, testCase, attemptNo, price = nu
   const t0 = Date.now();
   const startedAt = new Date(t0).toISOString();
   let callId = null;
+  let recordedCallId = null;
   try {
     let text, usage, stopReason, requestId = null, httpStatus = null;
     if (client.synthetic) {
@@ -87,6 +88,7 @@ async function attemptOnce({ client, cfg, model, testCase, attemptNo, price = nu
       if (!price) throw new Error('official 価格が無いモデルは呼び出さない');
       const worst = (16000 / 1e6) * price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * price.outputPerMTokUsd;
       callId = callStarted({ runId: cfg.runId || 'run_eval', caseId: testCase.id, modelId: model.modelId, attemptNo, worstCaseUsd: worst });
+      recordedCallId = callId;
       const res = await client.converse(model.invocationTarget || model.inferenceProfileId || model.modelId, body);
       const ex = extractConverse(res);
       text = ex.text; usage = ex.usage; stopReason = ex.stopReason;
@@ -105,6 +107,7 @@ async function attemptOnce({ client, cfg, model, testCase, attemptNo, price = nu
       requestId,
       httpStatus,
       apiOperation: client.synthetic ? 'MockInvoke' : 'Converse',
+      callId: recordedCallId,
       usage: usage ?? null,
       stopReason: stopReason ?? null,
       ok: parsed.ok,
@@ -221,6 +224,7 @@ export async function runCase({ client, cfg, model, testCase, price }) {
       modelId: model.modelId,
       caseId: testCase.id,
       apiOperation: x.apiOperation ?? null,
+      callId: x.callId ?? null,
       startedAt: x.startedAt ?? null,
       completedAt: x.completedAt ?? null,
       inputTokens: x.usage?.inputTokens ?? null,
@@ -385,6 +389,7 @@ async function main() {
   // 既発生費用を累計予算へ算入する(--prior-spent-usd)。今回runの支出はこの上に積む。
   const priorSpentUsd = Number(args['prior-spent-usd']) || 0;
   let spentUsd = priorSpentUsd;
+  let reservedUsd = 0; // dispatch 済み・未完了ケースの worst-case 予約
   if (priorSpentUsd > 0) logInfo('既発生費用を予算へ算入します', { priorSpentUsd: formatUsd(priorSpentUsd) });
   let unknownCostRows = 0; // 原価不明の件数。0円と混同しないため別に数える。
   const smokeStats = new Map();
@@ -425,14 +430,19 @@ async function main() {
     const slowMs = Number(args['slow-ms']) || 0;
     await runQueue(todo, cfg.concurrency, async (testCase) => {
       if (slowMs) await sleep(slowMs);
-      // 予算不足は呼び出し「前」に止める: 次の1ケースの worst-case(最大入力+最大出力×再試行込み)を先取り検査
-      if (price && cfg.usdJpy) {
-        const perCallWorstUsd = ((16000 / 1e6) * price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * price.outputPerMTokUsd) * (1 + cfg.maxAutoRetries);
-        if ((spentUsd + perCallWorstUsd) * cfg.usdJpy > cfg.maxBudgetJpy) {
-          throw new Error(`次の呼び出しの worst-case で予算上限 ${cfg.maxBudgetJpy} 円を超えうるため、呼び出し前に停止します(既発生費用 ${formatUsd(priorSpentUsd)} USD を含む)`);
+      // 予算不足は呼び出し「前」に止める: 次の1ケースの worst-case(最大入力+最大出力×再試行込み)を「予約」してから dispatch
+      // (並行ワーカーが同じ spentUsd を見て同時に通る競合を防ぐ。判定と予約の間に await を挟まない)
+      const perCallWorstUsd = price ? ((16000 / 1e6) * price.inputPerMTokUsd + (cfg.outputMaxTokens / 1e6) * price.outputPerMTokUsd) * (1 + cfg.maxAutoRetries) : 0;
+      const guarded = !!(price && cfg.usdJpy);
+      if (guarded) {
+        if (!budgetAllows({ spentUsd, reservedUsd, nextWorstUsd: perCallWorstUsd, usdJpy: cfg.usdJpy, maxBudgetJpy: cfg.maxBudgetJpy })) {
+          throw new Error(`次の呼び出しの worst-case で予算上限 ${cfg.maxBudgetJpy} 円を超えうるため、呼び出し前に停止します(既発生費用 ${formatUsd(priorSpentUsd)} USD・予約中 ${formatUsd(reservedUsd)} USD を含む)`);
         }
+        reservedUsd += perCallWorstUsd;
       }
-      const row = await runCase({ client, cfg, model, testCase, price });
+      let row;
+      try { row = await runCase({ client, cfg, model, testCase, price }); }
+      finally { if (guarded) reservedUsd -= perCallWorstUsd; }
       row.runId = runId; row.stage = stage;
       row.finalFailure = !row.success; // 再試行後も失敗 = 確定失敗。resume で再実行しない。
       appendFileSync(resultsPath, JSON.stringify(row) + '\n');
@@ -452,8 +462,10 @@ async function main() {
       if (stopMsg) throw new Error(stopMsg);
       total++; if (!row.success) errors++;
       if (row.effectiveCostUsd == null) unknownCostRows++;
-      if (row.effectiveCostUsd != null) {
-        spentUsd += row.effectiveCostUsd;
+      // 実費の計上: 費用が分かった試行は実費、分からない試行(usage 無し)は worst-case(甘く見積もらない)
+      if (guarded) {
+        const perAttemptWorst = perCallWorstUsd / (1 + cfg.maxAutoRetries);
+        spentUsd += (row.attempts || []).reduce((s, x) => s + (typeof x.costUsd === 'number' ? x.costUsd : perAttemptWorst), 0);
         if (cfg.usdJpy && spentUsd * cfg.usdJpy > cfg.maxBudgetJpy) {
           throw new Error(`予算上限 ${cfg.maxBudgetJpy} 円に到達したため中断します`);
         }

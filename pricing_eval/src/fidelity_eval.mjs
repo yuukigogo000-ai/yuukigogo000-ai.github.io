@@ -268,7 +268,7 @@ async function main() {
             requestId: res.$requestId ?? null, apiOperation: 'Converse',
             ok: parsed.ok, failureKind: parsed.ok ? null : parsed.failureKind,
             error: parsed.ok ? null : parsed.error, failureClass: parsed.ok ? null : 'model_output',
-            parsed,
+            parsed, callId,
           };
         } catch (e) {
           let usageAfterResponse = null;
@@ -278,7 +278,7 @@ async function main() {
             ok: false, failureKind: resReceived ? 'response_parse_error' : (e.code === 'Timeout' ? 'timeout' : `http_${e.status || 'error'}`),
             error: `${e.code || e.name}`, errorCode: e.code ?? e.name ?? null,
             sanitizedErrorMessage: sanitizeAwsMessage(e.message), httpStatus: e.status ?? null,
-            requestId: e.requestId ?? null, apiOperation: e.operation ?? 'Converse', failureClass: 'system',
+            requestId: e.requestId ?? null, apiOperation: e.operation ?? 'Converse', failureClass: 'system', callId,
           };
         }
         // 呼び出し台帳を確定(応答があれば SUCCEEDED=課金対象、例外なら FAILED。費用は usage から)
@@ -318,7 +318,7 @@ async function main() {
         success: final.ok, failureKind: final.failureKind, failureClass: final.failureClass ?? null,
         retried: attempts.length > 1,
         attempts: attempts.map((x, i) => ({
-          attemptNo: x.attemptNo, latencyMs: x.latencyMs, usage: x.usage, ok: x.ok,
+          attemptNo: x.attemptNo, latencyMs: x.latencyMs, usage: x.usage, ok: x.ok, callId: x.callId ?? null,
           failureKind: x.failureKind, error: x.error ?? null, errorCode: x.errorCode ?? null,
           sanitizedErrorMessage: x.sanitizedErrorMessage ?? null, httpStatus: x.httpStatus ?? null,
           requestId: x.requestId ?? null, modelId: model.modelId, caseId: c.id, apiOperation: x.apiOperation ?? null,
