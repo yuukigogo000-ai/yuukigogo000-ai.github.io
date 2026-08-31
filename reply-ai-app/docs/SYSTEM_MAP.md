@@ -1,11 +1,11 @@
-# Replier — 設計図+説明書(SYSTEM_MAP)v1.0 / 2026-09-01
+# Replier — 設計図+説明書(SYSTEM_MAP)v1.1 / 2026-09-01
 
 **このファイルが入口。** Replier(返信コーチPWA)と、その料金決定用モデル評価基盤 `pricing_eval/` の
 「今どうなっているか・どこに何があるか・どう動かすか・何を守るか・次に何を判断するか」を1枚にまとめた引き継ぎ文書。
 次の担当(別モデルの Claude を含む)は、まずこれを読み、細部は各正本(§9)へ飛ぶ。
 
 - リポジトリ: `yuukigogo000-ai.github.io`(public)/ 作業ブランチ **`claude/replier-pricing-decision-sh97a2`**(worktree `AI_WORKSPACE\ygo-replier-pricing`)
-- 最終コミット(この文書作成時点): `a034414`・push 済み。`main` には未マージ(**main へ push = 公開**なので Codex PASS 前に merge しない)
+- 最終コミット: この文書と同じコミット(履歴は `git log --oneline`)。`main` には未マージ(**main へ push = 公開**なので Codex PASS 前に merge しない)
 - 用語: 「発注者」= このリポジトリの所有者(ユーザー)。「GO」= 発注者の明示の許可
 
 ---
@@ -19,6 +19,7 @@
 | 採用AIモデル | **未定**。Kimi K2.5=不採用(人間確認で捏造5/5)・Qwen3 VL 235B=不合格(10件評価を5件目で停止)・**Opus 5(Anthropic API 直接)=自動10/10・固有名詞捏造0/10・軽い自己事実の作り込み5/10 → 採用は発注者判断待ち** |
 | 料金 | PRICING.md v3.3=**暫定**(月1,480円・ローンチ980円×3か月・生涯3回無料・月150回/日20回・追加枠なし)。原価が Opus 5 なら約4.8円/回=原価率約47%で見直し要 |
 | 評価予算 | 10,000円枠。予算計上 **$2.09≈335円**(記録済み $1.61834135 + 費用不明 worst-case $0.4739328。うち4件≈$0.44 は実際は非課金の 4xx) |
+| 生成方式 | **2026-09-01 変更: 事実ファイアウォール+内部6候補→3案**(禁止語を増やす方式は撤回)。契約 = `docs/CONTRACT_PROMPT_SCHEMA.md`。実装は共有 lib のみで、**本番UI・サーバーへの結線は未着手**。新方式でのモデル実測は未実施(GO待ち) |
 | 本番バグ | 2026-08-31 実射で **2件発見・修正済み**(構造化出力が `minItems/maxItems=3` を拒否 / claude-opus-5 が `temperature` を拒否)。3案固定コミット以降、再公開していれば全リクエスト失敗だった |
 
 ---
@@ -38,7 +39,10 @@ reply-ai-app/                      … 本番アプリのソース(React+Vite)�
   src/lib/api.ts                   … Anthropic Messages API 直接呼び出し(model claude-opus-5・max_tokens 16000・
                                       output_config json_schema・system cache_control・temperature は送らない)
   src/lib/schema_compat.mjs(+d.mts)… toStructuredOutputSchema: API に送る schema から minItems>1/maxItems を落とす(共有実装)
-  src/lib/ungrounded.mjs(+d.mts)   … 捏造検出器(停止層+補助候補層)。UI と評価器で単一実装
+  src/lib/ungrounded.mjs(+d.mts)   … 固有名詞の検出器(停止層+補助候補層)。UI と評価器で単一実装
+  src/lib/fact_firewall.mjs(+d.mts)… ★事実ファイアウォール(嘘になる個人事実だけを止める。3値判定・PLACEHOLDER_RE の正本)
+  src/lib/candidate_select.mjs(+d.mts) … ★内部6候補(3lane×2)の検査と最終3案の選抜・決定的 fallback
+  docs/CONTRACT_PROMPT_SCHEMA.md   … ★プロンプト/スキーマ契約(外部3案は不変・内部候補・検査順・限界)
   src/components/ReplyTab.tsx      … 返信タブ(結果表示・#ungroundedNote・#aiNotice・3件切り詰め/不足注記)
   src/components/ReplyCard.tsx     … 1案カード(コピー。article onClick+内側ボタン stopPropagation)
   src/App.tsx                      … タブ・トースト・採用履歴(onAdopt)
@@ -67,7 +71,10 @@ pricing_eval/                      … 料金決定用のモデル評価基盤(N
   evidence/                        … 価格 snapshot・モデルカード・規約(機械/人間の証拠)
   runs/                            … ★gitignore。全 run の results.jsonl / run_manifest / fidelity_summary / stop_reason、call_log.jsonl、ledger.jsonl、
                                       _discovery/(candidate_discovery・preflight)、_summary/(human_review_*.html・call_counts.json)
-  tests/run_tests.mjs(74件・--mutate で54件が落ちることを確認)/ tests/destructive.mjs(21件)
+  fixtures/saved_problem_outputs.json … 実runの問題出力の写し(回帰用。runs/ は gitignore・改変しない)
+  src/candidate_review_page.mjs    … 内部6候補→3案の人間確認ページ生成
+  tests/run_tests.mjs(74件・--mutate で53件が落ちる)/ tests/destructive.mjs(21件)
+  tests/fact_firewall_tests.mjs(35件)/ tests/mutate_fact_firewall.mjs(**ソースを実際に壊す変異24件**)
 tests/                             … サイト全体の検査(reply_ai_tombstone.mjs・csp_check.mjs・site_surface.mjs 等。CLAUDE.md 参照)
 ```
 
@@ -107,6 +114,7 @@ tests/                             … サイト全体の検査(reply_ai_tombsto
 | 09-01 | **Qwen3 VL 235B 不合格**(10件評価を5件目で停止。人間確認で4件中3件に捏造) | run `fidelity_tooluse_qwen_fab10` |
 | 08-31深夜 | **Opus 5 は Anthropic API 直接で評価**(B 経路)。Bedrock の Opus 5 は評価用 IAM で InvokeModel 未許可(ポリシー拡大はしない) | run `fidelity_anthropic_opus5_fab10_r4` |
 | 08-31深夜 | 本番修正: `toStructuredOutputSchema` を送信時に適用 / api.ts から temperature 削除 | a034414・e2e 4f2 |
+| 09-01 | **事実ファイアウォール+内部6候補→3案**。反応・質問・未来の興味は自由/個人事実だけ根拠必須/固有名詞は文脈で hard・soft を分ける/不正候補は部分置換せず破棄/不足 lane は1回再生成→決定的テンプレート/自分情報は既定無効・申告制。**外部 REPLY_SCHEMA は不変(指紋 2d61aecc…)** | CONTRACT_PROMPT_SCHEMA.md・RESEARCH §4.9 |
 
 ## 5. 守ること(絶対ルール)
 
@@ -126,6 +134,9 @@ tests/                             … サイト全体の検査(reply_ai_tombsto
 node pricing_eval/tests/run_tests.mjs                 # 74/0 が正常
 node pricing_eval/tests/run_tests.mjs --mutate        # 「期待どおり N 件が落ちました」(現在 54)= 検査器が効いている証明
 node pricing_eval/tests/destructive.mjs               # 21/0
+node pricing_eval/tests/fact_firewall_tests.mjs      # 35/0(事実ファイアウォール+6候補→3案)
+node pricing_eval/tests/mutate_fact_firewall.mjs     # 変異24/24 検出(ソースを実際に壊して確認)
+node pricing_eval/src/candidate_review_page.mjs      # 人間確認ページ(内部候補・reject理由・最終3案)
 (cd reply-ai-app && npx tsc -b --noEmit)              # 型検査
 # ビルドは必ず scratchpad へ(reply-ai/ 墓標を汚さない)→ 汚れていないことを確認
 (cd reply-ai-app && npx vite build --outDir "<scratchpad>/site/reply-ai" --emptyOutDir) && git status --short reply-ai/
@@ -173,6 +184,7 @@ codex exec --sandbox read-only -C C:/Users/gogyo/AI_WORKSPACE/ygo-replier-pricin
 - Bedrock の `anthropic.claude-opus-5` は global プロファイルのみ(国内固定なし)+評価用 IAM で InvokeModel 未許可 → 403(非課金だが台帳は worst-case 計上)
 - 検出器の誤停止例: 「カレー屋」「ミステリー」「1トピック」「自分パン屋」→ 直した。新しい誤検知は停止層でなく補助層で受ける
 - e2e **21e2 は不安定**(成功トースト「(改行区切り)」と失敗エラーが同時表示=onAdopt が2回呼ばれている痕跡。ReplyCard の article onClick と内側ボタンの二重発火が疑い)。公開前に根治か隔離
+- 変異テストは「変異の元文字列が1箇所あるか」を必ず確認する(無言で何も壊さない変異=常に緑、を防ぐ)。実際、最初に書いた自動送信の変異は `(?!)` を選択肢の先頭に足しただけで無効化になっておらず、MISSED として露見した
 - 4xx(403/400)は非課金だが台帳契約では「費用 null の終端=worst-case」。**手で消さず**発注者 GO で精算行を入れる
 
 ## 8. 数値ファクト(2026-09-01)
@@ -199,6 +211,7 @@ codex exec --sandbox read-only -C C:/Users/gogyo/AI_WORKSPACE/ygo-replier-pricin
 ## 10. 次にやること(発注者の判断待ち → GO 後の作業順)
 
 **判断待ち(発注者)**
+0. **新方式(事実ファイアウォール+6候補)でのモデル実測へ進むか**(GO 必須。10ケースで約100〜300円。出力が6候補ぶんに増えるので原価は再測定が要る)
 1. 採用モデル: **Opus 5(Anthropic 直接)を候補にするか**(固有名詞捏造0・4.8円/回・p95 30秒・原価率約47%)
 2. 「固有名詞なしの自己事実の作り込み(5/10)」を許容するか / **「自分の事実」入力欄**を足して塞ぐか
 3. 台帳の 4xx 非課金分($0.44)の $0 精算 GO/NO

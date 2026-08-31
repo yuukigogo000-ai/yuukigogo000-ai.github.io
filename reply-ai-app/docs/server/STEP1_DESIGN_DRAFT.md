@@ -1,4 +1,4 @@
-# Replier サーバー側プロキシ — 工程1: 設計書たたき台 v0.4(2026-09-01 発注者決定反映・API経路は条件付き・暗号化 idempotency 応答・**モデル=Kimi不採用・Qwen3 VL再評価中**)
+# Replier サーバー側プロキシ — 工程1: 設計書たたき台 v0.5(2026-09-01 発注者決定反映・API経路は条件付き・暗号化 idempotency 応答・**モデル=Kimi不採用・Qwen3 VL再評価中**)
 
 **位置づけ**: 実装には着手しない。STEP0 v0.2 §0 の決定(AWS東京 / Regional REST API+Lambda / Cognito メール OTP / DynamoDB / S3 なし / 同期 / 履歴はブラウザ内 / CAPTCHA なし / 追加枠なし / 予約方式の回数制限 / サーバー側出力検査)を前提に書いた設計。
 
@@ -130,11 +130,33 @@ generate(user, key):
 | 悪用 | メール認証・WAF・アカウント別 1分5回・同時1件・idempotency key・試行上限 月180/日25・使い捨てメールドメイン拒否 |
 | 削除要求 | 退会でプロフィール・QUOTA・EVENT の userId を削除(Stripe 顧客は Stripe 側で削除) |
 
+## 6.9 生成の流れ(v0.5 で変更・事実ファイアウォール+内部6候補)
+
+```
+[Lambda generate]
+  1. 入力を組む(会話・プロフィール・文体・ゴール + この要求で有効化された自分情報 self_facts)
+  2. モデルへ内部候補生成を依頼(INTERNAL_CANDIDATE_SCHEMA・3lane × 2候補 = 6候補)
+       - 構造化出力は minItems 0/1 のみ・maxItems 不可 → toStructuredOutputSchema() を通し、件数はアプリ側で担保
+       - Bedrock 経由なら ToolSpecification.strict(構造化出力の強制フラグ)を指定できるが、
+         **モデルごとの実効は未確認 = UNKNOWN 扱い**。アプリ側検証は必須のまま
+  3. 各候補を検査(§5の順序)→ hard reject は候補ごと破棄(部分置換しない)
+  4. reaction → expand → personal_or_future の順に1件ずつ選ぶ(書き出し重複・言い換え重複・全案質問を避ける)
+  5. 足りなければ **1回だけ再生成** → それでも足りない lane は決定的テンプレート(idempotencyKey で固定)
+  6. 外部レスポンスは **replies 3件のみ**。内部候補・lane・リスク判定は返さない(ログにも本文を残さない)
+```
+
+- 実装は共有パッケージ `reply-ai-app/src/lib/fact_firewall.mjs` / `candidate_select.mjs`(本番UIと評価器で単一実装)
+- 自分情報(self_facts)は既定無効・今回有効化されたものだけ・**サーバー恒久保存を前提にしない**。
+  将来案(今回実装しない): ブラウザ内(IndexedDB)に保存し、要求ごとに利用者が選んだものだけを送る。サーバーは保持しない
+- 失敗時の扱いは従来どおり: 3件に満たない/禁止出力/未解決プレースホルダ → 1回だけ再生成 → 再失敗はエラー(**成功回数は消費しない**)
+
 ## 7. 未決定(残り)
 0. **採用モデル**: 未定。Kimi K2.5 は不採用、Qwen3 VL 235B も10件評価で不合格(5件目停止・人間確認で4件中3件に捏造)(2026-09-01)。**Opus 5(Anthropic API 直接)は自動10/10・固有名詞捏造0**(軽い自己事実の作り込み5/10・約4.8円/回・p95 29.5秒)。採用は発注者判断。Opus 5 なら §3 の Bedrock 呼び出しは Anthropic Messages API(Lambda→api.anthropic.com・キーは Secrets Manager・`toStructuredOutputSchema`・temperature 送らない・プロンプトキャッシュ)に置き換える。設計はモデル非依存のまま進められる部分(認証・回数制限・課金・出力検査の枠)のみ
 1. **API 経路**(60秒同期 / 180秒申請 / 非同期)— 次の確証runの遅延計測で STEP0 §4.4 の判定表に当てて確定
 2. 所有ドメイン名・サポート窓口・特商法表記
-3. 暗号化 idempotency 応答の鍵配送の細部(ヘッダー名・鍵長・ack の再送時の扱い)は工程2で詰める。方針(暗号文のみ保持・最大10分・ack 即削除)は決定済み
+3. 自分情報のUI(入力欄・有効化の見せ方・ブラウザ内保存)は工程2以降。今回は型と契約のみ
+4. fallback 率・再生成率の実測(新方式でのモデル評価はまだ行っていない)
+5. 暗号化 idempotency 応答の鍵配送の細部(ヘッダー名・鍵長・ack の再送時の扱い)は工程2で詰める。方針(暗号文のみ保持・最大10分・ack 即削除)は決定済み
 
 ## 8. 工程の見取り図(承認後・実装は別 GO)
 - 工程2 詳細設計: OpenAPI 定義・DynamoDB キー/TransactWrite 条件式・IAM ポリシー・WAF ルール・Stripe 商品/価格/coupon・失敗シーケンス(統合タイムアウト時の返却)

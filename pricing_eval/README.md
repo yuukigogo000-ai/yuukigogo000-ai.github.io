@@ -93,6 +93,18 @@ node pricing_eval/src/run_eval.mjs --stage=full  --adapter=mock --fault=two_repl
 `none` `http_429` `http_500` `timeout` `broken_json` `two_replies` `empty`
 `interest_score` `false_refusal` `fabrication` `six_images_fail` `usage_missing` `flaky_first_only`
 
+## 事実ファイアウォール+内部6候補(2026-09-01・モデル呼び出しなしで検証できる)
+
+```bash
+node pricing_eval/tests/fact_firewall_tests.mjs      # 35件(許可/禁止の境界・6候補→3案・保存済み出力の回帰)
+node pricing_eval/tests/mutate_fact_firewall.mjs     # 変異24件: lib を一時複製して**実際に壊し**、上のスイートが落ちることを確認
+node pricing_eval/src/candidate_review_page.mjs      # 人間確認ページ(内部6候補・reject理由・最終3案・fallback)
+```
+
+- 実装(単一ソース) = `reply-ai-app/src/lib/fact_firewall.mjs` / `candidate_select.mjs`、契約 = `reply-ai-app/docs/CONTRACT_PROMPT_SCHEMA.md`
+- 回帰用の実出力 = `pricing_eval/fixtures/saved_problem_outputs.json`(runs/ は gitignore なので写しを置く。runs/ は改変しない)
+- **自動判定は検査器の範囲内の話**。捏造ゼロの断定はしない(人間確認ページで全件を読む)
+
 ## 捏造耐性の限定評価(10ケース・別 dataset)
 
 ```bash
