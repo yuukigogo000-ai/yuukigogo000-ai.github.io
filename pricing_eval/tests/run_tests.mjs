@@ -748,6 +748,79 @@ t('36. judgeAvailability: 全項目 AVAILABLE/AUTHORIZED のみ ok(変異検出)
   ]) assertEq(judgeAvailability(bad).ok, false, '不可の状態を ok にしている');
 });
 
+console.log('\n== 本番プロンプト追従テスト(fidelity) ==');
+const { parseProductionReply, checkStyleRules } = await import('../src/lib/fidelity_checks.mjs');
+const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases } = await import('../src/fidelity_eval.mjs');
+
+const goodProd = {
+  situation: '会話は序盤で温度は普通', interest_level: 55, advice: '次は軽い質問で続ける',
+  replies: [
+    { bubbles: ['おつかれです!今日は早めに帰れました笑'], why: '共感と自己開示' },
+    { bubbles: ['それ気になってました', '何系のお店でした?'], why: '軽い興味' },
+    { bubbles: ['週末どこか出ました?', '自分は映画でした', 'ゆるく過ごせました〜'], why: '生活感' },
+  ],
+};
+t('44. parseProductionReply: 本番schema(situation/interest_level/replies.bubbles+why/advice)を検証する(変異検出)', () => {
+  const ok = parseProductionReply(JSON.stringify(goodProd));
+  assertEq(ok.ok, MUTATE ? false : true, `正常JSONが通らない: ${ok.error}`);
+  assertEq(parseProductionReply(JSON.stringify({ ...goodProd, interest_level: undefined })).failureKind, 'schema_failure', 'interest_level欠落');
+  assertEq(parseProductionReply(JSON.stringify({ ...goodProd, interest_level: 150 })).failureKind, 'schema_failure', '範囲外interest_level');
+  assertEq(parseProductionReply(JSON.stringify({ ...goodProd, replies: goodProd.replies.slice(0, 2) })).failureKind, 'wrong_reply_count', '2案を通している');
+  assertEq(parseProductionReply(JSON.stringify({ ...goodProd, replies: [{ bubbles: [], why: 'x' }, ...goodProd.replies.slice(1)] })).failureKind, 'schema_failure', '空bubbles');
+  assertEq(parseProductionReply('```json\n' + JSON.stringify(goodProd) + '\n```').ok, true, 'コードフェンス剥がし');
+});
+
+t('45. checkStyleRules: 本番指示の禁止事項を検知し、許可されている表現を誤検知しない(変異検出)', () => {
+  const clean = checkStyleRules(goodProd);
+  assertEq(clean.violations.length, MUTATE ? 1 : 0, `正常出力を誤検知: ${JSON.stringify(clean.violations)}`);
+  const bad = checkStyleRules({
+    situation: 's', interest_level: 50, advice: 'a',
+    replies: [
+      { bubbles: ['プロフィール拝見しました!よろしくお願いいたします。'], why: 'w' },  // 禁止句2+文末。
+      { bubbles: ['うけるwww😊✨', 'それで、どうでしたか?何時ですか?'], why: 'w' },   // www+禁止絵文字+絵文字2+質問2
+      { bubbles: ['a'.repeat(130)], why: 'w' },                                        // 長文
+    ],
+  });
+  const rules = new Set(bad.violations.map((v) => v.rule));
+  for (const r of ['forbidden_phrase', 'trailing_maru', 'forbidden_laugh', 'forbidden_emoji', 'too_many_emoji', 'too_many_questions', 'bubble_too_long']) {
+    assert(rules.has(r), `${r} を検知できない`);
+  }
+  // 吹き出し構造: 全案同数・1通案なし
+  const st = checkStyleRules({ situation: 's', interest_level: 50, advice: 'a',
+    replies: [{ bubbles: ['a', 'b'], why: 'w' }, { bubbles: ['c', 'd'], why: 'w' }, { bubbles: ['e', 'f'], why: 'w' }] });
+  const stRules = new Set(st.violations.map((v) => v.rule));
+  assert(stRules.has('same_bubble_count') && stRules.has('no_single_bubble_plan'), '吹き出し構造の規則を検知できない');
+});
+
+await (async () => {
+  const prod = await loadProductionPrompts();
+  t('46. 本番プロンプトを無劣化で抽出できる(手写しでない)(変異検出)', () => {
+    const raw = readFileSync('reply-ai-app/src/lib/prompts.ts', 'utf8');
+    const m = raw.match(/REPLY_SYSTEM = `([\s\S]*?)`;/);
+    assert(m, 'prompts.ts から原文を特定できない');
+    assertEq(prod.REPLY_SYSTEM === m[1], MUTATE ? false : true, '抽出結果が原文と一致しない(劣化)');
+    assert(prod.REPLY_SCHEMA.required.includes('interest_level'), 'schema抽出');
+  });
+  t('47. buildProductionUserPrompt: ReplyTab.tsx と同じ節構成+schemaテキスト(変異検出)', () => {
+    const c = cases.find((x) => x.images.length > 0);
+    const p = buildProductionUserPrompt(c, prod.REPLY_SCHEMA);
+    for (const sec of ['## 相手のプロフィール', '## 今回のゴール', '## トーン', '## 吹き出しの分け方', '## 出力形式(厳守)', `スクショ${c.images.length}枚`]) {
+      assert(p.includes(sec), `${sec} が無い`);
+    }
+    assertEq(p.includes('## 会話(テキスト)'), MUTATE ? true : false, '画像ケースにテキスト会話節が混ざっている');
+    const t2 = buildProductionUserPrompt(cases.find((x) => !x.images.length), prod.REPLY_SCHEMA);
+    assert(t2.includes('## 会話(テキスト)') && t2.includes('自分:'), 'テキストケースの会話節');
+  });
+  t('48. pickFidelityCases: 各区分ちょうど5件=計30件の決定的選定(変異検出)', () => {
+    const picked = pickFidelityCases(cases);
+    assertEq(picked.length, MUTATE ? 31 : 30, '件数');
+    const byCat = {};
+    for (const c of picked) byCat[c.category] = (byCat[c.category] || 0) + 1;
+    for (const [k, v] of Object.entries(byCat)) assertEq(v, 5, `区分 ${k}`);
+    assert(picked.some((c) => c.images.length === 6), '6画像ケースが含まれない');
+  });
+})();
+
 function allPass() {
   const g = {};
   for (const id of ['bedrock_available', 'lifecycle_active', 'callable_from_tokyo', 'destinations_japan',
