@@ -14,7 +14,10 @@
 //
 // 使い方:
 //   node pricing_eval/src/fidelity_eval.mjs --models=<id> --usd-jpy=160 --max-budget-jpy=10000 \
-//     --prior-spent-usd=<usd> --run-id=<id>
+//     --prior-spent-usd=<usd> --run-id=<id> [--tool-use]
+//
+// --tool-use: 本番採用構成(Converse toolConfig で REPLY_SCHEMA を強制・schemaテキストは付けない)。
+//             省略時は従来どおりテキストで schema を渡す。
 
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -24,7 +27,7 @@ import { logInfo, logWarn, logError } from './lib/log.mjs';
 import { createBedrockClient, resolveCredentials, buildConverseBody, extractConverse, sanitizeAwsMessage } from './adapters/bedrock.mjs';
 import { costUsdForAttempt, loadPricing, formatUsd } from './calculate_cost.mjs';
 import { contractStopError, readResults } from './run_eval.mjs';
-import { parseProductionReply, checkStyleRules, checkUngroundedNames } from './lib/fidelity_checks.mjs';
+import { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse } from './lib/fidelity_checks.mjs';
 import { datasetHashOf, promptHashOf, configHashOf, ledgerKey, loadLedger, appendLedger } from './lib/ledger.mjs';
 
 const RUNS_DIR = 'pricing_eval/runs';
@@ -88,6 +91,7 @@ async function main() {
   if (!cfg.retryTransientOnly) throw new Error('--retry-transient-only が必須です');
   const runId = args['run-id'] || `fidelity_${new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '')}`;
   const priorSpentUsd = Number(args['prior-spent-usd']) || 0;
+  const toolUse = args['tool-use'] === true;
 
   const { REPLY_SYSTEM, REPLY_SCHEMA } = await loadProductionPrompts();
   const casesRaw = readFileSync('pricing_eval/cases.json', 'utf8');
@@ -123,7 +127,7 @@ async function main() {
   writeFileSync(join(dir, 'run_manifest.json'), JSON.stringify({
     runId, kind: 'production_prompt_fidelity', at: new Date().toISOString(),
     systemSource: PROMPTS_TS, systemLength: REPLY_SYSTEM.length,
-    schemaDelivery: 'text(本番はAnthropic tool-use。相違点として明記)',
+    schemaDelivery: toolUse ? 'tool-use(Converse toolConfig=本番採用構成)' : 'text(本番はtool-use。相違点として明記)',
     cases: cases.map((c) => c.id),
     models: models.map((m) => m.modelId),
     config: { region: cfg.region, outputMaxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, maxAutoRetries: cfg.maxAutoRetries, usdJpy: cfg.usdJpy, maxBudgetJpy: cfg.maxBudgetJpy, priorSpentUsd },
@@ -137,7 +141,12 @@ async function main() {
     const client = createBedrockClient({ region: cfg.region, credentials: creds });
     const hashesFor = (c) => ({
       modelId: model.modelId, caseId: c.id, datasetHash,
-      promptHash: promptHashOf({ system: REPLY_SYSTEM, userText: buildProductionUserPrompt(c, REPLY_SCHEMA), imageFiles: c.images }),
+      promptHash: promptHashOf({
+        // tool-use 時は schema テキスト無し+toolConfig 強制なので別プロンプト扱い(接頭辞で区別)
+        system: (toolUse ? 'TOOL_USE ' : '') + REPLY_SYSTEM,
+        userText: buildProductionUserPrompt(c, toolUse ? null : REPLY_SCHEMA),
+        imageFiles: c.images,
+      }),
       configHash: configHashOf({ region: cfg.region, invocationTarget: model.invocationTarget, outputMaxTokens: cfg.outputMaxTokens, temperature: cfg.temperature, maxImages: cfg.maxImages }),
     });
     const todo = [];
@@ -163,14 +172,29 @@ async function main() {
         try {
           const body = buildConverseBody({
             system: REPLY_SYSTEM,
-            userText: buildProductionUserPrompt(c, REPLY_SCHEMA),
+            // tool-use 時は本番と同じく schema テキストを付けない(tool 側で強制)
+            userText: buildProductionUserPrompt(c, toolUse ? null : REPLY_SCHEMA),
             imagePaths: c.images.map((f) => join('pricing_eval/screenshots', f)),
             maxTokens: cfg.outputMaxTokens,
             temperature: cfg.temperature,
           });
+          if (toolUse) {
+            body.toolConfig = {
+              tools: [{ toolSpec: { name: 'reply_result', description: '返信案・脈あり度・アドバイスの出力', inputSchema: { json: REPLY_SCHEMA } } }],
+              toolChoice: { tool: { name: 'reply_result' } },
+            };
+          }
           const res = await client.converse(model.invocationTarget, body);
+          let parsed;
+          if (toolUse) {
+            const input = extractToolUse(res, 'reply_result');
+            parsed = input
+              ? parseProductionReply(JSON.stringify(input))
+              : { ok: false, failureKind: 'no_tool_use_block', error: 'toolUse ブロックが無い' };
+          } else {
+            parsed = parseProductionReply(extractConverse(res).text);
+          }
           const ex = extractConverse(res);
-          const parsed = parseProductionReply(ex.text);
           a = {
             attemptNo, latencyMs: Date.now() - t0, usage: ex.usage, httpStatus: res.$httpStatus ?? null,
             requestId: res.$requestId ?? null, apiOperation: 'Converse',

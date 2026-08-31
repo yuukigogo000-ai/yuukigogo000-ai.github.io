@@ -16,17 +16,10 @@ import { loadConfig, parseArgs, isCliEntry } from './lib/config.mjs';
 import { logInfo, logError } from './lib/log.mjs';
 import { createBedrockClient, resolveCredentials, buildConverseBody, sanitizeAwsMessage } from './adapters/bedrock.mjs';
 import { costUsdForAttempt, loadPricing, formatUsd } from './calculate_cost.mjs';
-import { parseProductionReply, checkStyleRules } from './lib/fidelity_checks.mjs';
+import { parseProductionReply, checkStyleRules, extractToolUse } from './lib/fidelity_checks.mjs';
 import { loadProductionPrompts, buildProductionUserPrompt } from './fidelity_eval.mjs';
 
 const RUNS_DIR = 'pricing_eval/runs';
-
-/** Converse 応答から toolUse 入力を取り出す(無ければ null) */
-export function extractToolUse(res, toolName) {
-  const blocks = res?.output?.message?.content || [];
-  const tu = blocks.find((b) => b.toolUse && (!toolName || b.toolUse.name === toolName));
-  return tu ? tu.toolUse.input : null;
-}
 
 async function main() {
   const args = parseArgs();

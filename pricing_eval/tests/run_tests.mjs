@@ -749,7 +749,7 @@ t('36. judgeAvailability: 全項目 AVAILABLE/AUTHORIZED のみ ok(変異検出)
 });
 
 console.log('\n== 本番プロンプト追従テスト(fidelity) ==');
-const { parseProductionReply, checkStyleRules, checkUngroundedNames } = await import('../src/lib/fidelity_checks.mjs');
+const { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse } = await import('../src/lib/fidelity_checks.mjs');
 const { findUngroundedNames, PROMPT_EXAMPLE_NAMES } = await import('../../reply-ai-app/src/lib/ungrounded.mjs');
 const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases } = await import('../src/fidelity_eval.mjs');
 
@@ -813,6 +813,18 @@ t('49. 捏造検出: 入力に無い固有名詞・例文名を検知し、根�
   const v = checkUngroundedNames({ replies: [{ bubbles: ['アクアマリン行きました'], why: 'w' }], advice: 'a' }, grounding);
   assertEq(v.length, 1);
   assertEq(v[0].rule, 'ungrounded_name');
+});
+
+t('50. extractToolUse: toolUseブロックのinputを取り出し、無ければnull(捏造しない)(変異検出)', () => {
+  const res = { output: { message: { content: [
+    { text: '説明文' },
+    { toolUse: { name: 'reply_result', input: { situation: 's', interest_level: 50 } } },
+  ] } } };
+  const input = extractToolUse(res, 'reply_result');
+  assertEq(input?.interest_level, MUTATE ? 51 : 50, 'toolUse input を取り出せない');
+  assertEq(extractToolUse(res, 'other_tool'), null, '別名toolを誤取得');
+  assertEq(extractToolUse({ output: { message: { content: [{ text: 'no tool' }] } } }, 'reply_result'), null, 'toolUse無しでnullでない');
+  assertEq(extractToolUse(null, 'reply_result'), null, 'null応答');
 });
 
 await (async () => {

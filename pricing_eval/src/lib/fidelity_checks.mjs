@@ -24,6 +24,13 @@ export function checkUngroundedNames(data, groundingText) {
   }));
 }
 
+/** Converse 応答から toolUse 入力を取り出す(無ければ null)。tool-use 形式の検証で使う */
+export function extractToolUse(res, toolName) {
+  const blocks = res?.output?.message?.content || [];
+  const tu = blocks.find((b) => b.toolUse && (!toolName || b.toolUse.name === toolName));
+  return tu ? tu.toolUse.input : null;
+}
+
 /** 応答テキストから本番スキーマの JSON を取り出して検証する。失敗は失敗として返す。 */
 export function parseProductionReply(text) {
   if (typeof text !== 'string' || !text.trim()) {
