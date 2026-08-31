@@ -14,7 +14,7 @@
 //
 // 使い方:
 //   node pricing_eval/src/fidelity_eval.mjs --models=<id> --usd-jpy=160 --max-budget-jpy=10000 \
-//     --prior-spent-usd=<usd> --run-id=<id> [--tool-use]
+//     --prior-spent-usd=<usd> --run-id=<id> [--tool-use] [--case-offset=5]
 //
 // --tool-use: 本番採用構成(Converse toolConfig で REPLY_SCHEMA を強制・schemaテキストは付けない)。
 //             省略時は従来どおりテキストで schema を渡す。
@@ -29,6 +29,27 @@ import { costUsdForAttempt, loadPricing, formatUsd } from './calculate_cost.mjs'
 import { contractStopError, readResults } from './run_eval.mjs';
 import { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse } from './lib/fidelity_checks.mjs';
 import { datasetHashOf, promptHashOf, configHashOf, ledgerKey, loadLedger, appendLedger } from './lib/ledger.mjs';
+import { fidelityStopReason } from './lib/fidelity_checks.mjs';
+import { runPreflight } from './retention_preflight.mjs';
+
+/**
+ * 実行前の fail-closed 再確認(--confirm-run)。1つでも満たさなければ呼び出しゼロで停止。
+ *  expected = { arnTail, accountMask, datasetHash }(前回確証runと保存済み preflight から機械的に取る)
+ */
+export function assertRunPreconditions({ preflight, cfg, datasetHash, expected, priorSpentUsd, priorSpentGiven }) {
+  const blockers = [];
+  if (cfg.region !== 'ap-northeast-1') blockers.push(`region が東京でない(${cfg.region})`);
+  if (!preflight?.allowModelEvaluation) blockers.push(`preflight 不合格: ${(preflight?.blockers || ['report無し']).join(' / ')}`);
+  if (preflight?.retention?.mode !== 'none' || preflight?.retention?.ok !== true) blockers.push(`retention が none でない(${preflight?.retention?.mode})`);
+  if (preflight?.region !== 'ap-northeast-1') blockers.push(`preflight の region が東京でない(${preflight?.region})`);
+  if (!expected?.arnTail || preflight?.identity?.arnTail !== expected.arnTail) blockers.push(`IAM主体が期待と異なる(${preflight?.identity?.arnTail} ≠ ${expected?.arnTail})`);
+  if (!expected?.accountMask || preflight?.identity?.account !== expected.accountMask) blockers.push('AWSアカウント(マスク)が期待と異なる');
+  if (!expected?.datasetHash || datasetHash !== expected.datasetHash) blockers.push(`cases.json のハッシュが前回確証runと異なる(${String(datasetHash).slice(0, 12)}… ≠ ${String(expected?.datasetHash).slice(0, 12)}…)`);
+  if (!(cfg.maxBudgetJpy > 0) || cfg.maxBudgetJpy > 10000) blockers.push(`予算上限が不正(${cfg.maxBudgetJpy}円。上限10,000円)`);
+  if (!priorSpentGiven || !(priorSpentUsd > 0)) blockers.push('--prior-spent-usd(既発生費用)が未指定。累計を0から数える実行は禁止');
+  if (!(cfg.usdJpy > 0)) blockers.push('usdJpy 未設定');
+  return blockers;
+}
 
 const RUNS_DIR = 'pricing_eval/runs';
 const PROMPTS_TS = 'reply-ai-app/src/lib/prompts.ts';
@@ -75,13 +96,15 @@ export function buildProductionUserPrompt(c, schema) {
   return p;
 }
 
-/** 各区分の先頭 N 件(決定的な選定。ランダム抽出しない) */
-export function pickFidelityCases(cases, perCategory = CASES_PER_CATEGORY) {
+/** 各区分の先頭 N 件(決定的な選定。ランダム抽出しない)。offset=区分ごとに読み飛ばす件数(追加30ケース=offset 5 で前回30件と重複しない次の5件/区分) */
+export function pickFidelityCases(cases, perCategory = CASES_PER_CATEGORY, offset = 0) {
+  if (!Number.isInteger(offset) || offset < 0) throw new Error(`case-offset は0以上の整数(${offset})`);
   const byCat = new Map();
   const out = [];
   for (const c of cases) {
     const n = byCat.get(c.category) || 0;
-    if (n < perCategory) { out.push(c); byCat.set(c.category, n + 1); }
+    if (n >= offset && n < offset + perCategory) out.push(c);
+    byCat.set(c.category, n + 1);
   }
   return out;
 }
@@ -91,12 +114,17 @@ async function main() {
   const cfg = loadConfig(args);
   if (!cfg.retryTransientOnly) throw new Error('--retry-transient-only が必須です');
   const runId = args['run-id'] || `fidelity_${new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '')}`;
+  const priorSpentGiven = args['prior-spent-usd'] !== undefined;
   const priorSpentUsd = Number(args['prior-spent-usd']) || 0;
   const toolUse = args['tool-use'] === true;
+  const stopOnViolation = args['stop-on-violation'] === true;
+  const confirmRun = args['confirm-run'] === true; // 確証run: 実行前 fail-closed 再確認+1件目の違反で停止
 
   const { REPLY_SYSTEM, REPLY_SCHEMA } = await loadProductionPrompts();
   const casesRaw = readFileSync('pricing_eval/cases.json', 'utf8');
-  let cases = pickFidelityCases(JSON.parse(casesRaw).cases);
+  const caseOffset = args['case-offset'] === undefined ? 0 : Number(args['case-offset']);
+  let cases = pickFidelityCases(JSON.parse(casesRaw).cases, CASES_PER_CATEGORY, caseOffset);
+  if (cases.length !== 6 * CASES_PER_CATEGORY) throw new Error(`選定件数が30件でない(${cases.length}件・case-offset=${caseOffset})`);
   // スポット検証用: 指定ケースだけに絞る(選定30ケースの範囲内のみ)
   if (args.cases) {
     const want = String(args.cases).split(',').map((s) => s.trim()).filter(Boolean);
@@ -104,6 +132,23 @@ async function main() {
     if (cases.length !== want.length) throw new Error(`--cases に選定外/不明なIDが含まれています(${cases.length}/${want.length}件のみ一致)`);
   }
   const datasetHash = datasetHashOf(casesRaw);
+
+  let preflightReport = null;
+  if (confirmRun) {
+    if (!toolUse || !stopOnViolation) throw new Error('--confirm-run は --tool-use と --stop-on-violation が必須');
+    // 期待値は前回の確証run(fidelity_tooluse_kimi)の台帳と保存済み preflight から取る(手打ちしない)
+    const prevLedger = readFileSync(join(RUNS_DIR, 'ledger.jsonl'), 'utf8').split('\n').filter(Boolean)
+      .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+      .find((r) => r && r.runId === 'fidelity_tooluse_kimi' && r.success);
+    const prevPre = JSON.parse(readFileSync(join(RUNS_DIR, '_discovery', 'preflight.json'), 'utf8'));
+    const expected = { arnTail: prevPre?.identity?.arnTail, accountMask: prevPre?.identity?.account, datasetHash: prevLedger?.datasetHash };
+    preflightReport = await runPreflight(cfg);
+    const blockers = assertRunPreconditions({ preflight: preflightReport, cfg, datasetHash, expected, priorSpentUsd, priorSpentGiven });
+    mkdirSync(join(RUNS_DIR, runId), { recursive: true });
+    writeFileSync(join(RUNS_DIR, runId, 'preflight_recheck.json'), JSON.stringify({ at: new Date().toISOString(), preflight: preflightReport, expected, datasetHash, blockers, passed: blockers.length === 0 }, null, 2));
+    if (blockers.length) throw new Error(`実行前再確認に不合格(呼び出しゼロで停止): ${blockers.join(' / ')}`);
+    logInfo('実行前再確認 PASS', { region: cfg.region, retention: preflightReport.retention.mode, identity: preflightReport.identity.arnTail, datasetHash: datasetHash.slice(0, 12), maxBudgetJpy: cfg.maxBudgetJpy, priorSpentUsd });
+  }
 
   // 候補は discovery から(モデル名をコードに書かない)。価格必須。
   const discovery = JSON.parse(readFileSync(join(RUNS_DIR, '_discovery', 'candidate_discovery.json'), 'utf8'));
@@ -126,7 +171,7 @@ async function main() {
   const doneKeys = new Set(done.map((r) => `${r.modelId}::${r.caseId}`));
 
   writeFileSync(join(dir, 'run_manifest.json'), JSON.stringify({
-    runId, kind: 'production_prompt_fidelity', at: new Date().toISOString(),
+    runId, kind: 'production_prompt_fidelity', at: new Date().toISOString(), caseOffset,
     systemSource: PROMPTS_TS, systemLength: REPLY_SYSTEM.length,
     schemaDelivery: toolUse ? 'tool-use(Converse toolConfig=本番採用構成)' : 'text(本番はtool-use。相違点として明記)',
     cases: cases.map((c) => c.id),
@@ -252,6 +297,8 @@ async function main() {
         totalLatencyMs: attempts.reduce((s, x) => s + x.latencyMs, 0),
         effectiveCostUsd: effective,
         production: final.ok ? final.parsed.data : null,
+        // 違反時の出力本文(schema違反の原因調査用。成功時は production に入る)
+        invalidOutput: final.ok ? null : (final.parsed?.data ?? null),
         fidelity,
         at: new Date().toISOString(),
       };
@@ -267,6 +314,21 @@ async function main() {
       }
       const stop = contractStopError(row);
       if (stop) throw new Error(stop);
+      if (stopOnViolation) {
+        const why = fidelityStopReason(row);
+        if (why) {
+          const saved = {
+            at: row.at, runId, caseId: c.id, category: c.category, imageCount: c.images.length, modelId: model.modelId,
+            kind: why.kind, detail: why.detail,
+            requestId: attempts.find((x) => x.requestId)?.requestId ?? null, failureKind: row.failureKind,
+            violations: row.fidelity?.violations ?? null,
+            production: row.production ?? attempts.find((x) => x.parsed?.data)?.parsed?.data ?? null,
+            completedBeforeStop: readResults(resultsPath).rows.length, cumulativeUsd: formatUsd(spentUsd),
+          };
+          writeFileSync(join(dir, 'stop_reason.json'), JSON.stringify(saved, null, 2));
+          throw new Error(`確証run停止(1件目の違反): ${c.id} ${why.kind} — ${why.detail}(原因を stop_reason.json に保存)`);
+        }
+      }
     }
   }
 

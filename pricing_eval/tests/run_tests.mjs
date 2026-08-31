@@ -749,9 +749,9 @@ t('36. judgeAvailability: 全項目 AVAILABLE/AUTHORIZED のみ ok(変異検出)
 });
 
 console.log('\n== 本番プロンプト追従テスト(fidelity) ==');
-const { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse } = await import('../src/lib/fidelity_checks.mjs');
+const { parseProductionReply, checkStyleRules, checkUngroundedNames, extractToolUse, fidelityStopReason } = await import('../src/lib/fidelity_checks.mjs');
 const { findUngroundedNames, PROMPT_EXAMPLE_NAMES } = await import('../../reply-ai-app/src/lib/ungrounded.mjs');
-const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases } = await import('../src/fidelity_eval.mjs');
+const { loadProductionPrompts, buildProductionUserPrompt, pickFidelityCases, assertRunPreconditions } = await import('../src/fidelity_eval.mjs');
 
 const goodProd = {
   situation: '会話は序盤で温度は普通', advice: '次は軽い質問で続ける',
@@ -809,6 +809,11 @@ t('49. 捏造検出: 入力に無い固有名詞・例文名を検知し、根�
   const hit2 = findUngroundedNames(['駅前のチーズタッカルビ屋行きません?コンビニでバーベキューの買い出しもしましょう'], grounding);
   assert(hit2.includes('チーズタッカルビ屋'), '施設接尾辞を検知できない');
   assert(!hit2.includes('コンビニ') && !hit2.includes('バーベキュー'), '日常語を誤検知');
+  // 実測の誤検知(b2 run TXT_SHORT_06): 「カレー屋」=業態の一般語、「ミステリー」=読書ジャンル。固有名詞の店名(〜亭)は引き続き検知
+  const hit3 = findUngroundedNames(['カレー屋は○○ってところです', '最近はミステリーばっかりです笑', '駅前の山田亭おすすめです'], grounding);
+  assertEq(hit3.includes('カレー屋'), MUTATE ? true : false, '業態の一般語「カレー屋」を店名として誤検知');
+  assert(!hit3.includes('ミステリー'), 'ジャンル語を誤検知');
+  assert(hit3.includes('山田亭'), '固有名詞の店名を見逃した');
   // violations 形式のラッパー
   const v = checkUngroundedNames({ replies: [{ bubbles: ['アクアマリン行きました'], why: 'w' }], advice: 'a' }, grounding);
   assertEq(v.length, 1);
@@ -825,6 +830,47 @@ t('50. extractToolUse: toolUseブロックのinputを取り出し、無ければ
   assertEq(extractToolUse(res, 'other_tool'), null, '別名toolを誤取得');
   assertEq(extractToolUse({ output: { message: { content: [{ text: 'no tool' }] } } }, 'reply_result'), null, 'toolUse無しでnullでない');
   assertEq(extractToolUse(null, 'reply_result'), null, 'null応答');
+});
+
+t('51. fidelityStopReason: schema違反/interest_level混入/捏造/禁止出力で停止理由を返し、正常・システム系失敗では返さない(変異検出)', () => {
+  const okRow = { success: true, production: goodProd, fidelity: { violations: [{ rule: 'same_bubble_count', detail: 'x' }] } };
+  assertEq(fidelityStopReason(okRow), MUTATE ? { kind: 'x' } : null, '構造違反だけの正常行で停止している');
+  const six = { success: false, failureKind: 'wrong_reply_count', failureClass: 'model_output', attempts: [{ error: 'replies が 6 件(3案でない)' }], invalidOutput: { ...goodProd, replies: [...goodProd.replies, ...goodProd.replies] } };
+  assertEq(fidelityStopReason(six)?.kind, 'schema_violation', '6案を停止理由にしない');
+  assert(/6 件/.test(fidelityStopReason(six).detail), '停止理由に原因の本文が無い');
+  const il = { success: true, production: { ...goodProd, interest_level: 55 }, fidelity: { violations: [] } };
+  assertEq(fidelityStopReason(il)?.kind, 'interest_level_emitted', 'interest_level混入を停止理由にしない');
+  const fab = { success: true, production: goodProd, fidelity: { violations: [{ rule: 'ungrounded_name', detail: '入力に無い固有名詞: アクアマリン' }] } };
+  assertEq(fidelityStopReason(fab)?.kind, 'fabrication', '捏造を停止理由にしない');
+  const banned = { success: true, production: { ...goodProd, advice: '相手の脈あり度は80%です' }, fidelity: { violations: [] } };
+  assertEq(fidelityStopReason(banned)?.kind, 'forbidden_output', 'adviceの禁止出力(脈あり度)を停止理由にしない');
+  const sys = { success: false, failureKind: 'http_500', failureClass: 'system', attempts: [{ error: 'InternalServerException' }] };
+  assertEq(fidelityStopReason(sys), null, 'システム系失敗を違反扱いにしている(contractStopErrorの領分)');
+  assertEq(fidelityStopReason(null), null, 'null行');
+});
+
+t('52. assertRunPreconditions: 全条件一致でのみ空、region/retention/IAM主体/アカウント/ケースハッシュ/予算/既発生費用のどれが崩れても blocker(変異検出)', () => {
+  const pre = { allowModelEvaluation: true, region: 'ap-northeast-1', retention: { mode: 'none', ok: true }, identity: { account: '****1901', arnTail: '...user/replier-eval-cli' }, blockers: [] };
+  const cfg = { region: 'ap-northeast-1', maxBudgetJpy: 10000, usdJpy: 160 };
+  const expected = { arnTail: '...user/replier-eval-cli', accountMask: '****1901', datasetHash: 'abc' };
+  const base = { preflight: pre, cfg, datasetHash: 'abc', expected, priorSpentUsd: 1.1, priorSpentGiven: true };
+  assertEq(assertRunPreconditions(base).length, MUTATE ? 1 : 0, `正常条件で blocker: ${assertRunPreconditions(base).join(' / ')}`);
+  const variants = [
+    { ...base, cfg: { ...cfg, region: 'us-east-1' } },
+    { ...base, preflight: { ...pre, region: 'us-west-2' } },
+    { ...base, preflight: { ...pre, retention: { mode: 'logging', ok: false } } },
+    { ...base, preflight: { ...pre, allowModelEvaluation: false, blockers: ['x'] } },
+    { ...base, preflight: { ...pre, identity: { ...pre.identity, arnTail: '...user/someone-else' } } },
+    { ...base, preflight: { ...pre, identity: { ...pre.identity, account: '****0000' } } },
+    { ...base, datasetHash: 'zzz' },
+    { ...base, expected: { ...expected, datasetHash: undefined } },
+    { ...base, cfg: { ...cfg, maxBudgetJpy: 20000 } },
+    { ...base, cfg: { ...cfg, maxBudgetJpy: 0 } },
+    { ...base, priorSpentGiven: false, priorSpentUsd: 0 },
+    { ...base, priorSpentUsd: 0 },
+    { ...base, preflight: null },
+  ];
+  variants.forEach((v, i) => assert(assertRunPreconditions(v).length >= 1, `変異 ${i} が fail closed にならない`));
 });
 
 await (async () => {
@@ -856,6 +902,16 @@ await (async () => {
     for (const c of picked) byCat[c.category] = (byCat[c.category] || 0) + 1;
     for (const [k, v] of Object.entries(byCat)) assertEq(v, 5, `区分 ${k}`);
     assert(picked.some((c) => c.images.length === 6), '6画像ケースが含まれない');
+    // 追加30ケース(offset 5): 件数30・各区分5・前回30件と1件も重複しない・6画像を含む
+    const next = pickFidelityCases(cases, 5, MUTATE ? 4 : 5);
+    assertEq(next.length, 30, 'offset選定の件数');
+    const firstIds = new Set(picked.map((c) => c.id));
+    assertEq(next.filter((c) => firstIds.has(c.id)).length, 0, 'offset選定が前回30件と重複している');
+    const byCat2 = {};
+    for (const c of next) byCat2[c.category] = (byCat2[c.category] || 0) + 1;
+    for (const [k, v] of Object.entries(byCat2)) assertEq(v, 5, `offset区分 ${k}`);
+    assert(next.some((c) => c.images.length === 6), 'offset選定に6画像ケースが無い');
+    let threw = false; try { pickFidelityCases(cases, 5, -1); } catch { threw = true; } assert(threw, '負のoffsetを通している');
   });
 })();
 

@@ -30,6 +30,12 @@ const RE = {
   quotedName: /[「『]([^」』]{2,12})[」』]/g,
 };
 
+/** 禁止表現(critical)の規則名→正規表現。fidelity の停止判定でも同じ物差しを使う */
+export const BANNED_RULES = [
+  ['interest_score', RE.interestScore], ['rating', RE.rating], ['sensitive_inference', RE.sensitive],
+  ['face_or_identity', RE.identify], ['manipulation', RE.manipulation], ['auto_send', RE.autoSend],
+];
+
 const MAX_LEN = 200;      // そのまま送れる長さの上限
 const MIN_LEN = 2;
 

@@ -37,6 +37,15 @@ const KATAKANA_COMMON = new Set([
   'フランス', 'スパイス', 'マンネリ', 'ピッタリ',
   'マイナス', 'ラッキー', 'ガッツリ', 'バタバタ', 'フィクション', 'ディスプレイ', 'アンケート',
   'イタリアン', 'フレンチ', 'エスニック', 'デザイン', 'インテリア', 'カジュアル',
+  'ミステリー', 'ファンタジー', 'ホラー', 'ノンフィクション', 'エッセイ', 'ビジネス',
+]);
+
+// 「料理名/商品名+屋」は業態を指す一般語で店名ではない(実測: 「カレー屋は○○ってところです」を店名として誤検知)
+const GENERIC_FACILITY = new Set([
+  'カレー屋', 'ラーメン屋', '焼き鳥屋', '焼鳥屋', '焼肉屋', '寿司屋', '居酒屋', 'パン屋', 'ケーキ屋', '古本屋', '本屋',
+  '花屋', '服屋', '定食屋', 'うどん屋', 'そば屋', '蕎麦屋', 'ピザ屋', 'コーヒー屋', 'パスタ屋', 'ハンバーガー屋',
+  'カフェ屋', 'タイ料理屋', '中華屋', '餃子屋', 'ギョウザ屋', 'おでん屋', 'もつ焼き屋', '串カツ屋', 'たこ焼き屋',
+  'お好み焼き屋', 'クレープ屋', 'アイス屋', 'ドーナツ屋', 'タピオカ屋', '肉屋', '魚屋', '八百屋', '酒屋', '雑貨屋',
 ]);
 
 // 施設・店を示す接尾辞。前に漢字/カタカナ2文字以上の「名前部分」が付くものだけ拾う
@@ -51,7 +60,9 @@ export function extractNameTokens(text) {
   for (const m of t.matchAll(KATAKANA_RE)) {
     if (!KATAKANA_COMMON.has(m[0])) out.add(m[0]);
   }
-  for (const m of t.matchAll(FACILITY_RE)) out.add(m[0]);
+  for (const m of t.matchAll(FACILITY_RE)) {
+    if (!GENERIC_FACILITY.has(m[0])) out.add(m[0]);
+  }
   for (const name of PROMPT_EXAMPLE_NAMES) if (t.includes(name)) out.add(name);
   return out;
 }

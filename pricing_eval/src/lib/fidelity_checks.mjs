@@ -9,6 +9,44 @@
 
 // 固有名詞の根拠検査は本番UIと同一実装を使う(乖離防止のため単一ソース)
 import { findUngroundedNames } from '../../../reply-ai-app/src/lib/ungrounded.mjs';
+import { BANNED_RULES } from '../validate_output.mjs';
+
+/**
+ * 確証run(--stop-on-violation)の停止理由。1件でも該当したら残りを実行しない。
+ *  - schema違反(schema_failure / wrong_reply_count / json_parse_failure / no_tool_use_block)
+ *  - interest_level の混入(除去済み項目の出力)
+ *  - 捏造(ungrounded_name)
+ *  - 禁止出力(validate_output の critical 規則: 脈あり度・格付け・センシティブ推定・人物特定・操作・自動送信)を
+ *    返信・situation・advice の全文に適用
+ * システム系失敗(4xx/5xx/timeout)はここでは扱わない(contractStopError が担当)。
+ * @returns {null | {kind:string, detail:string}}
+ */
+export function fidelityStopReason(row) {
+  if (!row) return null;
+  const prod = row.production || row.invalidOutput || null;
+  if (!row.success) {
+    if (row.failureClass === 'model_output') {
+      const errs = (row.attempts || []).map((a) => a.error).filter(Boolean).join(' | ');
+      return { kind: 'schema_violation', detail: `${row.failureKind}: ${errs}` };
+    }
+    return null;
+  }
+  if (prod && Object.prototype.hasOwnProperty.call(prod, 'interest_level')) {
+    return { kind: 'interest_level_emitted', detail: `interest_level=${JSON.stringify(prod.interest_level)}` };
+  }
+  const ung = (row.fidelity?.violations || []).filter((v) => v.rule === 'ungrounded_name');
+  if (ung.length) return { kind: 'fabrication', detail: ung.map((v) => v.detail).join(' | ') };
+  const texts = [];
+  if (prod) {
+    for (const r of prod.replies || []) for (const b of r.bubbles || []) texts.push(String(b));
+    texts.push(String(prod.situation || ''), String(prod.advice || ''));
+  }
+  for (const [rule, re] of BANNED_RULES) {
+    const hit = texts.find((t) => re.test(t));
+    if (hit) return { kind: 'forbidden_output', detail: `${rule}: ${hit.slice(0, 80)}` };
+  }
+  return null;
+}
 
 /**
  * 生成結果から「入力に無い固有名詞らしき語」を violations 形式で返す。
