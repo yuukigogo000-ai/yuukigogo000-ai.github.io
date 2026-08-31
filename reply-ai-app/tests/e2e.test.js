@@ -443,7 +443,8 @@ const profileResult = () => ({
   await page.waitForFunction(() => document.querySelector('#error').textContent.includes('コピー'));
   const afterFail = await page.evaluate(() => localStorage.getItem('reply_ai_adopted'));
   check('21e. コピー失敗→エラー表示+採用履歴に入れない', afterFail === null, String(afterFail));
-  check('21e2. コピー失敗時にトーストで成功と言わない', !(await page.isVisible('#toast')));
+  // 不安定だった検査(2026-09-01): 落ちたときにトーストの文言を残し、原因(残留トースト or クリップボード差し替えの失敗)を切り分けられるようにする
+  check('21e2. コピー失敗時にトーストで成功と言わない', !(await page.isVisible('#toast')), `toast="${await page.textContent('#toast')}" error="${await page.textContent('#error')}"`);
 
   // 21f. 採用履歴が保存できない端末で「保存した」と言わない
   await page.reload();
