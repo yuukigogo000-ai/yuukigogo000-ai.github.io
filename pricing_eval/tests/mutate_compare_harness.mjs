@@ -31,7 +31,7 @@ const MUTATIONS = [
   ['⑥ A を常に同じモデルにする', BP,
     'const first = (stableHash(`${seed}|${id}`) + i) % 2 === 0;', 'const first = true;'],
   ['⑦ raw の hard reject を最終3案へ混入させる', H,
-    'const trial = finalizeReplies({ passes: [...passes], ctx });',
+    'const trial = finalizeReplies({ firstPass: passes[0], secondPass: passes[1] ?? null, ctx });',
     "const trial = { replies: passes.flat().slice(0, 3).map((x) => x.text), picked: passes.flat().slice(0, 3).map((x) => ({ lane: x.lane, source: 'model', verdict: 'hard_reject', text: x.text })), needsRegeneration: false };"],
   ['⑧ fallback をモデル生成の成功として数える', H,
     'modelReplyCount: modelReplies,', 'modelReplyCount: replies,'],
@@ -55,6 +55,10 @@ const MUTATIONS = [
   ['⑯ 人間確認の前に採用モデルを確定する', H,
     "  return { decided: false, model: null, reason: '自動では決めない(発注者がブラインド結果を返した後に人間が決定する)' };",
     "  return { decided: true, model: 'moonshotai.kimi-k2.5', reason: '自動で決めた' };"],
+
+  ['㉑ finalizeReplies へ候補を渡さない(全部 fallback になる実害の型)', H,
+    'const trial = finalizeReplies({ firstPass: passes[0], secondPass: passes[1] ?? null, ctx });',
+    'const trial = finalizeReplies({ passes: [...passes], ctx });'],
 
   // 追加(費用計算と停止規則の骨格)
   ['⑰ 入力単価と出力単価を同一単価として計算する', H,

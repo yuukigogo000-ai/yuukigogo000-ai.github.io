@@ -241,6 +241,23 @@ await ta('15. hard reject は最終3案に絶対入らない(全部不正でも3
   assert(!r.final.replies.some((x) => x.includes('週1') || x.includes('〇〇')), '不正候補の本文が漏れた');
 });
 
+await ta('15b. 良い候補6件なら1回の呼び出しで「モデルが作った3案」が選ばれる(fallback 0)', () => {
+  // 2026-09-02 実害: finalizeReplies の引数名を間違えて候補が1件も渡らず、
+  // 全60返信が fallback テンプレートになった run を出してしまった。その型を固定する回帰テスト。
+  const client = fakeClient([toolRes(GOOD6), toolRes(GOOD6)]);
+  const ledger = fakeLedger();
+  return H.runCase(runArgs(client, ledger)).then((r) => {
+    assertEq(r.ok, true, '良い候補なのに失敗した');
+    assertEq(client.calls, 1, `呼び出しが ${client.calls} 回(良い候補なら1回で済むはず=無駄な再生成をしていない)`);
+    assertEq(r.regenerated, false, '不要な再生成をした');
+    assertEq(r.final.replies.length, 3, '3案でない');
+    assertEq(r.final.picked.filter((p) => p.source === 'fallback').length, 0, `fallback を使った: ${JSON.stringify(r.final.replies)}`);
+    assertEq(r.final.picked.every((p) => p.source === 'model'), true, 'モデルの候補が選ばれていない');
+    const texts = GOOD6.map((c) => c.text);
+    assert(r.final.replies.every((x) => texts.includes(x)), `最終3案がモデル出力に含まれない: ${JSON.stringify(r.final.replies)}`);
+  });
+});
+
 console.log('\n== §8 集計 ==');
 
 const rowFor = (modelId, caseId, { fallback = 0, soft = 0, hard = 3, regenerated = false, cost = 0.001, latency = 5000 } = {}) => ({

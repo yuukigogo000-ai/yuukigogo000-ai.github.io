@@ -213,7 +213,8 @@ export async function runCase({
 
     passes.push(parsed.candidates);
     // 候補が足りているか(3案を作れるか)を見て、足りなければ1回だけ再生成に回す
-    const trial = finalizeReplies({ passes: [...passes], ctx });
+    // ⚠ finalizeReplies の引数は firstPass / secondPass。ここを passes で渡すと候補が1件も渡らず全部 fallback になる
+    const trial = finalizeReplies({ firstPass: passes[0], secondPass: passes[1] ?? null, ctx });
     if (!trial.needsRegeneration || attemptNo >= maxAttempts) {
       return { ok: true, attempts, passes, final: trial, lastFailure: null, regenerated: passes.length > 1 };
     }
@@ -221,7 +222,7 @@ export async function runCase({
   }
 
   if (passes.length) {
-    const final = finalizeReplies({ passes: [...passes], ctx });
+    const final = finalizeReplies({ firstPass: passes[0], secondPass: passes[1] ?? null, ctx });
     return { ok: true, attempts, passes, final, lastFailure, regenerated: passes.length > 1 };
   }
   return { ok: false, attempts, passes, final: null, lastFailure, regenerated: false };
