@@ -136,9 +136,15 @@ async function main() {
   const recorded = recordedSpendUsd(RUNS_DIR, callLog.rows);
   const from = Number(args['reconcile-from'] || 1.18292785);
   const to = Number(args['reconcile-to'] || 1.61834135);
-  const ex = explainDelta(spendRuns, to - from);
+  // この監査の対象は「$1.18292785 → $1.61834135 の履歴」。今回の比較 run(compare_ で始まる)は対象外にして、
+  // 履歴側の合計が to と一致することも併せて確かめる(自分の run で帳尻が合ってしまうのを防ぐ)
+  const historical = spendRuns.filter((r) => !String(r.runId).startsWith("compare_"));
+  const historicalSum = historical.reduce((s, r) => s + r.usageCostUsd, 0);
+  if (Math.abs(historicalSum - to) > 1e-6) stop(`履歴側の合計 ${historicalSum} が ${to} と一致しない`);
+  const ex = explainDelta(historical, to - from);
   gate.steps.reconcile = {
-    from, to, delta: to - from, explained: ex.sum, diff: ex.diff, ok: ex.ok,
+    from, to, delta: to - from, explained: ex.sum, diff: ex.diff, ok: ex.ok, historicalSum,
+    excludedRuns: spendRuns.filter((r) => String(r.runId).startsWith("compare_")).map((r) => ({ runId: r.runId, usageCostUsd: r.usageCostUsd })),
     runs: ex.picked.map((r) => ({ runId: r.runId, models: r.models, calls: r.calls, succeeded: r.succeeded, failed: r.failed, unknown: r.unknown, usageCostUsd: r.usageCostUsd, worstCaseUsd: r.worstCaseUsd })),
     recordedSpendUsd: recorded.sum,
   };

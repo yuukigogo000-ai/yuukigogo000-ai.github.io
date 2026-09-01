@@ -29,7 +29,7 @@ const MUTATIONS = [
   ['⑤ ブラインドページにモデル名を出す', BP,
     '<div class="col"><h4>${label}</h4>', '<div class="col"><h4>${label} (${modelId})</h4>'],
   ['⑥ A を常に同じモデルにする', BP,
-    'const first = (stableHash(`${seed}|${id}`) + i) % 2 === 0;', 'const first = true;'],
+    'const first = (stableHash(seed) + i) % 2 === 0;', 'const first = true;'],
   ['⑦ raw の hard reject を最終3案へ混入させる', H,
     'const trial = finalizeReplies({ firstPass: passes[0], secondPass: passes[1] ?? null, ctx });',
     "const trial = { replies: passes.flat().slice(0, 3).map((x) => x.text), picked: passes.flat().slice(0, 3).map((x) => ({ lane: x.lane, source: 'model', verdict: 'hard_reject', text: x.text })), needsRegeneration: false };"],

@@ -27,8 +27,9 @@ export function stableHash(s) {
 export function sideAssignment(caseIds, seed, [m1, m2]) {
   const map = new Map();
   caseIds.forEach((id, i) => {
-    // seed のハッシュに並び順を混ぜる = 隣り合うケースで必ず入れ替わるので、A が一方に固定されない
-    const first = (stableHash(`${seed}|${id}`) + i) % 2 === 0;
+    // どちらのモデルから始めるかは seed で決め、以降はケースごとに必ず入れ替える。
+    // これで A 側が 5:5 になり、A が一方に固定されない(seed が同じなら常に同じ配置=決定的)
+    const first = (stableHash(seed) + i) % 2 === 0;
     map.set(id, { A: first ? m1 : m2, B: first ? m2 : m1 });
   });
   return map;

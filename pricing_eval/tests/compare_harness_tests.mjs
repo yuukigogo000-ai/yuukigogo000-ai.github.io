@@ -306,6 +306,7 @@ t('19. A/B の割り当てが偏らない(A が常に同じモデルにならな
   assertEq(B.checkAssignment(asg, [KIMI, QWEN]).length, 0, `割り当てが偏った: ${JSON.stringify([...asg.values()].map((v) => v.A))}`);
   const asA = [...asg.values()].map((v) => v.A);
   assert(new Set(asA).size === 2, 'A が1モデルに固定されている');
+  assertEq(asA.filter((x) => x === KIMI).length, 5, 'A 側が 5:5 になっていない(偏り)');
   const again = B.sideAssignment(CASE_IDS, 'seed-1', [KIMI, QWEN]);
   assertEq(JSON.stringify([...again.values()]), JSON.stringify([...asg.values()]), '同じ seed で割り当てが変わった(決定的でない)');
   // 偏りの検査器自身が「A が常に同じ」を落とせること(検査器を信用する前に確かめる)
