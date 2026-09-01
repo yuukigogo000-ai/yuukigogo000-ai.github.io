@@ -14,7 +14,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { parseArgs, isCliEntry } from './lib/config.mjs';
-import { deriveLane, validateCandidate, finalizeReplies, selectionMetrics, LANES } from '../../reply-ai-app/src/lib/candidate_select.mjs';
+import { deriveLane, validateCandidate, finalizeReplies, LANES } from '../../reply-ai-app/src/lib/candidate_select.mjs';
 import { BANNED_RULES } from './validate_output.mjs';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -31,32 +31,7 @@ export function buildContext(caseObj, extra = {}) {
   };
 }
 
-/** §5 集計指標。率は分母0のとき null(「—」と出す)。件数と率を混ぜて書かない */
-export function renderMetrics(m) {
-  const pct = (v) => (v == null ? '—' : `${(v * 100).toFixed(1)}%`);
-  const rows = [
-    ['リクエスト数(requestCount)', m.requestCount],
-    ['生成された候補(generatedCandidateCount)', m.generatedCandidateCount],
-    ['候補 ok(okCandidateCount)', m.okCandidateCount],
-    ['候補 soft_risk(softRiskCandidateCount)', m.softRiskCandidateCount],
-    ['候補 hard_reject(hardRejectCandidateCount)', m.hardRejectCandidateCount],
-    ['採用 ok(selectedOkCount)', m.selectedOkCount],
-    ['採用 soft_risk(selectedSoftRiskCount)', m.selectedSoftRiskCount],
-    ['採用 fallback(selectedFallbackCount)', m.selectedFallbackCount],
-    ['fallback を使ったリクエスト(requestsWithFallback)', m.requestsWithFallback],
-    ['soft_risk を含むリクエスト(requestsWithSoftRisk)', m.requestsWithSoftRisk],
-    ['再生成の回数(regenerationCount)', m.regenerationCount],
-    ['最終返信の総数(finalReplyCount)', m.finalReplyCount],
-    ['fallback reply rate(= 採用fallback ÷ 返信総数)', pct(m.fallbackReplyRate)],
-    ['fallback request rate(= fallbackを使ったリクエスト ÷ リクエスト数)', pct(m.fallbackRequestRate)],
-    ['soft-risk reply rate(= 採用soft_risk ÷ 返信総数)', pct(m.softRiskReplyRate)],
-    ['regeneration rate(= 再生成回数 ÷ リクエスト数)', pct(m.regenerationRate)],
-  ];
-  return `<h2>集計(この再生ぶん)</h2><table>${rows.map(([k, v]) => `<tr><td>${esc(k)}</td><td><b>${esc(String(v))}</b></td></tr>`).join('')}</table>
-<p class="lane">率の分母を取り違えないこと: reply 系は<b>返信総数</b>、request 系は<b>リクエスト数</b>。分母0のときは「—」(0 とは書かない)。</p>`;
-}
-
-export function renderCandidateReview({ title, groups, note, metrics = null }) {
+export function renderCandidateReview({ title, groups, note }) {
   const head = `<!doctype html><meta charset="utf-8"><title>${esc(title)}</title>
 <style>body{font-family:system-ui,sans-serif;max-width:1100px;margin:24px auto;padding:0 16px;color:#222}
 .case{border:1px solid #ccc;border-radius:8px;padding:14px;margin:18px 0}
@@ -69,7 +44,7 @@ table{border-collapse:collapse;width:100%;margin-top:8px}td,th{border:1px solid 
   const intro = `<h1>${esc(title)}</h1>
 <p><b>これは自動評価の途中経過であって「捏造ゼロ」の証明ではありません。</b>検査器は明示的な言い回ししか見ておらず、
 未知の固有名詞・暗黙の個人事実・スクリーンショット内の文字は独立に照合できません。最終判定は人が読んで行ってください。</p>
-<p style="background:#fff3cd;padding:8px;border-radius:6px">${esc(note)}</p>${metrics ? renderMetrics(metrics) : ''}`;
+<p style="background:#fff3cd;padding:8px;border-radius:6px">${esc(note)}</p>`;
   const body = groups.map((g, gi) => {
     const rows = g.candidates.map((c, i) => {
       const v = g.validations[i];
@@ -122,20 +97,10 @@ if (isCliEntry(import.meta.url)) {
   }
   const out = args.out || join('pricing_eval/runs/_summary', `candidate_review_${basename(fixturePath).replace(/\.json$/, '')}.html`);
   mkdirSync('pricing_eval/runs/_summary', { recursive: true });
-  const metrics = selectionMetrics(groups.map((g) => g.final));
-  writeFileSync(join('pricing_eval/runs/_summary', 'candidate_selection_metrics.json'), JSON.stringify({
-    at: new Date().toISOString(), source: fixturePath,
-    note: 'これは保存済み出力を候補に見立てた再生の集計。新方式でのモデル実測ではない',
-    metrics,
-  }, null, 2) + '\n');
   writeFileSync(out, renderCandidateReview({
     title: '内部6候補 → 最終3案(事実ファイアウォール)人間確認',
-    groups, metrics,
+    groups,
     note: 'この候補は「保存済みの実出力(Kimi / Qwen3 VL / Opus 5)を候補に見立てた再生」です。モデルが6候補形式で返したものではありません。新方式でのモデル実測は未実施(発注者の GO 待ち)。',
   }));
   console.log(`candidate review page: ${out} (${groups.length} セット)`);
-  console.log(`集計: リクエスト ${metrics.requestCount} / 候補 ${metrics.generatedCandidateCount}(ok ${metrics.okCandidateCount} / soft ${metrics.softRiskCandidateCount} / hard ${metrics.hardRejectCandidateCount})`);
-  console.log(`      採用 ok ${metrics.selectedOkCount} / soft ${metrics.selectedSoftRiskCount} / fallback ${metrics.selectedFallbackCount}`
-    + ` / fallback reply rate ${metrics.fallbackReplyRate == null ? '—' : (metrics.fallbackReplyRate * 100).toFixed(1) + '%'}`
-    + ` / soft-risk reply rate ${metrics.softRiskReplyRate == null ? '—' : (metrics.softRiskReplyRate * 100).toFixed(1) + '%'}`);
 }

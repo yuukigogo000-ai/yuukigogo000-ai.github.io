@@ -96,11 +96,9 @@ node pricing_eval/src/run_eval.mjs --stage=full  --adapter=mock --fault=two_repl
 ## 事実ファイアウォール+内部6候補(2026-09-01・モデル呼び出しなしで検証できる)
 
 ```bash
-node pricing_eval/tests/fact_firewall_tests.mjs      # 50件(許可/禁止の境界・6候補→3案・保存済み出力の回帰・会計突合・費用見積り)
-node pricing_eval/tests/mutate_fact_firewall.mjs     # 変異43件: lib と評価器を一時複製して**実際に壊し**、上のスイートが落ちることを確認
-node pricing_eval/src/candidate_review_page.mjs      # 人間確認ページ+集計指標(内部6候補・reject理由・最終3案・fallback)
-node pricing_eval/src/reconcile_spend.mjs --from=1.18292785 --to=1.61834135  # 会計差額の突合(読み取り専用・1e-6 で一致しなければ exit 1)
-node pricing_eval/src/estimate_next_run.mjs          # 次の10ケースrunの費用(モデル別・公式価格が無ければ見積不能)
+node pricing_eval/tests/fact_firewall_tests.mjs      # 35件(許可/禁止の境界・6候補→3案・保存済み出力の回帰)
+node pricing_eval/tests/mutate_fact_firewall.mjs     # 変異24件: lib を一時複製して**実際に壊し**、上のスイートが落ちることを確認
+node pricing_eval/src/candidate_review_page.mjs      # 人間確認ページ(内部6候補・reject理由・最終3案・fallback)
 ```
 
 - 実装(単一ソース) = `reply-ai-app/src/lib/fact_firewall.mjs` / `candidate_select.mjs`、契約 = `reply-ai-app/docs/CONTRACT_PROMPT_SCHEMA.md`

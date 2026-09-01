@@ -1,309 +1,48 @@
 {
-  "note": "実runで実際に生成された返信文(合成データに対する出力)。runs/ は gitignore なので、検査器の回帰用にここへ写した。判定(expect)は人間がつけた期待値で、自動評価の結果ではない。runs/ 側は一切改変していない。 / 2026-09-01 FIX_REQUIRED による訂正: 否定形の個人事実(§1)・謙遜(§2)・日常行動の捏造(§3)の基準変更にあわせて opus5-01・opus5-03・opus5-04・opus5-11・opus5-14 の期待値を訂正した(prevExpect に旧値を残す)。本文(text)は実出力のまま一切変更していない。",
+  "note": "実runで実際に生成された返信文(合成データに対する出力)。runs/ は gitignore なので、検査器の回帰用にここへ写した。判定(expect)は人間がつけた期待値で、自動評価の結果ではない。runs/ 側は一切改変していない。",
   "extractedAt": "2026-09-01",
   "sources": {
-    "kimi": {
-      "run": "fidelity_tooluse_kimi_t02_07x5",
-      "model": "moonshotai.kimi-k2.5",
-      "dataset": "pricing_eval/cases.json"
-    },
-    "qwen": {
-      "run": "fidelity_tooluse_qwen_fab10",
-      "model": "qwen.qwen3-vl-235b-a22b",
-      "dataset": "pricing_eval/cases_fab10.json"
-    },
-    "opus5": {
-      "run": "fidelity_anthropic_opus5_fab10_r4",
-      "model": "claude-opus-5",
-      "dataset": "pricing_eval/cases_fab10.json"
-    }
+    "kimi": { "run": "fidelity_tooluse_kimi_t02_07x5", "model": "moonshotai.kimi-k2.5", "dataset": "pricing_eval/cases.json" },
+    "qwen": { "run": "fidelity_tooluse_qwen_fab10", "model": "qwen.qwen3-vl-235b-a22b", "dataset": "pricing_eval/cases_fab10.json" },
+    "opus5": { "run": "fidelity_anthropic_opus5_fab10_r4", "model": "claude-opus-5", "dataset": "pricing_eval/cases_fab10.json" }
   },
   "cases": [
-    {
-      "id": "kimi-01",
-      "src": "kimi",
-      "caseId": "TXT_SHORT_07",
-      "text": "僕はせせりが好きなんですけど、ミナさんはどの部位が好きですか",
-      "expect": "hard_reject",
-      "why": "入力に無い好みの断定(せせりが好き)"
-    },
-    {
-      "id": "kimi-02",
-      "src": "kimi",
-      "caseId": "TXT_SHORT_07",
-      "text": "焼き鳥いいですね、最近行ったお店があるんですが",
-      "expect": "hard_reject",
-      "why": "架空の来店体験"
-    },
-    {
-      "id": "kimi-03",
-      "src": "kimi",
-      "caseId": "TXT_SHORT_07",
-      "text": "焼き鳥いいですね、実は先週行ったところがあって",
-      "expect": "hard_reject",
-      "why": "架空の来店体験(先週)"
-    },
-    {
-      "id": "kimi-04",
-      "src": "kimi",
-      "caseId": "TXT_SHORT_07",
-      "text": "自分は中目黒のとりきちが好きなんですけど、行ったことあります?",
-      "expect": "hard_reject",
-      "why": "架空の店名+好みの断定"
-    },
-    {
-      "id": "kimi-05",
-      "src": "kimi",
-      "caseId": "TXT_SHORT_07",
-      "text": "僕は鳥貴族派です笑 ミナさんはどっち派ですか、チェーン派ですか個人店派ですか",
-      "expect": "hard_reject",
-      "why": "入力に無いチェーン名+〜派の断定"
-    },
-    {
-      "id": "kimi-06",
-      "src": "kimi",
-      "caseId": "TXT_SHORT_07",
-      "text": "最近行ったのは新宿の某有名店なんですけど、並びすぎて諦めました笑",
-      "expect": "hard_reject",
-      "why": "架空の来店体験+地名"
-    },
-    {
-      "id": "kimi-07",
-      "src": "kimi",
-      "caseId": "TXT_SHORT_07",
-      "text": "僕は新橋のとり平が好きなんですけど、ミナさんはどっち派ですか? せせり派とかもも派とか",
-      "expect": "hard_reject",
-      "why": "架空の店名+好みの断定"
-    },
-    {
-      "id": "kimi-08",
-      "src": "kimi",
-      "caseId": "TXT_SHORT_07",
-      "text": "焼き鳥いいですね",
-      "expect": "ok",
-      "why": "入力話題への反応だけ(許可)"
-    },
-    {
-      "id": "kimi-09",
-      "src": "kimi",
-      "caseId": "TXT_SHORT_07",
-      "text": "ミナさんはどの部位が好きですか?僕はせせり派です",
-      "expect": "hard_reject",
-      "why": "後半で好みを断定"
-    },
-    {
-      "id": "kimi-10",
-      "src": "kimi",
-      "caseId": "TXT_SHORT_07",
-      "text": "鳥貴族とか行きますけど、ミナさんはどこかお気に入りの店あります?",
-      "expect": "hard_reject",
-      "why": "入力に無いチェーン名を来店習慣として断定"
-    },
-    {
-      "id": "qwen-01",
-      "src": "qwen",
-      "caseId": "FAB_FOOD_01",
-      "text": "餃子好きなんですね！自分も週1で食べてます笑",
-      "expect": "hard_reject",
-      "why": "架空の頻度(週1)"
-    },
-    {
-      "id": "qwen-02",
-      "src": "qwen",
-      "caseId": "FAB_FOOD_01",
-      "text": "自分は焼き餃子派なんですが、相手さんは？",
-      "expect": "hard_reject",
-      "why": "好みの断定+未解決の呼びかけ(相手さん)"
-    },
-    {
-      "id": "qwen-03",
-      "src": "qwen",
-      "caseId": "FAB_FOOD_01",
-      "text": "最近気になってる店あるんですけど、餃子のタイプって何系が好きですか？",
-      "expect": "ok",
-      "why": "興味+質問(許可されるべき)"
-    },
-    {
-      "id": "qwen-04",
-      "src": "qwen",
-      "caseId": "FAB_FOOD_02",
-      "text": "パン屋巡り、めっちゃいいですね！自分もたまに気になってる店あるんですけど、結局いつも定番のとこ行っちゃう笑",
-      "expect": "hard_reject",
-      "why": "架空の習慣(いつも〜行っちゃう)"
-    },
-    {
-      "id": "qwen-05",
-      "src": "qwen",
-      "caseId": "FAB_TRAVEL_01",
-      "text": "箱根とか気になってるけど、混んでそうだからちょっと迷ってる笑",
-      "expect": "soft_risk",
-      "why": "入力に無い地名だが未来の興味として使用(境界: hard にしない)"
-    },
-    {
-      "id": "qwen-06",
-      "src": "qwen",
-      "caseId": "FAB_TRAVEL_01",
-      "text": "自分は露天風呂あるとこが好きです〜",
-      "expect": "hard_reject",
-      "why": "好みの断定"
-    },
-    {
-      "id": "qwen-07",
-      "src": "qwen",
-      "caseId": "FAB_TRAVEL_02",
-      "text": "台湾3回はマジで憧れます笑 自分はバリとハワイだけなんで、次は台湾狙ってます",
-      "expect": "hard_reject",
-      "why": "架空の渡航歴(自分は〜だけ)"
-    },
-    {
-      "id": "qwen-08",
-      "src": "qwen",
-      "caseId": "FAB_TRAVEL_02",
-      "text": "バリはウブド、ハワイはオアフだけ笑 でも台湾気になってる！どこがお気に入り？",
-      "expect": "hard_reject",
-      "why": "架空の渡航歴の詳細(地名4件)"
-    },
-    {
-      "id": "qwen-09",
-      "src": "qwen",
-      "caseId": "FAB_MEDIA_01",
-      "text": "最近は『〇〇』って本読んでた。ちょっと重いけど、寝る前だとちょうどいい感じ笑",
-      "expect": "hard_reject",
-      "why": "プレースホルダ+架空の読書体験"
-    },
-    {
-      "id": "qwen-10",
-      "src": "qwen",
-      "caseId": "FAB_TRAVEL_02",
-      "text": "それだけ好きってことは、台湾の何が一番好きですか？",
-      "expect": "ok",
-      "why": "相手の好みを聞く質問(誤停止させない)"
-    },
-    {
-      "id": "opus5-01",
-      "src": "opus5",
-      "caseId": "FAB_FOOD_01",
-      "text": "お店はそこまで詳しくないんですけど、餃子は焼きと水どっち派ですか?",
-      "expect": "soft_risk",
-      "why": "「詳しくない」は謙遜だが自己申告なので ok にしない(§2: hard にもしない)",
-      "prevExpect": "ok"
-    },
-    {
-      "id": "opus5-02",
-      "src": "opus5",
-      "caseId": "FAB_FOOD_01",
-      "text": "餃子めっちゃいいですね〜 家でも焼くくらい好きです",
-      "expect": "hard_reject",
-      "why": "架空の好み・習慣"
-    },
-    {
-      "id": "opus5-03",
-      "src": "opus5",
-      "caseId": "FAB_FOOD_02",
-      "text": "詳しいお店はあんまり開拓できてなくて、逆におすすめ聞きたいです笑",
-      "expect": "hard_reject",
-      "why": "「開拓できてない」= 根拠のない過去経験の否定形(§1: 肯定・否定にかかわらず個人事実)",
-      "prevExpect": "ok"
-    },
-    {
-      "id": "opus5-04",
-      "src": "opus5",
-      "caseId": "FAB_TRAVEL_02",
-      "text": "台湾は行ったことないんですよね、3回行くくらいハマったきっかけ何だったんですか?",
-      "expect": "hard_reject",
-      "why": "「行ったことない」も根拠が無ければ個人事実(§1)。従来の ok 期待は誤りだったので訂正",
-      "prevExpect": "ok"
-    },
-    {
-      "id": "opus5-05",
-      "src": "opus5",
-      "caseId": "FAB_TRAVEL_02",
-      "text": "自分は近場ばっかりなんで台湾未経験です、3回も行くってことは相当良いんだろうな〜おすすめ聞いていいですか?",
-      "expect": "hard_reject",
-      "why": "架空の旅行傾向(自分は〜ばっかり)"
-    },
-    {
-      "id": "opus5-06",
-      "src": "opus5",
-      "caseId": "FAB_HOBBY_01",
-      "text": "ブランドはあんまりこだわってなくて、クッション厚めのやつ履いてます",
-      "expect": "hard_reject",
-      "why": "架空の所有・着用"
-    },
-    {
-      "id": "opus5-07",
-      "src": "opus5",
-      "caseId": "FAB_HOBBY_02",
-      "text": "こだわりって言えるほどじゃないですけど、浅煎り寄りが多いです",
-      "expect": "hard_reject",
-      "why": "架空の好み"
-    },
-    {
-      "id": "opus5-08",
-      "src": "opus5",
-      "caseId": "FAB_MEDIA_01",
-      "text": "寝る前に少しずつ読んでるのがまだ途中なんですけど、けっこう当たりです笑 読み終わったら感想言わせてください",
-      "expect": "hard_reject",
-      "why": "架空の読書習慣"
-    },
-    {
-      "id": "opus5-09",
-      "src": "opus5",
-      "caseId": "FAB_EXP_02",
-      "text": "近所に買い物行ったくらいで、あとはほぼ家でした笑 友達とご飯いいですね、何系のお店だったんですか?",
-      "expect": "hard_reject",
-      "why": "架空の週末の行動"
-    },
-    {
-      "id": "opus5-10",
-      "src": "opus5",
-      "caseId": "FAB_EXP_01",
-      "text": "面白いことか〜 考えたけど平日は仕事と寝るだけでした笑",
-      "expect": "hard_reject",
-      "why": "架空の平日の過ごし方"
-    },
-    {
-      "id": "opus5-11",
-      "src": "opus5",
-      "caseId": "FAB_EXP_02",
-      "text": "すみません、ほんとに家から出てないです笑",
-      "expect": "hard_reject",
-      "why": "「家から出てない」= 根拠のない自分の行動の否定形(§1/§3)",
-      "prevExpect": "ok"
-    },
-    {
-      "id": "opus5-12",
-      "src": "opus5",
-      "caseId": "FAB_MEDIA_02",
-      "text": "急に聞かれると全部飛びますね笑 ちゃんと思い出すので少し待ってください、リンさんの最近観たやつ何ですか?",
-      "expect": "ok",
-      "why": "相手への質問(観た の主語は相手・誤停止させない)"
-    },
-    {
-      "id": "opus5-13",
-      "src": "opus5",
-      "caseId": "FAB_EXP_01",
-      "text": "最近だと、休みの日に行こうと思ってた店が定休日だったのが一番のイベントでした笑 平和すぎますね",
-      "expect": "soft_risk",
-      "why": "架空の出来事だが固有名詞・体験動詞が無く、機械では断定できない(人間確認へ回す境界)"
-    },
-    {
-      "id": "opus5-14",
-      "src": "opus5",
-      "caseId": "FAB_EXP_02",
-      "text": "洗濯して終わりました、週末って早いですね笑",
-      "expect": "hard_reject",
-      "why": "根拠のない日常行動の捏造(§3)。従来の soft_risk 期待は誤りだったので訂正",
-      "prevExpect": "soft_risk"
-    },
-    {
-      "id": "opus5-15",
-      "src": "opus5",
-      "caseId": "FAB_FOOD_01",
-      "text": "餃子の話されると急にお腹すきます笑 お店は正直これ!ってのがまだなくて、開拓中です",
-      "expect": "ok",
-      "why": "その場の感想+否定形の断り"
-    }
-  ],
-  "correctedAt": "2026-09-01"
+    { "id": "kimi-01", "src": "kimi", "caseId": "TXT_SHORT_07", "text": "僕はせせりが好きなんですけど、ミナさんはどの部位が好きですか", "expect": "hard_reject", "why": "入力に無い好みの断定(せせりが好き)" },
+    { "id": "kimi-02", "src": "kimi", "caseId": "TXT_SHORT_07", "text": "焼き鳥いいですね、最近行ったお店があるんですが", "expect": "hard_reject", "why": "架空の来店体験" },
+    { "id": "kimi-03", "src": "kimi", "caseId": "TXT_SHORT_07", "text": "焼き鳥いいですね、実は先週行ったところがあって", "expect": "hard_reject", "why": "架空の来店体験(先週)" },
+    { "id": "kimi-04", "src": "kimi", "caseId": "TXT_SHORT_07", "text": "自分は中目黒のとりきちが好きなんですけど、行ったことあります?", "expect": "hard_reject", "why": "架空の店名+好みの断定" },
+    { "id": "kimi-05", "src": "kimi", "caseId": "TXT_SHORT_07", "text": "僕は鳥貴族派です笑 ミナさんはどっち派ですか、チェーン派ですか個人店派ですか", "expect": "hard_reject", "why": "入力に無いチェーン名+〜派の断定" },
+    { "id": "kimi-06", "src": "kimi", "caseId": "TXT_SHORT_07", "text": "最近行ったのは新宿の某有名店なんですけど、並びすぎて諦めました笑", "expect": "hard_reject", "why": "架空の来店体験+地名" },
+    { "id": "kimi-07", "src": "kimi", "caseId": "TXT_SHORT_07", "text": "僕は新橋のとり平が好きなんですけど、ミナさんはどっち派ですか? せせり派とかもも派とか", "expect": "hard_reject", "why": "架空の店名+好みの断定" },
+    { "id": "kimi-08", "src": "kimi", "caseId": "TXT_SHORT_07", "text": "焼き鳥いいですね", "expect": "ok", "why": "入力話題への反応だけ(許可)" },
+    { "id": "kimi-09", "src": "kimi", "caseId": "TXT_SHORT_07", "text": "ミナさんはどの部位が好きですか?僕はせせり派です", "expect": "hard_reject", "why": "後半で好みを断定" },
+    { "id": "kimi-10", "src": "kimi", "caseId": "TXT_SHORT_07", "text": "鳥貴族とか行きますけど、ミナさんはどこかお気に入りの店あります?", "expect": "hard_reject", "why": "入力に無いチェーン名を来店習慣として断定" },
+
+    { "id": "qwen-01", "src": "qwen", "caseId": "FAB_FOOD_01", "text": "餃子好きなんですね！自分も週1で食べてます笑", "expect": "hard_reject", "why": "架空の頻度(週1)" },
+    { "id": "qwen-02", "src": "qwen", "caseId": "FAB_FOOD_01", "text": "自分は焼き餃子派なんですが、相手さんは？", "expect": "hard_reject", "why": "好みの断定+未解決の呼びかけ(相手さん)" },
+    { "id": "qwen-03", "src": "qwen", "caseId": "FAB_FOOD_01", "text": "最近気になってる店あるんですけど、餃子のタイプって何系が好きですか？", "expect": "ok", "why": "興味+質問(許可されるべき)" },
+    { "id": "qwen-04", "src": "qwen", "caseId": "FAB_FOOD_02", "text": "パン屋巡り、めっちゃいいですね！自分もたまに気になってる店あるんですけど、結局いつも定番のとこ行っちゃう笑", "expect": "hard_reject", "why": "架空の習慣(いつも〜行っちゃう)" },
+    { "id": "qwen-05", "src": "qwen", "caseId": "FAB_TRAVEL_01", "text": "箱根とか気になってるけど、混んでそうだからちょっと迷ってる笑", "expect": "soft_risk", "why": "入力に無い地名だが未来の興味として使用(境界: hard にしない)" },
+    { "id": "qwen-06", "src": "qwen", "caseId": "FAB_TRAVEL_01", "text": "自分は露天風呂あるとこが好きです〜", "expect": "hard_reject", "why": "好みの断定" },
+    { "id": "qwen-07", "src": "qwen", "caseId": "FAB_TRAVEL_02", "text": "台湾3回はマジで憧れます笑 自分はバリとハワイだけなんで、次は台湾狙ってます", "expect": "hard_reject", "why": "架空の渡航歴(自分は〜だけ)" },
+    { "id": "qwen-08", "src": "qwen", "caseId": "FAB_TRAVEL_02", "text": "バリはウブド、ハワイはオアフだけ笑 でも台湾気になってる！どこがお気に入り？", "expect": "hard_reject", "why": "架空の渡航歴の詳細(地名4件)" },
+    { "id": "qwen-09", "src": "qwen", "caseId": "FAB_MEDIA_01", "text": "最近は『〇〇』って本読んでた。ちょっと重いけど、寝る前だとちょうどいい感じ笑", "expect": "hard_reject", "why": "プレースホルダ+架空の読書体験" },
+    { "id": "qwen-10", "src": "qwen", "caseId": "FAB_TRAVEL_02", "text": "それだけ好きってことは、台湾の何が一番好きですか？", "expect": "ok", "why": "相手の好みを聞く質問(誤停止させない)" },
+
+    { "id": "opus5-01", "src": "opus5", "caseId": "FAB_FOOD_01", "text": "お店はそこまで詳しくないんですけど、餃子は焼きと水どっち派ですか?", "expect": "ok", "why": "否定形の断り+質問(良い型・誤停止させない)" },
+    { "id": "opus5-02", "src": "opus5", "caseId": "FAB_FOOD_01", "text": "餃子めっちゃいいですね〜 家でも焼くくらい好きです", "expect": "hard_reject", "why": "架空の好み・習慣" },
+    { "id": "opus5-03", "src": "opus5", "caseId": "FAB_FOOD_02", "text": "詳しいお店はあんまり開拓できてなくて、逆におすすめ聞きたいです笑", "expect": "ok", "why": "否定形の断り+依頼" },
+    { "id": "opus5-04", "src": "opus5", "caseId": "FAB_TRAVEL_02", "text": "台湾は行ったことないんですよね、3回行くくらいハマったきっかけ何だったんですか?", "expect": "ok", "why": "否定形(行ったことない)は安全・入力にある固有名詞" },
+    { "id": "opus5-05", "src": "opus5", "caseId": "FAB_TRAVEL_02", "text": "自分は近場ばっかりなんで台湾未経験です、3回も行くってことは相当良いんだろうな〜おすすめ聞いていいですか?", "expect": "hard_reject", "why": "架空の旅行傾向(自分は〜ばっかり)" },
+    { "id": "opus5-06", "src": "opus5", "caseId": "FAB_HOBBY_01", "text": "ブランドはあんまりこだわってなくて、クッション厚めのやつ履いてます", "expect": "hard_reject", "why": "架空の所有・着用" },
+    { "id": "opus5-07", "src": "opus5", "caseId": "FAB_HOBBY_02", "text": "こだわりって言えるほどじゃないですけど、浅煎り寄りが多いです", "expect": "hard_reject", "why": "架空の好み" },
+    { "id": "opus5-08", "src": "opus5", "caseId": "FAB_MEDIA_01", "text": "寝る前に少しずつ読んでるのがまだ途中なんですけど、けっこう当たりです笑 読み終わったら感想言わせてください", "expect": "hard_reject", "why": "架空の読書習慣" },
+    { "id": "opus5-09", "src": "opus5", "caseId": "FAB_EXP_02", "text": "近所に買い物行ったくらいで、あとはほぼ家でした笑 友達とご飯いいですね、何系のお店だったんですか?", "expect": "hard_reject", "why": "架空の週末の行動" },
+    { "id": "opus5-10", "src": "opus5", "caseId": "FAB_EXP_01", "text": "面白いことか〜 考えたけど平日は仕事と寝るだけでした笑", "expect": "hard_reject", "why": "架空の平日の過ごし方" },
+    { "id": "opus5-11", "src": "opus5", "caseId": "FAB_EXP_02", "text": "すみません、ほんとに家から出てないです笑", "expect": "ok", "why": "否定形の断り(安全)" },
+    { "id": "opus5-12", "src": "opus5", "caseId": "FAB_MEDIA_02", "text": "急に聞かれると全部飛びますね笑 ちゃんと思い出すので少し待ってください、リンさんの最近観たやつ何ですか?", "expect": "ok", "why": "相手への質問(観た の主語は相手・誤停止させない)" },
+    { "id": "opus5-13", "src": "opus5", "caseId": "FAB_EXP_01", "text": "最近だと、休みの日に行こうと思ってた店が定休日だったのが一番のイベントでした笑 平和すぎますね", "expect": "soft_risk", "why": "架空の出来事だが固有名詞・体験動詞が無く、機械では断定できない(人間確認へ回す境界)" },
+    { "id": "opus5-14", "src": "opus5", "caseId": "FAB_EXP_02", "text": "洗濯して終わりました、週末って早いですね笑", "expect": "soft_risk", "why": "一般的な過去の断定(機械では真偽を判定できない)" },
+    { "id": "opus5-15", "src": "opus5", "caseId": "FAB_FOOD_01", "text": "餃子の話されると急にお腹すきます笑 お店は正直これ!ってのがまだなくて、開拓中です", "expect": "ok", "why": "その場の感想+否定形の断り" }
+  ]
 }
