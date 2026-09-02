@@ -20,12 +20,12 @@ Visual / Interaction / Motion は ChatGPT Design Authority が決める。
 | 7 | IMPLEMENTATION | ✅ 11画面を実装 |
 | 8 | AUTOMATED VERIFICATION | ✅ FUNCTION 100% / STATE 100% / 性能劣化なし |
 | 9 | POST IMPLEMENT CAPTURE | ✅ 56枚 + モーションの証跡 |
-| **10** | **FINAL CHATGPT REVIEW** | ⏸ **ここで停止中(人手で渡す必要がある)** |
-| 11 | REPAIR(最大2ラウンド) | ⬜ レビュー結果待ち |
-| — | Gate H5 READY_FOR_USER_APPROVAL | ⬜ |
+| 10 | FINAL CHATGPT REVIEW | ✅ **PASS / REPAIR_SCOPE = NONE**(`frozen/FINAL_REVIEW_RESULT.md`) |
+| 11 | REPAIR(最大2ラウンド) | — 不要(IMPLEMENTATION_GAP 0件) |
+| — | **Gate H5 READY_FOR_USER_APPROVAL** | ⏸ **発注者の確認待ち** |
 
-Phase 10 は ChatGPT へ `CHATGPT_FINAL_REVIEW_PACKET.zip` を渡す必要がある。
-自動の橋渡しがこの環境に無いため、そこで止めている。
+Design Authority の最終レビューは PASS。修正指摘は0件。
+残っているのは発注者(あなた)の確認と、main への反映だけ。
 
 ### 検証の結果(現在の実装)
 
@@ -36,7 +36,7 @@ Phase 10 は ChatGPT へ `CHATGPT_FINAL_REVIEW_PACKET.zip` を渡す必要があ
 | RESPONSIVE | 11ページ × 3幅 × light/dark = 66通りで横溢れ0 |
 | RUNTIME | JSエラー0・404の0 |
 | MOTION | reduced-motion で無限アニメ0・1秒超アニメ0 |
-| PERFORMANCE | 再設計前と比較して劣化なし(CLS 0.0149→0) |
+| PERFORMANCE | 再設計前と**同じ実行の中で**比較して劣化なし(CLS 0.0149→0) |
 | CSP | 違反0。90MBモデルの Worker と wasm も生存 |
 
 ---
@@ -80,7 +80,7 @@ python3 verify/check_return.py --mutate    # 検査器自身の確認(12/12)
 # 実装の検証
 node verify/verify_ui.mjs                  # 機能・状態・レスポンシブ・実行時・モーション
 node verify/verify_ui.mjs --mutate         # 検査器自身の確認(F 93/93・S 56/56)
-node verify/perf.mjs                       # 再設計前との性能比較
+node verify/perf.mjs                       # 再設計前を同じ実行の中で測って比較
 
 # レビュー用の梱包
 node verify/capture.mjs

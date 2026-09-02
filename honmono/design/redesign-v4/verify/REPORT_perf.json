@@ -1,111 +1,197 @@
 {
   "generated_at": "2026-09-02",
-  "note": "固定条件 390x844 / DPR3 / ローカル配信。ネットワークの実測ではなく、モーション導入によるメインスレッドとレイアウトへの影響を見るためのもの。",
+  "note": "固定条件 390x844 / DPR3 / ローカル配信。再設計前(a9d5144)と同じ実行の中で交互に測っている。マシンの混み具合の差で誤判定しないため。",
+  "baseline_ref": "a9d5144",
   "pages": [
     {
       "url": "/honmono/",
-      "ms_to_networkidle": 1770,
+      "ms_to_networkidle": 2092,
       "transferred_kb": 71,
-      "dom_content_loaded_ms": 52,
+      "dom_content_loaded_ms": 333,
       "long_tasks_over_50ms": [
-        107
+        285
       ],
       "cumulative_layout_shift": 0
     },
     {
       "url": "/honmono/checker/",
-      "ms_to_networkidle": 1846,
+      "ms_to_networkidle": 1888,
       "transferred_kb": 92,
-      "dom_content_loaded_ms": 141,
+      "dom_content_loaded_ms": 152,
       "long_tasks_over_50ms": [
-        75
+        101
       ],
       "cumulative_layout_shift": 0
     },
     {
       "url": "/honmono/aicheck/",
-      "ms_to_networkidle": 1783,
+      "ms_to_networkidle": 2001,
       "transferred_kb": 43,
-      "dom_content_loaded_ms": 175,
+      "dom_content_loaded_ms": 257,
       "long_tasks_over_50ms": [
-        108
+        169
       ],
       "cumulative_layout_shift": 0
     },
     {
       "url": "/honmono/badge/",
-      "ms_to_networkidle": 1822,
+      "ms_to_networkidle": 1786,
       "transferred_kb": 39,
-      "dom_content_loaded_ms": 113,
+      "dom_content_loaded_ms": 38,
       "long_tasks_over_50ms": [
-        90
+        170
       ],
       "cumulative_layout_shift": 0
     },
     {
       "url": "/honmono/creators/",
-      "ms_to_networkidle": 1793,
+      "ms_to_networkidle": 1948,
       "transferred_kb": 36,
-      "dom_content_loaded_ms": 26,
+      "dom_content_loaded_ms": 182,
       "long_tasks_over_50ms": [
-        51
+        140,
+        75
       ],
       "cumulative_layout_shift": 0
     },
     {
       "url": "/honmono/report/",
-      "ms_to_networkidle": 1892,
+      "ms_to_networkidle": 2072,
       "transferred_kb": 42,
-      "dom_content_loaded_ms": 185,
+      "dom_content_loaded_ms": 340,
       "long_tasks_over_50ms": [
-        161
+        303
       ],
       "cumulative_layout_shift": 0
     },
     {
       "url": "/honmono/business/",
-      "ms_to_networkidle": 1730,
+      "ms_to_networkidle": 2075,
       "transferred_kb": 33,
-      "dom_content_loaded_ms": 156,
+      "dom_content_loaded_ms": 329,
       "long_tasks_over_50ms": [
-        132
+        291
       ],
       "cumulative_layout_shift": 0
     },
     {
       "url": "/honmono/docs/",
-      "ms_to_networkidle": 1939,
+      "ms_to_networkidle": 1770,
       "transferred_kb": 42,
-      "dom_content_loaded_ms": 231,
+      "dom_content_loaded_ms": 378,
       "long_tasks_over_50ms": [
-        208
+        340
+      ],
+      "cumulative_layout_shift": 0
+    }
+  ],
+  "baseline_pages": [
+    {
+      "url": "/honmono/",
+      "ms_to_networkidle": 1820,
+      "transferred_kb": 14,
+      "dom_content_loaded_ms": 20,
+      "long_tasks_over_50ms": [
+        268
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/checker/",
+      "ms_to_networkidle": 1879,
+      "transferred_kb": 66,
+      "dom_content_loaded_ms": 128,
+      "long_tasks_over_50ms": [
+        86
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/aicheck/",
+      "ms_to_networkidle": 1801,
+      "transferred_kb": 23,
+      "dom_content_loaded_ms": 366,
+      "long_tasks_over_50ms": [
+        301
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/badge/",
+      "ms_to_networkidle": 1773,
+      "transferred_kb": 20,
+      "dom_content_loaded_ms": 291,
+      "long_tasks_over_50ms": [
+        259
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/creators/",
+      "ms_to_networkidle": 1925,
+      "transferred_kb": 18,
+      "dom_content_loaded_ms": 30,
+      "long_tasks_over_50ms": [
+        140,
+        51
+      ],
+      "cumulative_layout_shift": 0.0149
+    },
+    {
+      "url": "/honmono/report/",
+      "ms_to_networkidle": 1763,
+      "transferred_kb": 25,
+      "dom_content_loaded_ms": 18,
+      "long_tasks_over_50ms": [
+        289
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/business/",
+      "ms_to_networkidle": 1772,
+      "transferred_kb": 17,
+      "dom_content_loaded_ms": 22,
+      "long_tasks_over_50ms": [
+        287
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/docs/",
+      "ms_to_networkidle": 1765,
+      "transferred_kb": 26,
+      "dom_content_loaded_ms": 22,
+      "long_tasks_over_50ms": [
+        281
       ],
       "cumulative_layout_shift": 0
     }
   ],
   "analysis_wait": {
     "animating": true,
-    "properties": "rail-travel",
-    "transition_property": "all",
+    "animation_name": "rail-travel",
     "cls_during_wait": 0.1741,
     "long_tasks_during_wait": [
-      69
+      117
     ]
   },
   "worst": {
     "transferred_kb": 92,
-    "long_tasks_over_50ms": 8,
-    "max_cls": 0
+    "long_tasks_over_50ms": 9,
+    "max_cls": 0,
+    "worst_long_task_ms": 340
   },
   "regression_check": {
     "compared": true,
+    "measured_in_same_run": true,
     "long_tasks": {
-      "before": 8,
-      "after": 8
+      "before": 9,
+      "after": 9
     },
     "worst_long_task_ms": {
-      "before": 225,
-      "after": 208
+      "before": 301,
+      "after": 340
     },
     "max_cls": {
       "before": 0.0149,
