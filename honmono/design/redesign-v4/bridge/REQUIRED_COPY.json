@@ -1,0 +1,446 @@
+{
+  "schema": "REQUIRED_COPY/1.0",
+  "generated_at": "2026-09-02",
+  "rules": {
+    "verbatim": "文字列をそのまま含める必要がある。自動検査が完全一致で見ている。言い換え・改行の挿入・記号の変更は不可",
+    "meaning": "文字列は書き換えてよいが、意味・強さ・限定条件を弱めてはならない。特に『断定しない』『例外つきの免責』のニュアンスを落とさない",
+    "placement": "配置の制約。UI再設計でこの前後関係を崩してはならない"
+  },
+  "brand": {
+    "product_name": {
+      "value": "HONMONO",
+      "kind": "verbatim",
+      "note": "表記固定。ローマ字大文字。『ホンモノ』『Honmono』へ変えない"
+    },
+    "subtitle": {
+      "value": "実在性証明プロジェクト",
+      "kind": "meaning",
+      "note": "トップのブランド脇に出ている補足"
+    }
+  },
+  "items": [
+    {
+      "id": "HOME-HERO",
+      "screen": "HOME",
+      "kind": "meaning",
+      "current": "AIが「美女」を無限に作る時代、いちばん希少なのは「本物の人間」です。",
+      "must_convey": "AI生成コンテンツが増えるほど、実在することの価値が上がるという逆張りの立場",
+      "forbidden": [
+        "AI生成を『悪』と断定する表現",
+        "特定のサービス・企業を名指しで攻撃する表現"
+      ]
+    },
+    {
+      "id": "HOME-TAGLINE",
+      "screen": "HOME",
+      "kind": "meaning",
+      "current": "HONMONO は、AI生成コンテンツが溢れるインターネットで「実在すること」を証明し、見分け、価値に変えるための無料ツール群です。すべてブラウザ内で動作し、あなたのデータはどこにも送信されません。",
+      "must_convey": "無料であること / ツール群であること / ブラウザ内で動くこと / データが送信されないこと"
+    },
+    {
+      "id": "HOME-LINK-REPORT",
+      "screen": "HOME",
+      "kind": "verbatim",
+      "value": "実測レポートを読む",
+      "note": "test_pages_smoke.js が完全一致で検査"
+    },
+    {
+      "id": "HOME-LINK-BUSINESS",
+      "screen": "HOME",
+      "kind": "verbatim",
+      "value": "法人・開発者の方へ",
+      "note": "test_pages_smoke.js が完全一致で検査"
+    },
+    {
+      "id": "HOME-DISCLAIMER",
+      "screen": "HOME",
+      "kind": "meaning",
+      "current": "本ツール群の判定は「参考情報」です。…実在する誰かを「AIだ」「詐欺だ」と断定して公表する目的では使わないでください。この道具は、実在する人が疑われずに済むために作られたものです。",
+      "must_convey": "判定は参考情報 / メタデータは編集削除可能 / 痕跡の有無で人間・悪意を断定しない / 特定個人を断定公表する目的で使わない / 製品の存在理由",
+      "placement": "トップページ内に到達可能であること"
+    },
+    {
+      "id": "HOME-PILLARS",
+      "screen": "HOME",
+      "kind": "meaning",
+      "current": "① 証明する / ② 見分ける / ③ 束ねる",
+      "must_convey": "3本柱の名称と各1文の説明"
+    },
+    {
+      "id": "CHK-LEAD",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "画像や動画をドロップすると、C2PA(コンテンツ来歴)・EXIF・XMP・生成AIツールの痕跡をその場で解析します。…ファイルはあなたのブラウザ内だけで処理され、どこにもアップロードされません。",
+      "must_convey": "何を解析するか / メタデータが消えていても経緯を推定すること / ファイルがアップロードされないこと",
+      "placement": "ファイルを渡す操作の前に読めること"
+    },
+    {
+      "id": "CHK-FORMATS",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "画像: JPEG / PNG / WebP / HEIC / AVIF ・ 動画: MP4 / MOV(Sora等のC2PA来歴にも対応)",
+      "must_convey": "対応形式の一覧",
+      "placement": "ファイルを渡す操作の近く"
+    },
+    {
+      "id": "CHK-V-AI",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "AI生成の痕跡があります",
+      "must_convey": "生成AIツールの記録・申告が埋め込まれている。詳細は根拠一覧にある"
+    },
+    {
+      "id": "CHK-V-C2PA",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "コンテンツ来歴(C2PA)付きの画像です",
+      "must_convey": "来歴データが埋め込まれている。良い/悪いの判定ではない"
+    },
+    {
+      "id": "CHK-V-CAMERA",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "カメラ撮影の痕跡があります",
+      "must_convey": "実写の可能性を高めるが偽装可能"
+    },
+    {
+      "id": "CHK-V-STOCK",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "ストック素材サイト由来の画像です",
+      "must_convey": "本人写真としては不自然。流用または架空人物の疑い"
+    },
+    {
+      "id": "CHK-V-WEAK",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "AI生成を疑う手がかりがあります(弱)",
+      "must_convey": "決定的な証拠はない。追加検証が要る"
+    },
+    {
+      "id": "CHK-V-UNKNOWN",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "判定材料がありません",
+      "must_convey": "メタデータが見つからなかった。SNS経由では普通のこと。『AIではない』の意味ではない。可能なら元データで再チェック"
+    },
+    {
+      "id": "CHK-FINDING-TAGS",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "AI痕跡 / 実写材料 / 注意 / 情報",
+      "must_convey": "根拠1件ごとの4段階の重み付け。この4段階を減らさない"
+    },
+    {
+      "id": "CHK-LIMITS",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "判定の限界: メタデータは編集・削除できます。「痕跡なし」は人間の証明にはならず(SNS・スクリーンショット経由でメタデータは消えます)、「カメラ情報あり」も偽装可能です。C2PA署名の暗号学的検証は Content Credentials Verify(公式)でも確認できます。",
+      "must_convey": "痕跡なしは証明にならない / カメラ情報も偽装可能 / 公式検証ツールという代替の存在",
+      "placement": "結果を読んだ直後に読める位置"
+    },
+    {
+      "id": "CHK-NEXT-STEP",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "次の一手: 逆画像検索で確かめる",
+      "must_convey": "メタデータが消えていても打てる次の手があること。4つの逆画像検索サービスへ画像をドラッグする手順"
+    },
+    {
+      "id": "CHK-PIXEL-TITLE",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "🧪 実験: 画素からのAI判定(参考値)",
+      "must_convey": "これが実験機能であり参考値であること。メタデータによる本判定とは別枠であること",
+      "placement": "本判定と混ざらない・同格に見えないこと"
+    },
+    {
+      "id": "CHK-PIXEL-INTRO",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "メタデータではなく画像そのものを学習済みモデルで判定します。ブラウザ内で動作し、画像は送信されません。初回はモデル(約90MB)を読み込みます(2回目以降は端末内キャッシュ)。PC推奨。",
+      "must_convey": "何を見ているか / 送信されないこと / 90MBの初回ダウンロード / 2回目以降はキャッシュ / PC推奨",
+      "placement": "実行ボタンより前"
+    },
+    {
+      "id": "CHK-PIXEL-EVAL",
+      "screen": "CHECKER",
+      "kind": "verbatim-numbers",
+      "current": "実測(学習に一切使っていない外部545枚): 実写をAIと誤判定 1.8%・AI画像の検出 70%。2025年世代の生成器(Seedream 4 / Gemini 2.5 / FLUX Pro 等)の検出は63%。人物の顔で別に測った615枚では、実在の人の顔の誤判定 1.1%・AI生成の顔の検出 92%。学習データは商用利用可のものだけを使用。",
+      "must_convey": "この数値をそのまま。丸めない・要約しない"
+    },
+    {
+      "id": "CHK-PIXEL-HIGH",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "AI生成の可能性が高い + 的中率約97%・実在の人の顔の誤判定1.1%(GAN風の切り取りでは5%)・他のシグナルと合わせて判断",
+      "must_convey": "高い可能性であって断定ではないこと。実測の誤り率"
+    },
+    {
+      "id": "CHK-PIXEL-MID",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "AI生成の疑いあり(弱) / 判定が割れる領域です。単独では根拠になりません。",
+      "must_convey": "単独では根拠にならない"
+    },
+    {
+      "id": "CHK-PIXEL-LOW",
+      "screen": "CHECKER",
+      "kind": "meaning",
+      "current": "AI生成の兆候は薄い / 注意: このモデルはAI画像の約3割(2025年世代の生成器は約4割)を見逃します。「AIではない」証明にはなりません。",
+      "must_convey": "見逃し率。『AIではない』証明にならないこと。この注意を弱めない"
+    },
+    {
+      "id": "BDG-LEAD",
+      "screen": "BADGE",
+      "kind": "meaning",
+      "current": "AI製アカウントが溢れる今、「実在する人間である」ことはクリエイターの強い差別化になります。このツールは相互リンク方式の証明ページとバッジを生成します。入力内容はブラウザ外に送信されません。",
+      "must_convey": "誰向けか / 何が手に入るか / 送信されないこと"
+    },
+    {
+      "id": "BDG-MECHANISM",
+      "screen": "BADGE",
+      "kind": "meaning",
+      "current": "① 証明ページを生成 ② 自分の管理下で公開 ③ 各SNSのプロフィールに証明ページのURLを記載 ④ バッジを設置",
+      "must_convey": "相互リンク証明の4段階。順序を崩さない",
+      "placement": "入力フォームより前に読めること"
+    },
+    {
+      "id": "BDG-NOT-IMPOSSIBLE",
+      "screen": "BADGE",
+      "kind": "verbatim",
+      "value": "不可能ではありません",
+      "note": "test_pages_smoke.js が完全一致で検査。断定を避けた表現であり、削除も言い換えも不可"
+    },
+    {
+      "id": "BDG-STATEMENT-DEFAULT",
+      "screen": "BADGE",
+      "kind": "verbatim",
+      "value": "私はAIによって生成された架空の人物ではなく、実在する人間のクリエイターです。このページに記載したSNSアカウントはすべて私本人が運用しており、各プロフィールには本ページのURLを記載しています。私の作品における生成AIの利用有無は、各作品の説明に明記します。",
+      "note": "実在宣言の既定文。利用者が編集できることが前提"
+    },
+    {
+      "id": "BDG-FINAL-STEP",
+      "screen": "BADGE",
+      "kind": "meaning",
+      "current": "入力したすべてのSNSプロフィール(bio)に証明ページのURLを記載する — これを忘れると証明の輪が完成しません",
+      "must_convey": "これを忘れると証明が成立しないという重み",
+      "placement": "生成物のダウンロード導線と同じ画面で、見落とされない位置"
+    },
+    {
+      "id": "BDG-DISCLAIMER",
+      "screen": "BADGE",
+      "kind": "meaning",
+      "current": "この証明が示すこと・示さないこと: 相互リンク証明は「これらのアカウント群を同一人物(組織)が管理している」ことを示します。…虚偽の宣言はご自身の信用を損なうだけでなく、法的責任を問われる可能性があります。",
+      "must_convey": "示す範囲の限定 / 裏付けリンクの質が効くこと / 虚偽宣言の法的責任"
+    },
+    {
+      "id": "BDG-SHIELDS-NOTE",
+      "screen": "BADGE",
+      "kind": "meaning",
+      "current": "Markdown版のバッジ画像は shields.io(外部サービス)を利用しています。自サイトに貼る場合はHTML版(完全自己完結のSVG)がおすすめです。",
+      "must_convey": "Markdown版だけが外部依存であること"
+    },
+    {
+      "id": "AIC-LEAD",
+      "screen": "AICHECK",
+      "kind": "meaning",
+      "current": "SNS・マッチングアプリで出会ったアカウントについて、当てはまる項目にチェックを入れてください。…リスクスコアを算出します。すべてブラウザ内で完結します。",
+      "must_convey": "自己申告のチェックリストであること / スコアが出ること / 送信されないこと"
+    },
+    {
+      "id": "AIC-BAND-LOW",
+      "screen": "AICHECK",
+      "kind": "meaning",
+      "current": "リスク: 低 / 現時点で強い危険信号はありません。ただし金銭の話が出た瞬間に再評価を。",
+      "must_convey": "低でも安全宣言ではないこと"
+    },
+    {
+      "id": "AIC-BAND-MID",
+      "screen": "AICHECK",
+      "kind": "meaning",
+      "current": "リスク: 中 / 複数の注意信号があります。ビデオ通話・逆画像検索・来歴チェッカーでの検証を強くおすすめします。金銭・個人情報は渡さないでください。",
+      "must_convey": "次にとる具体的な検証行動"
+    },
+    {
+      "id": "AIC-BAND-HIGH",
+      "screen": "AICHECK",
+      "kind": "meaning",
+      "current": "リスク: 高 / AI製・なりすまし・詐欺アカウントの典型的特徴に多数一致しています。金銭・個人情報のやり取りは絶対に避け、ブロック・通報を検討してください。",
+      "must_convey": "断定ではなく『特徴への一致』であること / とるべき行動"
+    },
+    {
+      "id": "AIC-EXPOSURE-WARNING",
+      "screen": "AICHECK",
+      "kind": "verbatim-fragments",
+      "fragments": [
+        "断定して晒す使い方はしないでください",
+        "名誉毀損"
+      ],
+      "current": "持ち出す前に: この結果はあなた自身が判断するための記録です。相手のアカウント名・写真とあわせて公開し、特定の人を「AI」「詐欺」と断定して晒す使い方はしないでください。事実に反した場合、名誉毀損・信用毀損にあたるおそれがあります。通報するなら、公開の場ではなくプラットフォームの通報窓口や警察(#9110)へ。",
+      "placement": "REQUIRED: 結果を持ち出す操作(コピー・画像保存)より DOM 順で前。折りたたみの中に入れない。持ち出しボタンより小さく目立たなくしない",
+      "note": "test_pages_smoke.js が2つの断片を完全一致で検査"
+    },
+    {
+      "id": "AIC-DISCLAIMER",
+      "screen": "AICHECK",
+      "kind": "meaning",
+      "current": "免責: この診断は統計的な傾向に基づく参考情報です。実在の人でも当てはまる項目はありますし、巧妙な詐欺は項目を回避します。金銭・投資・暗号資産の話が出たら、スコアに関わらず詐欺を疑ってください。被害が疑われる場合は警察相談専用電話「#9110」または警察庁サイバー犯罪相談窓口へ。",
+      "must_convey": "参考情報であること / 金銭の話はスコアより優先 / 相談先(#9110・警察庁窓口)"
+    },
+    {
+      "id": "CRE-SAMPLE-NOTICE",
+      "screen": "CREATORS",
+      "kind": "verbatim-fragments",
+      "fragments": [
+        "まだ0件",
+        "見本"
+      ],
+      "current": "実在のクリエイターの掲載は、まだ0件です。下に並んでいるのはカードの見本で、どんな項目が載るかを示すためだけのものです。実在の人物ではありません。実在を売りにする名鑑で架空の人物をでっち上げるのは筋が通らないので、人名は載せていません。掲載申請を受け付け次第、見本は順次差し替えます。",
+      "placement": "REQUIRED: 見本掲載項目の並びより DOM 順で前",
+      "note": "test_pages_smoke.js が断片を検査。人名を載せないという判断は製品上の決定であり、見本に架空の人名を付け直してはならない"
+    },
+    {
+      "id": "CRE-SAMPLE-NAMES",
+      "screen": "CREATORS",
+      "kind": "verbatim",
+      "value": "掲載カードの見本 ①",
+      "note": "smoke が完全一致で検査。①②③④の4枚。人名に置き換えてはならない"
+    },
+    {
+      "id": "CRE-RECRUIT",
+      "screen": "CREATORS",
+      "kind": "meaning",
+      "current": "📣 掲載クリエイター募集中(無料)。掲載条件は「実在証明バッジで証明ページを公開し、SNSとの相互リンクを完成させていること」。",
+      "must_convey": "募集していること / 無料であること / 掲載条件 / 申請導線"
+    },
+    {
+      "id": "CRE-NO-FEE",
+      "screen": "CREATORS",
+      "kind": "meaning",
+      "current": "掲載は実在を保証する審査ではなく、相互リンク証明の輪が閉じていることの確認に基づくものです。掲載料・審査料・優先表示料は一切いただきません(利用規約第6条)。",
+      "must_convey": "審査の性質の限定 / 無料であること"
+    },
+    {
+      "id": "DOC-LIABILITY",
+      "screen": "DOCS",
+      "kind": "verbatim",
+      "value": "故意または重大な過失",
+      "note": "verify_site.py と smoke が検査。全部免責は消費者契約法8条で無効なので、この限定表現を落としてはならない"
+    },
+    {
+      "id": "DOC-OFFLINE",
+      "screen": "DOCS",
+      "kind": "verbatim",
+      "value": "オフラインでは開けません",
+      "note": "smoke が検査。『オフラインでも動作します』は過去の虚偽表現で復活禁止"
+    },
+    {
+      "id": "RPT-LICENSES",
+      "screen": "REPORT",
+      "kind": "verbatim-fragments",
+      "fragments": [
+        "CDLA-Permissive-2.0",
+        "CC BY 2.0",
+        "Unsplash License",
+        "Pexels License"
+      ],
+      "note": "verify_site.py が必須記載として検査。学習データの帰属表示"
+    },
+    {
+      "id": "RPT-CORRECTIONS",
+      "screen": "REPORT",
+      "kind": "verbatim",
+      "value": "訂正の履歴",
+      "note": "smoke が検査。過去の訂正を消さないという製品上の約束"
+    },
+    {
+      "id": "RPT-WEAKNESS",
+      "screen": "REPORT",
+      "kind": "verbatim",
+      "value": "4割近く見逃します",
+      "note": "smoke が report と business の両方で検査"
+    },
+    {
+      "id": "BIZ-PRICE",
+      "screen": "BUSINESS",
+      "kind": "verbatim",
+      "value": "30〜100万円",
+      "note": "smoke が検査。確定価格ではなく目安である旨の注記とセット"
+    },
+    {
+      "id": "BIZ-REFUSALS",
+      "screen": "BUSINESS",
+      "kind": "verbatim",
+      "value": "お引き受けしないこと",
+      "note": "smoke が検査。断る用途の明示"
+    },
+    {
+      "id": "PRIVACY-STORAGE",
+      "screen": "LEGAL_PRIVACY",
+      "kind": "verbatim-fragments",
+      "fragments": [
+        "Cache Storage",
+        "shields.io"
+      ],
+      "note": "verify_site.py と smoke が検査"
+    },
+    {
+      "id": "TERMS-S8",
+      "screen": "LEGAL_TERMS",
+      "kind": "verbatim-fragments",
+      "fragments": [
+        "第8条(免責)",
+        "故意または重大な過失",
+        "名誉毀損"
+      ],
+      "note": "verify_site.py と smoke が検査"
+    },
+    {
+      "id": "CREDITS-ATTRIBUTION",
+      "screen": "LEGAL_CREDITS",
+      "kind": "verbatim-fragments",
+      "fragments": [
+        "MIT License",
+        "Copyright (c) Microsoft Corporation",
+        "Copyright 2021 Adobe",
+        "CC BY 2.0"
+      ],
+      "note": "verify_site.py と smoke が検査。OSSの著作権表示は法的義務"
+    },
+    {
+      "id": "FOOT-PRIVACY-LINE",
+      "screen": "ALL",
+      "kind": "meaning",
+      "current": "HONMONO プロジェクト — すべての処理はあなたのブラウザ内で完結します。画像やフォーム入力が外部に送信されることはありません。",
+      "must_convey": "端末内完結。ページごとに文言の細部は異なるが、この事実は全ページで読める"
+    }
+  ],
+  "forbidden_strings": [
+    {
+      "value": "オフラインでも動作します",
+      "reason": "事実に反する(Service Worker がない)"
+    },
+    {
+      "value": "なぜ偽造できない",
+      "reason": "断定。相互リンクは破られうる"
+    },
+    {
+      "value": "いかなる損害についても、運営者は責任を負いません",
+      "reason": "消費者契約法8条により条項ごと無効"
+    },
+    {
+      "value": "(サンプル)葉山 / 如月 / 真田 / 音無 などの架空の人名",
+      "reason": "実在を売る名鑑で架空の人物を並べるのは筋が通らない"
+    }
+  ],
+  "forbidden_new_claims": [
+    "精度・検出率・誤判定率について、TRUST_AND_SAFETY_FACTS.json の measured_numbers に無い数値を書くこと",
+    "『AI生成でないことを証明できる』という主旨の表現",
+    "『100%』『確実に』『必ず』を判定に対して使うこと",
+    "認証・認定・公的機関・第三者監査を思わせる表現(第三者による再測定は行われていない)",
+    "利用者数・導入実績・受賞歴(いずれも存在しない)",
+    "有料プラン・課金・トライアルの存在(全ツール無料)"
+  ],
+  "_verbatim_protected": "kind が verbatim で始まる項目の value / fragments は、自動検査が完全一致で見るため一切加工していない"
+}

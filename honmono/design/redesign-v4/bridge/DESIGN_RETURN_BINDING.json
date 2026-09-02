@@ -1,0 +1,31 @@
+{
+  "schema": "DESIGN_RETURN_BINDING/1.0 (request side)",
+  "request_id": "HONMONO-UI-REDESIGN-v4-6bda35f0a5ec",
+  "product": "HONMONO",
+  "pipeline": "UI_REDESIGN_PIPELINE_v4.0",
+  "phase": "PHASE 4 — CHATGPT DESIGN REQUEST",
+  "created_at": "2026-09-02",
+  "requested_by": "Claude Code (implementer / NOT design authority)",
+  "design_authority": "ChatGPT",
+  "expects_return_schema": "DESIGN_RETURN_SCHEMA.json",
+  "file_hashes": {
+    "PRODUCT_TRUTH.json": "a89ed59f32cd935339b9bcfbbd9373e2d3aa0e83dc1694fb075de1b4946c6372",
+    "FUNCTION_FREEZE.json": "798bedb253dbcb34b9f57ae8597f2d325d5f6f12f2a9a174bae1f28dd786519c",
+    "SCREEN_STATE_INVENTORY.json": "db1a94e28a371aa6be794da67386d1e0d82e559e40d2099e363fa246eb576660",
+    "REQUIRED_COPY.json": "ec2506cd3208c6e162bb178af6410a4d898a4cfe3343ceb75992725d1e14aef5",
+    "TECHNICAL_CONSTRAINTS.json": "6ba539898f8f90022f4018a05a46adc00006b005be6bf363d228d6b70c8fc122",
+    "TRUST_AND_SAFETY_FACTS.json": "08bf8b507f4c58faa0193843844fb5e5db5b8079eac63f8dbc3015ad89c39319",
+    "BLIND_DESIGN_BRIEF.md": "2ba000b500c21a12d2c4f27d7b0adc7abe4db5ce5f41461c7bf224e52efc60b1",
+    "FUNCTION_PRESENCE_CONTRACT.json": "60d93436ac6be47bd0864f4a2b655d9557cdb93912a01c34524128c6134c9de1",
+    "DESIGN_RETURN_SCHEMA.json": "563d27eb599302fc578873b43cc94dcb71f3f3f06532727660d0d38d61208625",
+    "CHATGPT_INSTRUCTIONS.md": "5cd66e5c5afe9bcc4fc06cd6d0e8d2ebea1cabb862bb2a40aa762c9440696b7b"
+  },
+  "hash_algorithm": "sha256",
+  "contains_current_visual_assets": false,
+  "product_asset_fixed": [],
+  "notes": [
+    "現行UIのスクリーンショット・CSS・レイアウトは意図的に同梱していない(Phase 2 VISUAL SANITIZATION)",
+    "製品identityとして固定のビジュアルアセットは存在しない。固定なのは製品名の表記 HONMONO のみ",
+    "返却時は DESIGN_RETURN_BINDING.json の responds_to_request_id にこの request_id を、function_freeze_hash に上記 FUNCTION_FREEZE.json のハッシュを入れること"
+  ]
+}

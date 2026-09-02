@@ -1,0 +1,137 @@
+{
+  "schema": "DESIGN_RETURN_SCHEMA/1.0",
+  "generated_at": "2026-09-02",
+  "purpose": "Design Authority からの返却物の形式を定める。Phase 5 の Design Return Verify は、この形式に対して機械検証を行う。",
+  "delivery": {
+    "format": "ZIP。ルート直下に下記のファイル名で配置する",
+    "encoding": "テキストは UTF-8 / 改行 LF",
+    "language": "文書は日本語または英語。UIに載る文言は日本語"
+  },
+  "required_files": [
+    {
+      "path": "DESIGN_DECISION.md",
+      "must_contain_sections": [
+        "VISUAL_DIRECTION — 何を目指すか。1〜3文の宣言",
+        "RATIONALE — なぜこの方向が、この製品(断定しない・端末内完結・実測のみ)に合うのか",
+        "PERSONALITY — Color Personality / Typography Personality / Motion Personality をそれぞれ言語化",
+        "SIGNATURE_ELEMENT — この製品を一目で識別させる要素。無い場合は『無し』と明記",
+        "VISUAL_METAPHOR — 使う比喩。人物・顔・手は使えない前提で",
+        "SCREEN_ROLE_MAP — 各画面を BRAND_CRITICAL / TASK_CRITICAL / DOCUMENT のどれとして扱うか",
+        "SHARED_DESIGN_LANGUAGE — 画面役割が違っても共通に保つもの(color language / typography family / signature motif / icon language / surface language / motion character)",
+        "INFORMATION_ARCHITECTURE — 11画面の束ね方。主操作の選定と、格下げの判断とその理由",
+        "REJECTED_ALTERNATIVES — 検討して採らなかった方向と、その理由(任意だが推奨)"
+      ]
+    },
+    {
+      "path": "DESIGN_SYSTEM.md",
+      "must_contain_sections": [
+        "COLOR — light と dark の両方。役割名(surface / text / accent / ok / warn / bad / info など)ごとに値を定義。**両テーマで独立に定義すること**。コントラスト比を明記",
+        "TYPOGRAPHY — OS標準フォントのみで成立するスタック。**文字階層は5段以内**。各段のサイズ・ウェイト・行間・用途",
+        "SPACING — スケールと適用規則",
+        "RADIUS — **3種以内**",
+        "ELEVATION_SURFACE — 面の重なりをどう表現するか(影を使う/使わないを含む)",
+        "STATE_LANGUAGE — 4段階(bad / warn / ok / info)の視覚表現。**色だけに依存しないこと**",
+        "ICON_LANGUAGE — 何を、どの様式で記号化するか。SVGで描ける範囲であること",
+        "FOCUS_AND_A11Y — フォーカス表示・タップ領域の下限・コントラストの下限",
+        "TOKENS — 実装が参照する名前と値の一覧(実装は生値を新たに書かず、この名前だけを使う)"
+      ],
+      "hard_limits": { "text_scale_levels": 5, "radius_variants": 3 }
+    },
+    {
+      "path": "SCREEN_SPEC.md",
+      "must_cover_screens": ["HOME","CHECKER","AICHECK","BADGE","CREATORS","REPORT","BUSINESS","DOCS","LEGAL_PRIVACY","LEGAL_TERMS","LEGAL_CREDITS"],
+      "per_screen_required": [
+        "SCREEN_ROLE",
+        "PRIMARY_ACTION — この画面の主操作(1つ)",
+        "COMPOSITION — 構成と視覚的階層",
+        "CAPABILITY_PRESENCE — FUNCTION_PRESENCE_CONTRACT の各 capability をこの画面でどう成立させるか",
+        "STATE_PRESENTATION — SCREEN_STATE_INVENTORY の全 S-ID について、その状態をどう見せるか",
+        "RESPONSIVE — 360 / 390 / 430 での振る舞い",
+        "COPY_PLACEMENT — REQUIRED_COPY の各項目をどこに置くか。BLIND_DESIGN_BRIEF §7 の PL-1〜PL-7 を満たすことを明示"
+      ]
+    },
+    {
+      "path": "MOTION_SPEC.md",
+      "per_motion_required": [
+        "MOTION_ID",
+        "PURPOSE — Feedback / State Transition / Brand Motion のいずれか(他は不可)",
+        "TARGET — どの要素・どの状態遷移",
+        "TRIGGER",
+        "PROPERTIES — transform / opacity 等。コンポジタで完結すること",
+        "DURATION_MS",
+        "EASING",
+        "REDUCED_MOTION — prefers-reduced-motion: reduce のときの挙動(必須)"
+      ],
+      "constraints": [
+        "無限アニメーションは、待ち状態の表示以外では使わない",
+        "レイアウトを動かすプロパティ(width/height/top/left/margin)のアニメーションは避ける",
+        "大面積の animated blur は不可",
+        "スクロール乗っ取りは不可",
+        "利用者の操作をブロックする長さのモーションは不可",
+        "推論中・解析中はメインスレッドが重くなるため、その区間のモーションはCSS完結のものに限る"
+      ]
+    },
+    {
+      "path": "ASSET_MANIFEST.json",
+      "shape": {
+        "assets": [
+          {
+            "id": "string — 実装が参照する識別子",
+            "kind": "logo | icon | illustration | diagram | background | og_image",
+            "format": "svg | png | webp | inline_svg",
+            "usage": "どの画面のどこで使うか",
+            "source": "authored_by_design_authority | to_be_authored_by_implementer",
+            "spec": "実装が再現できるだけの記述(寸法・ストローク・比率・色トークン名)",
+            "human_depiction": "must be false — 人物・顔・手は不可",
+            "external_dependency": "must be false — 外部からの読み込みは不可"
+          }
+        ]
+      },
+      "note": "アセットの実体を同梱できない場合でも、実装が再現できる spec があれば可。外部URLで配布されるアセットは受け取れない(CSPで読み込めないため)"
+    },
+    {
+      "path": "DESIGN_RETURN_BINDING.json",
+      "shape": {
+        "binding_version": "string",
+        "responds_to_request_id": "string — DESIGN_RETURN_BINDING.json(request側)の request_id と一致すること",
+        "function_freeze_hash": "string — 受け取った FUNCTION_FREEZE.json の sha256。改変していないことの宣言",
+        "covered_capability_ids": ["FUNCTION_PRESENCE_CONTRACT の全 capability_id"],
+        "covered_state_ids": ["SCREEN_STATE_INVENTORY の全 S-ID"],
+        "declared_no_function_change": "boolean — true でなければ Verify で落ちる",
+        "declared_no_copy_meaning_change": "boolean — 同上",
+        "declared_no_external_dependency": "boolean — 同上",
+        "declared_no_human_depiction": "boolean — 同上",
+        "unresolved_design_questions": ["決めきれなかった項目。空配列でよい"]
+      }
+    }
+  ],
+  "required_visuals": [
+    { "id": "HOME_MASTER", "what": "HOME の完成ビジュアル", "widths": [390], "themes": ["light","dark"], "format": "png | jpg | pdf" },
+    { "id": "TASK_MASTER", "what": "TASK_CRITICAL 画面の完成ビジュアル。最低でも CHECKER の結果表示状態を含むこと", "widths": [390], "themes": ["light","dark"], "format": "png | jpg | pdf" },
+    { "id": "STATE_VISUALS", "what": "状態の見せ方。最低限、CHECKER の6結論・4段階の根拠タグ・画素判定の3段階・AICHECK の3帯・待ち状態・空状態・エラー状態", "widths": [390], "themes": ["light"], "format": "png | jpg | pdf" }
+  ],
+  "optional_visuals": [
+    { "id": "NARROW_MASTER", "what": "360幅での HOME と CHECKER 結果" },
+    { "id": "WIDE_MASTER", "what": "430幅での HOME と CHECKER 結果" },
+    { "id": "BACKGROUND_ASSETS", "what": "背景・図解のためのアセット" }
+  ],
+  "verification_performed_by_implementer": {
+    "note": "Claude Code は Design Quality を評価しない。以下の機械的な整合性のみを検査する。",
+    "checks": [
+      "required_files が全て存在する",
+      "DESIGN_RETURN_BINDING.json の request_id が一致する",
+      "function_freeze_hash が送付した FUNCTION_FREEZE.json の sha256 と一致する",
+      "covered_capability_ids が FUNCTION_PRESENCE_CONTRACT の全 capability を含む(missing = 0)",
+      "covered_state_ids が SCREEN_STATE_INVENTORY の全 S-ID を含む(missing = 0)",
+      "SCREEN_SPEC.md が11画面すべてを扱っている",
+      "declared_* の4項目がすべて true",
+      "MOTION_SPEC.md の全モーションに PURPOSE と REDUCED_MOTION がある",
+      "ASSET_MANIFEST.json に external_dependency: true / human_depiction: true が無い",
+      "Function Freeze と矛盾する指示が無い(機能削除・状態削除・文言の意味変更・配置制約 PL-1〜PL-7 の違反)",
+      "実装不能な指示が無い(外部フォント・外部CDN・新規ランタイム依存・サーバー処理・Service Worker 前提)",
+      "TRUST_AND_SAFETY_FACTS の measured_numbers に無い数値、および forbidden_new_claims に該当する主張が無い",
+      "DESIGN_SYSTEM の hard_limits(文字階層5・面の丸み3)を超えていない"
+    ],
+    "on_failure": "Design Authority へ差し戻す。Claude Code が自分で補完してはならない"
+  }
+}

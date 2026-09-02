@@ -1,0 +1,921 @@
+{
+  "generated_at": "2026-09-02",
+  "mode": "verify",
+  "function_coverage_pct": 100,
+  "state_coverage_pct": 100,
+  "functions_total": 93,
+  "functions_unverified": [],
+  "functions_failed": [],
+  "states_total": 56,
+  "states_unverified": [],
+  "states_failed": [],
+  "checks": [
+    {
+      "name": "RUNTIME /honmono/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/checker/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/badge/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/aicheck/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/creators/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/docs/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/report/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/business/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/legal/privacy.html",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/legal/terms.html",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/legal/credits.html",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/checker/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/checker/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/checker/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/checker/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/badge/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "PL-1 晒し警告が持ち出し操作より前",
+      "ok": true,
+      "detail": "{\"warn\":6380,\"copy\":6543,\"save\":6632,\"hidden\":false}"
+    },
+    {
+      "name": "RUNTIME /honmono/aicheck/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "PL-2 見本の注意が掲載項目より前",
+      "ok": true,
+      "detail": "{\"notice\":1324,\"cards\":1955}"
+    },
+    {
+      "name": "RUNTIME /honmono/creators/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/docs/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/report/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/business/",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/legal/privacy.html",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/legal/terms.html",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RUNTIME /honmono/legal/credits.html",
+      "ok": true,
+      "detail": "エラーなし"
+    },
+    {
+      "name": "RESPONSIVE 横溢れ0",
+      "ok": true,
+      "detail": "66通りで横溢れなし"
+    },
+    {
+      "name": "RESPONSIVE 主操作が360pxで到達可能",
+      "ok": true,
+      "detail": "4画面すべて到達可能"
+    },
+    {
+      "name": "MOTION reduced-motion で無限アニメ0",
+      "ok": true,
+      "detail": "無限アニメーションなし"
+    },
+    {
+      "name": "MOTION reduced-motion で長時間アニメ0",
+      "ok": true,
+      "detail": "1秒超のアニメーションなし"
+    }
+  ],
+  "problems": [],
+  "detail": {
+    "functions": {
+      "F-GLOBAL-001": {
+        "ok": true,
+        "method": "browser",
+        "detail": "全ページで主要ナビが到達可能"
+      },
+      "F-GLOBAL-002": {
+        "ok": true,
+        "method": "browser",
+        "detail": "ブランドからトップへ戻れる"
+      },
+      "F-GLOBAL-003": {
+        "ok": true,
+        "method": "browser",
+        "detail": "aria-current='page' が各ツールページに1つ"
+      },
+      "F-GLOBAL-004": {
+        "ok": true,
+        "method": "browser",
+        "detail": "法務3リンクが全ページのDOMに存在"
+      },
+      "F-GLOBAL-006": {
+        "ok": true,
+        "method": "browser",
+        "detail": "入力を受け取る4画面で端末内完結を明示"
+      },
+      "F-GLOBAL-005": {
+        "ok": true,
+        "method": "browser",
+        "detail": "ライト/ダークで配色が切り替わる"
+      },
+      "F-HOME-001": {
+        "ok": true,
+        "method": "browser",
+        "detail": "冒頭の主張が読める"
+      },
+      "F-HOME-002": {
+        "ok": true,
+        "method": "browser",
+        "detail": "4ツールへ1操作で到達できる"
+      },
+      "F-HOME-003": {
+        "ok": true,
+        "method": "browser",
+        "detail": "3本柱"
+      },
+      "F-HOME-004": {
+        "ok": true,
+        "method": "browser",
+        "detail": "ロードマップ"
+      },
+      "F-HOME-005": {
+        "ok": true,
+        "method": "browser",
+        "detail": "根拠と収益導線"
+      },
+      "F-HOME-006": {
+        "ok": true,
+        "method": "browser",
+        "detail": "免責"
+      },
+      "F-CHK-001": {
+        "ok": true,
+        "method": "browser",
+        "detail": "クリックでファイル選択が開く"
+      },
+      "F-CHK-003": {
+        "ok": true,
+        "method": "browser",
+        "detail": "Enterでファイル選択が開く"
+      },
+      "F-CHK-004": {
+        "ok": true,
+        "method": "browser",
+        "detail": "ドラッグ中の状態が付いて外れる"
+      },
+      "F-CHK-031": {
+        "ok": true,
+        "method": "browser",
+        "detail": "使いどころ"
+      },
+      "F-CHK-023": {
+        "ok": true,
+        "method": "browser",
+        "detail": "逆画像検索4リンク"
+      },
+      "F-CHK-029": {
+        "ok": true,
+        "method": "browser",
+        "detail": "モデル利用条件リンク"
+      },
+      "F-CHK-002": {
+        "ok": true,
+        "method": "browser",
+        "detail": "drop で受け取る"
+      },
+      "F-CHK-017": {
+        "ok": true,
+        "method": "browser",
+        "detail": "経緯推定の経路(該当時のみ提示)"
+      },
+      "F-CHK-012": {
+        "ok": true,
+        "method": "browser",
+        "detail": "PNGテキストチャンクから生成パラメータを検出"
+      },
+      "F-CHK-013": {
+        "ok": true,
+        "method": "browser",
+        "detail": "カメラEXIFを抽出"
+      },
+      "F-CHK-007": {
+        "ok": true,
+        "method": "browser",
+        "detail": "ファイル名の表示"
+      },
+      "F-CHK-006": {
+        "ok": true,
+        "method": "browser",
+        "detail": "静止画側のプレビューに切り替わる"
+      },
+      "F-CHK-015": {
+        "ok": true,
+        "method": "browser",
+        "detail": "ストック素材の痕跡を検出"
+      },
+      "F-CHK-011": {
+        "ok": true,
+        "method": "browser",
+        "detail": "XMPを解析し生データを開ける"
+      },
+      "F-CHK-022": {
+        "ok": true,
+        "method": "browser",
+        "detail": "XMP生データの開閉"
+      },
+      "F-CHK-016": {
+        "ok": true,
+        "method": "browser",
+        "detail": "AI定番サイズを弱い手がかりとして提示"
+      },
+      "F-CHK-010": {
+        "ok": true,
+        "method": "browser",
+        "detail": "C2PA検証の区画が出る"
+      },
+      "F-CHK-009": {
+        "ok": true,
+        "method": "browser",
+        "detail": "6種の結論をすべて再現"
+      },
+      "F-CHK-020": {
+        "ok": true,
+        "method": "browser",
+        "detail": "根拠タグ 注意/AI痕跡/実写材料/情報"
+      },
+      "F-CHK-021": {
+        "ok": true,
+        "method": "browser",
+        "detail": "メタデータ表が描画される"
+      },
+      "F-CHK-008": {
+        "ok": true,
+        "method": "browser",
+        "detail": "形式判定(JPEG/PNG)"
+      },
+      "F-CHK-014": {
+        "ok": true,
+        "method": "browser",
+        "detail": "AIツールパターン照合"
+      },
+      "F-CHK-019": {
+        "ok": true,
+        "method": "browser",
+        "detail": "全体スキャン経路"
+      },
+      "F-CHK-018": {
+        "ok": true,
+        "method": "browser",
+        "detail": "サムネイル照合の経路(サムネイルがある時のみ)"
+      },
+      "F-CHK-033": {
+        "ok": true,
+        "method": "browser",
+        "detail": "連続投入で結果が置き換わる"
+      },
+      "F-CHK-024": {
+        "ok": true,
+        "method": "browser",
+        "detail": "動画では画素判定の入口を出さない"
+      },
+      "F-CHK-005": {
+        "ok": true,
+        "method": "browser",
+        "detail": "同上"
+      },
+      "F-CHK-032": {
+        "ok": true,
+        "method": "browser",
+        "detail": "同上"
+      },
+      "F-CHK-034": {
+        "ok": true,
+        "method": "browser",
+        "detail": "blob URL を解放している"
+      },
+      "F-CHK-035": {
+        "ok": true,
+        "method": "browser",
+        "detail": "実測値の注記"
+      },
+      "F-CHK-025": {
+        "ok": true,
+        "method": "browser",
+        "detail": "実行ボタン"
+      },
+      "F-CHK-028": {
+        "ok": true,
+        "method": "browser",
+        "detail": "localStorage キー honmono_pixel_auto"
+      },
+      "F-CHK-026": {
+        "ok": true,
+        "method": "browser",
+        "detail": "同上"
+      },
+      "F-CHK-027": {
+        "ok": true,
+        "method": "browser",
+        "detail": "3段階のラベルと注意文"
+      },
+      "F-CHK-030": {
+        "ok": true,
+        "method": "browser",
+        "detail": "限界の説明"
+      },
+      "F-BDG-001": {
+        "ok": true,
+        "method": "browser",
+        "detail": "仕組みの4段階と断定回避"
+      },
+      "F-BDG-002": {
+        "ok": true,
+        "method": "browser",
+        "detail": "実在宣言の既定文が入っている"
+      },
+      "F-BDG-014": {
+        "ok": true,
+        "method": "browser",
+        "detail": "免責"
+      },
+      "F-BDG-003": {
+        "ok": true,
+        "method": "browser",
+        "detail": "同上"
+      },
+      "F-BDG-004": {
+        "ok": true,
+        "method": "browser",
+        "detail": "生成"
+      },
+      "F-BDG-005": {
+        "ok": true,
+        "method": "browser",
+        "detail": "プレビューに入力が反映される"
+      },
+      "F-BDG-006": {
+        "ok": true,
+        "method": "browser",
+        "detail": "ダウンロード導線"
+      },
+      "F-BDG-007": {
+        "ok": true,
+        "method": "browser",
+        "detail": "バッジSVG"
+      },
+      "F-BDG-008": {
+        "ok": true,
+        "method": "browser",
+        "detail": "HTMLスニペット"
+      },
+      "F-BDG-009": {
+        "ok": true,
+        "method": "browser",
+        "detail": "Markdownスニペット"
+      },
+      "F-BDG-011": {
+        "ok": true,
+        "method": "browser",
+        "detail": "危険なURLスキームを弾く"
+      },
+      "F-BDG-012": {
+        "ok": true,
+        "method": "browser",
+        "detail": "生成後に出力へ視線が移る"
+      },
+      "F-BDG-010": {
+        "ok": true,
+        "method": "browser",
+        "detail": "最後の仕上げ手順"
+      },
+      "F-BDG-013": {
+        "ok": true,
+        "method": "browser",
+        "detail": "外部依存の注記"
+      },
+      "F-AIC-001": {
+        "ok": true,
+        "method": "browser",
+        "detail": "リスク項目 18件"
+      },
+      "F-AIC-002": {
+        "ok": true,
+        "method": "browser",
+        "detail": "信頼シグナル 4件"
+      },
+      "F-AIC-003": {
+        "ok": true,
+        "method": "browser",
+        "detail": "全項目に重み表示"
+      },
+      "F-AIC-004": {
+        "ok": true,
+        "method": "browser",
+        "detail": "全リスク項目に理由"
+      },
+      "F-AIC-005": {
+        "ok": true,
+        "method": "browser",
+        "detail": "チェックで即時に更新される"
+      },
+      "F-AIC-006": {
+        "ok": true,
+        "method": "browser",
+        "detail": "決定的シグナルの下限保証"
+      },
+      "F-AIC-007": {
+        "ok": true,
+        "method": "browser",
+        "detail": "水準の可視化"
+      },
+      "F-AIC-008": {
+        "ok": true,
+        "method": "browser",
+        "detail": "帯ごとの助言"
+      },
+      "F-AIC-010": {
+        "ok": true,
+        "method": "browser",
+        "detail": "警告=6380 コピー=6543 画像=6632 折りたたみ=false"
+      },
+      "F-AIC-011": {
+        "ok": true,
+        "method": "browser",
+        "detail": "結果テキストの持ち出し"
+      },
+      "F-AIC-013": {
+        "ok": true,
+        "method": "browser",
+        "detail": "コピー完了表示"
+      },
+      "F-AIC-012": {
+        "ok": true,
+        "method": "browser",
+        "detail": "結果画像の生成"
+      },
+      "F-AIC-009": {
+        "ok": true,
+        "method": "browser",
+        "detail": "チェック中も結果を参照できる"
+      },
+      "F-AIC-014": {
+        "ok": true,
+        "method": "browser",
+        "detail": "免責と相談先"
+      },
+      "F-CRE-005": {
+        "ok": true,
+        "method": "browser",
+        "detail": "掲載項目 4件"
+      },
+      "F-CRE-007": {
+        "ok": true,
+        "method": "browser",
+        "detail": "creators.json 読み込み(フォールバックあり)"
+      },
+      "F-CRE-001": {
+        "ok": true,
+        "method": "browser",
+        "detail": "掲載申請導線"
+      },
+      "F-CRE-008": {
+        "ok": true,
+        "method": "browser",
+        "detail": "掲載料なしの明記"
+      },
+      "F-CRE-002": {
+        "ok": true,
+        "method": "browser",
+        "detail": "{\"notice\":1324,\"cards\":1955}"
+      },
+      "F-CRE-003": {
+        "ok": true,
+        "method": "browser",
+        "detail": "キーワードで絞り込める"
+      },
+      "F-CRE-006": {
+        "ok": true,
+        "method": "browser",
+        "detail": "同上"
+      },
+      "F-CRE-004": {
+        "ok": true,
+        "method": "browser",
+        "detail": "絞り込み 5種"
+      },
+      "F-DOC-001": {
+        "ok": true,
+        "method": "browser",
+        "detail": "目次アンカーがすべて実在"
+      },
+      "F-DOC-002": {
+        "ok": true,
+        "method": "browser",
+        "detail": "必須の記載あり"
+      },
+      "F-RPT-001": {
+        "ok": true,
+        "method": "browser",
+        "detail": "目次アンカーがすべて実在"
+      },
+      "F-RPT-002": {
+        "ok": true,
+        "method": "browser",
+        "detail": "必須の記載あり"
+      },
+      "F-BIZ-001": {
+        "ok": true,
+        "method": "browser",
+        "detail": "4指標"
+      },
+      "F-BIZ-002": {
+        "ok": true,
+        "method": "browser",
+        "detail": "本文"
+      },
+      "F-BIZ-003": {
+        "ok": true,
+        "method": "browser",
+        "detail": "問い合わせ導線と公開の警告"
+      },
+      "F-LEG-001": {
+        "ok": true,
+        "method": "browser",
+        "detail": "必須の記載あり"
+      },
+      "F-LEG-002": {
+        "ok": true,
+        "method": "browser",
+        "detail": "必須の記載あり"
+      },
+      "F-LEG-003": {
+        "ok": true,
+        "method": "browser",
+        "detail": "必須の記載あり"
+      }
+    },
+    "states": {
+      "S-THEME-LIGHT": {
+        "ok": true,
+        "method": "browser",
+        "detail": "bg=rgb(250, 250, 249) fg=rgb(28, 25, 23)"
+      },
+      "S-THEME-DARK": {
+        "ok": true,
+        "method": "browser",
+        "detail": "bg=rgb(22, 24, 29) fg=rgb(231, 229, 228)"
+      },
+      "S-FOCUS-VISIBLE": {
+        "ok": true,
+        "method": "browser",
+        "detail": "主操作にキーボードフォーカスが乗る"
+      },
+      "S-HOME-DEFAULT": {
+        "ok": true,
+        "method": "browser",
+        "detail": "本文が描画される"
+      },
+      "S-CHK-IDLE": {
+        "ok": true,
+        "method": "browser",
+        "detail": "受け口が可視"
+      },
+      "S-CHK-DRAGOVER": {
+        "ok": true,
+        "method": "browser",
+        "detail": "同上"
+      },
+      "S-CHK-RESULT": {
+        "ok": true,
+        "method": "browser",
+        "detail": "動画プレビュー"
+      },
+      "S-CHK-V-UNKNOWN": {
+        "ok": true,
+        "method": "browser",
+        "detail": "❓ 判定材料がありません"
+      },
+      "S-CHK-V-AI": {
+        "ok": true,
+        "method": "browser",
+        "detail": "🤖 AI生成の痕跡があります"
+      },
+      "S-CHK-V-CAMERA": {
+        "ok": true,
+        "method": "browser",
+        "detail": "📷 カメラ撮影の痕跡があります"
+      },
+      "S-CHK-V-STOCK": {
+        "ok": true,
+        "method": "browser",
+        "detail": "🗂️ ストック素材サイト由来の画像です"
+      },
+      "S-CHK-V-WEAK": {
+        "ok": true,
+        "method": "browser",
+        "detail": "🟡 AI生成を疑う手がかりがあります(弱)"
+      },
+      "S-CHK-V-C2PA": {
+        "ok": true,
+        "method": "browser",
+        "detail": "📜 コンテンツ来歴(C2PA)付きの画像です"
+      },
+      "S-CHK-C2PA-UNREADABLE": {
+        "ok": true,
+        "method": "browser",
+        "detail": "C2PAらしきデータはありますが、有効なマニフェストは見つかりませんでした。"
+      },
+      "S-CHK-META-EMPTY": {
+        "ok": true,
+        "method": "browser",
+        "detail": "空でもメタ欄が意味を持つ"
+      },
+      "S-CHK-UNSUPPORTED": {
+        "ok": true,
+        "method": "browser",
+        "detail": "非対応の案内"
+      },
+      "S-CHK-PIXEL-HIDDEN": {
+        "ok": true,
+        "method": "browser",
+        "detail": "同上"
+      },
+      "S-CHK-TOO-LARGE": {
+        "ok": true,
+        "method": "browser",
+        "detail": "300MB超を解析前に断る"
+      },
+      "S-CHK-ERROR": {
+        "ok": true,
+        "method": "browser",
+        "detail": "解析失敗を伝える"
+      },
+      "S-CHK-ANALYZING": {
+        "ok": true,
+        "method": "browser",
+        "detail": "解析中であることを示す"
+      },
+      "S-CHK-PIXEL-IDLE": {
+        "ok": true,
+        "method": "browser",
+        "detail": "静止画では入口が出る"
+      },
+      "S-CHK-PIXEL-AUTO-OFF": {
+        "ok": true,
+        "method": "browser",
+        "detail": "既定は手動"
+      },
+      "S-CHK-PIXEL-AUTO-ON": {
+        "ok": true,
+        "method": "browser",
+        "detail": "同上"
+      },
+      "S-CHK-PIXEL-HIGH": {
+        "ok": true,
+        "method": "browser(推論を差し替え)",
+        "detail": "AI生成の可能性が高い"
+      },
+      "S-CHK-PIXEL-MID": {
+        "ok": true,
+        "method": "browser(推論を差し替え)",
+        "detail": "AI生成の疑いあり(弱)"
+      },
+      "S-CHK-PIXEL-LOW": {
+        "ok": true,
+        "method": "browser(推論を差し替え)",
+        "detail": "AI生成の兆候は薄い"
+      },
+      "S-CHK-PIXEL-LOADING": {
+        "ok": true,
+        "method": "browser",
+        "detail": "読み込み中の進捗が出る"
+      },
+      "S-CHK-PIXEL-ERROR": {
+        "ok": true,
+        "method": "browser",
+        "detail": "失敗を伝え、再試行できる"
+      },
+      "S-CHK-C2PA-LOADING": {
+        "ok": true,
+        "method": "static",
+        "detail": "C2PA読み込み中の表示"
+      },
+      "S-CHK-C2PA-OK": {
+        "ok": true,
+        "method": "static",
+        "detail": "C2PA署名有効"
+      },
+      "S-CHK-C2PA-BAD": {
+        "ok": true,
+        "method": "static",
+        "detail": "C2PA署名不正"
+      },
+      "S-CHK-C2PA-ENGINE-FAIL": {
+        "ok": true,
+        "method": "static",
+        "detail": "C2PAエンジン読込失敗"
+      },
+      "S-BDG-EMPTY": {
+        "ok": true,
+        "method": "browser",
+        "detail": "初期は出力なし"
+      },
+      "S-BDG-INVALID": {
+        "ok": true,
+        "method": "browser",
+        "detail": "活動名が空なら生成しない"
+      },
+      "S-BDG-FILLED": {
+        "ok": true,
+        "method": "browser",
+        "detail": "入力途中の状態"
+      },
+      "S-BDG-GENERATED": {
+        "ok": true,
+        "method": "browser",
+        "detail": "生成後の出力が出る"
+      },
+      "S-BDG-COPIED": {
+        "ok": true,
+        "method": "browser",
+        "detail": "コピー完了の合図"
+      },
+      "S-AIC-NONE-CHECKED": {
+        "ok": true,
+        "method": "browser",
+        "detail": "初期スコア0"
+      },
+      "S-AIC-LOW": {
+        "ok": true,
+        "method": "browser",
+        "detail": "低"
+      },
+      "S-AIC-PARTIAL": {
+        "ok": true,
+        "method": "browser",
+        "detail": "スコア 4"
+      },
+      "S-AIC-MID": {
+        "ok": true,
+        "method": "browser",
+        "detail": "決定的1件 → リスク: 中 40"
+      },
+      "S-AIC-HIGH": {
+        "ok": true,
+        "method": "browser",
+        "detail": "決定的2件 → リスク: 高 65"
+      },
+      "S-AIC-TRUST-APPLIED": {
+        "ok": true,
+        "method": "browser",
+        "detail": "65 → 50"
+      },
+      "S-AIC-COPIED": {
+        "ok": true,
+        "method": "browser",
+        "detail": "コピー完了の合図"
+      },
+      "S-CRE-LIST": {
+        "ok": true,
+        "method": "browser",
+        "detail": "一覧が出る"
+      },
+      "S-CRE-SAMPLE-ONLY": {
+        "ok": true,
+        "method": "browser",
+        "detail": "見本である旨が掲載項目より前"
+      },
+      "S-CRE-EMPTY": {
+        "ok": true,
+        "method": "browser",
+        "detail": "0件の表示"
+      },
+      "S-CRE-FILTER-ACTIVE": {
+        "ok": true,
+        "method": "browser",
+        "detail": "選択中が1つ"
+      },
+      "S-DOC-DEFAULT": {
+        "ok": true,
+        "method": "browser",
+        "detail": "本文が読める"
+      },
+      "S-RPT-DEFAULT": {
+        "ok": true,
+        "method": "browser",
+        "detail": "本文が読める"
+      },
+      "S-BIZ-DEFAULT": {
+        "ok": true,
+        "method": "browser",
+        "detail": "本文が読める"
+      },
+      "S-LEG-PRIVACY": {
+        "ok": true,
+        "method": "browser",
+        "detail": "本文が読める"
+      },
+      "S-LEG-TERMS": {
+        "ok": true,
+        "method": "browser",
+        "detail": "本文が読める"
+      },
+      "S-LEG-CREDITS": {
+        "ok": true,
+        "method": "browser",
+        "detail": "本文が読める"
+      },
+      "S-RPT-TABLE-SCROLL": {
+        "ok": true,
+        "method": "browser",
+        "detail": "数表が横スクロールで読み切れる"
+      },
+      "S-MOTION-REDUCED": {
+        "ok": true,
+        "method": "browser",
+        "detail": "reduced-motion で装飾モーションが止まる"
+      }
+    }
+  }
+}

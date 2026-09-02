@@ -1,10 +1,19 @@
 // 新規ページがスマホ幅で横に溢れていないかだけを機械的に見る(見た目の良し悪しは判定しない)。
 const { chromium } = require('playwright-core');
 const fs = require('fs'); const path = require('path'); const http = require('http');
-const REPO = path.resolve('C:/Users/gogyo/AppData/Local/Temp/hbk/site');
+// 検査対象のサイトルート。既定はこのファイルから見たリポジトリ直下(SITE_ROOT で差し替え可)。
+const REPO = path.resolve(process.env.SITE_ROOT || path.join(__dirname, '..', '..'));
 const PORT = 8772;
 const MIME = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.json':'application/json; charset=utf-8', '.png':'image/png', '.svg':'image/svg+xml' };
-function findBrowser(){ for (const c of ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe','C:/Program Files/Microsoft/Edge/Application/msedge.exe','C:/Program Files/Google/Chrome/Application/chrome.exe']) if (fs.existsSync(c)) return c; throw new Error('no browser'); }
+function findBrowser(){
+  if (process.env.CHROME_PATH && fs.existsSync(process.env.CHROME_PATH)) return process.env.CHROME_PATH;
+  const cands = ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe','C:/Program Files/Microsoft/Edge/Application/msedge.exe','C:/Program Files/Google/Chrome/Application/chrome.exe'];
+  const dir = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  if (dir && fs.existsSync(dir)) for (const d of fs.readdirSync(dir)) for (const rel of ['chrome-linux/chrome','chrome-linux/headless_shell']) cands.push(path.join(dir,d,rel));
+  cands.push('/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser');
+  for (const c of cands) if (fs.existsSync(c)) return c;
+  throw new Error('no browser (CHROME_PATH で指定してください)');
+}
 function serve(){ return new Promise(res=>{ const s=http.createServer((q,p)=>{ let u=decodeURIComponent(q.url.split('?')[0]); if(u.endsWith('/'))u+='index.html'; const f=path.join(REPO,u); if(!f.startsWith(REPO)||!fs.existsSync(f)||fs.statSync(f).isDirectory()){p.writeHead(404);p.end();return;} p.writeHead(200,{'Content-Type':MIME[path.extname(f)]||'application/octet-stream'}); fs.createReadStream(f).pipe(p); }); s.listen(PORT,()=>res(s)); }); }
 
 const URLS = ['/honmono/','/honmono/report/','/honmono/business/','/honmono/legal/privacy.html','/honmono/legal/terms.html','/honmono/legal/credits.html','/honmono/creators/','/honmono/docs/','/honmono/aicheck/'];

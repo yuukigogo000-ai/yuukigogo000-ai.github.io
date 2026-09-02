@@ -17,6 +17,7 @@
 <style>
   .toc { font-size: .9rem; }
   .toc a { display: inline-block; margin: 2px 10px 2px 0; }
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .usecase-table td:first-child { white-space: nowrap; font-weight: 600; }
   .step-flow { counter-reset: fstep; padding-left: 0; list-style: none; margin: 8px 0; }
   .step-flow li { counter-increment: fstep; position: relative; padding: 5px 0 5px 40px; font-size: .9rem; }
@@ -80,13 +81,13 @@
   </div>
 
   <h2 id="which">2. どのツールを使えばいい?</h2>
-  <table class="usecase-table">
+  <div class="scroll"><table class="usecase-table">
     <tr><th>あなたの状況</th><th>使うツール</th></tr>
     <tr><td>この画像、AI生成か知りたい</td><td><a href="../checker/">🔍 来歴チェッカー</a> に画像をドロップ</td></tr>
     <tr><td>このアカウント、実在する人か怪しい</td><td><a href="../aicheck/">🕵️ AIアカウント鑑定</a> でチェックリスト診断(画像があれば来歴チェッカーも併用)</td></tr>
     <tr><td>クリエイターとして「本物」を証明したい</td><td><a href="../badge/">🪪 実在証明バッジ</a> で証明ページを作成 → <a href="../creators/">🌟 名鑑</a> に掲載申請</td></tr>
     <tr><td>実在する人に仕事を頼みたい・応援したい</td><td><a href="../creators/">🌟 実在クリエイター名鑑</a> で検索</td></tr>
-  </table>
+  </table></div>
 
   <h2 id="checker">3. 画像来歴チェッカーの使い方</h2>
   <div class="card">

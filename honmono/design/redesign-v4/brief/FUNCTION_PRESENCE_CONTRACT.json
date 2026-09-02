@@ -1,0 +1,128 @@
+{
+  "schema": "FUNCTION_PRESENCE_CONTRACT/1.0",
+  "generated_at": "2026-09-02",
+  "rule": "この契約は『存在の必要性』だけを定める。表示方法・配置・視覚的な扱いは一切指定しない。それらは Design Authority の決定事項である。",
+  "definitions": {
+    "recognized_on_home": "HOME に着地した利用者が、その能力が存在することを認識できる必要がある(スクロールしてよい)",
+    "required_on_task_screen": "その能力の Task 画面において、その機能が必ず果たされる必要がある",
+    "must_be_reachable": "サイト内のどこかから、利用者が到達できる必要がある",
+    "must_exist_in_dom": "視覚的に目立つ必要はないが、DOM に必ず存在する必要がある(法的義務・自動検査の対象)"
+  },
+  "capabilities": [
+    {
+      "capability_id": "CAP-CHECKER",
+      "importance": "primary",
+      "recognized_on_home": true,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "function_ids": ["F-CHK-001","F-CHK-002","F-CHK-003","F-CHK-004","F-CHK-005","F-CHK-006","F-CHK-007","F-CHK-008","F-CHK-009","F-CHK-010","F-CHK-011","F-CHK-012","F-CHK-013","F-CHK-014","F-CHK-015","F-CHK-016","F-CHK-017","F-CHK-018","F-CHK-019","F-CHK-020","F-CHK-021","F-CHK-022","F-CHK-023","F-CHK-024","F-CHK-025","F-CHK-026","F-CHK-027","F-CHK-028","F-CHK-029","F-CHK-030","F-CHK-031","F-CHK-032","F-CHK-033","F-CHK-034","F-CHK-035"],
+      "state_ids": ["S-CHK-IDLE","S-CHK-DRAGOVER","S-CHK-ANALYZING","S-CHK-TOO-LARGE","S-CHK-UNSUPPORTED","S-CHK-ERROR","S-CHK-RESULT","S-CHK-V-AI","S-CHK-V-C2PA","S-CHK-V-CAMERA","S-CHK-V-STOCK","S-CHK-V-WEAK","S-CHK-V-UNKNOWN","S-CHK-META-EMPTY","S-CHK-C2PA-LOADING","S-CHK-C2PA-OK","S-CHK-C2PA-BAD","S-CHK-C2PA-UNREADABLE","S-CHK-C2PA-ENGINE-FAIL","S-CHK-PIXEL-HIDDEN","S-CHK-PIXEL-IDLE","S-CHK-PIXEL-LOADING","S-CHK-PIXEL-HIGH","S-CHK-PIXEL-MID","S-CHK-PIXEL-LOW","S-CHK-PIXEL-ERROR","S-CHK-PIXEL-AUTO-ON","S-CHK-PIXEL-AUTO-OFF"]
+    },
+    {
+      "capability_id": "CAP-ACCOUNT",
+      "importance": "primary",
+      "recognized_on_home": true,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "function_ids": ["F-AIC-001","F-AIC-002","F-AIC-003","F-AIC-004","F-AIC-005","F-AIC-006","F-AIC-007","F-AIC-008","F-AIC-009","F-AIC-010","F-AIC-011","F-AIC-012","F-AIC-013","F-AIC-014"],
+      "state_ids": ["S-AIC-NONE-CHECKED","S-AIC-PARTIAL","S-AIC-LOW","S-AIC-MID","S-AIC-HIGH","S-AIC-TRUST-APPLIED","S-AIC-COPIED"]
+    },
+    {
+      "capability_id": "CAP-BADGE",
+      "importance": "primary",
+      "recognized_on_home": true,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "function_ids": ["F-BDG-001","F-BDG-002","F-BDG-003","F-BDG-004","F-BDG-005","F-BDG-006","F-BDG-007","F-BDG-008","F-BDG-009","F-BDG-010","F-BDG-011","F-BDG-012","F-BDG-013","F-BDG-014"],
+      "state_ids": ["S-BDG-EMPTY","S-BDG-FILLED","S-BDG-INVALID","S-BDG-GENERATED","S-BDG-COPIED"]
+    },
+    {
+      "capability_id": "CAP-EVIDENCE",
+      "importance": "secondary",
+      "recognized_on_home": true,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "note": "このプロジェクトの信頼の根拠であり、法人向けの営業資料も兼ねる",
+      "function_ids": ["F-RPT-001","F-RPT-002"],
+      "state_ids": ["S-RPT-DEFAULT","S-RPT-TABLE-SCROLL"]
+    },
+    {
+      "capability_id": "CAP-DIRECTORY",
+      "importance": "secondary",
+      "recognized_on_home": true,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "function_ids": ["F-CRE-001","F-CRE-002","F-CRE-003","F-CRE-004","F-CRE-005","F-CRE-006","F-CRE-007","F-CRE-008"],
+      "state_ids": ["S-CRE-SAMPLE-ONLY","S-CRE-LIST","S-CRE-EMPTY","S-CRE-FILTER-ACTIVE"]
+    },
+    {
+      "capability_id": "CAP-BUSINESS",
+      "importance": "secondary",
+      "recognized_on_home": true,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "note": "唯一の収益導線",
+      "function_ids": ["F-BIZ-001","F-BIZ-002","F-BIZ-003"],
+      "state_ids": ["S-BIZ-DEFAULT"]
+    },
+    {
+      "capability_id": "CAP-DOCS",
+      "importance": "secondary",
+      "recognized_on_home": false,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "function_ids": ["F-DOC-001","F-DOC-002"],
+      "state_ids": ["S-DOC-DEFAULT"]
+    },
+    {
+      "capability_id": "CAP-LEGAL-PRIVACY",
+      "importance": "tertiary",
+      "recognized_on_home": false,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "must_exist_in_dom_on_all_screens": true,
+      "function_ids": ["F-LEG-001"],
+      "state_ids": ["S-LEG-PRIVACY"]
+    },
+    {
+      "capability_id": "CAP-LEGAL-TERMS",
+      "importance": "tertiary",
+      "recognized_on_home": false,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "must_exist_in_dom_on_all_screens": true,
+      "function_ids": ["F-LEG-002"],
+      "state_ids": ["S-LEG-TERMS"]
+    },
+    {
+      "capability_id": "CAP-LEGAL-CREDITS",
+      "importance": "tertiary",
+      "recognized_on_home": false,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "must_exist_in_dom_on_all_screens": true,
+      "note": "同梱OSSの著作権表示は法的義務",
+      "function_ids": ["F-LEG-003"],
+      "state_ids": ["S-LEG-CREDITS"]
+    },
+    {
+      "capability_id": "CAP-GLOBAL",
+      "importance": "primary",
+      "recognized_on_home": true,
+      "required_on_task_screen": true,
+      "must_be_reachable": true,
+      "note": "全画面共通の移動手段・現在地・テーマ追従・端末内完結の明示",
+      "function_ids": ["F-GLOBAL-001","F-GLOBAL-002","F-GLOBAL-003","F-GLOBAL-004","F-GLOBAL-005","F-GLOBAL-006","F-HOME-001","F-HOME-002","F-HOME-003","F-HOME-004","F-HOME-005","F-HOME-006"],
+      "state_ids": ["S-THEME-LIGHT","S-THEME-DARK","S-MOTION-REDUCED","S-FOCUS-VISIBLE","S-HOME-DEFAULT"]
+    }
+  ],
+  "not_specified_here": [
+    "表示形式(一覧か、集約か、段階的開示か)",
+    "順序・グルーピング",
+    "視覚的な重みの付け方",
+    "情報構造(ナビゲーションの形)",
+    "何を主操作に据えるか",
+    "何を格下げするか"
+  ],
+  "note_on_information_architecture": "11画面の束ね方・主操作の選定・格下げの判断は、Design Authority の決定事項として BLIND_DESIGN_BRIEF §5-1 で明示的に委ねている。ただし BLIND_DESIGN_BRIEF §7 の配置制約(PL-1〜PL-7)は安全要件であり、情報構造の自由の外にある。"
+}

@@ -1,0 +1,406 @@
+{
+  "schema": "SCREEN_STATE_INVENTORY/1.0",
+  "generated_at": "2026-09-02",
+  "rule": "ここに列挙した state は実際に存在するものだけである。UI再設計後、全 S-ID が再現可能かつ視覚的に区別可能であること(STATE_COVERAGE=100%)を機械検証する。",
+  "global_states": [
+    {
+      "id": "S-THEME-LIGHT",
+      "trigger": "prefers-color-scheme: light(既定)",
+      "must_convey": "全テキストが読め、状態色(良い/注意/危険/情報)が区別できる"
+    },
+    {
+      "id": "S-THEME-DARK",
+      "trigger": "prefers-color-scheme: dark",
+      "must_convey": "同上。ライトの色をそのまま流用しないこと"
+    },
+    {
+      "id": "S-MOTION-REDUCED",
+      "trigger": "prefers-reduced-motion: reduce",
+      "must_convey": "全ての装飾モーションが止まるか十分に弱まる。操作は全て可能なまま。状態の変化は動き以外(色・形・テキスト)でも判る"
+    },
+    {
+      "id": "S-FOCUS-VISIBLE",
+      "trigger": "キーボード操作",
+      "must_convey": "現在フォーカスされている操作要素が明確に分かる"
+    }
+  ],
+  "screens": [
+    {
+      "id": "HOME",
+      "route": "/honmono/",
+      "role_hint": "BRAND_CRITICAL",
+      "states": [
+        {
+          "id": "S-HOME-DEFAULT",
+          "trigger": "ページ読み込み",
+          "must_convey": "このサイトが何で、何ができ、どれが自分向けかが分かる。4つのツールの存在が認識できる"
+        }
+      ]
+    },
+    {
+      "id": "CHECKER",
+      "route": "/honmono/checker/",
+      "role_hint": "TASK_CRITICAL",
+      "primary_flow": "ファイルを渡す → 待つ → 結論を読む → 根拠を確かめる → 次の手を打つ",
+      "states": [
+        {
+          "id": "S-CHK-IDLE",
+          "trigger": "初期表示",
+          "must_convey": "ここに画像/動画を渡せばよい。対応形式。ファイルは送信されない"
+        },
+        {
+          "id": "S-CHK-DRAGOVER",
+          "trigger": "ファイルをドラッグして重ねた",
+          "must_convey": "今ここで離せば受け取る"
+        },
+        {
+          "id": "S-CHK-ANALYZING",
+          "trigger": "ファイル受領〜解析完了",
+          "must_convey": "解析中である。数秒で終わる。※メインスレッドが重くなりうるので、止まって見えない待ち表現が要る"
+        },
+        {
+          "id": "S-CHK-TOO-LARGE",
+          "trigger": "300MB超のファイル",
+          "must_convey": "受け取れない理由と上限、そして次にできること(動画は冒頭を切り出す)"
+        },
+        {
+          "id": "S-CHK-UNSUPPORTED",
+          "trigger": "対応外の形式",
+          "must_convey": "対応形式の一覧と、変換すれば試せること"
+        },
+        {
+          "id": "S-CHK-ERROR",
+          "trigger": "解析中の例外",
+          "must_convey": "解析できなかったこと。UIは操作可能なまま、別のファイルを試せる"
+        },
+        {
+          "id": "S-CHK-RESULT",
+          "trigger": "解析完了",
+          "must_convey": "結論・根拠・生データ・次の手・限界の5つが揃って読める"
+        },
+        {
+          "id": "S-CHK-V-AI",
+          "trigger": "verdict=ai",
+          "level": "bad",
+          "must_convey": "AI生成の痕跡が見つかった。根拠は下にある"
+        },
+        {
+          "id": "S-CHK-V-C2PA",
+          "trigger": "verdict=c2pa",
+          "level": "info",
+          "must_convey": "来歴データ付き。良い悪いではなく、透明性の高い運用の証拠"
+        },
+        {
+          "id": "S-CHK-V-CAMERA",
+          "trigger": "verdict=camera",
+          "level": "ok",
+          "must_convey": "カメラ撮影の痕跡がある。ただし偽装可能"
+        },
+        {
+          "id": "S-CHK-V-STOCK",
+          "trigger": "verdict=stock",
+          "level": "warn",
+          "must_convey": "素材サイト由来。本人写真としては不自然"
+        },
+        {
+          "id": "S-CHK-V-WEAK",
+          "trigger": "verdict=weak",
+          "level": "warn",
+          "must_convey": "弱い手がかりのみ。追加検証が要る"
+        },
+        {
+          "id": "S-CHK-V-UNKNOWN",
+          "trigger": "verdict=unknown",
+          "level": "warn",
+          "frequency": "SNS経由の画像では最も多い",
+          "must_convey": "判定材料がない=中立。『AIではない』でも『本物』でもない。次にできること"
+        },
+        {
+          "id": "S-CHK-META-EMPTY",
+          "trigger": "抽出メタデータ0件",
+          "must_convey": "メタデータが検出されなかったという事実"
+        },
+        {
+          "id": "S-CHK-C2PA-LOADING",
+          "trigger": "C2PA検出直後",
+          "must_convey": "署名検証エンジンを読み込み中。初回は数秒かかる"
+        },
+        {
+          "id": "S-CHK-C2PA-OK",
+          "trigger": "validationStatus が空",
+          "level": "ok",
+          "must_convey": "署名後に改ざんされていない。ただし発行者が信頼できるかは別問題"
+        },
+        {
+          "id": "S-CHK-C2PA-BAD",
+          "trigger": "validationStatus にエラー",
+          "level": "bad",
+          "must_convey": "署名検証で問題が見つかった。個々のエラーコードも読める"
+        },
+        {
+          "id": "S-CHK-C2PA-UNREADABLE",
+          "trigger": "SDKが解析できない",
+          "level": "warn",
+          "must_convey": "C2PAらしきデータはあるが読めない(破損・非標準の可能性)"
+        },
+        {
+          "id": "S-CHK-C2PA-ENGINE-FAIL",
+          "trigger": "SDK読み込み失敗(オフライン/file://)",
+          "must_convey": "エンジンを読み込めなかった理由と、公式検証ツールという代替"
+        },
+        {
+          "id": "S-CHK-PIXEL-HIDDEN",
+          "trigger": "動画・非対応形式・機能無効",
+          "must_convey": "画素判定の入口を出さない(存在しないものを期待させない)"
+        },
+        {
+          "id": "S-CHK-PIXEL-IDLE",
+          "trigger": "静止画の解析後",
+          "must_convey": "実験機能であること。約90MBの初回ダウンロードが要ること。2回目以降はキャッシュ。実測精度と限界。押すかどうかは利用者が決める"
+        },
+        {
+          "id": "S-CHK-PIXEL-LOADING",
+          "trigger": "実行押下〜推論完了",
+          "must_convey": "何MB中何MB読み込んだか。単一スレッドで重くなりうる区間"
+        },
+        {
+          "id": "S-CHK-PIXEL-HIGH",
+          "trigger": "pAI >= 0.8",
+          "level": "bad",
+          "must_convey": "AI生成の可能性が高い。的中率と誤りの実測値。他のシグナルと合わせて判断すること"
+        },
+        {
+          "id": "S-CHK-PIXEL-MID",
+          "trigger": "0.5 <= pAI < 0.8",
+          "level": "warn",
+          "must_convey": "判定が割れる領域。単独では根拠にならない"
+        },
+        {
+          "id": "S-CHK-PIXEL-LOW",
+          "trigger": "pAI < 0.5",
+          "level": "ok",
+          "must_convey": "兆候は薄い。ただし約3割(2025年世代は約4割)見逃す。『AIではない』証明にはならない"
+        },
+        {
+          "id": "S-CHK-PIXEL-ERROR",
+          "trigger": "モデル取得/推論の失敗",
+          "must_convey": "実行できなかったこと。再試行できること"
+        },
+        {
+          "id": "S-CHK-PIXEL-AUTO-ON",
+          "trigger": "自動実行が有効",
+          "must_convey": "次回から自動で走る"
+        },
+        {
+          "id": "S-CHK-PIXEL-AUTO-OFF",
+          "trigger": "自動実行が無効(既定)",
+          "must_convey": "毎回自分で押す"
+        }
+      ]
+    },
+    {
+      "id": "BADGE",
+      "route": "/honmono/badge/",
+      "role_hint": "TASK_CRITICAL",
+      "primary_flow": "仕組みを理解する → 入力する → 生成物を確かめる → ダウンロードする → 相互リンクを完成させる",
+      "states": [
+        {
+          "id": "S-BDG-EMPTY",
+          "trigger": "初期表示",
+          "must_convey": "何を入力するのか、生成すると何が手に入るのか。実在宣言には既定文が入っている"
+        },
+        {
+          "id": "S-BDG-FILLED",
+          "trigger": "入力途中",
+          "must_convey": "必須が満たされているかどうか"
+        },
+        {
+          "id": "S-BDG-INVALID",
+          "trigger": "活動名が空のまま生成",
+          "must_convey": "活動名が要ること。どこを直せばよいか"
+        },
+        {
+          "id": "S-BDG-GENERATED",
+          "trigger": "生成成功",
+          "must_convey": "プレビュー・ダウンロード・2種のスニペット・最後の仕上げ手順が揃って読める"
+        },
+        {
+          "id": "S-BDG-COPIED",
+          "trigger": "スニペットのコピー成功",
+          "must_convey": "コピーできたこと(約2秒)"
+        }
+      ]
+    },
+    {
+      "id": "AICHECK",
+      "route": "/honmono/aicheck/",
+      "role_hint": "TASK_CRITICAL",
+      "primary_flow": "当てはまる項目にチェック → スコアと帯を見る → 助言に従って次の行動をとる",
+      "states": [
+        {
+          "id": "S-AIC-NONE-CHECKED",
+          "trigger": "初期表示(スコア0)",
+          "must_convey": "チェックを入れると診断が更新されること。まだ何も判定していないこと"
+        },
+        {
+          "id": "S-AIC-PARTIAL",
+          "trigger": "チェック途中",
+          "must_convey": "現在のスコアが暫定であること。項目がまだ残っていること(リスク18件・信頼4件)"
+        },
+        {
+          "id": "S-AIC-LOW",
+          "trigger": "0〜19",
+          "level": "ok",
+          "must_convey": "強い危険信号なし。ただし金銭の話が出たら再評価"
+        },
+        {
+          "id": "S-AIC-MID",
+          "trigger": "20〜44",
+          "level": "warn",
+          "must_convey": "複数の注意信号。ビデオ通話・逆画像検索・来歴チェッカーでの検証を勧める"
+        },
+        {
+          "id": "S-AIC-HIGH",
+          "trigger": "45〜100",
+          "level": "bad",
+          "must_convey": "典型的特徴に多数一致。金銭・個人情報を渡さない。ブロック・通報を検討"
+        },
+        {
+          "id": "S-AIC-TRUST-APPLIED",
+          "trigger": "信頼シグナルにチェックあり",
+          "must_convey": "信頼シグナルによりスコアを減点済みであること"
+        },
+        {
+          "id": "S-AIC-COPIED",
+          "trigger": "テキストコピー成功",
+          "must_convey": "コピーできたこと(約2秒)"
+        }
+      ]
+    },
+    {
+      "id": "CREATORS",
+      "route": "/honmono/creators/",
+      "role_hint": "TASK_CRITICAL",
+      "states": [
+        {
+          "id": "S-CRE-SAMPLE-ONLY",
+          "trigger": "実在の掲載が0件(現状)",
+          "must_convey": "並んでいるのは見本で実在の人物ではないこと。掲載0件であること。募集していること。※これは掲載項目より前に読める必要がある"
+        },
+        {
+          "id": "S-CRE-LIST",
+          "trigger": "1件以上が該当",
+          "must_convey": "各掲載者の名前・ジャンル・紹介・リンク・約束"
+        },
+        {
+          "id": "S-CRE-EMPTY",
+          "trigger": "絞り込み結果0件",
+          "must_convey": "該当がないこと。条件を変えれば戻れること"
+        },
+        {
+          "id": "S-CRE-FILTER-ACTIVE",
+          "trigger": "カテゴリ選択中",
+          "must_convey": "今どの絞り込みが効いているか"
+        }
+      ]
+    },
+    {
+      "id": "DOCS",
+      "route": "/honmono/docs/",
+      "role_hint": "DOCUMENT",
+      "states": [
+        {
+          "id": "S-DOC-DEFAULT",
+          "trigger": "読み込み",
+          "must_convey": "9セクションの全文が読め、目次から跳べる"
+        }
+      ]
+    },
+    {
+      "id": "REPORT",
+      "route": "/honmono/report/",
+      "role_hint": "DOCUMENT",
+      "states": [
+        {
+          "id": "S-RPT-DEFAULT",
+          "trigger": "読み込み",
+          "must_convey": "8セクションの全文が読め、目次から跳べる"
+        },
+        {
+          "id": "S-RPT-TABLE-SCROLL",
+          "trigger": "狭い画面で数表を見る",
+          "must_convey": "表が横スクロールで最後まで読めること。ページ全体は横スクロールしないこと"
+        }
+      ]
+    },
+    {
+      "id": "BUSINESS",
+      "route": "/honmono/business/",
+      "role_hint": "DOCUMENT",
+      "states": [
+        {
+          "id": "S-BIZ-DEFAULT",
+          "trigger": "読み込み",
+          "must_convey": "4指標・用途・差別化・弱点・提供形態・問い合わせ・お引き受けしないこと"
+        }
+      ]
+    },
+    {
+      "id": "LEGAL_PRIVACY",
+      "route": "/honmono/legal/privacy.html",
+      "role_hint": "DOCUMENT",
+      "states": [
+        {
+          "id": "S-LEG-PRIVACY",
+          "trigger": "読み込み",
+          "must_convey": "全7節が読める"
+        }
+      ]
+    },
+    {
+      "id": "LEGAL_TERMS",
+      "route": "/honmono/legal/terms.html",
+      "role_hint": "DOCUMENT",
+      "states": [
+        {
+          "id": "S-LEG-TERMS",
+          "trigger": "読み込み",
+          "must_convey": "全10条が読める"
+        }
+      ]
+    },
+    {
+      "id": "LEGAL_CREDITS",
+      "route": "/honmono/legal/credits.html",
+      "role_hint": "DOCUMENT",
+      "states": [
+        {
+          "id": "S-LEG-CREDITS",
+          "trigger": "読み込み",
+          "must_convey": "全4節と各著作権表示が読める"
+        }
+      ]
+    }
+  ],
+  "state_level_semantics": {
+    "note": "level は『どれくらい悪いか』ではなく『利用者が次にとるべき行動の強さ』を表す。4段階が既存の実装に存在する。",
+    "levels": [
+      {
+        "id": "bad",
+        "meaning": "AI痕跡・検証失敗。追加検証よりも警戒を優先させる"
+      },
+      {
+        "id": "warn",
+        "meaning": "注意。判断保留で、追加検証を促す"
+      },
+      {
+        "id": "ok",
+        "meaning": "実写の材料・検証成功。ただし断定はしない"
+      },
+      {
+        "id": "info",
+        "meaning": "中立の事実。良い悪いを含まない"
+      }
+    ]
+  }
+}

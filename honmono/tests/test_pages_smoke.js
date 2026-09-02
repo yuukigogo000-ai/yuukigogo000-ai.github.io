@@ -12,15 +12,27 @@ const http = require('http');
 const REPO = path.resolve(process.env.SITE_ROOT || path.join(__dirname, '..', '..'));
 const PORT = 8771;
 
+// システムにあるブラウザ本体を使う(playwright のダウンロードはしない)。
+// CHROME_PATH で明示指定でき、無ければ Windows / Linux の定番の場所を順に見る。
 function findBrowser() {
+  if (process.env.CHROME_PATH && fs.existsSync(process.env.CHROME_PATH)) return process.env.CHROME_PATH;
   const cands = [
     'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
     'C:/Program Files/Microsoft/Edge/Application/msedge.exe',
     'C:/Program Files/Google/Chrome/Application/chrome.exe',
     'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe',
   ];
+  const dir = process.env.PLAYWRIGHT_BROWSERS_PATH;
+  if (dir && fs.existsSync(dir)) {
+    for (const d of fs.readdirSync(dir)) {
+      for (const rel of ['chrome-linux/chrome', 'chrome-linux/headless_shell']) {
+        cands.push(path.join(dir, d, rel));
+      }
+    }
+  }
+  cands.push('/usr/bin/google-chrome', '/usr/bin/chromium', '/usr/bin/chromium-browser');
   for (const c of cands) if (fs.existsSync(c)) return c;
-  throw new Error('no chromium-based browser found');
+  throw new Error('no chromium-based browser found (CHROME_PATH で指定してください)');
 }
 
 const MIME = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',

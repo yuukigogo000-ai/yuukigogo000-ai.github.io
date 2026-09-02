@@ -1,0 +1,309 @@
+{
+  "schema": "PRODUCT_TRUTH/1.0",
+  "pipeline": "UI_REDESIGN_PIPELINE_v4.0",
+  "generated_at": "2026-09-02",
+  "generated_by": "Claude Code (Product Truth extractor role — NOT design authority)",
+  "product": {
+    "id": "honmono",
+    "name": "HONMONO",
+    "name_reading": "ホンモノ",
+    "name_is_fixed": true,
+    "site_root": "https://yuukigogo000-ai.github.io/honmono/",
+    "primary_language": "ja-JP",
+    "operator": "個人開発者(法人ではない)",
+    "purpose": "生成AIによる『実在しない人物』が量産される状況に対し、『実在すること』を検証可能な価値に変えるための無料ツール群を提供する。AI生成コンテンツを作る側に回らず、実在の証明・検出・可視化に賭ける。",
+    "purpose_short": "実在性を証明し、見分け、束ねるための無料ツール群。",
+    "problem_solved": [
+      "消費者被害 — なりすまし・ロマンス詐欺・偽アカウントへの課金",
+      "クリエイターの埋没 — 実在の活動者がAI量産アカウントに埋もれ、逆に『AIでしょ』と疑われる",
+      "信頼の崩壊 — 見ているものが本物か分からない不信の常態化"
+    ],
+    "three_pillars": [
+      {
+        "id": "prove",
+        "label": "証明する",
+        "meaning": "実在の人間・実写のコンテンツであることを、来歴データと相互リンクで示す"
+      },
+      {
+        "id": "detect",
+        "label": "見分ける",
+        "meaning": "AI製アカウント・なりすまし・詐欺を、誰でも使える道具で検知する"
+      },
+      {
+        "id": "bundle",
+        "label": "束ねる",
+        "meaning": "『本物であること』を選んだクリエイターを可視化し、仕事とファンにつなぐ"
+      }
+    ]
+  },
+  "primary_audience": {
+    "ranked": [
+      {
+        "rank": 1,
+        "id": "suspicious_contact",
+        "who": "SNS・マッチングアプリで接触してきた相手が実在するか疑っている一般利用者",
+        "device": "スマートフォンが大半",
+        "situation": "相手の写真を保存した直後、その場で調べたい。焦っている・不安である",
+        "literacy": "メタデータ・C2PA・EXIF という語を知らない",
+        "job": "この相手と関わり続けてよいかを、今この場で決めたい"
+      },
+      {
+        "rank": 2,
+        "id": "creator",
+        "who": "実在するクリエイター(イラストレーター・写真家・コスプレイヤー・配信者)",
+        "device": "PCとスマートフォンの両方",
+        "situation": "『その絵/写真AIでしょ』と疑われる。疑いを晴らす手段がない",
+        "literacy": "自分のサイトやGitHub Pagesを扱える程度の技術力を持つ人と、持たない人が混在",
+        "job": "自分が実在の人間であることを、第三者が検証できる形で示したい"
+      },
+      {
+        "rank": 3,
+        "id": "business",
+        "who": "判定モデルの導入を検討する法人・開発者(マッチング/フリマ/ファン/メディア/金融)",
+        "device": "PC",
+        "situation": "画像を自社サーバーに送らずにAI生成を判定したい。法務審査を通す必要がある",
+        "literacy": "高い。数字と弱点とライセンスを見る",
+        "job": "この判定モデルが自社の要件と法務を通るかを見極めたい"
+      },
+      {
+        "rank": 4,
+        "id": "journalist_researcher",
+        "who": "記者・研究者",
+        "device": "PC",
+        "situation": "拡散している画像の出所を調べたい",
+        "literacy": "高い",
+        "job": "画像の来歴と根拠データを取得したい"
+      }
+    ]
+  },
+  "primary_user_jobs": [
+    "手元の画像/動画がAI生成か実写かの手がかりを、その場で得る",
+    "怪しいアカウントが実在の人間かを、自分の観察から構造的に評価する",
+    "自分が実在の人間であることを、第三者が検証できる形で公開する",
+    "この判定が『どれくらい当たるのか』『どこで外れるのか』を確かめる",
+    "実在を証明済みのクリエイターを探す",
+    "判定モデルを製品に組み込む相談をする"
+  ],
+  "capabilities": {
+    "primary": [
+      {
+        "id": "CAP-CHECKER",
+        "label": "画像来歴チェッカー",
+        "route": "/honmono/checker/",
+        "what": "画像・動画を端末内で解析し、AI生成の痕跡・カメラ撮影の痕跡・来歴データを判定材料として提示する"
+      },
+      {
+        "id": "CAP-ACCOUNT",
+        "label": "AIアカウント鑑定",
+        "route": "/honmono/aicheck/",
+        "what": "18項目のリスクチェックと4項目の信頼シグナル(合計22項目)から、アカウントのリスクスコアを算出する"
+      },
+      {
+        "id": "CAP-BADGE",
+        "label": "実在証明バッジ",
+        "route": "/honmono/badge/",
+        "what": "相互リンク方式の実在証明ページ(HTML)とバッジを端末内で生成しダウンロードさせる"
+      }
+    ],
+    "secondary": [
+      {
+        "id": "CAP-EVIDENCE",
+        "label": "実測レポート",
+        "route": "/honmono/report/",
+        "what": "判定モデルの実測値・弱点・学習データ出典・過去の訂正を全部公開する。このプロジェクトの信頼の根拠"
+      },
+      {
+        "id": "CAP-DIRECTORY",
+        "label": "実在クリエイター名鑑",
+        "route": "/honmono/creators/",
+        "what": "実在証明を済ませたクリエイターの検索ディレクトリ。現在は実在の掲載0件で見本カード4枚のみ"
+      },
+      {
+        "id": "CAP-BUSINESS",
+        "label": "法人・開発者向け案内",
+        "route": "/honmono/business/",
+        "what": "判定モデルのライセンス提供案内。唯一の収益導線"
+      },
+      {
+        "id": "CAP-DOCS",
+        "label": "説明書",
+        "route": "/honmono/docs/",
+        "what": "目的・各ツールの使い方・FAQ・制限事項・プライバシーの公式ドキュメント"
+      }
+    ],
+    "tertiary": [
+      {
+        "id": "CAP-LEGAL-PRIVACY",
+        "label": "プライバシーポリシー",
+        "route": "/honmono/legal/privacy.html",
+        "what": "外部に伝わりうる情報も含めた完全版"
+      },
+      {
+        "id": "CAP-LEGAL-TERMS",
+        "label": "利用規約",
+        "route": "/honmono/legal/terms.html",
+        "what": "全10条。禁止事項と免責の限定"
+      },
+      {
+        "id": "CAP-LEGAL-CREDITS",
+        "label": "クレジット・ライセンス",
+        "route": "/honmono/legal/credits.html",
+        "what": "同梱OSSと学習データの帰属表示"
+      }
+    ]
+  },
+  "routes": [
+    {
+      "path": "/honmono/",
+      "file": "honmono/index.html",
+      "role": "HOME",
+      "capability": null,
+      "in_header_nav": true
+    },
+    {
+      "path": "/honmono/checker/",
+      "file": "honmono/checker/index.html",
+      "role": "TASK",
+      "capability": "CAP-CHECKER",
+      "in_header_nav": true
+    },
+    {
+      "path": "/honmono/badge/",
+      "file": "honmono/badge/index.html",
+      "role": "TASK",
+      "capability": "CAP-BADGE",
+      "in_header_nav": true
+    },
+    {
+      "path": "/honmono/aicheck/",
+      "file": "honmono/aicheck/index.html",
+      "role": "TASK",
+      "capability": "CAP-ACCOUNT",
+      "in_header_nav": true
+    },
+    {
+      "path": "/honmono/creators/",
+      "file": "honmono/creators/index.html",
+      "role": "TASK",
+      "capability": "CAP-DIRECTORY",
+      "in_header_nav": true
+    },
+    {
+      "path": "/honmono/docs/",
+      "file": "honmono/docs/index.html",
+      "role": "DOCUMENT",
+      "capability": "CAP-DOCS",
+      "in_header_nav": true
+    },
+    {
+      "path": "/honmono/report/",
+      "file": "honmono/report/index.html",
+      "role": "DOCUMENT",
+      "capability": "CAP-EVIDENCE",
+      "in_header_nav": false
+    },
+    {
+      "path": "/honmono/business/",
+      "file": "honmono/business/index.html",
+      "role": "DOCUMENT",
+      "capability": "CAP-BUSINESS",
+      "in_header_nav": false
+    },
+    {
+      "path": "/honmono/legal/privacy.html",
+      "file": "honmono/legal/privacy.html",
+      "role": "DOCUMENT",
+      "capability": "CAP-LEGAL-PRIVACY",
+      "in_header_nav": false
+    },
+    {
+      "path": "/honmono/legal/terms.html",
+      "file": "honmono/legal/terms.html",
+      "role": "DOCUMENT",
+      "capability": "CAP-LEGAL-TERMS",
+      "in_header_nav": false
+    },
+    {
+      "path": "/honmono/legal/credits.html",
+      "file": "honmono/legal/credits.html",
+      "role": "DOCUMENT",
+      "capability": "CAP-LEGAL-CREDITS",
+      "in_header_nav": false
+    }
+  ],
+  "entry_points": {
+    "primary": "サイトルート /(『つくったもの置き場』)からのリンク、および検索・SNS共有からの直接着地",
+    "deep_link_reality": "各ツールページは単独で共有・着地しうる。どのページから入っても、そのページだけで用が足りる必要がある",
+    "og_share": "全ページが og:image を1枚(共通)持ち、Twitter summary_large_image を宣言している"
+  },
+  "data_sources": [
+    {
+      "id": "DS-USER-FILE",
+      "what": "利用者が選択/ドロップした画像・動画ファイル",
+      "where": "利用者の端末のみ。File API で読み、ネットワークには一切出さない"
+    },
+    {
+      "id": "DS-MODEL",
+      "what": "AI判定モデル honmono_v31_int8.onnx(90,283,577 bytes を2分割で同梱)",
+      "where": "同一オリジンから取得し Cache Storage にキャッシュ"
+    },
+    {
+      "id": "DS-C2PA-SDK",
+      "what": "c2pa-js(WASM + Worker)",
+      "where": "同一オリジンに同梱。blob: worker として起動"
+    },
+    {
+      "id": "DS-ORT",
+      "what": "onnxruntime-web(WASM)",
+      "where": "同一オリジンに同梱。numThreads=1(GitHub Pages が COOP/COEP を出せないため)"
+    },
+    {
+      "id": "DS-CREATORS",
+      "what": "creators/creators.json(掲載データ)",
+      "where": "同一オリジンから fetch。失敗時は同内容のJS内フォールバックを使う"
+    },
+    {
+      "id": "DS-LOCALSTORAGE",
+      "what": "honmono_pixel_auto(画素判定の自動実行設定)",
+      "where": "利用者端末の localStorage"
+    }
+  ],
+  "processing_facts": {
+    "server_side": "なし。GitHub Pages による静的配信のみ。バックエンド・DB・ログイン・セッションは存在しない",
+    "in_browser": "画像解析・C2PA署名検証・ONNX推論・チェックリスト採点・証明ページ生成・結果画像生成のすべて",
+    "network_egress_from_app_code": "同一オリジンへのアセット取得のみ(モデル・WASM・creators.json)。利用者データの送信は一切ない",
+    "offline": "オフラインでは動作しない。Service Worker を持たないため、ページ自体の読み込みに通信が必要。この事実は過去に『オフラインでも動作します』と誤記していたため訂正済みで、再発は禁止"
+  },
+  "privacy_facts": [
+    "画像・動画・フォーム入力・チェック内容はサーバーに送信されない",
+    "独自のCookie・トラッキング・アクセス解析は使用していない(ホスティングのGitHub Pagesが標準的なアクセスログを記録する)",
+    "端末に保存されるのは localStorage の画素判定自動実行設定と、Cache Storage 上の判定モデル(約90MB)のみ",
+    "外部サイトへのリンク(逆画像検索・GitHub・contentcredentials.org 等)を利用者が押した場合、その先には遷移の事実が伝わる",
+    "名鑑への掲載申請と法人問い合わせは GitHub Issue 経由で、内容は公開される"
+  ],
+  "trust_claims_allowed": [
+    "処理はすべてブラウザ内で完結し、画像は送信されない",
+    "無料・登録不要",
+    "実測値と弱点を全部公開している",
+    "学習データは商用利用が明示的に許諾されたものだけを使用している"
+  ],
+  "trust_claims_forbidden": [
+    "オフラインでも動作します(事実に反する)",
+    "偽造できません / 100%判定できます などの断定",
+    "AI生成でないことを証明できます",
+    "いかなる損害についても責任を負いません(消費者契約法8条で無効)",
+    "架空のクリエイター名を実在の掲載者として並べること"
+  ],
+  "constraints_summary_ref": "TECHNICAL_CONSTRAINTS.json",
+  "monetization": {
+    "current": "なし(全ツール無料)",
+    "only_revenue_path": "CAP-BUSINESS 経由の判定モデルのライセンス提供",
+    "prices_are_ranges_not_fixed": true
+  },
+  "status_facts": {
+    "published": true,
+    "users": "ほぼゼロ(告知していない)",
+    "directory_entries": 0,
+    "image_assets_owned": "og.png 1枚のみ。アイコンはすべて絵文字。ロゴ画像は存在しない"
+  }
+}

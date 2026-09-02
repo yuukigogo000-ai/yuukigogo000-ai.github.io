@@ -1,0 +1,83 @@
+{
+  "schema": "SELECTOR_CONTRACT/1.0",
+  "note": "検査器が『意味』でUIを掴むための唯一の対応表。UI再設計でマークアップが変わったら、直すのはこのファイルだけにする。検査器本体は書き換えない。",
+  "global": {
+    "nav_links": "header nav a",
+    "brand_home_link": "header a[href='../'], header a[href='./'], header a[href='/honmono/']",
+    "footer": "footer",
+    "legal_links": "a[href$='legal/privacy.html'], a[href$='legal/terms.html'], a[href$='legal/credits.html'], a[href$='./privacy.html'], a[href$='./terms.html'], a[href$='./credits.html']"
+  },
+  "home": {
+    "tool_links": "a[href='checker/'], a[href='badge/'], a[href='aicheck/'], a[href='creators/']",
+    "report_link": "a[href='report/']",
+    "business_link": "a[href='business/']"
+  },
+  "checker": {
+    "dropzone": "#drop",
+    "file_input": "#file",
+    "dragover_state": "#drop.over",
+    "result_root": "#result",
+    "file_name": "#fileName",
+    "file_meta": "#fileMeta",
+    "preview_image": "#preview",
+    "preview_video": "#previewVid",
+    "verdict": "#verdict",
+    "findings": "#findings",
+    "finding_tag": "#findings .tag",
+    "meta_table": "#metaTable",
+    "xmp_details": "#xmpDetails",
+    "c2pa_card": "#c2paCard",
+    "c2pa_body": "#c2paBody",
+    "pixel_card": "#pixelCard",
+    "pixel_run": "#pixelRun",
+    "pixel_auto": "#pixelAuto",
+    "pixel_progress": "#pixelProgress",
+    "pixel_result": "#pixelResult",
+    "pixel_score": "#pixelScore",
+    "pixel_label": "#pixelLabel",
+    "pixel_note": "#pixelNote",
+    "pixel_eval": "#pixelEval",
+    "reverse_search_links": "a[href*='lens.google.com'], a[href*='bing.com/visualsearch'], a[href*='yandex.com/images'], a[href*='tineye.com']",
+    "model_license_link": "a[href$='vendor/models/LICENSE.md']"
+  },
+  "badge": {
+    "input_name": "#name",
+    "input_category": "#category",
+    "input_links": "#links",
+    "input_video": "#video",
+    "input_statement": "#statement",
+    "input_proof_url": "#proofUrl",
+    "generate": "#generate",
+    "output_root": "#output",
+    "preview_frame": "#previewFrame",
+    "download": "#download",
+    "badge_box": "#badgeBox",
+    "snippet_html": "#snippetHtml",
+    "snippet_md": "#snippetMd",
+    "copy_buttons": "button[data-copy]",
+    "copied_flags": "#copiedHtml, #copiedMd"
+  },
+  "aicheck": {
+    "risk_checkboxes": "input[data-kind='risk']",
+    "trust_checkboxes": "input[data-kind='trust']",
+    "weights": ".weight",
+    "reasons": ".why",
+    "score_number": "#scoreNum",
+    "band_label": "#bandLabel",
+    "score_fill": "#scorefill",
+    "advice": "#advice",
+    "result_area": "#resultArea",
+    "copy_result": "#copyResult",
+    "save_image": "#saveImage",
+    "copied_flag": "#copied"
+  },
+  "creators": {
+    "search": "#q",
+    "filters": "#filters button",
+    "filter_active": "#filters button.active",
+    "list": "#list",
+    "entries": "#list > *",
+    "empty": "#empty",
+    "apply_link": "a[href*='issues/new']"
+  }
+}

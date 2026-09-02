@@ -1,0 +1,113 @@
+{
+  "schema": "TECHNICAL_CONSTRAINTS/1.0",
+  "generated_at": "2026-09-02",
+  "stack": {
+    "type": "静的サイト。HTML + CSS + 素のJavaScript のみ",
+    "build_step": "なし。書いたファイルがそのまま配信される",
+    "framework": "なし(React/Vue/Svelte 等は使えない)",
+    "hosting": "GitHub Pages(Jekyll)",
+    "css": "共通スタイルシート1本 + 各ページの <style> ブロック。CSS変数でテーマを定義",
+    "server_features_unavailable": ["サーバー処理", "DB", "ログイン/認証", "セッション", "Cookieによる状態保持", "リダイレクト設定", "任意のHTTPヘッダ付与", "COOP/COEP"]
+  },
+  "hard_constraints": [
+    {
+      "id": "TC-CSP",
+      "rule": "全公開ページに Content-Security-Policy の meta が入っており、変更してはいけない",
+      "value": "default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'",
+      "implication": "外部オリジンからの script / style / font / image / fetch は全てブロックされる。デザインが外部リソースを要求した場合、その案は実装不能"
+    },
+    {
+      "id": "TC-NO-EXTERNAL-ASSETS",
+      "rule": "外部CDN・Webフォント・外部アイコンフォント・外部画像の読み込みは禁止(プロジェクト規則および TC-CSP により二重に禁止)",
+      "implication": "使えるのは OS 標準フォント(system-ui 等)と、リポジトリに同梱した自前アセット(SVG/PNG/WebP/data:)だけ。Google Fonts・Font Awesome・Material Symbols のウェブ配信は使用不可"
+    },
+    {
+      "id": "TC-NO-NEW-RUNTIME-DEPS",
+      "rule": "新しい実行時ライブラリを増やさない。現在の同梱依存は c2pa-js と onnxruntime-web の2本のみ",
+      "implication": "アニメーションライブラリ・UIライブラリ・アイコンライブラリは追加できない。モーションは CSS と Web Animations API の範囲で実装する"
+    },
+    {
+      "id": "TC-NO-HUMAN-IMAGERY",
+      "rule": "人物・顔・手を描いた画像素材は一切使用できない",
+      "reason": "AI生成画像で人物を描くとプロジェクトの主張と矛盾する。実写の人物写真も権利上使わない",
+      "allowed_instead": "抽象図形・幾何学模様・器具/レンズ等のモチーフ・自作の図解・自作のSVG"
+    },
+    {
+      "id": "TC-NO-THIRD-PARTY-IMAGERY",
+      "rule": "他社・他者の画像を持ち込まない。同梱するアセットは自作またはライセンスが明示的に商用可のものに限る"
+    },
+    {
+      "id": "TC-NO-LOGIC-CHANGE",
+      "rule": "見た目の作業でロジック・保存形式・localStorage キーを変更しない",
+      "fixed_storage_keys": ["honmono_pixel_auto"],
+      "fixed_cache_name": "honmono-pixel-model-v1"
+    },
+    {
+      "id": "TC-NO-SERVICE-WORKER",
+      "rule": "Service Worker は存在せず、追加もしない。よって『オフライン動作』を主張してはいけない"
+    },
+    {
+      "id": "TC-JA-FIRST",
+      "rule": "主言語は日本語。lang=\"ja\"。日本語の長文・長い固有名詞・表が崩れないことが前提"
+    },
+    {
+      "id": "TC-VIEWPORT",
+      "rule": "固定検証条件は 360×800 と 390×844(DPR3)、および 430 幅。light と dark の両方",
+      "dark_mode": "prefers-color-scheme による自動切替のみ。手動切替のUIは現状存在しない"
+    },
+    {
+      "id": "TC-A11Y",
+      "rule": "既存のアクセシビリティ実装を落とさない",
+      "existing": [
+        "checker のドロップゾーンは role=button / tabindex=0 / aria-label を持ち Enter と Space で開く",
+        "ヘッダーナビの現在地は aria-current=\"page\"",
+        "全 input に対応する label が存在する",
+        "iframe と img に title / alt が付いている"
+      ]
+    },
+    {
+      "id": "TC-CONTENT-INTEGRITY",
+      "rule": "既存の禁止表現の復活と、必須記載の削除は自動検査で落ちる",
+      "checker": "honmono/tests/verify_site.py"
+    }
+  ],
+  "performance_constraints": [
+    {
+      "id": "PC-MODEL-90MB",
+      "fact": "画素判定モデルは約90MB。初回のみダウンロードし Cache Storage に載る。判定は約0.8秒/枚",
+      "implication": "この重さと『初回だけ』であることを、利用者が押す前に理解できる必要がある"
+    },
+    {
+      "id": "PC-SINGLE-THREAD",
+      "fact": "onnxruntime-web は numThreads=1 で動く(COOP/COEPを出せないため)",
+      "implication": "推論中はメインスレッドが重くなりうる。推論中に走るアニメーションは軽いものに限る"
+    },
+    {
+      "id": "PC-MAIN-THREAD-ANALYSIS",
+      "fact": "メタデータ解析・サムネイル照合・文字列スキャンはメインスレッドで走る。最大300MBのファイルを受け付ける",
+      "implication": "解析中の待ち表現は、メインスレッドが詰まっても破綻しない方式(CSSアニメーション等)である必要がある"
+    },
+    {
+      "id": "PC-NO-LARGE-BLUR",
+      "fact": "大面積の animated blur・無限アニメーション・レイアウトスラッシングは禁止(pipeline 12章)"
+    }
+  ],
+  "browser_targets": {
+    "primary": "モバイル Chrome / Safari(利用者の大半)",
+    "secondary": "デスクトップ Chrome / Edge / Safari",
+    "apis_in_use": ["File API", "createImageBitmap", "Canvas 2D", "DecompressionStream", "Cache API", "WebGPU(あれば)", "WebAssembly", "Clipboard API(フォールバックあり)", "canvas.toBlob"],
+    "reduced_motion": "prefers-reduced-motion への対応は必須(pipeline 12章)"
+  },
+  "test_harness": {
+    "static": "python3 honmono/tests/verify_site.py(--selftest で自己検査)",
+    "browser_smoke": "node honmono/tests/test_pages_smoke.js(--mutate で自己検査)。SITE_ROOT で対象を差し替え可",
+    "overflow": "node honmono/tests/test_overflow.js",
+    "csp": "node tests/csp_check.mjs(--mutate で自己検査)",
+    "site_surface": "node tests/site_surface.mjs",
+    "browser_binary": "playwright-core + システムの Chromium を使う(ブラウザ本体はダウンロードしない)"
+  },
+  "publication_rule": {
+    "main_branch_equals_publication": true,
+    "note": "main への push はそのまま公開になる。作業は指定ブランチで行う"
+  }
+}

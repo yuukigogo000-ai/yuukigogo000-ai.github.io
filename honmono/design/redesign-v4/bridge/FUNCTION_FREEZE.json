@@ -1,0 +1,1270 @@
+{
+  "schema": "FUNCTION_FREEZE/1.0",
+  "generated_at": "2026-09-02",
+  "freeze_rule": "この一覧の機能は削除・追加・意味変更してはならない。copy の意味を変えてはならない。state を消してはならない。UI再設計後、全 F-ID が到達可能かつ動作すること(FUNCTION_COVERAGE=100%)を機械検証する。",
+  "id_stability": "F-ID / S-ID は今後の全ラウンドで不変。番号を詰め直さない。",
+  "functions": [
+    {
+      "id": "F-GLOBAL-001",
+      "screen": "ALL",
+      "purpose": "サイト内の主要ツールへ、どのページからでも移動できる",
+      "trigger": "リンク押下",
+      "input": "なし",
+      "output": "対象ページへ遷移",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "全ページで5つのナビ先href が実在し到達できる(verify_site.py の内部リンク検査 + smoke)",
+      "source_file": "honmono/*.html(全ページ共通)"
+    },
+    {
+      "id": "F-GLOBAL-002",
+      "screen": "ALL",
+      "purpose": "ブランド名からトップへ戻れる",
+      "trigger": "押下",
+      "input": "なし",
+      "output": "/honmono/ へ遷移",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "smoke: 各ページに honmono ルートへのリンクが存在する",
+      "source_file": "honmono/*.html(全ページ共通)"
+    },
+    {
+      "id": "F-GLOBAL-003",
+      "screen": "ALL",
+      "purpose": "現在いるページを利用者に示す",
+      "trigger": "ページ読み込み",
+      "input": "なし",
+      "output": "現在地のナビ項目が区別可能になる",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "各ツールページで aria-current='page' が1個だけ存在する",
+      "source_file": "honmono/*.html(全ページ共通)"
+    },
+    {
+      "id": "F-GLOBAL-004",
+      "screen": "ALL",
+      "purpose": "法務・根拠ページへ全ページから到達できる",
+      "trigger": "リンク押下",
+      "input": "なし",
+      "output": "docs / report / business / privacy / terms / credits へ遷移",
+      "state_dependencies": [],
+      "visibility": "常時DOMに存在(視覚的に見えていなくてもDOM必須)",
+      "test": "test_pages_smoke.js の LINKS 検査",
+      "source_file": "honmono/*.html(全ページ共通)"
+    },
+    {
+      "id": "F-GLOBAL-005",
+      "screen": "ALL",
+      "purpose": "端末のダークモード設定に自動追従する",
+      "trigger": "OS/ブラウザのテーマ設定",
+      "input": "なし",
+      "output": "配色が切り替わる",
+      "state_dependencies": [
+        "S-THEME-LIGHT",
+        "S-THEME-DARK"
+      ],
+      "visibility": "常時",
+      "test": "両テーマでスクリーンショットを撮り、文字と背景のコントラストが確保されていること",
+      "source_file": "honmono/*.html(全ページ共通)"
+    },
+    {
+      "id": "F-GLOBAL-006",
+      "screen": "ALL",
+      "purpose": "処理が端末内で完結することを、入力を受け取る画面で読める",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "テキスト表示",
+      "state_dependencies": [],
+      "visibility": "トップと、利用者の入力を受け取る3画面(checker / badge / aicheck)で可視",
+      "test": "トップ・checker・badge・aicheck のフッターに端末内完結の明示がある(creators / docs / 文書ページには無い — 入力を受け取らないため)",
+      "source_file": "honmono/*.html(全ページ共通)"
+    },
+    {
+      "id": "F-HOME-001",
+      "screen": "HOME",
+      "purpose": "このサイトが何のためのものかを最初に伝える",
+      "trigger": "ページ読み込み",
+      "input": "なし",
+      "output": "主張見出し + 説明文",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "REQUIRED_COPY の HOME-HERO が本文に存在する",
+      "source_file": "honmono/index.html"
+    },
+    {
+      "id": "F-HOME-002",
+      "screen": "HOME",
+      "purpose": "4つのツールの存在を認識させ、各ツールへ送り出す",
+      "trigger": "この能力の入口を押す",
+      "input": "なし",
+      "output": "checker / badge / aicheck / creators へ遷移",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "HOME から4ツール全てへ1クリックで到達できる",
+      "source_file": "honmono/index.html"
+    },
+    {
+      "id": "F-HOME-003",
+      "screen": "HOME",
+      "purpose": "なぜこのプロジェクトが存在するかと3本柱を説明する",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "テキスト表示",
+      "state_dependencies": [],
+      "visibility": "常時可視(折りたたみ可、ただし到達可能であること)",
+      "test": "3本柱の各ラベルが本文に存在する",
+      "source_file": "honmono/index.html"
+    },
+    {
+      "id": "F-HOME-004",
+      "screen": "HOME",
+      "purpose": "現在地(Phase 1)と今後の予定を示す",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "Phase 1/2/3 のテキスト",
+      "state_dependencies": [],
+      "visibility": "到達可能であること",
+      "test": "Phase 1/2/3 の文言が本文に存在する",
+      "source_file": "honmono/index.html"
+    },
+    {
+      "id": "F-HOME-005",
+      "screen": "HOME",
+      "purpose": "実測値を公開していることを示し、実測レポートと法人向けへ送る",
+      "trigger": "リンク押下",
+      "input": "なし",
+      "output": "/honmono/report/ と /honmono/business/ へ遷移",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "smoke: HOME に『実測レポートを読む』『法人・開発者の方へ』が描画される",
+      "source_file": "honmono/index.html"
+    },
+    {
+      "id": "F-HOME-006",
+      "screen": "HOME",
+      "purpose": "判定が参考情報であること・晒す目的で使わないことを伝える",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "免責テキスト + 利用規約リンク",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "REQUIRED_COPY の HOME-DISCLAIMER が本文に存在する",
+      "source_file": "honmono/index.html"
+    },
+    {
+      "id": "F-CHK-001",
+      "screen": "CHECKER",
+      "purpose": "クリック/タップでファイルを選ぶ",
+      "trigger": "#drop の click",
+      "input": "なし",
+      "output": "OSのファイル選択ダイアログ",
+      "state_dependencies": [
+        "S-CHK-IDLE"
+      ],
+      "visibility": "常時可視",
+      "test": "#drop を click して file input の click が発火する",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-002",
+      "screen": "CHECKER",
+      "purpose": "ファイルをドラッグ&ドロップで渡す",
+      "trigger": "drop イベント",
+      "input": "DataTransfer.files[0]",
+      "output": "解析開始",
+      "state_dependencies": [
+        "S-CHK-IDLE",
+        "S-CHK-DRAGOVER"
+      ],
+      "visibility": "常時可視",
+      "test": "DataTransfer を合成して drop し、結果セクションが表示される",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-003",
+      "screen": "CHECKER",
+      "purpose": "キーボードだけでファイル選択を開ける",
+      "trigger": "Enter または Space",
+      "input": "なし",
+      "output": "ファイル選択ダイアログ",
+      "state_dependencies": [
+        "S-CHK-IDLE"
+      ],
+      "visibility": "常時可視",
+      "test": "#drop に focus して Enter を送り click が発火する",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-004",
+      "screen": "CHECKER",
+      "purpose": "ドラッグ中に『ここに落とせる』と伝える",
+      "trigger": "dragover / dragleave",
+      "input": "なし",
+      "output": "受け取り可能であることが視覚的に伝わる",
+      "state_dependencies": [
+        "S-CHK-DRAGOVER"
+      ],
+      "visibility": "ドラッグ中のみ",
+      "test": "dragover 後に状態クラスが付き、dragleave で外れる",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-005",
+      "screen": "CHECKER",
+      "purpose": "扱えない大きさのファイルを、解析前に断る",
+      "trigger": "300MB超のファイル投入",
+      "input": "File",
+      "output": "『ファイルが大きすぎます(300MBまで)』の案内。解析は行わない",
+      "state_dependencies": [
+        "S-CHK-TOO-LARGE"
+      ],
+      "visibility": "該当時のみ",
+      "test": "サイズを偽装した File を投入し、当該文言が出て解析が走らないこと",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-006",
+      "screen": "CHECKER",
+      "purpose": "何を解析しているかを利用者が目で確認できる",
+      "trigger": "ファイル投入",
+      "input": "File",
+      "output": "画像はサムネイル、動画は再生可能なプレビュー",
+      "state_dependencies": [
+        "S-CHK-RESULT"
+      ],
+      "visibility": "解析後",
+      "test": "画像投入で img が可視、動画投入で video が可視になり排他であること",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-007",
+      "screen": "CHECKER",
+      "purpose": "解析対象のファイル名・形式・サイズを示す",
+      "trigger": "ファイル投入",
+      "input": "File",
+      "output": "ファイル名と『形式 / xx KB』",
+      "state_dependencies": [
+        "S-CHK-ANALYZING",
+        "S-CHK-RESULT"
+      ],
+      "visibility": "解析後",
+      "test": "投入したファイル名が表示される",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-008",
+      "screen": "CHECKER",
+      "purpose": "ファイル形式を判定し、非対応を伝える",
+      "trigger": "解析",
+      "input": "先頭バイト列",
+      "output": "JPEG / PNG / WebP / HEIC/HEIF / AVIF / 動画(MP4/MOV) / 不明",
+      "state_dependencies": [
+        "S-CHK-UNSUPPORTED"
+      ],
+      "visibility": "解析後",
+      "test": "各形式のサンプルで format が正しく、非対応形式で警告が出る",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-009",
+      "screen": "CHECKER",
+      "purpose": "解析の結論を1つに絞って提示する",
+      "trigger": "解析完了",
+      "input": "verdict キー",
+      "output": "6種のうち1つ(ai / c2pa / camera / stock / weak / unknown)",
+      "state_dependencies": [
+        "S-CHK-V-AI",
+        "S-CHK-V-C2PA",
+        "S-CHK-V-CAMERA",
+        "S-CHK-V-STOCK",
+        "S-CHK-V-WEAK",
+        "S-CHK-V-UNKNOWN"
+      ],
+      "visibility": "解析後",
+      "test": "6種すべてを再現するサンプルで、対応する見出し文が出ること",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-010",
+      "screen": "CHECKER",
+      "purpose": "C2PA署名の真正性を端末内で検証する",
+      "trigger": "C2PAデータ検出時に自動",
+      "input": "File",
+      "output": "署名有効 / 問題あり / 読み取れない / エンジン読込失敗 のいずれか + 発行者等の表",
+      "state_dependencies": [
+        "S-CHK-C2PA-LOADING",
+        "S-CHK-C2PA-OK",
+        "S-CHK-C2PA-BAD",
+        "S-CHK-C2PA-UNREADABLE",
+        "S-CHK-C2PA-ENGINE-FAIL"
+      ],
+      "visibility": "C2PA検出時のみ",
+      "test": "C2PA入り画像で署名検証の区画が出て、Worker(blob:)と wasm が動くこと(csp_check.mjs)",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-011",
+      "screen": "CHECKER",
+      "purpose": "XMPからAI申告・作成ツール・権利情報を取り出す",
+      "trigger": "解析",
+      "input": "XMP文字列",
+      "output": "digitalSourceType 申告の検出、CreatorTool 等のメタ行",
+      "state_dependencies": [],
+      "visibility": "検出時のみ",
+      "test": "digitalSourceType=trainedAlgorithmicMedia を含む画像で bad シグナルが出る",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-012",
+      "screen": "CHECKER",
+      "purpose": "PNGテキストチャンクから生成パラメータを取り出す",
+      "trigger": "解析",
+      "input": "tEXt/zTXt/iTXt",
+      "output": "Stable Diffusion / ComfyUI / NovelAI 等の検出",
+      "state_dependencies": [],
+      "visibility": "検出時のみ",
+      "test": "parameters チャンク入りPNGで該当シグナルが出る",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-013",
+      "screen": "CHECKER",
+      "purpose": "カメラEXIFを取り出し、実写の材料として示す",
+      "trigger": "解析",
+      "input": "EXIF",
+      "output": "メーカー・機種・撮影日時等 + ok シグナル",
+      "state_dependencies": [],
+      "visibility": "検出時のみ",
+      "test": "カメラEXIF入りJPEGで ok シグナルと camera 判定が出る",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-014",
+      "screen": "CHECKER",
+      "purpose": "生成AIツールの痕跡を30種超のパターンで照合する",
+      "trigger": "解析",
+      "input": "メタデータ全文 + ファイル全体の文字列",
+      "output": "検出されたツール名の一覧",
+      "state_dependencies": [],
+      "visibility": "検出時のみ",
+      "test": "各パターンに合致する文字列を含むファイルで検出される",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-015",
+      "screen": "CHECKER",
+      "purpose": "ストック素材サイト由来の痕跡を16サイトで照合する",
+      "trigger": "解析",
+      "input": "メタデータ",
+      "output": "warn シグナル + stock 判定",
+      "state_dependencies": [],
+      "visibility": "検出時のみ",
+      "test": "Adobe Stock 等の表記を含む画像で stock 判定になる",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-016",
+      "screen": "CHECKER",
+      "purpose": "生成AIの定番出力サイズを弱い手がかりとして示す",
+      "trigger": "解析",
+      "input": "画像寸法",
+      "output": "warn シグナル(弱い手がかりである旨つき)",
+      "state_dependencies": [
+        "S-CHK-V-WEAK"
+      ],
+      "visibility": "検出時のみ",
+      "test": "1024x1024 かつカメラEXIFなしの画像で weak 判定になる",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-017",
+      "screen": "CHECKER",
+      "purpose": "メタデータが消えていても、ファイルがたどった経緯を推定して示す",
+      "trigger": "解析",
+      "input": "JPEG構造・ファイル名",
+      "output": "info シグナル『この画像がたどった経緯(推定)』",
+      "state_dependencies": [],
+      "visibility": "推定できた場合のみ",
+      "test": "SNS再保存相当のJPEGで経緯シグナルが出る",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-018",
+      "screen": "CHECKER",
+      "purpose": "EXIFサムネイルと本体画像の食い違いから差し替え・大幅加工を検知する",
+      "trigger": "サムネイル検出時",
+      "input": "File + サムネイルバイト列",
+      "output": "warn シグナル",
+      "state_dependencies": [],
+      "visibility": "不一致時のみ",
+      "test": "サムネイルを差し替えたJPEGで警告が出る",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-019",
+      "screen": "CHECKER",
+      "purpose": "標準的な位置以外に残った痕跡も拾う",
+      "trigger": "解析",
+      "input": "ファイル全体(大きい場合は末尾も)",
+      "output": "AI痕跡・C2PA断片の追加検出",
+      "state_dependencies": [],
+      "visibility": "検出時のみ",
+      "test": "非標準位置にAIツール名を埋めたファイルで検出される",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-020",
+      "screen": "CHECKER",
+      "purpose": "判定の根拠となったシグナルを、重要度つきで一覧する",
+      "trigger": "解析完了",
+      "input": "findings 配列",
+      "output": "4レベル(AI痕跡 / 実写材料 / 注意 / 情報)のタグ付き一覧",
+      "state_dependencies": [
+        "S-CHK-RESULT"
+      ],
+      "visibility": "解析後",
+      "test": "4レベルすべてを含むサンプルで、4種のタグが描画される",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-021",
+      "screen": "CHECKER",
+      "purpose": "抽出できた生のメタデータを全部見せる",
+      "trigger": "解析完了",
+      "input": "meta オブジェクト",
+      "output": "キー/値の表。0件なら『メタデータは検出されませんでした』",
+      "state_dependencies": [
+        "S-CHK-RESULT",
+        "S-CHK-META-EMPTY"
+      ],
+      "visibility": "解析後",
+      "test": "メタあり/なしの両方で正しい表示になり、横スクロールで表が読めること",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-022",
+      "screen": "CHECKER",
+      "purpose": "XMPの生データを必要な人だけが開いて読める",
+      "trigger": "summary 押下",
+      "input": "XMP文字列(先頭20000文字)",
+      "output": "生データ表示",
+      "state_dependencies": [
+        "S-CHK-RESULT"
+      ],
+      "visibility": "XMPがある時のみ表示され、既定は閉じている",
+      "test": "XMP入り画像で details が現れ、開閉できる",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-023",
+      "screen": "CHECKER",
+      "purpose": "メタデータが消えていても次の手を示す(逆画像検索)",
+      "trigger": "リンク押下",
+      "input": "なし",
+      "output": "Google レンズ / Bing / Yandex / TinEye を新しいタブで開く",
+      "state_dependencies": [
+        "S-CHK-RESULT"
+      ],
+      "visibility": "解析後",
+      "test": "4つのリンクが target=_blank rel=noopener で存在する",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-024",
+      "screen": "CHECKER",
+      "purpose": "画素判定が使える場合にだけ、その入口を出す",
+      "trigger": "解析完了",
+      "input": "File + 解析結果",
+      "output": "動画・非対応形式・機能無効ときは入口を出さない",
+      "state_dependencies": [
+        "S-CHK-PIXEL-IDLE",
+        "S-CHK-PIXEL-HIDDEN"
+      ],
+      "visibility": "条件付き",
+      "test": "動画投入で画素判定の入口が出ないこと、静止画で出ること",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-025",
+      "screen": "CHECKER",
+      "purpose": "90MBのモデルを読み込むかどうかを利用者が決める",
+      "trigger": "押下",
+      "input": "なし",
+      "output": "モデル読み込み → 推論 → 結果",
+      "state_dependencies": [
+        "S-CHK-PIXEL-IDLE",
+        "S-CHK-PIXEL-LOADING",
+        "S-CHK-PIXEL-HIGH",
+        "S-CHK-PIXEL-MID",
+        "S-CHK-PIXEL-LOW",
+        "S-CHK-PIXEL-ERROR"
+      ],
+      "visibility": "画素判定の区画内",
+      "test": "押下でボタンが隠れ進捗が出る",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-026",
+      "screen": "CHECKER",
+      "purpose": "重いダウンロードの進行状況を示す",
+      "trigger": "モデル取得中",
+      "input": "取得済みバイト数 / 総バイト数",
+      "output": "『モデルを読み込み中… x / y MB』",
+      "state_dependencies": [
+        "S-CHK-PIXEL-LOADING"
+      ],
+      "visibility": "読み込み中のみ",
+      "test": "進捗テキストが更新される",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-027",
+      "screen": "CHECKER",
+      "purpose": "画素判定の結果を、確信度と限界つきで示す",
+      "trigger": "推論完了",
+      "input": "pAI",
+      "output": "スコア(%)+ 3段階ラベル + 水準の可視化 + 各段階固有の注意文 + 実行環境(GPU/CPU・ms)・モデル名",
+      "state_dependencies": [
+        "S-CHK-PIXEL-HIGH",
+        "S-CHK-PIXEL-MID",
+        "S-CHK-PIXEL-LOW"
+      ],
+      "visibility": "推論後",
+      "test": "3段階すべてで対応するラベルと注意文が出ること",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-028",
+      "screen": "CHECKER",
+      "purpose": "毎回押さずに済むよう、自動実行を選べる",
+      "trigger": "チェックボックス変更",
+      "input": "boolean",
+      "output": "次回以降のファイル投入で自動実行",
+      "state_dependencies": [
+        "S-CHK-PIXEL-AUTO-ON",
+        "S-CHK-PIXEL-AUTO-OFF"
+      ],
+      "visibility": "画素判定の区画内",
+      "test": "チェック→リロード→ファイル投入で自動実行される。キー名は変更禁止",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-029",
+      "screen": "CHECKER",
+      "purpose": "画素判定の実測値・出典・モデル利用条件へ導く",
+      "trigger": "なし・リンク押下",
+      "input": "なし",
+      "output": "実測値の注記文とリンク2本",
+      "state_dependencies": [
+        "S-CHK-PIXEL-IDLE"
+      ],
+      "visibility": "画素判定の区画内(DOM必須)",
+      "test": "test_pages_smoke.js の LINKS 検査(モデルの利用条件リンク)",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-030",
+      "screen": "CHECKER",
+      "purpose": "判定の限界を、結果を見た直後に読ませる",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "限界の説明 + 公式検証ツールへのリンク",
+      "state_dependencies": [
+        "S-CHK-RESULT"
+      ],
+      "visibility": "結果表示時に可視",
+      "test": "REQUIRED_COPY の CHK-LIMITS が本文に存在する",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-031",
+      "screen": "CHECKER",
+      "purpose": "どんな場面で使う道具かを示す",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "3項目のリスト",
+      "state_dependencies": [],
+      "visibility": "到達可能であること",
+      "test": "3項目が本文に存在する",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-032",
+      "screen": "CHECKER",
+      "purpose": "解析が失敗したことを利用者に伝える",
+      "trigger": "analyze() の例外",
+      "input": "Error",
+      "output": "『解析エラー: <message>』",
+      "state_dependencies": [
+        "S-CHK-ERROR"
+      ],
+      "visibility": "失敗時のみ",
+      "test": "壊れたファイルを投入してエラー文言が出て、UIが固まらないこと",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-033",
+      "screen": "CHECKER",
+      "purpose": "別のファイルを続けて調べられる",
+      "trigger": "2枚目以降の投入",
+      "input": "File",
+      "output": "前回の判定・シグナル・メタ表・C2PA検証の区画が消えて新しい結果に置き換わる",
+      "state_dependencies": [
+        "S-CHK-RESULT"
+      ],
+      "visibility": "常時",
+      "test": "2枚連続投入で前の結果が残らないこと",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-034",
+      "screen": "CHECKER",
+      "purpose": "プレビュー用の blob URL を解放しリークを防ぐ",
+      "trigger": "新しいファイル投入",
+      "input": "なし",
+      "output": "副作用のみ",
+      "state_dependencies": [],
+      "visibility": "不可視",
+      "test": "連続投入でも blob URL が積み上がらないこと",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-CHK-035",
+      "screen": "CHECKER",
+      "purpose": "モデルの実測精度を、使う前に読ませる",
+      "trigger": "画素判定の区画表示時",
+      "input": "なし",
+      "output": "誤判定率・検出率・学習データ条件の注記",
+      "state_dependencies": [
+        "S-CHK-PIXEL-IDLE"
+      ],
+      "visibility": "画素判定の区画内",
+      "test": "evalNote の文字列が描画される",
+      "source_file": "honmono/checker/index.html + honmono/checker/pixel.js"
+    },
+    {
+      "id": "F-BDG-001",
+      "screen": "BADGE",
+      "purpose": "相互リンク証明の仕組みを4段階で説明する",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "番号付き4ステップ",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "『不可能ではありません』を含む4ステップ目が本文に存在する(smoke)",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-002",
+      "screen": "BADGE",
+      "purpose": "証明ページに載せる情報を入力する",
+      "trigger": "入力",
+      "input": "活動名(必須)/ ジャンル / SNSリンク複数行 / 裏付けリンク / 実在宣言(既定文つき・編集可)/ 公開予定URL",
+      "output": "内部状態",
+      "state_dependencies": [
+        "S-BDG-EMPTY",
+        "S-BDG-FILLED"
+      ],
+      "visibility": "常時可視",
+      "test": "6つの入力すべてに label が対応し、既定の実在宣言文が初期値として入っていること",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-003",
+      "screen": "BADGE",
+      "purpose": "活動名の未入力を生成前に止める",
+      "trigger": "生成押下",
+      "input": "空の活動名",
+      "output": "活動名にフォーカスが移り、エラー状態になる。生成は行わない",
+      "state_dependencies": [
+        "S-BDG-INVALID"
+      ],
+      "visibility": "該当時のみ",
+      "test": "空のまま生成して出力セクションが出ないこと・フォーカスが移ること",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-004",
+      "screen": "BADGE",
+      "purpose": "証明ページとバッジを生成する",
+      "trigger": "押下",
+      "input": "フォーム値",
+      "output": "証明ページHTML文字列 + バッジ + 2種のスニペット",
+      "state_dependencies": [
+        "S-BDG-GENERATED"
+      ],
+      "visibility": "常時可視",
+      "test": "活動名を入れて押すと出力セクションが表示される",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-005",
+      "screen": "BADGE",
+      "purpose": "生成物を公開前に確認できる",
+      "trigger": "生成",
+      "input": "証明ページHTML",
+      "output": "プレビュー描画",
+      "state_dependencies": [
+        "S-BDG-GENERATED"
+      ],
+      "visibility": "生成後",
+      "test": "iframe に活動名が描画される",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-006",
+      "screen": "BADGE",
+      "purpose": "証明ページを honmono-proof.html として保存する",
+      "trigger": "押下",
+      "input": "生成済みHTML",
+      "output": "ファイルダウンロード",
+      "state_dependencies": [
+        "S-BDG-GENERATED"
+      ],
+      "visibility": "生成後",
+      "test": "download 属性が honmono-proof.html であること",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-007",
+      "screen": "BADGE",
+      "purpose": "設置するバッジの見た目を見せる",
+      "trigger": "生成",
+      "input": "proofUrl",
+      "output": "リンク付きインラインSVGバッジ",
+      "state_dependencies": [
+        "S-BDG-GENERATED"
+      ],
+      "visibility": "生成後",
+      "test": "SVGが描画され、リンク先が入力URLになる",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-008",
+      "screen": "BADGE",
+      "purpose": "サイト・ブログに貼るHTMLを配る",
+      "trigger": "コピー押下",
+      "input": "なし",
+      "output": "クリップボードへコピー + 完了表示(2秒)",
+      "state_dependencies": [
+        "S-BDG-GENERATED",
+        "S-BDG-COPIED"
+      ],
+      "visibility": "生成後",
+      "test": "コピー後に完了表示が出て2秒で消える",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-009",
+      "screen": "BADGE",
+      "purpose": "GitHub README に貼る Markdown を配る",
+      "trigger": "コピー押下",
+      "input": "なし",
+      "output": "クリップボードへコピー + 完了表示",
+      "state_dependencies": [
+        "S-BDG-GENERATED",
+        "S-BDG-COPIED"
+      ],
+      "visibility": "生成後",
+      "test": "Markdown文字列に proofUrl が含まれる",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-010",
+      "screen": "BADGE",
+      "purpose": "相互リンクを完成させる最後の手順を伝える(最重要)",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "3項目の手順",
+      "state_dependencies": [
+        "S-BDG-GENERATED"
+      ],
+      "visibility": "生成後に可視",
+      "test": "『すべてのSNSプロフィール(bio)に証明ページのURLを記載』が本文に存在する",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-011",
+      "screen": "BADGE",
+      "purpose": "危険なURLスキームを弾く",
+      "trigger": "生成",
+      "input": "任意の文字列",
+      "output": "http/https 以外は空にする",
+      "state_dependencies": [],
+      "visibility": "不可視",
+      "test": "javascript: を入れても href に入らないこと",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-012",
+      "screen": "BADGE",
+      "purpose": "生成直後に結果まで視線を運ぶ",
+      "trigger": "生成",
+      "input": "なし",
+      "output": "出力セクションへスクロール",
+      "state_dependencies": [
+        "S-BDG-GENERATED"
+      ],
+      "visibility": "不可視",
+      "test": "生成後に出力セクションが視界に入る。prefers-reduced-motion では瞬時移動でよい",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-013",
+      "screen": "BADGE",
+      "purpose": "Markdown版が外部サービスに依存することを伝える",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "注記テキスト",
+      "state_dependencies": [
+        "S-BDG-GENERATED"
+      ],
+      "visibility": "生成後",
+      "test": "'shields.io' が本文に存在する(privacy でも検査対象)",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-BDG-014",
+      "screen": "BADGE",
+      "purpose": "この証明が示すこと・示さないことを明示する",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "免責テキスト",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "REQUIRED_COPY の BDG-DISCLAIMER が本文に存在する",
+      "source_file": "honmono/badge/index.html"
+    },
+    {
+      "id": "F-AIC-001",
+      "screen": "AICHECK",
+      "purpose": "リスク項目18件を4グループで提示し、チェックさせる",
+      "trigger": "ページ読み込み",
+      "input": "なし",
+      "output": "4グループ・18チェックボックス。各項目に重みと『なぜそれがシグナルか』の説明",
+      "state_dependencies": [
+        "S-AIC-NONE-CHECKED",
+        "S-AIC-PARTIAL"
+      ],
+      "visibility": "常時可視",
+      "test": "risk のチェックボックスがちょうど18個あり、各 label が対応している",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-002",
+      "screen": "AICHECK",
+      "purpose": "スコアを下げる信頼シグナル4件を提示する",
+      "trigger": "ページ読み込み",
+      "input": "なし",
+      "output": "4チェックボックス(減点表示つき)",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "trust のチェックボックスがちょうど4個ある",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-003",
+      "screen": "AICHECK",
+      "purpose": "各項目の重みを見せ、採点を透明にする",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "+n / −n の表示",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "全22項目(リスク18+信頼4)に重み表示がある",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-004",
+      "screen": "AICHECK",
+      "purpose": "なぜその項目がシグナルなのかを説明する",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "各リスク項目の理由文",
+      "state_dependencies": [],
+      "visibility": "可視または開いて読めること",
+      "test": "18件すべてに理由文が存在する",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-005",
+      "screen": "AICHECK",
+      "purpose": "チェックのたびに即座に結果を更新する",
+      "trigger": "チェックボックス変更",
+      "input": "チェック状態",
+      "output": "スコア・バー・帯ラベル・助言の更新",
+      "state_dependencies": [
+        "S-AIC-LOW",
+        "S-AIC-MID",
+        "S-AIC-HIGH"
+      ],
+      "visibility": "常時",
+      "test": "1項目チェックでスコアが変わる",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-006",
+      "screen": "AICHECK",
+      "purpose": "決定的シグナルを、他が0でも埋もれさせない",
+      "trigger": "重み4以上の項目のチェック",
+      "input": "decisive 件数",
+      "output": "スコア下限の保証",
+      "state_dependencies": [
+        "S-AIC-MID",
+        "S-AIC-HIGH"
+      ],
+      "visibility": "不可視のロジック",
+      "test": "重み4の項目1つだけで『中』、2つで『高』になること",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-007",
+      "screen": "AICHECK",
+      "purpose": "結果を数値・帯・色で示す",
+      "trigger": "recalc",
+      "input": "pct",
+      "output": "0-100 の数値 + 低/中/高 + 水準の可視化",
+      "state_dependencies": [
+        "S-AIC-LOW",
+        "S-AIC-MID",
+        "S-AIC-HIGH"
+      ],
+      "visibility": "常時可視",
+      "test": "3つの帯すべてを再現し、ラベルが切り替わること",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-008",
+      "screen": "AICHECK",
+      "purpose": "スコアに応じて、次にとるべき行動を示す",
+      "trigger": "recalc",
+      "input": "band",
+      "output": "帯ごとの助言文(+信頼シグナルによる減点の注記)",
+      "state_dependencies": [
+        "S-AIC-LOW",
+        "S-AIC-MID",
+        "S-AIC-HIGH"
+      ],
+      "visibility": "常時可視",
+      "test": "3帯それぞれの助言文が出ること",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-009",
+      "screen": "AICHECK",
+      "purpose": "全項目を見終える前でも、その時点の結果を参照できる",
+      "trigger": "スクロール",
+      "input": "なし",
+      "output": "スクロール中も現在の結果を参照できる",
+      "state_dependencies": [],
+      "visibility": "常時",
+      "test": "360px でスクロールしてもその時点の結果が参照でき、かつ本文の可読性を損なわないこと",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-010",
+      "screen": "AICHECK",
+      "purpose": "結果を持ち出す直前に、晒す使い方を止める",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "名誉毀損への注意 + 通報先(#9110 / プラットフォーム窓口)",
+      "state_dependencies": [],
+      "visibility": "常時可視。持ち出しボタンより前・折りたたみ不可",
+      "test": "smoke: 『断定して晒す使い方はしないでください』『名誉毀損』が本文に存在し、DOM順で持ち出しボタンより前にあること",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-011",
+      "screen": "AICHECK",
+      "purpose": "診断結果をテキストで持ち出す",
+      "trigger": "押下",
+      "input": "現在のチェック状態",
+      "output": "スコア・帯・該当項目・信頼シグナルを整形したテキストをクリップボードへ(失敗時は textarea フォールバック)",
+      "state_dependencies": [
+        "S-AIC-COPIED"
+      ],
+      "visibility": "常時可視",
+      "test": "押下で完了表示が出て2秒で消える",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-012",
+      "screen": "AICHECK",
+      "purpose": "診断結果を画像(1200x630 PNG)で保存する",
+      "trigger": "押下",
+      "input": "現在のチェック状態",
+      "output": "honmono-aicheck.png をダウンロード。スコア・帯・バー・該当シグナル最大6件・注意書きを描画",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "押下で toBlob が呼ばれ、生成画像に注意書きが含まれること",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-013",
+      "screen": "AICHECK",
+      "purpose": "コピーできたことを伝える",
+      "trigger": "コピー完了",
+      "input": "なし",
+      "output": "『コピーしました ✓』を2秒表示",
+      "state_dependencies": [
+        "S-AIC-COPIED"
+      ],
+      "visibility": "一時的",
+      "test": "表示と自動消滅",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-AIC-014",
+      "screen": "AICHECK",
+      "purpose": "診断の限界と、金銭の話が出た場合の優先判断を伝える",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "免責 + #9110 + 警察庁窓口リンク",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "REQUIRED_COPY の AIC-DISCLAIMER が本文に存在する",
+      "source_file": "honmono/aicheck/index.html"
+    },
+    {
+      "id": "F-CRE-001",
+      "screen": "CREATORS",
+      "purpose": "掲載を募集し、申請フォームへ送る",
+      "trigger": "リンク押下",
+      "input": "なし",
+      "output": "GitHub Issue 作成画面(件名・本文テンプレ入り)を新しいタブで開く",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "リンクが存在し、テンプレのクエリが壊れていないこと",
+      "source_file": "honmono/creators/index.html + honmono/creators/creators.json"
+    },
+    {
+      "id": "F-CRE-002",
+      "screen": "CREATORS",
+      "purpose": "並んでいるのが見本であり実在の人物ではないと明示する",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "注意書き + 各掲載項目のラベル",
+      "state_dependencies": [
+        "S-CRE-SAMPLE-ONLY"
+      ],
+      "visibility": "常時可視。掲載項目の並びより前",
+      "test": "smoke: 『まだ0件』『見本』が本文に存在し、DOM順で掲載項目より前にあること",
+      "source_file": "honmono/creators/index.html + honmono/creators/creators.json"
+    },
+    {
+      "id": "F-CRE-003",
+      "screen": "CREATORS",
+      "purpose": "キーワードで掲載者を絞り込む",
+      "trigger": "input",
+      "input": "検索語",
+      "output": "名前・ジャンル・紹介文・約束を対象に部分一致で絞り込み",
+      "state_dependencies": [
+        "S-CRE-LIST",
+        "S-CRE-EMPTY"
+      ],
+      "visibility": "常時可視",
+      "test": "一致する語で件数が減り、一致しない語で空表示になる",
+      "source_file": "honmono/creators/index.html + honmono/creators/creators.json"
+    },
+    {
+      "id": "F-CRE-004",
+      "screen": "CREATORS",
+      "purpose": "ジャンルで絞り込む",
+      "trigger": "押下",
+      "input": "カテゴリ名",
+      "output": "該当カテゴリのみ表示。選択中が区別できる",
+      "state_dependencies": [
+        "S-CRE-LIST",
+        "S-CRE-EMPTY"
+      ],
+      "visibility": "常時可視",
+      "test": "『すべて』+ 各カテゴリのボタンが出て、押すと絞り込まれる",
+      "source_file": "honmono/creators/index.html + honmono/creators/creators.json"
+    },
+    {
+      "id": "F-CRE-005",
+      "screen": "CREATORS",
+      "purpose": "掲載項目を一覧する",
+      "trigger": "描画",
+      "input": "CREATORS 配列",
+      "output": "各掲載項目に 証明ページあり表示 / 名前 / ジャンル / 紹介文 / リンク群 / 約束",
+      "state_dependencies": [
+        "S-CRE-LIST"
+      ],
+      "visibility": "常時可視",
+      "test": "4件が描画され、各掲載項目に6要素が揃うこと",
+      "source_file": "honmono/creators/index.html + honmono/creators/creators.json"
+    },
+    {
+      "id": "F-CRE-006",
+      "screen": "CREATORS",
+      "purpose": "絞り込み結果が0件のときに、そうと分かる",
+      "trigger": "0件",
+      "input": "なし",
+      "output": "『該当するクリエイターが見つかりませんでした。』",
+      "state_dependencies": [
+        "S-CRE-EMPTY"
+      ],
+      "visibility": "0件時のみ",
+      "test": "存在しない語で検索して表示される",
+      "source_file": "honmono/creators/index.html + honmono/creators/creators.json"
+    },
+    {
+      "id": "F-CRE-007",
+      "screen": "CREATORS",
+      "purpose": "掲載データを外部JSONで運用しつつ、取得できない環境でも表示を壊さない",
+      "trigger": "ページ読み込み",
+      "input": "creators.json",
+      "output": "取得成功なら JSON、失敗/file:// ならフォールバック",
+      "state_dependencies": [
+        "S-CRE-LIST"
+      ],
+      "visibility": "不可視",
+      "test": "JSONを404にしても掲載項目が4件出ること",
+      "source_file": "honmono/creators/index.html + honmono/creators/creators.json"
+    },
+    {
+      "id": "F-CRE-008",
+      "screen": "CREATORS",
+      "purpose": "掲載が有料でないこと・審査の性質を明示する",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "掲載料・審査料・優先表示料をいただかない旨 + 利用規約リンク",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "該当文言が本文に存在する",
+      "source_file": "honmono/creators/index.html + honmono/creators/creators.json"
+    },
+    {
+      "id": "F-DOC-001",
+      "screen": "DOCS",
+      "purpose": "9セクションへ目次から跳べる",
+      "trigger": "押下",
+      "input": "なし",
+      "output": "同一ページ内アンカー移動 + 外部法務ページへのリンク",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "全アンカー先の id が実在する(verify_site.py)",
+      "source_file": "honmono/docs/index.html"
+    },
+    {
+      "id": "F-DOC-002",
+      "screen": "DOCS",
+      "purpose": "目的・ツール選択・各ツールの使い方・FAQ・制限と免責・プライバシーを提供する",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "本文(表・手順・Q&A を含む)",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "smoke: 『故意または重大な過失』『オフラインでは開けません』が本文に存在する",
+      "source_file": "honmono/docs/index.html"
+    },
+    {
+      "id": "F-RPT-001",
+      "screen": "REPORT",
+      "purpose": "8セクションへ目次から跳べる",
+      "trigger": "押下",
+      "input": "なし",
+      "output": "アンカー移動",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "全アンカー先の id が実在する",
+      "source_file": "honmono/report/index.html"
+    },
+    {
+      "id": "F-RPT-002",
+      "screen": "REPORT",
+      "purpose": "実測値・公開モデル比較・弱点・学習データ出典・再現手順・訂正履歴を全部見せる",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "表と本文",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "smoke: 'CDLA-Permissive-2.0' '訂正の履歴' '4割近く見逃します' が本文に存在。360px で表が横スクロールで読めること",
+      "source_file": "honmono/report/index.html"
+    },
+    {
+      "id": "F-BIZ-001",
+      "screen": "BUSINESS",
+      "purpose": "判定モデルの要点数値を最初に示す",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "1.1% / 92.2% / 90MB / 100% の4指標と説明",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "4指標が本文に存在し、レポートの値と一致すること",
+      "source_file": "honmono/business/index.html"
+    },
+    {
+      "id": "F-BIZ-002",
+      "screen": "BUSINESS",
+      "purpose": "用途・差別化・弱点・提供形態・お引き受けしないことを示す",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "本文と価格レンジ表",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "smoke: '30〜100万円' '4割近く見逃します' 'お引き受けしないこと' が本文に存在する",
+      "source_file": "honmono/business/index.html"
+    },
+    {
+      "id": "F-BIZ-003",
+      "screen": "BUSINESS",
+      "purpose": "問い合わせ導線を出し、内容が公開されることを警告する",
+      "trigger": "リンク押下",
+      "input": "なし",
+      "output": "Issue 作成画面 + 『GitHub Issue の内容は公開されます』",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "リンクと警告文が存在する",
+      "source_file": "honmono/business/index.html"
+    },
+    {
+      "id": "F-LEG-001",
+      "screen": "LEGAL_PRIVACY",
+      "purpose": "送信しないもの・端末に保存されるもの・外部に伝わりうるものを正確に示す",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "本文",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "smoke: 'Cache Storage' 'shields.io' が本文に存在する",
+      "source_file": "honmono/legal/privacy.html"
+    },
+    {
+      "id": "F-LEG-002",
+      "screen": "LEGAL_TERMS",
+      "purpose": "禁止事項と限定された免責を示す",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "本文",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "smoke: '第8条(免責)' '故意または重大な過失' が本文に存在する",
+      "source_file": "honmono/legal/terms.html"
+    },
+    {
+      "id": "F-LEG-003",
+      "screen": "LEGAL_CREDITS",
+      "purpose": "同梱OSSと学習データの帰属表示を行う",
+      "trigger": "なし",
+      "input": "なし",
+      "output": "本文(著作権表示を含む)",
+      "state_dependencies": [],
+      "visibility": "常時可視",
+      "test": "smoke: 'Copyright (c) Microsoft Corporation' 'Copyright 2021 Adobe' 'CC BY 2.0' が本文に存在する",
+      "source_file": "honmono/legal/credits.html"
+    }
+  ],
+  "counts": {
+    "functions": 93
+  },
+  "prohibited_changes": [
+    "F-ID の削除・統合・意味変更",
+    "REQUIRED_COPY に列挙した文言の意味を変えること",
+    "state の削除(視覚的に到達できなくすることを含む)",
+    "警告・免責を、それが守る操作より後ろ・目立たない位置・折りたたみの中へ移すこと",
+    "localStorage キー / Cache 名 / ダウンロードファイル名の変更"
+  ],
+  "_sanitized": "source(ファイル+CSSセレクタ)は source_file(ファイルパスのみ)に置き換えた。現行の構造・装飾を示す語は WHAT だけを残す語に置き換えた"
+}

@@ -44,6 +44,9 @@ exclude:
   - honmono/design/IMAGE_BRIEF.md
   - honmono/design/PLAN_RELEASE_PREP.md
   - honmono/design/UI_REVIEW_BRIEF.md
+  # UI再設計パイプライン(v4)の作業一式。製品事実の台帳・Design Authority への依頼書・
+  # 検証基盤が入っている。サイトの一部ではないので配信しない。
+  - honmono/design/redesign-v4/
   - pachinko/DESIGN.md
   - pachinko/ASSET_BRIEF.md
 

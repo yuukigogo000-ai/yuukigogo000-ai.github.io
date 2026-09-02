@@ -152,7 +152,11 @@ def check(site):
     return problems, len(pages)
 
 def main():
-    site = r"C:\Users\gogyo\AppData\Local\Temp\hbk\site"
+    # 検査対象のサイトルート。既定はこのファイルから見たリポジトリ直下。
+    # (以前は特定セッションの一時ディレクトリを直書きしていて、そのフォルダが消えた時点で
+    #  この検査器は実行不能になっていた。SITE_ROOT で差し替えられるようにした)
+    site = os.path.abspath(os.environ.get(
+        "SITE_ROOT", os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")))
     if "--selftest" in sys.argv:
         # 写しを作ってわざと壊し、検査器が本当に落ちるか確かめる
         tmp = tempfile.mkdtemp(prefix="honmono_selftest_")
