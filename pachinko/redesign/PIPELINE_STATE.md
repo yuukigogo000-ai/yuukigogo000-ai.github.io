@@ -55,3 +55,12 @@ Design Authority への指示は `request/CHATGPT_INSTRUCTIONS.md` に定義済�
 - SOURCE_REPO_INTEGRITY: 本フェーズでゲーム本体のコードは一切変更していない
 - Claude Code は Design Authority ではない。未定義の Design Decision は
   `BLIND_DESIGN_BRIEF.md` 第14節として差し戻し済みであり、実装者側で補完しない
+
+## スマホからの受け渡し(モバイル・ブリッジ)
+
+ZIPを扱えない環境向けに、パッケージを11分割して1タップでコピーできるページを用意した。
+
+- `handoff.html` — 依頼一式を PART 1〜11 に分割し、コピーボタン・送信済みの記録・
+  自動コピー不可時の手動フォールバックを備えた受け渡しページ(全73,936字)
+- 分割は依頼パッケージの内容をそのまま用い、各パートに送信順の見出しを付けたのみ。
+  資料の内容・意味は一切変更していない
