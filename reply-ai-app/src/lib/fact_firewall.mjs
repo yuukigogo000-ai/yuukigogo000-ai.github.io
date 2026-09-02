@@ -42,6 +42,27 @@ const SECOND_PERSON_RE = /(?:さん|ちゃん|くん|あなた|そちら|君)(?:
 // 否定(自分の事実を「無い」と言うのは安全な断り。捏造の向きではないので許可)
 const NEGATION_RE = /な(?:い|く|かった)|ませ(?:ん|んでした)|ないです|無い|未経験|ことがな|ことな|ず(?:に|、|。|$)|できてな|出てな|弱いです|無知/;
 
+// 日本語の壊れ(誤字・重複)の簡易検査。**完全な誤字検出ではない**ので hard にはせず soft_risk(人間確認)へ回す。
+// 2026-09-02 実測: 「聞いたらお風呂入ったくなります」(入りたく の誤り)を人間が見つけ、検査器は素通しだった。
+const GLITCH_PATTERNS = [
+  ['broken_conjugation', /っ[たた]く(?:な|て)/],                       // 促音+たく(「入ったくなる」)
+  // 注: 助詞の2連(「とと」「にに」など)は「こととか」「なにに」で誤検知したので入れない(2026-09-02 実測)
+  ['duplicated_particle', /(?:がが|をを)(?![ぁ-ん])/],
+  ['repeated_char', /([ぁ-んァ-ヶ])\1{3,}/],                          // 同じ仮名の4連
+  ['double_punctuation', /[、。]{2,}|[!！?？]{4,}/],
+];
+
+/** 日本語として壊れて見える箇所(簡易・見逃しあり) */
+export function findTextGlitches(text) {
+  const t = String(text ?? '');
+  const out = [];
+  for (const [code, re] of GLITCH_PATTERNS) {
+    const m = re.exec(t);
+    if (m) out.push({ code, level: 'soft_risk', detail: `日本語が壊れて見える(${code}): 「${m[0]}」`, clause: t });
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // 個人事実のパターン(根拠が無ければ hard)。key は理由コードになる。
 const HARD_PATTERNS = [
@@ -50,7 +71,7 @@ const HARD_PATTERNS = [
   // 習慣・頻度
   ['habit_frequency', /週[0-9０-９一二三四五]|毎(?:日|週|月|朝|晩|回)|いつも|よく(?:行|来|食べ|飲|読|観|見|買|使|する)|しょっちゅう|(?:月|週|年)に[0-9０-９一二三四五六七八九十]+回|ばっか(?:り|りです)|ばかりで|(?:普段|平日|休日|週末)は[^。！？!?\n]{0,12}(?:ます|ました|てる|でる|です|でした)/],
   // 確立した好み(「〜派」「〜が好き」。質問・帰属は上位で除外)
-  ['established_preference', /派(?:です|だ|な(?:ん|の)|かな|で[、。]|$)|(?:が|は|も)好き(?:です|だ|な(?:ん|の)|で)|好きです|好きなん|苦手(?:です|だ|な(?:ん|の)|で)|嫌い(?:です|だ|な(?:ん|の))|(?:こだわ|拘)(?:り|って)|寄りが多い|の酸味あるやつが好き/],
+  ['established_preference', /派(?:です|だ|な(?:ん|の)|かな|で[、。]|$)|(?:が|は|も)好き(?:です|だ|な(?:ん|の)|で)|好きです|好きなん|苦手(?:です|だ|な(?:ん|の)|で)|嫌い(?:です|だ|な(?:ん|の))|(?:こだわ|拘)(?:り|って)|寄りが多い|の酸味あるやつが好き|ハマ(?:って|り(?:ま|に))|はまって(?:る|ます|い)|一番好き|お気に入り(?:です|の|は)|愛読|マイブーム|(?:が|は)気に入って/],
   // 所有・生活状態
   ['possession_state', /飼っ(?:て|た)|持って(?:る|ます|います)|履いて(?:る|ます|います)|着て(?:る|ます|います)|一人暮らし|実家暮らし|住んで(?:る|ます|います)|愛用/],
   // 属性(職業・住所・家族・交際)
@@ -59,6 +80,10 @@ const HARD_PATTERNS = [
   ['expertise', /詳し(?:いです(?![かね])|い(?=[。、!?！？\s]|$)|くて)|得意(?:です|な(?:ん|の)|で)|やってました|やってた|習ってた|経験があ|資格(?:を)?(?:持|取)/],
   // 行きつけ・常連
   ['regular_place', /行きつけ|常連|馴染みの(?:店|お店)|通ってる(?:店|お店)/],
+  // 主語つきの好み申告(「私は最近はSFとコメディのバランスがいいかも」)。断定を「かも/かな」で緩めても事実の申告
+  ['self_preference_claim', /(?:自分|私|僕|俺)(?:は|も)(?:最近(?:は)?)?[^。！？!?\n]{2,24}(?:バランスがい|が多い|寄り|でいい|がいい)(?:かも|かな|です|だ|ん)/],
+  // 体験がないと言えない助言(「専門店で測ってもらうのおすすめです」)。おすすめを「聞く・教えてもらう」側は対象外
+  ['experience_based_advice', /おすすめ(?:です|ですよ|だよ|だと思)|(?:する|した方が|してもらう|してみる)といい(?:です|ですよ|よ)|(?:のが|ので)おすすめ/],
   // 主語つきの範囲限定(「自分はバリとハワイだけなんで」「自分は近場ばっかり」= 経歴の断定)
   ['self_scope_claim', /(?:自分|僕|俺|私)(?:は|も)[^。！？!?\n]{0,24}(?:だけ(?:です|な(?:ん|の)|で)|ばっか(?:り|りです)|ばかりです|中心です)/],
 ];
@@ -195,12 +220,20 @@ export function findPersonalFacts(text, ctx = {}) {
  * 固有名詞の検査。入力にあるものは可。新規は文脈で hard / soft を分ける。
  * @returns {{code:string, level:'hard_reject'|'soft_risk', token:string, detail:string}[]}
  */
+/** 『…』「…」で囲まれた作品名・店名(固有名詞抽出が拾えない型。2026-09-02 の実測で見逃し) */
+export function findQuotedTitles(text) {
+  const out = [];
+  for (const m of String(text ?? '').matchAll(/[『「]([^』」\n]{2,30})[』」]/g)) out.push(m[1].trim());
+  return out.filter(Boolean);
+}
+
 export function findProperNounRisks(text, ctx = {}) {
   const groundingText = String(ctx.conversationText ?? '');
   // place_store(「〈地名〉の〈語〉」)は一般語を拾う誤検出が実測で出たため、firewall では使わない
   // (人間確認ページの候補提示としては引き続き有効)。ここは実在名の固定リストと固有名詞抽出だけ。
   const hints = findFabricationHints([text], groundingText).filter((h) => h.kind === 'known_brand' || h.kind === 'known_place');
   const tokens = new Set([...extractNameTokens(text)].filter((t) => !groundingText.includes(t)));
+  for (const q of findQuotedTitles(text)) if (!groundingText.includes(q)) tokens.add(q);
   for (const h of hints) if (!groundingText.includes(h.text)) tokens.add(h.text);
   if (!tokens.size) return [];
 
@@ -232,6 +265,7 @@ export function checkFactFirewall(text, ctx = {}) {
   if (PLACEHOLDER_RE.test(t)) reasons.push({ code: 'placeholder', level: 'hard_reject', detail: '未解決のプレースホルダ・呼びかけ(そのまま送れない)' });
   if (MANIPULATION_RE.test(t)) reasons.push({ code: 'manipulation_or_autosend', level: 'hard_reject', detail: '自動送信・操作を促す表現' });
   reasons.push(...findPersonalFacts(t, ctx));
+  reasons.push(...findTextGlitches(t));
   reasons.push(...findFactContradictions(t, ctx.enabledFactTexts || []));
   reasons.push(...findProperNounRisks(t, ctx));
   const verdict = reasons.some((r) => r.level === 'hard_reject') ? 'hard_reject'

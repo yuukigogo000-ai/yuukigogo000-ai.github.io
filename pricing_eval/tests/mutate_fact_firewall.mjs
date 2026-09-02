@@ -31,6 +31,15 @@ const MUTATIONS = [
   ['自動送信・操作の検出を無効化', 'fact_firewall.mjs', 'export const MANIPULATION_RE = /自動(?:で|的に)?(?:送信|返信|送っ)|代わりに送(?:り|っ)|勝手に送|既読(?:を)?つけ(?:ず|ない)|相手を(?:焦らせ|試す|煽)|わざと(?:既読|未読|返さ)|返信を予約/;', 'export const MANIPULATION_RE = /(?!)/;'],
   ['節の分割から空白を外す(「〜です笑 相手さんは〜」を1節にする)', 'fact_firewall.mjs', '[。．！!？?、，\\n\\s]', '[。．！!？?、，\\n]'],
 
+  // --- 2026-09-02 の実測で見逃した型 ---
+  ['「ハマってる」を好みの断定から外す', 'fact_firewall.mjs', '|ハマ(?:って|り(?:ま|に))', ''],
+  ['主語つきの好み申告(「私は最近は〜がいいかも」)の検出を外す', 'fact_firewall.mjs', "  ['self_preference_claim',", "  ['self_preference_claim_disabled', /(?!)/], ['unused_self_preference',"],
+  ['体験前提の助言(「〜のがおすすめです」)の検出を外す', 'fact_firewall.mjs', "  ['experience_based_advice',", "  ['experience_based_advice_disabled', /(?!)/], ['unused_advice',"],
+  ['『』で囲んだ作品名を固有名詞として拾わない', 'fact_firewall.mjs', '  for (const q of findQuotedTitles(text)) if (!groundingText.includes(q)) tokens.add(q);', ''],
+  ['日本語の壊れの検査を無効化する', 'fact_firewall.mjs', '  reasons.push(...findTextGlitches(t));', ''],
+  ['日本語の壊れを hard へ上げる(人間確認に回さず落とす)', 'fact_firewall.mjs', "out.push({ code, level: 'soft_risk', detail: `日本語が壊れて見える", "out.push({ code, level: 'hard_reject', detail: `日本語が壊れて見える"],
+  ['誤字検査の対象を広げて普通の日本語まで止める', 'fact_firewall.mjs', "  ['broken_conjugation', /っ[たた]く(?:な|て)/],", "  ['broken_conjugation', /た(?:く|かっ)/],"],
+
   // --- 候補選抜 ---
   ['最終案を2件にする', 'candidate_select.mjs', 'export const FINAL_COUNT = 3;', 'export const FINAL_COUNT = 2;'],
   ['hard reject の候補を選抜対象に混ぜる', 'candidate_select.mjs', 'const valid = results.filter((r) => r.ok);', 'const valid = results;'],

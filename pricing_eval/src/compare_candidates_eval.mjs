@@ -81,13 +81,26 @@ export function parseCandidateResponse(res, { toolName = 'reply_candidates' } = 
   return { ok: true, candidates: list, usage };
 }
 
+/**
+ * 「自分の事実」節。**この要求で有効化されたものだけ**を渡し、id を添えて申告させる。
+ * 何も無いときは節ごと出さない(空の節を出すと「無いこと」を推測材料にされる)。
+ */
+export function selfFactsSection(facts = []) {
+  const list = (facts || []).filter((f) => f && f.enabledForRequest === true);
+  if (!list.length) return '';
+  return ['', '## 自分の事実(本人が登録したもの。これは使ってよい。使ったら usedFactIds に id を入れる)',
+    ...list.map((f) => `- ${f.id}: ${f.text}`),
+    'ここに無いことは自分の事実として書かない。聞かれて答えが無いときは「無い」と正直に書いてよい'].join('\n');
+}
+
 /** ケースから検査用の文脈を作る(両モデルで完全に同じ) */
-export function contextFor(c, experimentId) {
+export function contextFor(c, experimentId, enabledFacts = []) {
   const conv = (c.conversation || []).map((x) => x.text);
   return {
     conversationText: [c.goal, c.style_sample || '', c.partner_profile ? `${c.partner_profile.nickname} ${c.partner_profile.note}` : '', ...conv].join(' '),
     selfMessages: (c.conversation || []).filter((x) => x.from === 'self').map((x) => x.text),
     bannedRules: BANNED_RULES,
+    enabledFacts,
     idempotencyKey: `${experimentId}|${c.id}`,   // モデル名を入れない = fallback 文面も両モデルで同一
   };
 }
@@ -106,6 +119,7 @@ async function main() {
   const dryRun = args['dry-run'] === true;
   const priorSpentGiven = args['prior-spent-usd'] !== undefined;
   const priorSpentUsd = Number(args['prior-spent-usd'] || 0);
+  const selfFactsPath = args['self-facts'] ? String(args['self-facts']) : null;
   const modelIds = String(args.models || 'moonshotai.kimi-k2.5,qwen.qwen3-vl-235b-a22b').split(',').map((s) => s.trim()).filter(Boolean);
   if (modelIds.length !== 2) throw new Error('--models は2件(比較のため)');
   const summaryDir = join(RUNS_DIR, '_summary');
@@ -122,6 +136,17 @@ async function main() {
   const cases = parsedDs.cases;
   if (cases.length !== COMPARE_CASES) stop(`dataset のケース数が ${cases.length}(期待 ${COMPARE_CASES})`);
   gate.steps.dataset = { path: datasetPath, datasetHash, cases: cases.map((c) => c.id), generatedBy: parsedDs.generated_by };
+
+  // 自分の事実(任意)。両モデルへ同じものを渡す = 指紋にも入れるので片方だけ有利にできない
+  let selfFactsByCase = {};
+  let selfFactsHash = 'none';
+  if (selfFactsPath) {
+    const rawFacts = readFileSync(selfFactsPath, 'utf8');
+    selfFactsHash = sha(rawFacts);
+    selfFactsByCase = JSON.parse(rawFacts).byCase || {};
+    gate.steps.selfFacts = { path: selfFactsPath, sha256: selfFactsHash, cases: Object.keys(selfFactsByCase).length };
+  }
+  const factsFor = (caseId) => (selfFactsByCase[caseId] || []).map((f) => ({ ...f, enabledForRequest: true, source: 'explicit' }));
 
   // ---------------- プロンプト・schema・検出器の指紋(両モデル共通)
   const { sys: candidateSystem, schema: candidateSchema, externalSchemaSha } = await loadCandidatePrompts();
@@ -213,7 +238,8 @@ async function main() {
     if (!canContinue(state, step.modelId)) continue;
     const model = models.find((m) => m.modelId === step.modelId);
     const c = casesById.get(step.caseId);
-    const ctx = contextFor(c, experimentId);
+    const facts = factsFor(c.id);
+    const ctx = contextFor(c, experimentId, facts);
     const oneWorst = oneCallWorstCaseUsd(model);
     // モデル別の上限(§4)と全体予算の両方を、呼び出しの前に見る
     const modelWorstAfter = (spentByModel[model.modelId] + oneWorst * MAX_ATTEMPTS_PER_CASE) * usdJpy;
@@ -228,10 +254,10 @@ async function main() {
       break;
     }
 
-    const userText = buildProductionUserPrompt(c, null);
+    const userText = buildProductionUserPrompt(c, null) + selfFactsSection(facts);
     const imagePaths = (c.images || []).map((f) => join('pricing_eval/screenshots', f));
     const fp = inputFingerprint({
-      datasetHash, caseId: c.id, schemaHash, detectorHash, temperature: cfg.temperature, outputMaxTokens,
+      datasetHash, caseId: c.id, schemaHash, detectorHash: `${detectorHash}|facts:${selfFactsHash}`, temperature: cfg.temperature, outputMaxTokens,
       promptHash: promptHashOf({ system: 'CANDIDATES ' + candidateSystem, userText, imageFiles: c.images || [] }),
       imageHashes: (c.images || []).map((f) => (existsSync(join('pricing_eval/screenshots', f)) ? sha(readFileSync(join('pricing_eval/screenshots', f))) : 'missing')),
     });
@@ -311,7 +337,7 @@ async function main() {
   const out = {
     experimentId, at: new Date().toISOString(), blindSeed: `${experimentId}-blind`,
     dataset: { path: datasetPath, datasetHash }, fingerprints: gate.steps.fingerprints,
-    config: { temperature: cfg.temperature, outputMaxTokens, usdJpy, perModelLimitJpy, totalLimitJpy, maxAttempts: MAX_ATTEMPTS_PER_CASE, region: cfg.region },
+    config: { temperature: cfg.temperature, outputMaxTokens, usdJpy, perModelLimitJpy, totalLimitJpy, maxAttempts: MAX_ATTEMPTS_PER_CASE, region: cfg.region, selfFacts: selfFactsPath ? { path: selfFactsPath, sha256: selfFactsHash } : null },
     models: gate.steps.models, runIds,
     plan: gate.steps.plan,
     identicalInputProblems: identical,

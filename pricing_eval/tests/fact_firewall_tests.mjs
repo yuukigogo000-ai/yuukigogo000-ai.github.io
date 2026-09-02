@@ -363,6 +363,61 @@ t('36. 似すぎた候補は3案に同時採用しない(別 lane でも言い�
   }
 });
 
+console.log('\n== 2026-09-02 の実測で見逃した型(人間が「作り話」と判定したもの) ==');
+
+t('37. 実runで見逃した4型が hard になる(ハマってる/主語つきの好み/作品名のおすすめ/体験前提の助言)', () => {
+  const ctx = ctxFor('FAB_MEDIA_02');
+  const cases = [
+    ['最近はサスペンス系にハマってる笑', 'established_preference'],
+    ['私は最近はSFとコメディのバランスがいいかも', 'self_preference_claim'],
+    ['おすすめは『バービー』とか『君たちはどう生きるか』かな、観てないならぜひ', 'proper_noun_personal_history'],
+    ['専門店で足型測定してもらうのおすすめです、自分に合うの見つかりますよ', 'experience_based_advice'],
+  ];
+  for (const [text, code] of cases) {
+    const v = checkFactFirewall(text, ctx);
+    assertEq(v.verdict, 'hard_reject', `見逃し: ${text}`);
+    assert(v.reasons.some((r) => r.code === code), `理由コードが違う(${code}): ${v.reasons.map((r) => r.code)}`);
+  }
+});
+
+t('38. 日本語の壊れは soft_risk(hard にしない)。ふつうの日本語を誤検知しない', () => {
+  const ctx = ctxFor('FAB_TRAVEL_01');
+  const v = checkFactFirewall('温泉いいね!聞いたらお風呂入ったくなります笑', ctx);
+  assertEq(v.verdict, 'soft_risk', '誤字を素通しした/hard にした');
+  assert(v.reasons.some((r) => r.code === 'broken_conjugation'), `理由: ${v.reasons.map((r) => r.code)}`);
+  // 誤検知していた実例(「こととか」の「とと」・「ぼったくり」の「った+く」)
+  for (const s2 of ['最近ちょっと嬉しかったこととかあります?', 'ぼったくりの店は嫌ですよね', '行きたくなってきました']) {
+    assert(!checkFactFirewall(s2, ctx).reasons.some((r) => /glitch|duplicated_particle|broken_conjugation|repeated_char/.test(r.code)), `ふつうの日本語を誤検知: ${s2}`);
+  }
+});
+
+t('39. 「おすすめは無い」と正直に答える型は ok のまま(発注者が「これでいい」と言った言い回し)', () => {
+  const ctx = ctxFor('FAB_FOOD_02');
+  for (const s2 of [
+    '実はまだこれってお店がなくて、逆におすすめ知りたいです',
+    '詳しくないんですよね〜 どういうお店が好みですか?',
+    'ちゃんと調べたことなかったです笑 教えてもらっていいですか?',
+    'おすすめあったら教えてほしいです',
+  ]) {
+    assertEq(checkFactFirewall(s2, ctx).verdict, 'ok', `正直な「無い」を止めた: ${s2}`);
+  }
+});
+
+t('40. 候補生成プロンプトが本番の文体ルールの上に建っている(落とすと AI っぽくなる)', () => {
+  const src = readFileSync('reply-ai-app/src/lib/prompts.ts', 'utf8');
+  const cand = src.match(/REPLY_CANDIDATES_SYSTEM = `([\s\S]*?)`;/);
+  assert(cand, 'REPLY_CANDIDATES_SYSTEM を取り出せない');
+  assert(cand[1].includes('${STYLE_AND_TELL}'), '共有の文体ブロックを使っていない');
+  const style = src.match(/STYLE_AND_TELL = `([\s\S]*?)`;/);
+  assert(style, 'STYLE_AND_TELL が無い');
+  for (const k of ['30〜60字', '句読点', 'アンケート', 'オウム返し', '温度ゼロ', '毎通同じ長さ']) {
+    assert(style[1].includes(k), `共有の文体ブロックに「${k}」が無い`);
+  }
+  for (const k of ['金太郎飴', '質問で終わる案は多くても1つ', '正直に答えてよい', '少なくとも1案']) {
+    assert(cand[1].includes(k), `候補プロンプトに「${k}」が無い`);
+  }
+});
+
 console.log(`\n${fail === 0 ? '✅' : '❌'} ${pass} 件成功 / ${fail} 件失敗`);
 if (fail) console.log(`失敗: ${failures.join(', ')}`);
 process.exit(fail === 0 ? 0 : 1);

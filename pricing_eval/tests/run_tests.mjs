@@ -1186,7 +1186,17 @@ await (async () => {
     const raw = readFileSync('reply-ai-app/src/lib/prompts.ts', 'utf8');
     const m = raw.match(/REPLY_SYSTEM = `([\s\S]*?)`;/);
     assert(m, 'prompts.ts から原文を特定できない');
-    assertEq(prod.REPLY_SYSTEM === m[1], MUTATE ? false : true, '抽出結果が原文と一致しない(劣化)');
+    // 文体・AI判定のブロックは候補生成プロンプトと共有する定数(STYLE_AND_TELL)。
+    // 原文には ${STYLE_AND_TELL} が入るので、定数を差し込んだものが抽出結果と一致すること = 手写しでないこと
+    const styleM = raw.match(/STYLE_AND_TELL = `([\s\S]*?)`;/);
+    assert(styleM, 'STYLE_AND_TELL を特定できない(文体ルールの共有元)');
+    assert(m[1].includes('${STYLE_AND_TELL}'), '本番プロンプトが共有の文体ブロックを使っていない');
+    const composed = m[1].replace('${STYLE_AND_TELL}', styleM[1]);
+    assertEq(prod.REPLY_SYSTEM === composed, MUTATE ? false : true, '抽出結果が原文と一致しない(劣化)');
+    // 候補生成プロンプトも同じ文体ブロックの上に建っていること(2026-09-02: 落としていて AI っぽさの主因になった)
+    const candM = raw.match(/REPLY_CANDIDATES_SYSTEM = `([\s\S]*?)`;/);
+    assert(candM, 'REPLY_CANDIDATES_SYSTEM を特定できない');
+    assert(candM[1].includes('${STYLE_AND_TELL}'), '候補生成プロンプトに文体ルールが入っていない');
     assert(prod.REPLY_SCHEMA.required.includes('replies') && prod.REPLY_SCHEMA.required.includes('situation'), 'schema抽出');
     assertEq('interest_level' in prod.REPLY_SCHEMA.properties, MUTATE ? true : false, '除去済みinterest_levelがschemaに残っている');
     assertEq(/interest_level/.test(prod.REPLY_SYSTEM), false, '本番プロンプト本文に interest_level が残っている');
