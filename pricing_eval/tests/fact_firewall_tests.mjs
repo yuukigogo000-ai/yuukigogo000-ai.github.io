@@ -418,6 +418,20 @@ t('40. 候補生成プロンプトが本番の文体ルールの上に建って�
   }
 });
 
+t('41. 登録した自分の事実を否定する返信は hard(実測: 台湾に行ったと登録したのに「行ったことない」)', () => {
+  const facts = ['海外は台湾と韓国に行ったことがある', '国内は北海道が一番よかった'];
+  const ctx = { ...ctxFor('FAB_TRAVEL_02'), enabledFactTexts: facts };
+  const v = checkFactFirewall('実は台湾まだ行ったことないんです、おすすめ教えてください!', ctx);
+  assertEq(v.verdict, 'hard_reject', '登録事実と食い違う否定を通した');
+  assert(v.reasons.some((r) => r.code === 'fact_negation_conflict'), `理由: ${v.reasons.map((r) => r.code)}`);
+  for (const s2 of ['台湾と韓国です!台湾3回は本当に好きなんですね', '韓国は1回だけで、また行きたいなって思ってます']) {
+    assertEq(checkFactFirewall(s2, ctx).verdict, 'ok', `矛盾していない文を止めた: ${s2}`);
+  }
+  // 事実そのものが否定形なら、否定で返しても矛盾ではない
+  const ctx2 = { ...ctxFor('FAB_FOOD_02'), enabledFactTexts: ['パン屋巡りはしたことがない', 'こだわりは特にない'] };
+  assertEq(checkFactFirewall('パン屋巡りはしたことなくて、逆におすすめ知りたいです', ctx2).verdict, 'ok', '否定の事実を否定で返して止めた');
+});
+
 console.log(`\n${fail === 0 ? '✅' : '❌'} ${pass} 件成功 / ${fail} 件失敗`);
 if (fail) console.log(`失敗: ${failures.join(', ')}`);
 process.exit(fail === 0 ? 0 : 1);

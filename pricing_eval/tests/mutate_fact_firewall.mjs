@@ -40,6 +40,9 @@ const MUTATIONS = [
   ['日本語の壊れを hard へ上げる(人間確認に回さず落とす)', 'fact_firewall.mjs', "out.push({ code, level: 'soft_risk', detail: `日本語が壊れて見える", "out.push({ code, level: 'hard_reject', detail: `日本語が壊れて見える"],
   ['誤字検査の対象を広げて普通の日本語まで止める', 'fact_firewall.mjs', "  ['broken_conjugation', /っ[たた]く(?:な|て)/],", "  ['broken_conjugation', /た(?:く|かっ)/],"],
 
+  ['登録した事実の否定(矛盾)の検出を無効化', 'fact_firewall.mjs', '  reasons.push(...findFactNegationConflicts(t, ctx.allFactTexts || ctx.enabledFactTexts || []));', ''],
+  ['矛盾検出を事実が否定形でも動かす(誤検知させる)', 'fact_firewall.mjs', 'if (!FACT_POSITIVE_RE.test(fact) || FACT_NEGATIVE_RE.test(fact)) continue;', 'if (false) continue;'],
+
   // --- 候補選抜 ---
   ['最終案を2件にする', 'candidate_select.mjs', 'export const FINAL_COUNT = 3;', 'export const FINAL_COUNT = 2;'],
   ['hard reject の候補を選抜対象に混ぜる', 'candidate_select.mjs', 'const valid = results.filter((r) => r.ok);', 'const valid = results;'],

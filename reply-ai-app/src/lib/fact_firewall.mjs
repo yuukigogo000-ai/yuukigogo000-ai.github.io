@@ -128,6 +128,42 @@ export function splitClauses(text) {
  * 有効な自分情報と食い違う断定の検出(現状は「〜派」の食い違いだけ)。
  * **全ての矛盾を検出できるとは主張しない**(人間確認が最終判定)。
  */
+// 登録済みの事実を否定してしまう型(2026-09-02 実測: 「海外は台湾と韓国に行ったことがある」と登録したのに
+// 「実は台湾まだ行ったことないんです」と書いた)。肯定の事実 × 同じ語 × 否定 = 矛盾。
+const FACT_POSITIVE_RE = /(?:行った|訪れた|食べた|読んだ|観た|見た|買った|使って|持って|飼って|住んで)(?:こと)?(?:が|は)?(?:ある|あり)|(?:に|へ)行った|(?:が|は)好き|(?:を)?履いて(?:る|いる|います)/;
+const FACT_NEGATIVE_RE = /こと(?:が|は)?(?:ない|なく|ありませ)|たことな|行ってな|使ってな|持ってな|好きじゃな|知らな/;
+
+/**
+ * 登録済みの事実と正面から食い違う否定を探す。
+ * ⚠ ここは**申告(usedFactIds)に関係なく、有効な自分情報すべて**と突き合わせる。
+ *   申告していなくても「登録した事実と反対のこと」を書けば嘘になるため。
+ * 別の(否定形の)事実がその否定を説明できるなら矛盾ではない
+ * (例: 「パンはクロワッサンが好き」+「パン屋巡りはしたことがない」に対して
+ *  「クロワッサンは好きだけどパン屋巡りはしたことない」は矛盾ではない)。
+ */
+export function findFactNegationConflicts(text, factTexts = []) {
+  const out = [];
+  const clauses = splitClauses(text).filter((c) => !c.isQuestion);
+  const negativeFacts = factTexts.map((f) => String(f ?? '')).filter((f) => FACT_NEGATIVE_RE.test(f));
+  // 説明に使えるのは**別の**事実だけ。自分自身で自分の矛盾を説明できることにしない
+  const explainedBy = (clause, tok, self) => negativeFacts.filter((nf) => nf !== self).some((nf) =>
+    (nf.match(/[一-龠ァ-ヴー]{2,}/g) || []).some((t2) => t2.length >= tok.length && clause.includes(t2)));
+  for (const f of factTexts) {
+    const fact = String(f ?? '');
+    if (!FACT_POSITIVE_RE.test(fact) || FACT_NEGATIVE_RE.test(fact)) continue;   // 事実側が肯定のときだけ見る
+    for (const tok of fact.match(/[一-龠ァ-ヴー]{2,}/g) || []) {
+      for (const c of clauses) {
+        if (!c.text.includes(tok) || !FACT_NEGATIVE_RE.test(c.text)) continue;
+        if (explainedBy(c.text, tok, fact)) continue;    // 別の否定形の事実で説明がつく
+        if (out.some((o) => o.detail.includes(tok))) continue;
+        out.push({ code: 'fact_negation_conflict', level: 'hard_reject', clause: c.text.trim(),
+          detail: `登録した自分の事実と食い違う否定(${tok}): 「${c.text.trim()}」/ 事実「${fact}」` });
+      }
+    }
+  }
+  return out;
+}
+
 export function findFactContradictions(text, factTexts = []) {
   // 「〜派」の直前の内容語だけを取る(助詞・主語は含めない)
   const pref = (s) => [...String(s).matchAll(/([^\s、。!?！？はがもをにでとの]{1,4})派/g)].map((m) => m[1]).filter(Boolean);
@@ -267,6 +303,8 @@ export function checkFactFirewall(text, ctx = {}) {
   reasons.push(...findPersonalFacts(t, ctx));
   reasons.push(...findTextGlitches(t));
   reasons.push(...findFactContradictions(t, ctx.enabledFactTexts || []));
+  // 矛盾は申告の有無に関係なく見る(allFactTexts があればそちら)
+  reasons.push(...findFactNegationConflicts(t, ctx.allFactTexts || ctx.enabledFactTexts || []));
   reasons.push(...findProperNounRisks(t, ctx));
   const verdict = reasons.some((r) => r.level === 'hard_reject') ? 'hard_reject'
     : reasons.some((r) => r.level === 'soft_risk') ? 'soft_risk' : 'ok';

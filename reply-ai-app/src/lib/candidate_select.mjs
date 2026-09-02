@@ -137,7 +137,8 @@ export function validateCandidate(cand, ctx = {}) {
   const base = { conversationText: ctx.conversationText || '', selfMessages: ctx.selfMessages || [] };
   // 根拠にできるのは「この要求で有効化され、かつ候補が申告した」自分情報だけ(§5.5)。
   // 申告の無い自分情報で個人事実を書いたら、たとえ本当でも破棄する(モデルの申告を信用しないため)
-  const strict = checkFactFirewall(text, { ...base, enabledFactTexts: declared.map((f) => f.text) });
+  // 根拠にできるのは申告した事実だけ。ただし**矛盾の検査だけは有効な事実すべて**と突き合わせる
+  const strict = checkFactFirewall(text, { ...base, enabledFactTexts: declared.map((f) => f.text), allFactTexts: enabled.map((f) => f.text) });
   reasons.push(...strict.reasons);
   if (strict.verdict === 'hard_reject' && enabled.length > declared.length) {
     const lenient = checkFactFirewall(text, { ...base, enabledFactTexts: enabled.map((f) => f.text) });
