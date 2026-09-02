@@ -1,0 +1,76 @@
+{
+  "schema": "TECHNICAL_CONSTRAINTS/1.0",
+  "delivery": {
+    "artifact": "単一の自己完結HTMLファイル(pachinko/index.html)。ビルド工程・バンドラ・トランスパイラは存在しない。",
+    "languages": "素のHTML / CSS / JavaScript のみ。フレームワーク未使用。",
+    "external_requests": "実行時の外部リクエストは禁止(現状ゼロ)。CDN・Webフォント・外部画像・解析タグは一切使用できない。",
+    "assets": "追加アセットはファイル内インライン(SVG / CSS / data URI)または同ディレクトリの静的ファイルとして同梱する必要がある。ラスタ画像を追加する場合は合計で軽量に保つこと。",
+    "fonts": "Webフォントの読み込みは不可。OS標準フォントスタックのみ利用可能。日本語表示が必須。"
+  },
+  "runtime_environments": [
+    "モバイルブラウザ(iOS Safari / Android Chrome)",
+    "デスクトップブラウザ(Chrome / Edge / Safari / Firefox)",
+    "PWAスタンドアロンウィンドウ",
+    "Electron(Chromium、sandbox有効・nodeIntegration無効、file:プロトコル)",
+    "file: プロトコルでの直接オープン"
+  ],
+  "protocol_constraint": "file: 環境でも同一ファイルが動作する必要があるため、fetch/XHRに依存する実装、ES Modules の外部import、Service Worker必須の実装は不可(Service Workerはhttps時のみの上乗せ機能として実装済み)。",
+  "viewport_requirements": {
+    "must_support_widths_px": [360, 390, 430],
+    "desktop": "1080px幅のウィンドウでも破綻せず表示されること(Electron既定ウィンドウ 1080x920)",
+    "rules": [
+      "横スクロール(body水平オーバーフロー)は禁止",
+      "テキストの重なり・切れは禁止",
+      "主要操作はスクロールで到達可能であること",
+      "幅に収まりきらないデータ表現は、その要素の内部で水平スクロールさせること(ページ全体を横スクロールさせない)"
+    ]
+  },
+  "persistence": {
+    "mechanism": "localStorage(キー: pachi-teikoku-save-v1)",
+    "constraint": "保存容量は小さく保つこと。保存値はロード時にサニタイズされ、型崩れ・範囲外・未知IDは補正または除去される。",
+    "failure_mode": "localStorageが使用不可でも致命的に落ちてはならない(保存処理は例外を握りつぶす実装)。"
+  },
+  "security": {
+    "html_injection": "ユーザー由来またはセーブ由来の文字列をHTMLとして挿入してはならない。現状は既知値のホワイトリスト化で防御している。新たな動的HTML挿入を伴う設計は、テキストノード挿入またはホワイトリスト化が可能な範囲に限る。",
+    "electron": "sandbox有効・contextIsolation有効・nodeIntegration無効。Node APIへ依存する実装は不可。",
+    "no_eval": "eval / new Function による動的コード生成は不可。"
+  },
+  "accessibility_requirements": [
+    "prefers-reduced-motion: reduce の尊重が必須",
+    "状態や意味の区別を色のみに依存させない(形・記号・テキストの併用が必要)",
+    "本文テキストは背景に対して十分なコントラストを確保すること",
+    "タップ対象は指で確実に押せる大きさを確保すること",
+    "操作可能要素はキーボードでも到達・実行できること"
+  ],
+  "performance_requirements": [
+    "1営業日の実行から結果提示までは体感的に即時であること(ブロッキング演出を挟まない)",
+    "常時再生される無限アニメーションは最小限に留めること",
+    "アニメーションは transform / opacity など合成向きプロパティを優先し、レイアウトを毎フレーム再計算させないこと",
+    "広範囲の大きなぼかしアニメーションは避けること",
+    "スクロールの乗っ取りは禁止",
+    "低スペックなモバイル端末でも操作応答が損なわれないこと"
+  ],
+  "content_scale": {
+    "machine_catalog_items": 10,
+    "max_installed_machines": 60,
+    "installed_machine_list_is_long": "設置台数は最大60件になり得るため、その一覧は多件数でも破綻しない前提で設計する必要がある",
+    "records_rows": "最大60営業日分の実績行",
+    "record_columns": 8,
+    "event_messages": 130,
+    "achievements": 15,
+    "status_metrics_always_visible": 7
+  },
+  "existing_pwa_and_desktop_bindings": {
+    "icon_files": ["pachinko/icon-192.png", "pachinko/icon-512.png"],
+    "note": "これらのファイルパスと寸法は PWA マニフェストおよびデスクトップビルドが参照する技術的固定要件である。中身の絵柄は Design Decision であり、Design Authority が新しいアイコンを指定した場合は同じパス・同じ寸法で差し替える。",
+    "theme_color_meta": "PWAマニフェストとtheme-colorメタタグに単一の色値が必要(値そのものは Design Decision)。"
+  },
+  "localization": "UIコピーは日本語。多言語化の要件はない。",
+  "prohibited_technical_changes": [
+    "外部ネットワーク依存の追加",
+    "ビルド工程の導入",
+    "サーバーサイド処理の追加",
+    "アカウント・ログインの追加",
+    "課金・決済の追加"
+  ]
+}

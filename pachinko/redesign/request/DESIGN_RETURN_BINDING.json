@@ -1,0 +1,100 @@
+{
+  "schema": "DESIGN_RETURN_BINDING/1.0",
+  "binding_id": "PT-87DA08BE2BEE2CF3",
+  "product_id": "pachi-teikoku",
+  "target_app_path": "pachinko/index.html",
+  "issued_at": "2026-09-02",
+  "issued_by": "Claude Code (implementer / not design authority)",
+  "pipeline": "UI REDESIGN PIPELINE v4.0",
+  "phase": "PHASE 4 — CHATGPT DESIGN REQUEST",
+  "function_freeze_range": "F-001..F-045",
+  "state_ids": [
+    "S-ONBOARDING",
+    "S-IDLE",
+    "S-SELECTED",
+    "S-PROCESSING",
+    "S-RESULT",
+    "S-SUCCESS",
+    "S-WARNING",
+    "S-DANGER",
+    "S-EMPTY",
+    "S-DISABLED",
+    "S-CONFIRM",
+    "S-BLOCKED-NO-MACHINE",
+    "S-DEAD",
+    "S-TRANSIENT-NOTICE",
+    "S-HOVER",
+    "S-TRIAL-IDLE",
+    "S-TRIAL-SPINNING",
+    "S-TRIAL-REACH",
+    "S-TRIAL-WIN",
+    "S-TRIAL-RUSH",
+    "S-TRIAL-LOSE",
+    "S-TRIAL-AUTO",
+    "S-TRIAL-EMPTY"
+  ],
+  "screen_ids": [
+    "SCR-ONBOARDING",
+    "SCR-PERSISTENT-CONTEXT",
+    "SCR-OPERATIONS",
+    "SCR-ACQUISITION",
+    "SCR-MANAGEMENT",
+    "SCR-RECORDS",
+    "SCR-DAY-COMMIT",
+    "SCR-DAY-RESULT",
+    "SCR-TRIAL-SLOT",
+    "SCR-TRIAL-PACHINKO",
+    "SCR-BLOCKED-NO-MACHINE",
+    "SCR-TERMINAL-BANKRUPT",
+    "SCR-ACHIEVEMENT-NOTICE"
+  ],
+  "copy_id_range": "C-001..C-189 + fixed_content_sets",
+  "request_file_sha256": {
+    "PRODUCT_TRUTH.json": "a6edc045cbd321fa4f36cf46185e341addf2844abd0bfe5c9499e8bd213fca97",
+    "FUNCTION_FREEZE.json": "15db214a8c15e011ecd16d21e1fa7a0df4245d9a8714c0869c758298a0048e69",
+    "SCREEN_STATE_INVENTORY.json": "3c50f56fa4aab9ee6368da7f598c4c5535b71430726c397ed908955c196ac3d7",
+    "REQUIRED_COPY.json": "bc7972962ad583841370f034fb19a2d5708fdafac8dcb3d342a71159f878e4cc",
+    "TECHNICAL_CONSTRAINTS.json": "2053c8a224e76e994297a4bd0505f68a9f33e5d935a4b70684d3954d728c66cc",
+    "TRUST_AND_SAFETY_FACTS.json": "52d4e991481d6c570347b79b9fae0f336ddf5105f6ffe511fe026848db3064d9",
+    "BLIND_DESIGN_BRIEF.md": "8528f046249dac18f2609afb5ae8473eef697c8762505a565d4a0e1c84c4abd9",
+    "FUNCTION_PRESENCE_CONTRACT.json": "56597ba64d490779216779e533126a6419f8ec837326e51a4502b76ae897896e",
+    "DESIGN_RETURN_SCHEMA.json": "bfd4911acd8bccf96a0b899f3e1884ed7fa17f8646935972334a136cb4288e4f",
+    "CHATGPT_INSTRUCTIONS.md": "61b7f6c97393955a3ac65ab7e85771fbf1a9690c80d5684f30187e406f72de79"
+  },
+  "required_return_files": [
+    "DESIGN_RETURN_BINDING.json",
+    "DESIGN_DECISION.md",
+    "DESIGN_SYSTEM.md",
+    "SCREEN_SPEC.md",
+    "MOTION_SPEC.md",
+    "ASSET_MANIFEST.json"
+  ],
+  "required_return_visuals": [
+    "HOME_MASTER",
+    "TASK_MASTER",
+    "TRIAL_MASTER",
+    "STATE_VISUALS",
+    "NARROW_AND_WIDE"
+  ],
+  "return_must_echo": {
+    "request_binding_id": "PT-87DA08BE2BEE2CF3"
+  },
+  "return_must_declare": {
+    "declares_no_function_change": true,
+    "declares_no_invented_claims": true,
+    "acknowledged_function_freeze_range": "F-001..F-045"
+  },
+  "verification_on_return": [
+    "binding echo一致",
+    "必須ファイルの存在",
+    "Function Freeze矛盾=0",
+    "必須能力の欠落=0",
+    "必須状態の欠落=0",
+    "実装不能な指示=0",
+    "外部依存の要求=0",
+    "アセット欠落=0",
+    "モーション矛盾=0",
+    "作られた製品主張=0"
+  ],
+  "note": "Design Qualityは実装者側では評価しない。検証対象は整合性・実現可能性・凍結範囲の遵守のみ。"
+}

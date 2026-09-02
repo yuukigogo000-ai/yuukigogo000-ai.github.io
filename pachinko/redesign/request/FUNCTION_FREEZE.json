@@ -1,0 +1,701 @@
+{
+  "schema": "FUNCTION_FREEZE/1.0",
+  "target_app_path": "pachinko/index.html",
+  "freeze_rule": "以下のF-IDはすべて再設計後も存在し、同じ意味・同じ結果を保たなければならない。削除・追加・意味変更は禁止。提示方法(視覚表現)のみ Design Authority の決定に従って変更してよい。",
+  "functions": [
+    {
+      "id": "F-001",
+      "name": "難易度を選んで新規ゲームを開始する",
+      "purpose": "初回起動時またはやり直し時に、3種類の難易度から1つを選んでゲームを始める",
+      "source": "index.html startGame(), showTutorial()",
+      "trigger": "難易度3種のいずれかを選ぶ操作",
+      "input": "難易度の選択(のんびり / 標準 / 修羅)",
+      "output": "選択した難易度に応じた初期資金・経営条件でゲーム状態が初期化され、以後の全機能が利用可能になる",
+      "state_dependencies": [
+        "S-ONBOARDING"
+      ],
+      "visible_behavior": "選択直後に開始が通知され、経営画面が操作可能になる",
+      "test": "各難易度で開始し、初期資金がそれぞれ13,000,000 / 10,000,000 / 6,500,000 になること"
+    },
+    {
+      "id": "F-002",
+      "name": "初回オンボーディングの提示",
+      "purpose": "ゲームの目的と中心となるトレードオフを開始前に伝える",
+      "source": "index.html showTutorial()",
+      "trigger": "セーブデータが存在しない状態での起動、またはやり直し実行後",
+      "input": "なし",
+      "output": "製品の目的・設定のジレンマ・特日/ブーム/シマ・融資・試打の存在が提示され、難易度選択へ接続される",
+      "state_dependencies": [
+        "S-ONBOARDING"
+      ],
+      "visible_behavior": "起動直後に自動提示される。難易度を選ぶまで経営操作は行われない",
+      "test": "localStorageを空にして起動し、オンボーディング内容と難易度選択肢3種が提示されること"
+    },
+    {
+      "id": "F-003",
+      "name": "4つの機能領域の切り替え",
+      "purpose": "ホール運用 / 新台購入 / 経営 / 帳簿 の各領域へ移動する",
+      "source": "index.html 機能領域切替ハンドラ",
+      "trigger": "領域選択操作",
+      "input": "領域ID(hall / shop / mgmt / ledger)",
+      "output": "選択した領域の内容が表示され、現在位置が識別できる",
+      "state_dependencies": [
+        "S-IDLE"
+      ],
+      "visible_behavior": "常時いずれか1領域が選択状態。切り替えは即時",
+      "test": "4領域すべてへ到達でき、各領域固有の要素が表示されること"
+    },
+    {
+      "id": "F-004",
+      "name": "設置台ごとの出玉設定変更(1〜6)",
+      "purpose": "各台の出玉設定を個別に選び、当日の粗利と評判・常連への影響を決める",
+      "source": "index.html renderHall() 内の設定選択UI",
+      "trigger": "台ごとの設定選択操作",
+      "input": "1〜6の離散値",
+      "output": "その台の設定が更新され保存される。次の営業日の収支・評判・プロ来店に反映される",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-SELECTED",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "現在の設定値が台ごとに常に読み取れる。設定5以上の台は警戒表示が付く",
+      "test": "設定を変更→保存→再読込で値が保持されること。倒産状態では変更できないこと"
+    },
+    {
+      "id": "F-005",
+      "name": "設置台の試打を開始する",
+      "purpose": "自店に設置済みの台を、その台の現在設定で実際に遊技して出方を体感する",
+      "source": "index.html renderHall() → openTrial()",
+      "trigger": "台ごとの試打操作",
+      "input": "対象の台(と現在設定)",
+      "output": "機種タイプに応じてスロットまたはパチンコの遊技フローが開始する",
+      "state_dependencies": [
+        "S-TRIAL-IDLE"
+      ],
+      "visible_behavior": "遊技フローへ遷移する。経営収支には影響しない旨が示される",
+      "test": "スロット機種で開始操作要素が、パチンコ機種で回転操作要素が提示されること"
+    },
+    {
+      "id": "F-006",
+      "name": "設置台の売却",
+      "purpose": "不要になった台を売却して資金を回収し、設置枠を空ける",
+      "source": "index.html renderHall() 売却処理",
+      "trigger": "台ごとの売却操作",
+      "input": "対象の台 + 実行確認",
+      "output": "購入価格の45%が資金に加算され、その台が設置一覧から除去される",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-CONFIRM",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "実行前に確認を求める。売却額は事前に読み取れる",
+      "test": "売却で資金が売却額分増え、台数が1減ること。倒産状態では実行できないこと"
+    },
+    {
+      "id": "F-007",
+      "name": "カタログ機種の試打を開始する",
+      "purpose": "購入前の機種を試して導入判断に活かす",
+      "source": "index.html renderShop() → openTrial()",
+      "trigger": "カタログ項目の試打操作",
+      "input": "対象機種(設定3相当で開始)",
+      "output": "その機種の遊技フローが開始する",
+      "state_dependencies": [
+        "S-TRIAL-IDLE"
+      ],
+      "visible_behavior": "未購入の機種でも試打できる",
+      "test": "カタログ10機種すべてで試打が開始できること"
+    },
+    {
+      "id": "F-008",
+      "name": "新台の購入・設置",
+      "purpose": "資金を投じて集客力のある台を増やす",
+      "source": "index.html renderShop() 購入処理",
+      "trigger": "カタログ項目の導入操作",
+      "input": "対象機種",
+      "output": "価格分の資金が減り、その機種が設置一覧に追加される。導入から5日間は新台効果が付く",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-DISABLED(資金不足/設置枠なし)",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "資金不足および設置枠満杯のときは実行不可であることが分かる",
+      "test": "購入で資金が価格分減り台数が1増えること。資金不足時と満杯時に実行不可であること"
+    },
+    {
+      "id": "F-009",
+      "name": "スタッフの雇用",
+      "purpose": "必要人数を満たして接客品質の低下を防ぐ",
+      "source": "index.html btnHire",
+      "trigger": "雇用操作",
+      "input": "なし(1人単位)",
+      "output": "スタッフが1人増え、日給が経費に加算される",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-WARNING(人員不足)",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "現在人数・必要人数・不足状態が読み取れる",
+      "test": "雇用でスタッフ数が1増えること"
+    },
+    {
+      "id": "F-010",
+      "name": "スタッフの解雇",
+      "purpose": "人件費を削減する",
+      "source": "index.html btnFire",
+      "trigger": "解雇操作",
+      "input": "なし(1人単位)",
+      "output": "スタッフが1人減る。1人未満にはできない",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-DISABLED(1人のとき)",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "1人のときは実行不可であることが分かる",
+      "test": "1人まで減らせ、それ以上は減らないこと"
+    },
+    {
+      "id": "F-011",
+      "name": "広告プランの選択",
+      "purpose": "翌営業日の集客を費用を払って増やす",
+      "source": "index.html renderMgmt() adButtons",
+      "trigger": "広告プランの選択操作",
+      "input": "4種のいずれか(広告なし / チラシ配布 / SNSキャンペーン / ローカルTV CM)",
+      "output": "選択が保存され、次の営業日の集客が増加し、費用がその日の経費に計上される。実行後は自動的に未設定へ戻る",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-SELECTED",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "現在選択中のプランと、その効果の説明が読み取れる",
+      "test": "選択が保存され、営業実行後に未設定へ戻ること"
+    },
+    {
+      "id": "F-012",
+      "name": "新装開店フェアの予約",
+      "purpose": "新台導入直後に告知して翌営業日の集客と評判を大きく伸ばす",
+      "source": "index.html btnGrand",
+      "trigger": "フェア開催操作",
+      "input": "なし",
+      "output": "費用300,000が引かれ、次の営業日にフェア効果(客数1.5倍・評判上昇)が適用される",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-DISABLED(条件未達/クールダウン中/資金不足)",
+        "S-SELECTED(予約済み)",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "開催可否と、不可の理由(新台導入直後でない/残り日数/資金不足)、予約済みであることが読み取れる",
+      "test": "新台導入から2日以内かつ7日経過かつ資金充足のときのみ実行でき、実行後は予約済み表示になること"
+    },
+    {
+      "id": "F-013",
+      "name": "店舗の拡張",
+      "purpose": "最大設置台数を5台増やして成長の上限を引き上げる",
+      "source": "index.html btnExpand",
+      "trigger": "拡張操作",
+      "input": "なし",
+      "output": "費用が引かれ最大設置数が+5される。上限60台。以降の家賃が増える",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-DISABLED(資金不足/上限到達)",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "現在の最大設置数、次の拡張費用、上限到達が読み取れる",
+      "test": "実行で最大設置数が+5され、60で打ち止めになること"
+    },
+    {
+      "id": "F-014",
+      "name": "銀行からの借入",
+      "purpose": "手元資金を増やして拡大を前倒しする",
+      "source": "index.html btnBorrow",
+      "trigger": "借入操作",
+      "input": "なし(100万円単位)",
+      "output": "資金と借入残高が同額増える。借入残高には日次0.25%の利息が発生し経費に計上される",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-DISABLED(枠上限)",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "借入残高・借入可能枠・金利が読み取れる",
+      "test": "枠内で実行でき、枠を超えて実行できないこと"
+    },
+    {
+      "id": "F-015",
+      "name": "借入の返済",
+      "purpose": "利息負担と純資産の目減りを解消する",
+      "source": "index.html btnRepay",
+      "trigger": "返済操作",
+      "input": "なし(100万円単位、残高と資金の少ない方が上限)",
+      "output": "資金と借入残高が同額減る",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-DISABLED(残高なし/資金不足)",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "実行可否が分かる",
+      "test": "残高と資金がある場合のみ実行でき、両者が同額減ること"
+    },
+    {
+      "id": "F-016",
+      "name": "交換率ポリシーの切り替え",
+      "purpose": "集客重視と利幅重視のどちらに店を寄せるか選ぶ",
+      "source": "index.html renderMgmt() rateButtons",
+      "trigger": "ポリシー選択操作",
+      "input": "2種のいずれか(等価交換 / 低換金)",
+      "output": "選択が保存され、以後の粗利率と客数に恒常的に影響する",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-SELECTED",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "現在のポリシーと、その損得の説明が読み取れる",
+      "test": "選択が保存・維持されること"
+    },
+    {
+      "id": "F-017",
+      "name": "1営業日の実行",
+      "purpose": "設定と施策を確定して1日を進め、結果を得る",
+      "source": "index.html btnOpen → simulateDay()",
+      "trigger": "営業開始操作(常時到達可能)",
+      "input": "現在のゲーム状態すべて",
+      "output": "客数・売上・払出・経費・純利益が算出され、資金・評判・常連・警戒度・台人気・実績が更新され、営業日が1進み、自動保存される",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-PROCESSING",
+        "S-RESULT",
+        "S-BLOCKED-NO-MACHINE",
+        "S-DEAD(操作拒否)"
+      ],
+      "visible_behavior": "実行後に必ず当日の結果が提示される。結果提示中の再実行は無効",
+      "test": "1回の操作で営業日がちょうど1進むこと。連続操作で複数日進まないこと"
+    },
+    {
+      "id": "F-018",
+      "name": "営業結果の提示",
+      "purpose": "その日に何が起きて、いくら儲かったのかを理解させる",
+      "source": "index.html showDayResult()",
+      "trigger": "F-017の完了",
+      "input": "当日の結果レコード + 発生イベント一覧",
+      "output": "発生イベント文、来店客数(一般/常連/プロの内訳)、総売上、出玉払出、経費(利息の内訳を含む)、本日の純利益、台別の店側収支が提示される",
+      "state_dependencies": [
+        "S-RESULT"
+      ],
+      "visible_behavior": "利用者が閉じるまで残り、閉じると通常操作へ戻る",
+      "test": "1日実行後に上記6項目と台別収支がすべて提示されること"
+    },
+    {
+      "id": "F-019",
+      "name": "週次レポートの提示",
+      "purpose": "7日ごとに経営を振り返らせ、次に取るべき手を助言する",
+      "source": "index.html weeklyReport()",
+      "trigger": "営業日が7の倍数に達したときのF-018と同時",
+      "input": "直近7日の履歴と現在状態",
+      "output": "週間純利益・平均客数・常連数と、状況に応じた助言(最大複数件)が提示される",
+      "state_dependencies": [
+        "S-RESULT"
+      ],
+      "visible_behavior": "当日結果に続けて提示される",
+      "test": "7日目・14日目の結果に週次レポートが含まれること"
+    },
+    {
+      "id": "F-020",
+      "name": "クリア判定と評価の提示",
+      "purpose": "ゴール到達を祝い、到達日数に応じた評価を与える",
+      "source": "index.html showDayResult() clear分岐, clearRank()",
+      "trigger": "純資産が1億円以上になった営業日の結果提示",
+      "input": "クリア日数",
+      "output": "クリアの告知と S/A/B/C の評価が提示される。クリア後もゲームは継続できる",
+      "state_dependencies": [
+        "S-SUCCESS"
+      ],
+      "visible_behavior": "クリアした日の結果に一度だけ提示される",
+      "test": "純資産1億到達日に評価付きの告知が提示され、その後も営業を継続できること"
+    },
+    {
+      "id": "F-021",
+      "name": "倒産の確定と終局提示",
+      "purpose": "ゲームオーバーを明確に伝え、やり直し以外の操作を封じる",
+      "source": "index.html showDayResult() 倒産分岐, isDead(), showBankruptModal()",
+      "trigger": "資金がマイナスのまま営業日が終了したとき、または倒産状態のセーブを読み込んだとき",
+      "input": "なし",
+      "output": "倒産の告知と、やり直し手段のみが提示される。経営操作・営業実行・売却は拒否される",
+      "state_dependencies": [
+        "S-DEAD"
+      ],
+      "visible_behavior": "倒産提示は回避できず、やり直すまで経営に戻れない",
+      "test": "倒産状態で売却により資金が回復しないこと、営業日が進まないこと"
+    },
+    {
+      "id": "F-022",
+      "name": "実績解除の通知",
+      "purpose": "達成の瞬間を即時に伝える",
+      "source": "index.html grantAch() および一時通知の表示処理",
+      "trigger": "未解除の実績条件を満たした瞬間",
+      "input": "実績ID",
+      "output": "解除した実績名の一時的な通知が表示され、数秒後に自動的に消える",
+      "state_dependencies": [
+        "S-TRANSIENT-NOTICE"
+      ],
+      "visible_behavior": "進行を妨げず、操作をブロックしない",
+      "test": "初回営業で開店初日の実績通知が出て、一定時間後に消えること"
+    },
+    {
+      "id": "F-023",
+      "name": "実績一覧の確認",
+      "purpose": "解除済み/未解除の全実績と条件を確認して次の目標にする",
+      "source": "index.html renderAch()",
+      "trigger": "経営領域の閲覧",
+      "input": "なし",
+      "output": "15件の実績が、名称・説明・解除状態とともに提示される",
+      "state_dependencies": [
+        "S-IDLE"
+      ],
+      "visible_behavior": "未解除のものは未達であると識別できる(色のみに依存しないこと)",
+      "test": "15件が列挙され、解除状態が区別できること"
+    },
+    {
+      "id": "F-024",
+      "name": "損益推移の提示と個別日の詳細参照",
+      "purpose": "直近30営業日の黒字/赤字の流れを一目で把握する",
+      "source": "index.html renderChart()",
+      "trigger": "帳簿領域の閲覧",
+      "input": "直近30日の純利益",
+      "output": "日ごとの純利益の推移が、黒字と赤字を区別できる形で提示される。個別の日を指し示すと日付と金額が読み取れる",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-EMPTY(履歴なし)",
+        "S-HOVER"
+      ],
+      "visible_behavior": "履歴がないときは、その旨が示される",
+      "test": "7日営業後に7日分の要素が提示され、履歴ゼロ件で空状態メッセージが出ること"
+    },
+    {
+      "id": "F-025",
+      "name": "営業成績一覧の確認",
+      "purpose": "各営業日の内訳を数値で検証する",
+      "source": "index.html renderLedger()",
+      "trigger": "帳簿領域の閲覧",
+      "input": "最大60日分の履歴",
+      "output": "日・客数・一般/常連/プロ内訳・売上・出玉払出・経費・純利益・備考の8項目が日ごとに参照できる。新しい日が先頭",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-EMPTY"
+      ],
+      "visible_behavior": "純利益の正負が区別できる。履歴ゼロ件では空状態メッセージが出る",
+      "test": "8項目すべてが参照可能で、幅の狭い画面でもページ全体を横スクロールさせずに読めること"
+    },
+    {
+      "id": "F-026",
+      "name": "経営ステータスの常時提示",
+      "purpose": "判断に必要な現在値をいつでも把握できるようにする",
+      "source": "index.html renderStatus()",
+      "trigger": "常時(状態更新のたびに再描画)",
+      "input": "ゲーム状態",
+      "output": "営業日(特日/週末の別を含む)・資金・評判・常連数・設置台数と上限・借入残高・純資産の7指標が読み取れる",
+      "state_dependencies": [
+        "S-IDLE"
+      ],
+      "visible_behavior": "どの機能領域にいても参照できる",
+      "test": "7指標すべてが常に読み取れ、値の更新が即時反映されること"
+    },
+    {
+      "id": "F-027",
+      "name": "行政・組合の警戒度の提示",
+      "purpose": "回収営業を続けた際の指導リスクの高まりを事前に知らせる",
+      "source": "index.html renderMgmt() heat表示",
+      "trigger": "経営領域の閲覧",
+      "input": "警戒度の値",
+      "output": "現在の警戒水準が量として把握でき、平常/警戒/危険に応じた説明が提示される",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-WARNING",
+        "S-DANGER"
+      ],
+      "visible_behavior": "水準の違いが色のみに依存せず判別できること",
+      "test": "警戒度を変化させたとき、量の表現と説明文が対応して変わること"
+    },
+    {
+      "id": "F-028",
+      "name": "手動セーブ",
+      "purpose": "任意のタイミングで保存する",
+      "source": "index.html btnSave",
+      "trigger": "セーブ操作",
+      "input": "なし",
+      "output": "現在状態が保存され、完了が利用者に伝わる",
+      "state_dependencies": [
+        "S-IDLE"
+      ],
+      "visible_behavior": "保存完了が明示される",
+      "test": "実行後に保存データが更新されること"
+    },
+    {
+      "id": "F-029",
+      "name": "最初からやり直す",
+      "purpose": "セーブを破棄して新規に開始する",
+      "source": "index.html btnReset, doReset()",
+      "trigger": "やり直し操作 + 実行確認",
+      "input": "実行確認",
+      "output": "保存データが削除され、オンボーディングから再開する",
+      "state_dependencies": [
+        "S-CONFIRM",
+        "S-ONBOARDING"
+      ],
+      "visible_behavior": "実行前に確認を求める。倒産状態からの唯一の復帰手段でもある",
+      "test": "実行後に営業日が1へ戻り、保存データが消えること"
+    },
+    {
+      "id": "F-030",
+      "name": "自動保存と自動復元(および保存値の無害化)",
+      "purpose": "中断しても続きから遊べるようにし、壊れた保存値でも安全に起動する",
+      "source": "index.html save(), load(), sanitizeState()",
+      "trigger": "営業日の終了ごと・各操作後の自動保存 / 起動時の自動読込",
+      "input": "localStorage の保存JSON",
+      "output": "前回の続きから再開する。型崩れ・範囲外・未知IDを含む保存値は補正または除去され、破損時は新規ゲームとして起動する",
+      "state_dependencies": [
+        "S-IDLE",
+        "S-ONBOARDING"
+      ],
+      "visible_behavior": "利用者の操作なしに機能する。自動保存される旨が説明されている",
+      "test": "改竄・破損した保存値でも例外なく起動し、値が正常範囲に収まること"
+    },
+    {
+      "id": "F-031",
+      "name": "台がない状態での営業実行のブロック",
+      "purpose": "台0台での営業という無効操作を防ぎ、次の行動を案内する",
+      "source": "index.html btnOpen ガード",
+      "trigger": "設置台数0で営業開始を試みたとき",
+      "input": "なし",
+      "output": "営業は実行されず、台の導入が必要である旨が案内される",
+      "state_dependencies": [
+        "S-BLOCKED-NO-MACHINE"
+      ],
+      "visible_behavior": "案内を閉じると通常操作へ戻る",
+      "test": "全台売却後に営業開始しても営業日が進まず、案内が提示されること"
+    },
+    {
+      "id": "F-032",
+      "name": "スロット試打: 遊技開始操作",
+      "purpose": "1ゲームを開始し、抽選結果を確定させる",
+      "source": "index.html openSlotTrial() lever()",
+      "trigger": "開始操作",
+      "input": "なし(所持メダル3枚を消費)",
+      "output": "3つのリールが回転状態になり、停止操作が可能になる。所持メダルとゲーム数が更新される",
+      "state_dependencies": [
+        "S-TRIAL-IDLE",
+        "S-TRIAL-SPINNING",
+        "S-DISABLED(メダル不足/回転中)"
+      ],
+      "visible_behavior": "回転中であることが分かる",
+      "test": "開始でメダルが3減り、ゲーム数が1増え、停止操作が有効になること"
+    },
+    {
+      "id": "F-033",
+      "name": "スロット試打: 3つのリールの個別停止と結果確定",
+      "purpose": "利用者自身の操作でリールを止め、成立役を確認する",
+      "source": "index.html openSlotTrial() stopReel(), resolve()",
+      "trigger": "リールごとの停止操作(3回)",
+      "input": "停止対象のリール",
+      "output": "各リールが停止し、3つすべての停止で結果が確定する。ボーナス成立時は告知表示と獲得枚数が提示され、所持メダル・差枚・ボーナス回数が更新される",
+      "state_dependencies": [
+        "S-TRIAL-SPINNING",
+        "S-TRIAL-WIN",
+        "S-TRIAL-LOSE"
+      ],
+      "visible_behavior": "ボーナス成立が明確に分かる(色のみに依存しないこと)",
+      "test": "3回の停止で結果が確定し、成立時に所持メダルが増えること"
+    },
+    {
+      "id": "F-034",
+      "name": "スロット試打: 試打設定の変更",
+      "purpose": "設定ごとの当選しやすさの違いを体感する",
+      "source": "index.html openSlotTrial() trSet",
+      "trigger": "試打設定の選択操作",
+      "input": "1〜6",
+      "output": "以後の抽選確率がその設定に従う(店の設定値は変更されない)",
+      "state_dependencies": [
+        "S-TRIAL-IDLE"
+      ],
+      "visible_behavior": "現在の試打設定が読み取れる",
+      "test": "設定変更後も遊技が継続でき、店側の台設定が変わらないこと"
+    },
+    {
+      "id": "F-035",
+      "name": "スロット試打: メダル補充",
+      "purpose": "所持メダルが尽きても体験を続けられるようにする",
+      "source": "index.html openSlotTrial() trRefill",
+      "trigger": "補充操作",
+      "input": "なし",
+      "output": "所持メダルが500増える(無償・経営収支に影響しない)",
+      "state_dependencies": [
+        "S-TRIAL-IDLE",
+        "S-TRIAL-EMPTY"
+      ],
+      "visible_behavior": "補充が無償であることが分かる",
+      "test": "実行で所持メダルが500増えること"
+    },
+    {
+      "id": "F-036",
+      "name": "スロット試打: 遊技実績の提示",
+      "purpose": "試打中の成績を把握する",
+      "source": "index.html openSlotTrial() updateStats()",
+      "trigger": "遊技の進行",
+      "input": "遊技状態",
+      "output": "所持メダル・総ゲーム数・BIG回数・REG回数・差枚の5指標が随時更新される",
+      "state_dependencies": [
+        "S-TRIAL-IDLE",
+        "S-TRIAL-SPINNING"
+      ],
+      "visible_behavior": "遊技中に常に参照できる",
+      "test": "5指標が遊技に応じて更新されること"
+    },
+    {
+      "id": "F-037",
+      "name": "パチンコ試打: 回転操作と抽選演出",
+      "purpose": "1回転を実行し、外れ・リーチ・大当りの結果を体験する",
+      "source": "index.html openPachiTrial() spin()",
+      "trigger": "回転操作",
+      "input": "なし(釘設定に応じた玉数を消費)",
+      "output": "3つの図柄が回転し順に停止する。リーチ時はその旨が提示され、大当り時は大当り演出と獲得玉が提示される。持ち玉・回転数・当り回数が更新される",
+      "state_dependencies": [
+        "S-TRIAL-IDLE",
+        "S-TRIAL-SPINNING",
+        "S-TRIAL-REACH",
+        "S-TRIAL-WIN",
+        "S-TRIAL-EMPTY(玉切れ)"
+      ],
+      "visible_behavior": "回転中の再操作は受け付けない。玉切れ時は補充を促す",
+      "test": "1回の操作で回転数が1だけ増え、演出完了後に次の操作が可能になること"
+    },
+    {
+      "id": "F-038",
+      "name": "パチンコ試打: 連続大当り(RUSH)の継続抽選",
+      "purpose": "機種ごとの継続率による連チャンを体験する",
+      "source": "index.html openPachiTrial() hitSequence()",
+      "trigger": "大当りの発生",
+      "input": "機種の継続率",
+      "output": "継続するたびに連チャン数と獲得玉が加算・提示され、終了時に総連チャン数と総獲得玉が提示される。最高連チャン数が更新される",
+      "state_dependencies": [
+        "S-TRIAL-WIN",
+        "S-TRIAL-RUSH"
+      ],
+      "visible_behavior": "継続と終了が明確に伝わる",
+      "test": "大当り発生から終了までが自動進行し、終了後に操作が可能に戻ること"
+    },
+    {
+      "id": "F-039",
+      "name": "パチンコ試打: 自動回転",
+      "purpose": "連続で回して長期の出方を確認する",
+      "source": "index.html openPachiTrial() pAuto",
+      "trigger": "自動回転の切り替え操作",
+      "input": "オン / オフ",
+      "output": "オンの間は回転が自動で繰り返される。オフで停止する",
+      "state_dependencies": [
+        "S-TRIAL-IDLE",
+        "S-TRIAL-AUTO"
+      ],
+      "visible_behavior": "自動回転中であることが分かる",
+      "test": "オンで回転数が自動増加し、オフで停止し、遊技終了時に確実に停止すること"
+    },
+    {
+      "id": "F-040",
+      "name": "パチンコ試打: 釘(設定)の変更",
+      "purpose": "釘調整による玉持ちの違いを体感する",
+      "source": "index.html openPachiTrial() trSet",
+      "trigger": "釘設定の選択操作",
+      "input": "1〜6",
+      "output": "1回転あたりの消費玉数が変化する(店の設定値は変更されない)",
+      "state_dependencies": [
+        "S-TRIAL-IDLE"
+      ],
+      "visible_behavior": "現在の釘設定が読み取れる",
+      "test": "設定を上げると1回転の消費玉が減ること"
+    },
+    {
+      "id": "F-041",
+      "name": "パチンコ試打: 玉補充と遊技実績の提示",
+      "purpose": "体験を継続でき、成績を把握できるようにする",
+      "source": "index.html openPachiTrial() pRefill, updateStats()",
+      "trigger": "補充操作 / 遊技の進行",
+      "input": "なし",
+      "output": "持ち玉が1000増える(無償)。持ち玉・回転数・当り回数・最高連チャン・差玉の5指標が随時更新される",
+      "state_dependencies": [
+        "S-TRIAL-IDLE",
+        "S-TRIAL-EMPTY"
+      ],
+      "visible_behavior": "補充が無償であることが分かる",
+      "test": "補充で持ち玉が1000増え、差玉の基準がずれないこと"
+    },
+    {
+      "id": "F-042",
+      "name": "試打の終了",
+      "purpose": "遊技をやめて経営へ戻る",
+      "source": "index.html closeModal(), trialCleanup",
+      "trigger": "終了操作",
+      "input": "なし",
+      "output": "遊技が終了し経営画面へ戻る。進行中の演出・自動回転はすべて確実に停止する。経営状態は一切変化しない",
+      "state_dependencies": [
+        "S-TRIAL-IDLE",
+        "S-TRIAL-SPINNING",
+        "S-TRIAL-AUTO"
+      ],
+      "visible_behavior": "いつでも終了できる",
+      "test": "回転中・自動回転中に終了しても残留処理が動作せず、資金等が変化しないこと"
+    },
+    {
+      "id": "F-043",
+      "name": "結果・案内の確認と復帰",
+      "purpose": "提示された内容を読み終えて操作へ戻る",
+      "source": "index.html closeModal()",
+      "trigger": "閉じる操作、または提示領域外の操作",
+      "input": "なし",
+      "output": "提示が閉じ、最新状態で経営画面へ戻る。ただし倒産時は閉じられない",
+      "state_dependencies": [
+        "S-RESULT",
+        "S-BLOCKED-NO-MACHINE",
+        "S-DEAD"
+      ],
+      "visible_behavior": "閉じる手段が明示される",
+      "test": "通常時は閉じられ、倒産時は閉じられずやり直しのみ可能なこと"
+    },
+    {
+      "id": "F-044",
+      "name": "インストール可能なアプリとしての動作(PWA)",
+      "purpose": "ブラウザから独立したウィンドウで、オフラインでも遊べるようにする",
+      "source": "pachinko/manifest.webmanifest, pachinko/sw.js, index.html のSW登録",
+      "trigger": "https配信時の起動、およびブラウザのインストール操作",
+      "input": "なし",
+      "output": "スタンドアロン表示でインストールでき、オフラインでも起動・プレイできる",
+      "state_dependencies": [
+        "S-IDLE"
+      ],
+      "visible_behavior": "アプリ名とアイコンがOSに登録される",
+      "test": "SWが登録され、オフライン再読込でもゲームが起動すること",
+      "visual_presence": "platform"
+    },
+    {
+      "id": "F-045",
+      "name": "デスクトップアプリとしての動作(Electron)",
+      "purpose": "OSネイティブのウィンドウで同一のゲームを遊べるようにする",
+      "source": "pachinko/desktop/main.js(index.html を読み込む)",
+      "trigger": "デスクトップアプリの起動",
+      "input": "なし",
+      "output": "同一のゲームがデスクトップウィンドウで動作し、保存もアプリ内で保持される",
+      "state_dependencies": [
+        "S-IDLE"
+      ],
+      "visible_behavior": "ブラウザ版と同一の機能が利用できる",
+      "test": "Electron起動でゲームが描画され、1営業日の実行と保存が成功すること",
+      "visual_presence": "platform"
+    }
+  ],
+  "prohibited_changes": [
+    "上記F-IDのいずれかの削除",
+    "新しいユーザー機能の追加",
+    "機能の意味・結果の変更",
+    "コピーの意味の変更",
+    "状態(S-ID)の削除",
+    "1営業日の実行を自動化・省略すること",
+    "試打が経営収支へ影響するようにすること",
+    "破壊的操作から確認を取り除くこと"
+  ],
+  "visual_presence_note": "visual_presence が platform の機能は、特定の画面文脈に属さない配布基盤レベルの機能である(画面文脈カバレッジの対象外)。"
+}

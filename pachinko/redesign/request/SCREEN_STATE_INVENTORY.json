@@ -1,0 +1,423 @@
+{
+  "schema": "SCREEN_STATE_INVENTORY/1.0",
+  "note_on_naming": "ここでの screen は「利用者が置かれる機能的な文脈」であり、画面構成・配置・提示形式を指定するものではない。presentation_form が TO_BE_DECIDED のものは Design Authority が決定する。",
+  "screens": [
+    {
+      "id": "SCR-ONBOARDING",
+      "role": "BRAND_CRITICAL",
+      "purpose": "製品の目的・中心となるジレンマ・遊びの広がりを伝え、難易度選択で開始させる",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "純資産1億円を目指すホール経営シミュレーションであること",
+        "出玉設定を渋ると儲かるが評判が下がり行政指導のリスクがあること、出すと常連が育つがプロに狙われること",
+        "7のつく日は特日で客が殺到し、週替わりのブーム機種とシマ効果があること",
+        "銀行融資で拡大できるが利息が重く、クリア条件は借金を差し引いた純資産であること",
+        "設置した台や購入前の台を実際に試打できること",
+        "難易度3種の選択肢と、それぞれの初期資金"
+      ],
+      "functions": [
+        "F-001",
+        "F-002"
+      ],
+      "states": [
+        "S-ONBOARDING"
+      ]
+    },
+    {
+      "id": "SCR-PERSISTENT-CONTEXT",
+      "role": "TASK_CRITICAL",
+      "purpose": "どの機能領域に居ても成立していなければならない文脈。経営指標の常時把握と、4つの機能領域間の移動・現在地の識別を担う",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "営業日(特日/週末の別を含む)",
+        "資金",
+        "評判(上限100)",
+        "常連客数",
+        "設置台数と最大設置数",
+        "借入残高",
+        "純資産",
+        "現在どの機能領域に居るかの識別",
+        "4つの機能領域(ホール / 新台購入 / 経営 / 帳簿)への移動手段"
+      ],
+      "functions": [
+        "F-026",
+        "F-003"
+      ],
+      "states": [
+        "S-IDLE",
+        "S-SELECTED"
+      ]
+    },
+    {
+      "id": "SCR-OPERATIONS",
+      "role": "TASK_CRITICAL",
+      "purpose": "設置中の各台を運用する中心作業。設定判断のための情報がここに集約される",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "台ごと: 機種名、機種の性格を表す短い説明、スペック概要、現在人気の水準、前営業日の店側収支と客数、売却額",
+        "台ごと: 新台であること / ブーム中であること / シマ効果の量 / 高設定でプロに狙われる状態 の各標識(該当時のみ)",
+        "台ごと: 出玉設定の現在値と変更手段、試打の起動手段、売却の手段",
+        "この領域の遊び方の説明(設定のメリハリ、行政指導、プロ、シマ効果、ブーム)"
+      ],
+      "scale_note": "台は最大60件まで増える",
+      "functions": [
+        "F-004",
+        "F-005",
+        "F-006"
+      ],
+      "states": [
+        "S-IDLE",
+        "S-SELECTED",
+        "S-EMPTY",
+        "S-WARNING",
+        "S-DEAD"
+      ]
+    },
+    {
+      "id": "SCR-ACQUISITION",
+      "role": "TASK_CRITICAL",
+      "purpose": "10機種のカタログから導入する台を選ぶ",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "機種ごと: 名称、性格を表す短い説明、スペック概要、集客力の値、人気の落ちる速さ(遅い/普通/速い)、価格",
+        "機種ごと: ブーム中であること / 自店の設置数(該当時のみ)",
+        "機種ごと: 試打の起動手段、購入の手段",
+        "購入不可の理由(資金不足 / 設置枠なし)が分かること",
+        "新台効果・シマ効果・売却額・新装開店フェアとの併用に関する説明"
+      ],
+      "functions": [
+        "F-007",
+        "F-008"
+      ],
+      "states": [
+        "S-IDLE",
+        "S-DISABLED",
+        "S-DEAD"
+      ]
+    },
+    {
+      "id": "SCR-MANAGEMENT",
+      "role": "TASK_CRITICAL",
+      "purpose": "台以外の経営資源(人・広告・催事・規模・資金調達・方針)と、警戒度・実績・データを扱う",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "スタッフ: 現在人数と日給合計、必要人数、不足の警告、雇用と解雇の手段、必要人数の考え方",
+        "広告: 4プランの名称と費用、現在の選択、効果の説明",
+        "新装開店フェア: 開催手段と開催可否の理由、費用と効果と条件の説明",
+        "店舗拡張: 現在の最大設置数、拡張の手段と費用、上限到達、家賃増加の注意",
+        "銀行融資: 借入残高、借入可能枠とその算出根拠、金利、借入と返済の手段、純資産がクリア条件である説明と緊急融資の説明",
+        "交換率ポリシー: 2種の選択肢、現在の選択、損得の説明",
+        "行政・組合の警戒度: 現在の水準と、水準に応じた説明",
+        "実績: 15件の名称・条件・解除状態",
+        "データ: 手動セーブ、やり直し、自動保存の説明"
+      ],
+      "functions": [
+        "F-009",
+        "F-010",
+        "F-011",
+        "F-012",
+        "F-013",
+        "F-014",
+        "F-015",
+        "F-016",
+        "F-023",
+        "F-027",
+        "F-028",
+        "F-029",
+        "F-030"
+      ],
+      "states": [
+        "S-IDLE",
+        "S-SELECTED",
+        "S-DISABLED",
+        "S-WARNING",
+        "S-DANGER",
+        "S-CONFIRM",
+        "S-DEAD"
+      ]
+    },
+    {
+      "id": "SCR-RECORDS",
+      "role": "TASK_CRITICAL",
+      "purpose": "過去の営業結果を検証する",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "直近30営業日の純利益の推移が、黒字と赤字を区別できる形で把握できること",
+        "推移上の個別の日について、日付と金額が確認できること",
+        "最大60営業日分の各日について、日・客数・一般/常連/プロの内訳・売上・出玉払出・経費・純利益・備考が確認できること",
+        "履歴がないときの空状態の案内"
+      ],
+      "functions": [
+        "F-024",
+        "F-025"
+      ],
+      "states": [
+        "S-IDLE",
+        "S-EMPTY",
+        "S-HOVER"
+      ]
+    },
+    {
+      "id": "SCR-DAY-COMMIT",
+      "role": "TASK_CRITICAL",
+      "purpose": "1営業日を確定させる主要アクション。どの機能領域からも到達できる必要がある",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "1営業日を実行する操作",
+        "その日が特日であるかどうかと、それに応じた短い助言",
+        "今週のブーム(該当時)"
+      ],
+      "functions": [
+        "F-017"
+      ],
+      "states": [
+        "S-IDLE",
+        "S-PROCESSING",
+        "S-DEAD"
+      ]
+    },
+    {
+      "id": "SCR-DAY-RESULT",
+      "role": "TASK_CRITICAL",
+      "purpose": "その日に起きたことと収支を理解させ、次の判断へつなげる",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "何日目の結果か、特日/週末であったか",
+        "その日に発生したイベントの文(0〜複数件)",
+        "来店客数と、一般/常連/プロの内訳",
+        "総売上、出玉払出、経費(利息を含む場合はその額)、本日の純利益",
+        "台別の店側収支",
+        "7日ごとの週次レポート(週間純利益・平均客数・常連数・助言)",
+        "クリア達成時の告知と評価ランク",
+        "倒産時の告知とやり直し手段",
+        "読み終えて戻る手段(倒産時を除く)"
+      ],
+      "functions": [
+        "F-018",
+        "F-019",
+        "F-020",
+        "F-021",
+        "F-043"
+      ],
+      "states": [
+        "S-RESULT",
+        "S-SUCCESS",
+        "S-DEAD"
+      ]
+    },
+    {
+      "id": "SCR-TRIAL-SLOT",
+      "role": "BRAND_CRITICAL",
+      "purpose": "スロット実機の遊技体験そのもの。操作の手応えと当選の瞬間が主役",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "遊技中の機種名とスペック概要",
+        "試打設定の現在値と変更手段",
+        "3つのリールの図柄と回転状態",
+        "遊技開始の操作(消費メダル数が分かること)と、3つの停止操作",
+        "ボーナス成立の告知",
+        "直前の結果(成立役と獲得枚数)",
+        "所持メダル・総ゲーム数・BIG回数・REG回数・差枚",
+        "試打が経営収支に影響しないこと、メダルを無償補充できること",
+        "メダル補充の手段、試打を終える手段"
+      ],
+      "functions": [
+        "F-032",
+        "F-033",
+        "F-034",
+        "F-035",
+        "F-036",
+        "F-042"
+      ],
+      "states": [
+        "S-TRIAL-IDLE",
+        "S-TRIAL-SPINNING",
+        "S-TRIAL-WIN",
+        "S-TRIAL-LOSE",
+        "S-TRIAL-EMPTY",
+        "S-DISABLED"
+      ]
+    },
+    {
+      "id": "SCR-TRIAL-PACHINKO",
+      "role": "BRAND_CRITICAL",
+      "purpose": "パチンコ実機の遊技体験そのもの。リーチから大当り、連チャンまでの盛り上がりが主役",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "遊技中の機種名とスペック概要",
+        "釘(設定)の現在値と変更手段",
+        "3つの数字図柄と回転・停止の状態",
+        "リーチの発生",
+        "大当りの発生と獲得玉、連チャンの継続と終了(総連チャン数と総獲得玉)",
+        "回転の操作、自動回転の切り替えと現在状態",
+        "持ち玉・回転数・当り回数・最高連チャン数・差玉",
+        "玉切れの通知",
+        "試打が経営収支に影響しないこと、玉を無償補充できること、釘が良いほど玉持ちが良いこと",
+        "玉補充の手段、試打を終える手段"
+      ],
+      "functions": [
+        "F-037",
+        "F-038",
+        "F-039",
+        "F-040",
+        "F-041",
+        "F-042"
+      ],
+      "states": [
+        "S-TRIAL-IDLE",
+        "S-TRIAL-SPINNING",
+        "S-TRIAL-REACH",
+        "S-TRIAL-WIN",
+        "S-TRIAL-RUSH",
+        "S-TRIAL-AUTO",
+        "S-TRIAL-EMPTY"
+      ]
+    },
+    {
+      "id": "SCR-BLOCKED-NO-MACHINE",
+      "role": "TASK_CRITICAL",
+      "purpose": "台0台で営業しようとしたときに、無効であることと次の行動を伝える",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "台が1台もないと営業できないこと",
+        "新台購入から台を導入する必要があること",
+        "了解して戻る手段"
+      ],
+      "functions": [
+        "F-031",
+        "F-043"
+      ],
+      "states": [
+        "S-BLOCKED-NO-MACHINE"
+      ]
+    },
+    {
+      "id": "SCR-TERMINAL-BANKRUPT",
+      "role": "TASK_CRITICAL",
+      "purpose": "倒産という終局を明確に伝え、やり直し以外を封じる",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "資金が尽き融資枠も限界であること",
+        "何日間の経営であったか",
+        "やり直す手段のみが提示されること"
+      ],
+      "functions": [
+        "F-021",
+        "F-029"
+      ],
+      "states": [
+        "S-DEAD"
+      ]
+    },
+    {
+      "id": "SCR-ACHIEVEMENT-NOTICE",
+      "role": "TASK_CRITICAL",
+      "purpose": "実績解除の瞬間を、操作を妨げずに伝える",
+      "presentation_form": "TO_BE_DECIDED",
+      "must_contain_meaning": [
+        "解除した実績の名称",
+        "解除されたという事実"
+      ],
+      "functions": [
+        "F-022"
+      ],
+      "states": [
+        "S-TRANSIENT-NOTICE"
+      ]
+    }
+  ],
+  "states": [
+    {
+      "id": "S-ONBOARDING",
+      "meaning": "ゲーム未開始。目的の理解と難易度選択を待っている"
+    },
+    {
+      "id": "S-IDLE",
+      "meaning": "通常操作可能。次の判断を待っている"
+    },
+    {
+      "id": "S-SELECTED",
+      "meaning": "選択肢のうち現在選ばれているものがある(出玉設定・広告プラン・交換率・機能領域・フェア予約済み)"
+    },
+    {
+      "id": "S-PROCESSING",
+      "meaning": "1営業日の実行から結果提示までの遷移中"
+    },
+    {
+      "id": "S-RESULT",
+      "meaning": "当日の結果を提示中。読み終えるまで次の営業へ進めない"
+    },
+    {
+      "id": "S-SUCCESS",
+      "meaning": "目標達成(純資産1億円)。評価ランクとともに祝われる"
+    },
+    {
+      "id": "S-WARNING",
+      "meaning": "放置すると不利になる状態(スタッフ不足、警戒度の上昇、人気の枯れ、赤字)"
+    },
+    {
+      "id": "S-DANGER",
+      "meaning": "警戒度が危険域。行政指導がいつ発生してもおかしくない"
+    },
+    {
+      "id": "S-EMPTY",
+      "meaning": "対象が0件(設置台なし、営業履歴なし)"
+    },
+    {
+      "id": "S-DISABLED",
+      "meaning": "条件未達で実行できない(資金不足・設置枠なし・スタッフ1人・借入枠上限・返済不能・拡張上限・クールダウン中・回転中)"
+    },
+    {
+      "id": "S-CONFIRM",
+      "meaning": "破壊的操作の実行確認を待っている(売却・やり直し)"
+    },
+    {
+      "id": "S-BLOCKED-NO-MACHINE",
+      "meaning": "台が0台のため営業を実行できない"
+    },
+    {
+      "id": "S-DEAD",
+      "meaning": "倒産。やり直す以外のすべての経営操作が拒否される"
+    },
+    {
+      "id": "S-TRANSIENT-NOTICE",
+      "meaning": "実績解除の一時的な通知が出ている(自動的に消え、操作は妨げない)"
+    },
+    {
+      "id": "S-HOVER",
+      "meaning": "推移上の個別データを指し示して詳細を読んでいる"
+    },
+    {
+      "id": "S-TRIAL-IDLE",
+      "meaning": "試打中で次の操作を待っている"
+    },
+    {
+      "id": "S-TRIAL-SPINNING",
+      "meaning": "試打中でリールまたは図柄が回転しており、結果が未確定"
+    },
+    {
+      "id": "S-TRIAL-REACH",
+      "meaning": "パチンコ試打でリーチが発生している(期待が高まっている)"
+    },
+    {
+      "id": "S-TRIAL-WIN",
+      "meaning": "試打で当選が発生した(スロット=ボーナス、パチンコ=大当り)"
+    },
+    {
+      "id": "S-TRIAL-RUSH",
+      "meaning": "パチンコ試打で連チャンが継続している"
+    },
+    {
+      "id": "S-TRIAL-LOSE",
+      "meaning": "試打の1回が当選せずに終わった"
+    },
+    {
+      "id": "S-TRIAL-AUTO",
+      "meaning": "パチンコ試打が自動回転中"
+    },
+    {
+      "id": "S-TRIAL-EMPTY",
+      "meaning": "試打の持ちメダル/持ち玉が尽き、補充が必要"
+    }
+  ]
+}
