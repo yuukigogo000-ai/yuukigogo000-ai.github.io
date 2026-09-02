@@ -1,0 +1,101 @@
+<main class="wrap">
+  <h1>実在証明バッジ</h1>
+  <p class="lede">「実在する人間である」ことを、第三者が検証できる形にする。</p>
+  <p>AI製アカウントが溢れる今、実在することはクリエイターの強い差別化になります。
+  このツールは<b>相互リンク方式の証明ページ</b>とバッジを生成します。</p>
+  <p><span class="local-sign">
+    <span class="ico" aria-hidden="true">__ICO_LOCK__</span>
+    <span>入力内容はすべて端末内で処理され、外部へ送信されません</span>
+  </span></p>
+
+  <h2>仕組み — 相互リンク証明</h2>
+  <ol class="steps spine">
+    <li class="spine__node"><b>証明ページを生成</b><span>活動名・SNS一覧・実在宣言を書いたHTMLをダウンロードします。</span></li>
+    <li class="spine__node"><b>自分の管理下で公開</b><span>自分のサイトやGitHub Pagesにアップロードします（URLの所有が第一の証明）。</span></li>
+    <li class="spine__node"><b>各SNSのプロフィールに証明ページのURLを記載</b><span>これで「SNS ⇄ 証明ページ」の相互リンクが完成します。</span></li>
+    <li class="spine__node"><b>バッジを設置</b><span>見た人は、バッジ → 証明ページ → 各SNSのプロフィール、と辿って相互リンクを確認できます。
+    なりすましは他人のSNSプロフィールを書き換えられないため、この輪を作るのは困難です（<b>不可能ではありません</b> — アカウントの乗っ取り等では破られます）。</span></li>
+  </ol>
+
+  <h2>生成すると手に入るもの</h2>
+  <div class="dossier wire">
+    <div class="wire__page" aria-hidden="true">
+      <span class="wire__badge">✓ 実在クリエイター宣言</span>
+      <span class="wire__line wire__line--title"></span>
+      <span class="wire__line" style="width:52%"></span>
+      <span class="wire__line" style="width:88%"></span>
+      <span class="wire__line" style="width:74%"></span>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>証明ページ（HTML 1枚）</b><br>
+      <span class="note">活動名・ジャンル・実在宣言・SNS一覧・裏付けリンク・検証手順が入ります。自分のURLで公開します。</span></p>
+      <p style="margin-bottom:0"><b>バッジ（HTML / Markdown）</b><br>
+      <span class="note">サイトやREADMEに貼るスニペット。リンク先は公開した証明ページです。</span></p>
+    </div>
+  </div>
+
+  <h2>1. 情報を入力</h2>
+  <div class="dossier">
+    <label for="name">活動名（必須）</label>
+    <input type="text" id="name" placeholder="例: 山田ハナ / hana_creates">
+    <p class="field-error" id="nameError" hidden>活動名を入れてください。</p>
+
+    <label for="category">活動ジャンル</label>
+    <input type="text" id="category" placeholder="例: イラストレーター / コスプレイヤー / 写真家">
+
+    <label for="links">SNS・公式リンク（1行に1つ、2つ以上推奨）</label>
+    <textarea id="links" placeholder="https://x.com/your_account&#10;https://www.instagram.com/your_account&#10;https://www.youtube.com/@your_channel"></textarea>
+
+    <label for="video">実在の裏付けリンク（任意）</label>
+    <input type="url" id="video" placeholder="例: ライブ配信アーカイブ、イベント出演記録、対談動画などのURL">
+
+    <label for="statement">実在宣言（編集可）</label>
+    <textarea id="statement">私はAIによって生成された架空の人物ではなく、実在する人間のクリエイターです。このページに記載したSNSアカウントはすべて私本人が運用しており、各プロフィールには本ページのURLを記載しています。私の作品における生成AIの利用有無は、各作品の説明に明記します。</textarea>
+
+    <label for="proofUrl">証明ページを公開する予定のURL（任意・バッジのリンク先になります）</label>
+    <input type="url" id="proofUrl" placeholder="例: https://あなたのID.github.io/proof.html">
+
+    <p style="margin-bottom:0"><button class="btn btn--block" type="button" id="generate">証明ページとバッジを生成する</button></p>
+  </div>
+
+  <section id="output" style="display:none">
+    <h2>2. 証明ページのプレビュー</h2>
+    <iframe id="previewFrame" title="証明ページのプレビュー"></iframe>
+    <p><button class="btn btn--block" type="button" id="download">証明ページ（HTML）をダウンロード</button></p>
+
+    <h2>3. バッジを設置</h2>
+    <div class="dossier">
+      <div class="badge-preview" id="badgeBox"></div>
+
+      <h3>HTML用（サイト・ブログに貼る）</h3>
+      <pre class="snippet" id="snippetHtml"></pre>
+      <button class="btn btn--ghost" type="button" data-copy="snippetHtml" data-flag="copiedHtml">HTMLをコピー<span id="copiedHtml" hidden> — コピーしました ✓</span></button>
+
+      <h3>Markdown用（GitHub READMEなど）</h3>
+      <pre class="snippet" id="snippetMd"></pre>
+      <button class="btn btn--ghost" type="button" data-copy="snippetMd" data-flag="copiedMd">Markdownをコピー<span id="copiedMd" hidden> — コピーしました ✓</span></button>
+
+      <p class="note" style="margin-bottom:0">Markdown版のバッジ画像は shields.io（外部サービス）を利用しています。
+      自サイトに貼る場合はHTML版（完全自己完結のSVG）がおすすめです。</p>
+    </div>
+
+    <!-- PL-5: 最後の1手。ダウンロード導線と同じ画面に置き、弱くしない -->
+    <h2>4. 最後の封印</h2>
+    <div class="final-seal" id="finalSeal">
+      <p style="margin-top:0"><b>ここまでで証明は完成していません。</b>
+      入力した<b>すべてのSNSプロフィール（bio）に証明ページのURLを記載</b>してください。これを忘れると証明の輪が閉じません。</p>
+      <ol style="margin:0; padding-left:1.3em">
+        <li>ダウンロードした <code>honmono-proof.html</code> を自分のサイト・GitHub Pagesにアップロード</li>
+        <li><b>すべてのSNSプロフィール（bio）に証明ページのURLを記載する</b></li>
+        <li>バッジをサイトやREADMEに設置し、リンク先を公開した証明ページのURLにする</li>
+      </ol>
+    </div>
+  </section>
+
+  <div class="note-block">
+    <b>この証明が示すこと・示さないこと。</b>
+    <p style="margin:var(--sp-2) 0 0">相互リンク証明は「これらのアカウント群を同一人物（組織）が管理している」ことを示します。
+    運用者が実在の人間であることの確からしさは、ライブ配信・イベント出演など裏付けリンクの質で決まります。
+    虚偽の宣言はご自身の信用を損なうだけでなく、法的責任を問われる可能性があります。</p>
+  </div>
+</main>

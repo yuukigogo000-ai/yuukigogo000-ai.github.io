@@ -83,7 +83,9 @@ def check(site):
     problems = []
     pages = []
     for root, dirs, files in os.walk(os.path.join(site, "honmono")):
-        dirs[:] = [d for d in dirs if d not in (".git", "vendor")]
+        # design/ はサイトの一部ではない(_config.yml で配信停止)。
+        # 中にある組み立て用のHTML断片まで検査すると、断片単体のリンク切れで落ちてしまう。
+        dirs[:] = [d for d in dirs if d not in (".git", "vendor", "design")]
         for f in files:
             if f.endswith(".html"):
                 pages.append(os.path.join(root, f))
@@ -171,22 +173,27 @@ def main():
             print("!! 写しが壊れていない状態で既に問題あり:", base[:5]); sys.exit(1)
         print("自己テスト: 健全な写しでは 0件 … OK")
 
+        # count=None なら全部置き換える。「必須の記載が消えた」を仕込むには、
+        # 同じ語がページ内の複数箇所(本文とフッター等)にあると1か所だけでは足りない。
         cases = [
             ("リンク切れ",     "honmono/index.html",        'href="report/"',            'href="repooort/"'),
             ("禁止表現の復活", "honmono/docs/index.html",   "ページを閉じれば何も残りません", "ページを閉じれば何も残りません(オフラインでも動作します)"),
-            ("必須記載の欠落", "honmono/legal/terms.html",  "故意または重大な過失",       "ぜんぶ"),
+            ("必須記載の欠落", "honmono/legal/terms.html",  "故意または重大な過失",       "ぜんぶ", None),
             ("外部読み込み",   "honmono/index.html",        '<link rel="stylesheet" href="honmono.css">',
                                                             '<link rel="stylesheet" href="honmono.css"><script src="https://evil.example.com/x.js"></script>'),
             ("タグ崩れ",       "honmono/business/index.html", "</main>",                 "</main></div>"),
             ("架空の人名",     "honmono/creators/creators.json", "掲載カードの見本 ①",   "(サンプル)葉山みお"),
         ]
         ok = 0
-        for name, relpath, old, new in cases:
+        for case in cases:
+            name, relpath, old, new = case[:4]
+            count = case[4] if len(case) > 4 else 1
             p = os.path.join(dst, relpath.replace("/", os.sep))
             orig = open(p, encoding="utf-8").read()
             if old not in orig:
                 print("  [%s] 仕込む場所が見つからない → 検査不能" % name); continue
-            open(p, "w", encoding="utf-8", newline="").write(orig.replace(old, new, 1))
+            open(p, "w", encoding="utf-8", newline="").write(
+                orig.replace(old, new) if count is None else orig.replace(old, new, count))
             probs, _ = check(dst)
             open(p, "w", encoding="utf-8", newline="").write(orig)
             if probs:

@@ -219,7 +219,7 @@ async function verifyHome() {
   const page = await openPage('/honmono/');
   const t = await text(page);
   rec('S', 'S-HOME-DEFAULT', want(t.length > 200), 'browser', '本文が描画される');
-  rec('F', 'F-HOME-001', want(/希少|本物の人間/.test(t)), 'browser', '冒頭の主張が読める');
+  rec('F', 'F-HOME-001', want(/実在することの価値は上がる|希少|本物の人間/.test(t)), 'browser', '冒頭の主張(AI生成が増えるほど実在の価値が上がる)が読める');
   rec('F', 'F-HOME-002', want(await count(page, SEL.home.tool_links) >= 4), 'browser', '4ツールへ1操作で到達できる');
   rec('F', 'F-HOME-003', want(/証明する/.test(t) && /見分ける/.test(t) && /束ねる/.test(t)), 'browser', '3本柱');
   rec('F', 'F-HOME-004', want(/Phase 1/.test(t) && /Phase 2/.test(t) && /Phase 3/.test(t)), 'browser', 'ロードマップ');
@@ -285,7 +285,7 @@ async function verifyChecker() {
     ai: ['S-CHK-V-AI', /AI生成の痕跡があります/],
     camera: ['S-CHK-V-CAMERA', /カメラ撮影の痕跡があります/],
     stock: ['S-CHK-V-STOCK', /ストック素材サイト由来/],
-    weak: ['S-CHK-V-WEAK', /手がかりがあります/],
+    weak: ['S-CHK-V-WEAK', /AI生成を疑う手がかり/],
     c2pa: ['S-CHK-V-C2PA', /コンテンツ来歴/],
   };
   let allVerdicts = true, tagsSeen = new Set(), metaOK = true;
@@ -429,7 +429,7 @@ async function verifyChecker() {
   // C2PA のエンジン失敗 / 正常系は同梱SDKに依存するため、経路の存在だけを静的に確認する
   const src = fs.readFileSync(path.join(REPO, 'honmono/checker/index.html'), 'utf8');
   rec('S', 'S-CHK-C2PA-LOADING', want(src.includes('署名検証エンジンを読み込み中')), 'static', 'C2PA読み込み中の表示');
-  rec('S', 'S-CHK-C2PA-OK', want(src.includes('署名は有効です')), 'static', 'C2PA署名有効');
+  rec('S', 'S-CHK-C2PA-OK', want(src.includes('署名後の改ざんなし')), 'static', 'C2PA署名有効');
   rec('S', 'S-CHK-C2PA-BAD', want(src.includes('署名検証で問題が見つかりました')), 'static', 'C2PA署名不正');
   rec('S', 'S-CHK-C2PA-ENGINE-FAIL', want(src.includes('署名検証エンジンを読み込めませんでした')), 'static', 'C2PAエンジン読込失敗');
 
@@ -523,7 +523,8 @@ async function verifyAicheck() {
   rec('S', 'S-AIC-MID', want(/中/.test(bands.one[0]) && bands.one[1] >= 40), 'browser', `決定的1件 → ${bands.one.join(' ')}`);
   rec('S', 'S-AIC-HIGH', want(/高/.test(bands.two[0]) && bands.two[1] >= 65), 'browser', `決定的2件 → ${bands.two.join(' ')}`);
   rec('F', 'F-AIC-006', results.states['S-AIC-MID'].ok && results.states['S-AIC-HIGH'].ok, 'browser', '決定的シグナルの下限保証');
-  rec('F', 'F-AIC-007', want(await page.evaluate(s => parseFloat(document.querySelector(s).style.width) > 0, SEL.aicheck.score_fill)), 'browser', '水準の可視化');
+  rec('F', 'F-AIC-007', want(await page.evaluate(s => /scaleX\(([\d.]+)\)/.test(document.querySelector(s).style.transform)
+    && parseFloat(/scaleX\(([\d.]+)\)/.exec(document.querySelector(s).style.transform)[1]) > 0, SEL.aicheck.score_fill)), 'browser', '水準の可視化');
   rec('F', 'F-AIC-008', want((await page.evaluate(s => document.querySelector(s).textContent, SEL.aicheck.advice)).length > 20), 'browser', '帯ごとの助言');
 
   // 信頼シグナルで減点

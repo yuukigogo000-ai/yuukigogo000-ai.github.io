@@ -1,0 +1,131 @@
+<main class="wrap">
+  <h1>画像来歴チェッカー</h1>
+  <p class="lede">画像・動画の来歴と痕跡を、端末内で調べる。</p>
+  <p>C2PA（コンテンツ来歴）・EXIF・XMP・生成AIツールの痕跡をその場で解析します。
+  メタデータが消えている場合も、再圧縮の痕跡から「どんな経緯をたどったファイルか」を推定します。</p>
+  <p><span class="local-sign">
+    <span class="ico" aria-hidden="true">__ICO_LOCK__</span>
+    <span>ファイルは<b>あなたのブラウザ内だけ</b>で処理され、どこにもアップロードされません</span>
+  </span></p>
+
+  <div id="drop" tabindex="0" role="button" aria-label="画像・動画を選ぶ">
+    <span class="mark" aria-hidden="true">__ICO_CHECKER__</span>
+    <span class="big drop-idle">ファイルを選ぶ</span>
+    <span class="big drop-alt">ここで離して解析</span>
+    <span class="note drop-idle">またはここに画像・動画をドロップ</span>
+    <span class="note">画像: JPEG / PNG / WebP / HEIC / AVIF ・ 動画: MP4 / MOV（Sora等のC2PA来歴にも対応）</span>
+    <input type="file" id="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.avif,.mp4,.mov,.m4v,image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif,video/mp4,video/quicktime" hidden>
+  </div>
+  <p class="note">解析は数秒で終わります。できるだけ<b>元データに近いファイル</b>のほうが手がかりが残っています。</p>
+
+  <section id="result">
+
+    <div class="dossier file-card">
+      <span class="thumb">
+        <img id="preview" alt="解析対象のプレビュー">
+        <video id="previewVid" controls muted playsinline style="display:none"></video>
+      </span>
+      <span class="facts">
+        <span class="note" style="letter-spacing:.12em">解析したファイル</span>
+        <b id="fileName"></b>
+        <span class="note" id="fileMeta"></span>
+      </span>
+      <button type="button" class="btn btn--ghost" id="pickAnother">別のファイルを調べる</button>
+    </div>
+
+    <p class="kicker">判定結果</p>
+    <div class="spine">
+      <div id="verdict" class="spine__node"></div>
+      <div class="limits spine__node">
+        <h3>断定しない — 判定の限界</h3>
+        <p>メタデータは編集・削除できます。「痕跡なし」は人間の証明にはならず（SNS・スクリーンショット経由でメタデータは消えます）、「カメラ情報あり」も偽装可能です。
+        結論ではなく、次の検証材料として使ってください。
+        C2PA署名の暗号学的検証は <a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">Content Credentials Verify（公式）</a> でも確認できます。</p>
+      </div>
+    </div>
+
+    <div class="dossier" id="c2paCard" style="display:none">
+      <h2 style="margin-top:0">C2PA署名の検証</h2>
+      <div id="c2paBody"></div>
+    </div>
+
+    <h2>根拠</h2>
+    <p class="note" style="margin-top:calc(var(--sp-2) * -1)">根拠は1件ずつ、重みと一緒に読む。</p>
+    <div id="findings"></div>
+
+    <h2>次の一手</h2>
+    <div class="dossier">
+      <h3 style="margin-top:0">逆画像検索で確かめる</h3>
+      <p class="note" style="margin-top:var(--sp-1)">メタデータが消えていても、逆画像検索で「盗用元の別人」や「同じ画像の使い回し」が見つかることがあります。
+      下記サービスを開き、同じ画像ファイルを検索窓にドラッグしてください。</p>
+      <div class="chips-row">
+        <a class="btn btn--ghost" href="https://lens.google.com/" target="_blank" rel="noopener">Google レンズ</a>
+        <a class="btn btn--ghost" href="https://www.bing.com/visualsearch" target="_blank" rel="noopener">Bing ビジュアル検索</a>
+        <a class="btn btn--ghost" href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex Images</a>
+        <a class="btn btn--ghost" href="https://tineye.com/" target="_blank" rel="noopener">TinEye</a>
+      </div>
+    </div>
+
+    <h2>生データ</h2>
+    <details class="dossier" id="metaCard">
+      <summary>抽出メタデータをすべて見る<span class="note" id="metaCount" style="margin-left:auto"></span></summary>
+      <div id="metaTable"></div>
+      <details id="xmpDetails" style="display:none">
+        <summary>XMPデータ（生データ）を表示</summary>
+        <pre class="snippet" id="xmpRaw"></pre>
+      </details>
+    </details>
+
+    <section class="lab" id="pixelCard" style="display:none">
+      <p class="lab__tag">LAB / 実験機能</p>
+      <h2>画素からのAI判定（参考値）</h2>
+      <p class="note" id="pixelIntro">メタデータとは別の実験機能です。<b>画像そのもの</b>を端末内のモデルで判定します。画像は送信されません。
+        初回のみ<span id="pixelSize">約90MB</span>を読み込み、2回目以降は端末内キャッシュ。PC推奨。</p>
+
+      <div class="note-block">
+        <b>押す前に読む</b>
+        <p id="pixelEval" style="margin:var(--sp-1) 0 0"></p>
+        <p style="margin:var(--sp-2) 0 0">「AIではない」ことの証明には使えません。</p>
+      </div>
+
+      <div id="pixelProgress" class="note" style="display:none"></div>
+      <div class="progress-rail" id="pixelDlRail" style="display:none" role="presentation">
+        <div class="progress-rail__fill" id="pixelDlFill"></div>
+      </div>
+
+      <div id="pixelResult" style="display:none">
+        <div class="lab-score">
+          <span class="pct" id="pixelScore"></span>
+          <span id="pixelLabel" style="font-weight:700"></span>
+        </div>
+        <div class="progress-rail"><div class="progress-rail__fill" id="pixelBar"></div></div>
+        <p class="note" id="pixelNote" style="margin:var(--sp-2) 0 0"></p>
+        <p class="note" id="pixelMeta" style="margin:var(--sp-1) 0 0"></p>
+      </div>
+
+      <div id="pixelControls" class="lab-controls">
+        <button id="pixelRun" class="btn" type="button">約90MBを読み込んで実行</button>
+        <label class="switch" for="pixelAuto">
+          <input type="checkbox" id="pixelAuto">
+          次回から自動で実行: <span id="pixelAutoState">OFF</span>
+        </label>
+      </div>
+
+      <p class="note" style="margin-top:var(--sp-4)">
+        <a href="../report/">実測値・モデル条件・弱点を見る →</a>
+        <span style="opacity:.6"> / </span>
+        <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/vendor/models/LICENSE.md" target="_blank" rel="noopener">モデルの利用条件</a>
+      </p>
+    </section>
+
+  </section>
+
+  <h2>使いどころ</h2>
+  <div class="dossier">
+    <ul style="margin:0; padding-left:1.3em">
+      <li>SNSで見かけた「実在するか怪しい人物」の画像の一次チェックに</li>
+      <li>自分の作品・写真に来歴データ（C2PA）が正しく付いているかの確認に</li>
+      <li>フリマ・マッチングアプリのプロフィール画像の検証に（可能なら「元データ」を入手して調べるのが有効）</li>
+    </ul>
+  </div>
+</main>

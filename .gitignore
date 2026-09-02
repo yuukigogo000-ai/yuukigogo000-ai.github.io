@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+
+# 再現できる大きな中間生成物はリポジトリに入れない。
+#   node honmono/design/redesign-v4/verify/capture.mjs        で撮り直せる
+#   python3 honmono/design/redesign-v4/verify/make_review_packet.py で作り直せる
+honmono/design/redesign-v4/verify/captures/
+honmono/design/redesign-v4/CHATGPT_FINAL_REVIEW_PACKET.zip

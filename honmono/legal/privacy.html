@@ -5,34 +5,71 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>プライバシーポリシー — HONMONO</title>
-<meta name="description" content="HONMONOのプライバシーポリシー。画像・入力内容はサーバーに送信されません。端末に保存されるもの、外部に伝わる情報を正確に記載しています。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta name="description" content="HONMONOがあなたの情報をどう扱うかを、外部に伝わりうる情報まで含めて正確に書いています。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z' fill='none' stroke='%237F5A23' stroke-width='3'/><text x='32' y='42' font-size='26' text-anchor='middle' fill='%237F5A23' font-family='serif'>本</text></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="プライバシーポリシー — HONMONO">
+<meta property="og:description" content="HONMONOがあなたの情報をどう扱うかを、外部に伝わりうる情報まで含めて正確に書いています。">
+<meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/legal/privacy.html">
+<meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
-  h2 { font-size: 1.05rem; margin-top: 26px; }
-  main p, main li { font-size: .9rem; }
-  .rev { font-size: .82rem; color: var(--muted); }
+  /* DOCUMENT。著作権表示は折り返せるようにする(法的な表示義務) */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+  .doc pre, .doc code, .doc td { overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
+
 <header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO<small>実在性証明プロジェクト</small></a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
-  </nav>
+  <a class="brand" href="../">
+    <span class="seal" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z" stroke="currentColor" stroke-width="2"/><path d="M32 9 49 19v26L32 55 15 45V19L32 9Z" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="32" y="40" text-anchor="middle" font-size="24" font-family="serif" fill="currentColor">本</text></svg></span>
+    <span class="word">HONMONO</span>
+  </a>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="siteMenu" aria-label="メニューを開く">
+    <span class="ico-open" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></span>
+    <span class="ico-close" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+  </button>
 </div></header>
 
+<nav class="site-menu" id="siteMenu" hidden aria-label="サイト内の移動"><div class="wrap">
+  <div class="menu-group">
+    <h2>調べる</h2>
+    <ul class="menu-list">
+      <li><a href="../checker/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10H4z"/><path d="m6 12 3.5-4 2.5 3 2-2 4 3"/><circle cx="16.5" cy="17.5" r="3.5"/><path d="m19.5 20.5 1.8 1.8"/></svg></span>画像来歴チェッカー</a></li>
+      <li><a href="../aicheck/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 11-4.7"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M16 17.5h3"/></svg></span>AIアカウント鑑定</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>証明・探す</h2>
+    <ul class="menu-list">
+      <li><a href="../badge/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v6.5c0 3.4-2.9 6-7 7.5-4.1-1.5-7-4.1-7-7.5V7z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg></span>実在証明バッジ</a></li>
+      <li><a href="../creators/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 13h8M8 16h5"/></svg></span>実在クリエイター名鑑</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>理解する</h2>
+    <ul class="menu-list">
+      <li><a href="../docs/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></span>説明書</a></li>
+    </ul>
+  </div>
+  <div class="menu-group menu-sub">
+    <ul class="menu-list">
+      <li><a href="../report/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 18V9M12 18V4M18 18v-6"/></svg></span>実測レポートを読む</a></li>
+      <li><a href="../business/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6l7-3v17"/><path d="M11 9h9v11"/><path d="M7 9h.01M7 13h.01M15 13h.01M15 17h.01"/></svg></span>法人・開発者の方へ</a></li>
+    </ul>
+  </div>
+</div></nav>
 <main class="wrap">
+<div class="doc">
   <h1>プライバシーポリシー</h1>
-  <p class="lead">HONMONO(以下「本サイト」)が、あなたの情報をどう扱うかを正確に書きます。
+  <p class="lede">送信しないもの、端末に残るもの、外部に伝わりうるもの。</p>
+  <p class="lede">HONMONO(以下「本サイト」)が、あなたの情報をどう扱うかを正確に書きます。
   <b>「何も送っていません」で済ませず、外部に伝わりうるものも漏らさず挙げます。</b></p>
 
   <h2>1. 本サイトがサーバーに送信しないもの</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin-top:0">次のものは、<b>一切サーバーに送信されません。</b>すべてあなたのブラウザの中だけで処理されます。</p>
     <ul style="margin:0; padding-left:1.3em">
       <li>来歴チェッカーに読み込ませた<b>画像・動画ファイルとその中身</b>(メタデータを含む)</li>
@@ -43,64 +80,70 @@
   </div>
 
   <h2>2. あなたの端末に保存されるもの</h2>
-  <div class="card">
-    <table>
+  <div class="dossier">
+    <div class="scroll-wrap"><p class="scroll-hint">← 横にスクロールできます</p><div class="scroll"><table>
       <tr><th>保存されるもの</th><th>仕組み</th><th>目的</th><th>消し方</th></tr>
       <tr><td><code>honmono_pixel_auto</code>(オン/オフの1文字)</td><td>localStorage</td><td>画素判定を自動実行する設定を覚えておくため</td><td>ブラウザのサイトデータ削除</td></tr>
       <tr><td>AI判定モデル(約90MB)</td><td>Cache Storage</td><td>2回目以降に90MBを再ダウンロードさせないため</td><td>ブラウザのサイトデータ削除</td></tr>
-    </table>
+    </table></div></div>
     <p class="note" style="margin-bottom:0"><b>いずれも本サイトから読み出すことはできません</b>(サーバーが無いため)。個人を識別する情報も含みません。</p>
   </div>
 
   <h2>3. Cookie・アクセス解析</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin:0">本サイトは<b>独自のCookie・トラッキング・広告・アクセス解析を一切使用していません</b>。
     第三者の解析タグ(Google Analytics 等)も設置していません。</p>
   </div>
 
   <h2>4. それでも外部に伝わりうる情報(正直に書きます)</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin-top:0">本サイトが送らなくても、<b>あなたのブラウザが通信する相手には、通信の事実とIPアドレスが伝わります。</b>該当するのは次の場合です。</p>
-    <table>
+    <div class="scroll-wrap"><p class="scroll-hint">← 横にスクロールできます</p><div class="scroll"><table>
       <tr><th>通信先</th><th>いつ</th><th>伝わるもの</th></tr>
       <tr><td><b>GitHub</b>(ホスティング元)</td><td>ページやAI判定モデルを読み込むとき</td><td>IPアドレス・アクセス日時・読み込んだファイル名・User-Agent(GitHubが標準的なアクセスログとして記録します)</td></tr>
       <tr><td><b>逆画像検索サービス</b>(Google・Bing・Yandex・TinEye)</td><td>来歴チェッカーの「次の一手」で検索ボタンを押したとき<b>のみ</b></td><td>あなたがそのサービスへ移動したこと。各社のプライバシーポリシーが適用されます</td></tr>
       <tr><td><b>shields.io</b></td><td>あなたが Markdown 版バッジを<b>自分のサイトに貼った場合に、その閲覧者のブラウザから</b></td><td>バッジ画像の取得。本サイトの閲覧では通信しません。気になる場合は完全自己完結のHTML版バッジをお使いください</td></tr>
       <tr><td><b>GitHub Issues</b></td><td>名鑑の掲載申請・法人からのお問い合わせを送るとき</td><td>あなたが入力した内容と GitHub アカウント名。<b>Issue の内容は公開されます</b></td></tr>
-    </table>
+    </table></div></div>
     <p class="note" style="margin-bottom:0">外部サイトへのリンクを押した先での扱いについて、本サイトは責任を負えません。各サイトのポリシーをご確認ください。</p>
   </div>
 
   <h2>5. お問い合わせで受け取った情報</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin:0">法人・開発者からのお問い合わせで受け取った氏名・会社名・連絡先は、<b>そのお問い合わせへの回答と、その後のご相談のためだけに使用</b>します。
     ご本人の同意なく第三者に提供することはありません。削除のご希望があれば削除します。</p>
   </div>
 
   <h2>6. 名鑑への掲載について</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin:0">実在クリエイター名鑑への掲載申請は公開の GitHub Issue を通じて行われ、<b>申請内容は誰でも閲覧できます</b>。
     掲載される情報は、申請者が自分で公開している活動名・ジャンル・証明ページURL・紹介文に限ります。
     掲載の取り下げはいつでも受け付けます。</p>
   </div>
 
   <h2>7. 改定</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin:0">内容を変更した場合は、このページの日付を更新します。
     <b>ホスティング先の変更や有料サービスの開始など、扱う情報が変わる場合は、変更前に本ページを更新します。</b></p>
   </div>
 
   <p class="rev">最終更新: 2026-08-20 / HONMONO プロジェクト</p>
+</div>
 </main>
 
 <footer class="site-foot"><div class="wrap">
-  <a href="../">HONMONO</a> ·
-  <a href="../docs/">説明書</a> ·
-  <a href="../report/">実測レポート</a> ·
-  <a href="../business/">法人向け</a> ·
-  <a href="./privacy.html">プライバシー</a> ·
-  <a href="./terms.html">利用規約</a> ·
-  <a href="./credits.html">クレジット</a>
+  <div class="foot-links">
+    <a href="../">HONMONO</a>
+    <a href="../docs/">説明書</a>
+    <a href="../report/">実測レポート</a>
+    <a href="../business/">法人向け</a>
+    <a href="../legal/privacy.html">プライバシー</a>
+    <a href="../legal/terms.html">利用規約</a>
+    <a href="../legal/credits.html">クレジット</a>
+  </div>
+  <p style="margin:0">HONMONO プロジェクト — 送信しないものと、端末に残るものを正確に書いています。</p>
 </div></footer>
+
+<script src="../shell.js"></script>
 </body>
 </html>

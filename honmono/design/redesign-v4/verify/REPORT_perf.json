@@ -1,0 +1,120 @@
+{
+  "generated_at": "2026-09-02",
+  "note": "固定条件 390x844 / DPR3 / ローカル配信。ネットワークの実測ではなく、モーション導入によるメインスレッドとレイアウトへの影響を見るためのもの。",
+  "pages": [
+    {
+      "url": "/honmono/",
+      "ms_to_networkidle": 1770,
+      "transferred_kb": 71,
+      "dom_content_loaded_ms": 52,
+      "long_tasks_over_50ms": [
+        107
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/checker/",
+      "ms_to_networkidle": 1846,
+      "transferred_kb": 92,
+      "dom_content_loaded_ms": 141,
+      "long_tasks_over_50ms": [
+        75
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/aicheck/",
+      "ms_to_networkidle": 1783,
+      "transferred_kb": 43,
+      "dom_content_loaded_ms": 175,
+      "long_tasks_over_50ms": [
+        108
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/badge/",
+      "ms_to_networkidle": 1822,
+      "transferred_kb": 39,
+      "dom_content_loaded_ms": 113,
+      "long_tasks_over_50ms": [
+        90
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/creators/",
+      "ms_to_networkidle": 1793,
+      "transferred_kb": 36,
+      "dom_content_loaded_ms": 26,
+      "long_tasks_over_50ms": [
+        51
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/report/",
+      "ms_to_networkidle": 1892,
+      "transferred_kb": 42,
+      "dom_content_loaded_ms": 185,
+      "long_tasks_over_50ms": [
+        161
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/business/",
+      "ms_to_networkidle": 1730,
+      "transferred_kb": 33,
+      "dom_content_loaded_ms": 156,
+      "long_tasks_over_50ms": [
+        132
+      ],
+      "cumulative_layout_shift": 0
+    },
+    {
+      "url": "/honmono/docs/",
+      "ms_to_networkidle": 1939,
+      "transferred_kb": 42,
+      "dom_content_loaded_ms": 231,
+      "long_tasks_over_50ms": [
+        208
+      ],
+      "cumulative_layout_shift": 0
+    }
+  ],
+  "analysis_wait": {
+    "animating": true,
+    "properties": "rail-travel",
+    "transition_property": "all",
+    "cls_during_wait": 0.1741,
+    "long_tasks_during_wait": [
+      69
+    ]
+  },
+  "worst": {
+    "transferred_kb": 92,
+    "long_tasks_over_50ms": 8,
+    "max_cls": 0
+  },
+  "regression_check": {
+    "compared": true,
+    "long_tasks": {
+      "before": 8,
+      "after": 8
+    },
+    "worst_long_task_ms": {
+      "before": 225,
+      "after": 208
+    },
+    "max_cls": {
+      "before": 0.0149,
+      "after": 0
+    },
+    "transferred_kb": {
+      "before": 66,
+      "after": 92
+    },
+    "pass": true
+  }
+}

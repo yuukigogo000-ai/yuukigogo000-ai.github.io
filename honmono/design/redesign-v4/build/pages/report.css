@@ -1,0 +1,7 @@
+  /* DOCUMENT。数字は等幅で並べ、良い数字だけを目立たせない */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+  .num { text-align: right; white-space: nowrap; }
+  .win { color: var(--c-ok); font-weight: 700; }
+  .lose { color: var(--c-bad); }
+  .srclist { font-size: .8125rem; line-height: 1.75; }
+  .srclist code { font-size: .95em; overflow-wrap: anywhere; }

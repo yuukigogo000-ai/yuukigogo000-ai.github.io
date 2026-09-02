@@ -1,9 +1,9 @@
 {
   "schema": "SELECTOR_CONTRACT/1.0",
-  "note": "検査器が『意味』でUIを掴むための唯一の対応表。UI再設計でマークアップが変わったら、直すのはこのファイルだけにする。検査器本体は書き換えない。",
+  "note": "検査器が『意味』でUIを掴むための唯一の対応表。UI再設計でマークアップが変わったら、直すのはこのファイルだけにする。検査器本体は書き換えない。(2026-09-02 の再設計に合わせて更新)",
   "global": {
-    "nav_links": "header nav a",
-    "brand_home_link": "header a[href='../'], header a[href='./'], header a[href='/honmono/']",
+    "nav_links": "#siteMenu a",
+    "brand_home_link": "header a.brand",
     "footer": "footer",
     "legal_links": "a[href$='legal/privacy.html'], a[href$='legal/terms.html'], a[href$='legal/credits.html'], a[href$='./privacy.html'], a[href$='./terms.html'], a[href$='./credits.html']"
   },
@@ -23,7 +23,7 @@
     "preview_video": "#previewVid",
     "verdict": "#verdict",
     "findings": "#findings",
-    "finding_tag": "#findings .tag",
+    "finding_tag": "#findings .chip",
     "meta_table": "#metaTable",
     "xmp_details": "#xmpDetails",
     "c2pa_card": "#c2paCard",
@@ -60,7 +60,7 @@
   "aicheck": {
     "risk_checkboxes": "input[data-kind='risk']",
     "trust_checkboxes": "input[data-kind='trust']",
-    "weights": ".weight",
+    "weights": ".w",
     "reasons": ".why",
     "score_number": "#scoreNum",
     "band_label": "#bandLabel",
@@ -76,7 +76,7 @@
     "filters": "#filters button",
     "filter_active": "#filters button.active",
     "list": "#list",
-    "entries": "#list > *",
+    "entries": "#list > .entry",
     "empty": "#empty",
     "apply_link": "a[href*='issues/new']"
   }

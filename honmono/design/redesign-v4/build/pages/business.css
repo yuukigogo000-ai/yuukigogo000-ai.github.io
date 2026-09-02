@@ -1,0 +1,15 @@
+  /* DOCUMENT。数字の直後に必ず弱点が来る */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+  .kpi { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); margin: var(--sp-4) 0; }
+  .kpi div {
+    background: var(--c-surface); border: 1px solid var(--c-line-soft);
+    border-radius: var(--r-1); padding: var(--sp-3);
+  }
+  .kpi b {
+    display: block; font-family: var(--font-display);
+    font-size: 1.75rem; line-height: 1.2; font-weight: 600;
+    color: var(--c-brass); font-variant-numeric: tabular-nums;
+  }
+  .kpi span { font-size: .8125rem; line-height: 1.55; color: var(--c-muted); }
+  .rev { font-size: .8125rem; color: var(--c-muted); }
+  .num { text-align: right; white-space: nowrap; }

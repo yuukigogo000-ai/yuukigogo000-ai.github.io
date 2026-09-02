@@ -1,0 +1,98 @@
+{
+  "generated_at": "2026-09-02",
+  "motion": [
+    {
+      "id": "M-06",
+      "desc": "解析中の待ちレール",
+      "measured": {
+        "present": true,
+        "name": "rail-travel",
+        "dur": "1.2s",
+        "iter": "infinite",
+        "props": "transform"
+      }
+    },
+    {
+      "id": "M-06",
+      "desc": "解析が終わると待ちレールは消える",
+      "measured": {
+        "stillPresent": false
+      }
+    },
+    {
+      "id": "reduced-motion",
+      "desc": "HOME で無限アニメーション0・主操作は健在",
+      "measured": {
+        "infinite": [],
+        "ctaClickable": true
+      }
+    },
+    {
+      "id": "M-11",
+      "desc": "スコア更新のフィードバック",
+      "measured": {
+        "classApplied": true,
+        "name": "score-bump",
+        "dur": "0.14s"
+      }
+    }
+  ],
+  "shots": [
+    "390_home_light",
+    "390_home_dark",
+    "390_checker_idle_light",
+    "390_checker_dragover_light",
+    "390_checker_processing_light",
+    "390_checker_result_ok_light",
+    "390_checker_result_bad_light",
+    "390_checker_result_neutral_light",
+    "390_checker_result_warn_light",
+    "390_checker_lab_high_light",
+    "390_checker_lab_mid_light",
+    "390_checker_lab_low_light",
+    "390_checker_toolarge_light",
+    "390_checker_error_light",
+    "390_checker_idle_dark",
+    "390_checker_dragover_dark",
+    "390_checker_processing_dark",
+    "390_checker_result_ok_dark",
+    "390_checker_result_bad_dark",
+    "390_checker_result_neutral_dark",
+    "390_checker_result_warn_dark",
+    "390_checker_lab_high_dark",
+    "390_checker_lab_mid_dark",
+    "390_checker_lab_low_dark",
+    "390_checker_toolarge_dark",
+    "390_checker_error_dark",
+    "390_aicheck_none_light",
+    "390_aicheck_mid_light",
+    "390_aicheck_high_light",
+    "390_aicheck_exposure_light",
+    "390_aicheck_none_dark",
+    "390_aicheck_mid_dark",
+    "390_aicheck_high_dark",
+    "390_aicheck_exposure_dark",
+    "390_badge_empty_light",
+    "390_badge_generated_light",
+    "390_creators_light",
+    "390_creators_empty_light",
+    "390_badge_empty_dark",
+    "390_badge_generated_dark",
+    "390_creators_dark",
+    "390_creators_empty_dark",
+    "390_report_light",
+    "390_business_light",
+    "390_docs_light",
+    "390_terms_light",
+    "390_menu_light",
+    "390_menu_dark",
+    "360_home_light",
+    "360_checker_result_light",
+    "360_report_light",
+    "430_home_light",
+    "430_checker_result_light",
+    "430_report_light",
+    "390_motion_M06_wait",
+    "390_motion_reduced_home"
+  ]
+}

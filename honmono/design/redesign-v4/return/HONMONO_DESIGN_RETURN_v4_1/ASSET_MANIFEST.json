@@ -1,0 +1,134 @@
+{
+  "assets": [
+    {
+      "id": "A-LOGO-SEAL",
+      "kind": "logo",
+      "format": "svg",
+      "usage": "全画面headerのHONMONO wordmark左。Home footer sealにも使用。",
+      "source": "authored_by_design_authority",
+      "spec": "assets/logo_seal.svg。64x64 viewBox。外六角+内六角+中央『本』。CSS currentColor=`--c-brass`、Home footerのみ`--c-seal`可。認証バッジに見せる文言を隣接させない。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-HERO-EVIDENCE-DARK",
+      "kind": "illustration",
+      "format": "webp",
+      "usage": "HOME dark Hero。右側Dominant Visualのみ。",
+      "source": "authored_by_design_authority",
+      "spec": "assets/hero_evidence_bundle_dark.webp。1024x1792。半透明スリーブ、赤い紐、封印、匿名の指紋状テクスチャ。object-fit:cover。decorativeならalt=\"\"。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-HERO-EVIDENCE-LIGHT",
+      "kind": "illustration",
+      "format": "webp",
+      "usage": "HOME light Hero。右側Dominant Visualのみ。",
+      "source": "authored_by_design_authority",
+      "spec": "assets/hero_evidence_bundle_light.webp。1024x1792。Dark版と同じ構図をLight canvas向けに静的調整。Dark tokenの単純反転ではない。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-EVIDENCE-SPINE",
+      "kind": "diagram",
+      "format": "svg",
+      "usage": "CHECKER result、BADGE step、Document section indexのsignature motif。",
+      "source": "authored_by_design_authority",
+      "spec": "assets/evidence_spine.svg。40x220 viewBox。2px vertical line + 26px seal node。`currentColor`を`--c-seal`。節目だけ使用し、全screenに常時敷かない。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-ICON-CHECKER",
+      "kind": "icon",
+      "format": "inline_svg",
+      "usage": "Home/Global nav/CHECKER。",
+      "source": "to_be_authored_by_implementer",
+      "spec": "24x24。document rectangle + small landscape zigzag + lens circle。stroke=currentColor 1.75、fill=none、round cap/join。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-ICON-ACCOUNT",
+      "kind": "icon",
+      "format": "inline_svg",
+      "usage": "Home/Global nav/AICHECK。",
+      "source": "to_be_authored_by_implementer",
+      "spec": "24x24。abstract account outline（顔写真ではなく記号的circle+shoulder arc）+ small AI ring。人物画像assetではないSVG icon。stroke 1.75。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-ICON-BADGE",
+      "kind": "icon",
+      "format": "inline_svg",
+      "usage": "Home/Global nav/BADGE。",
+      "source": "to_be_authored_by_implementer",
+      "spec": "24x24。10-point restrained seal outline + check。認証済みを断定する文脈では使わず、機能識別iconのみ。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-ICON-CREATORS",
+      "kind": "icon",
+      "format": "inline_svg",
+      "usage": "Home/Global nav/CREATORS。",
+      "source": "to_be_authored_by_implementer",
+      "spec": "24x24。index-card / directory glyph。人物写真・avatar silhouetteを主iconにしない。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-ICON-REPORT",
+      "kind": "icon",
+      "format": "inline_svg",
+      "usage": "Home/REPORT。",
+      "source": "to_be_authored_by_implementer",
+      "spec": "24x24。3本の異なる高さのmeasurement ticks。bar chartの成長演出ではなく実測資料の索引記号。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-ICON-BUSINESS",
+      "kind": "icon",
+      "format": "inline_svg",
+      "usage": "Home/BUSINESS。",
+      "source": "to_be_authored_by_implementer",
+      "spec": "24x24。building outline。stroke currentColor 1.75。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-ICON-DOCS",
+      "kind": "icon",
+      "format": "inline_svg",
+      "usage": "Home/DOCS/legal/document menu。",
+      "source": "to_be_authored_by_implementer",
+      "spec": "24x24。open document/book outline。stroke currentColor 1.75。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-STATE-GLYPHS",
+      "kind": "icon",
+      "format": "inline_svg",
+      "usage": "CHECKER findings / AICHECK bands / errors。",
+      "source": "to_be_authored_by_implementer",
+      "spec": "4 glyph set: bad=clipped diamond + !; warn=diagonal slash; ok=brackets + check; info=open circle. 16x16. Always paired with visible text label。",
+      "human_depiction": false,
+      "external_dependency": false
+    },
+    {
+      "id": "A-OG",
+      "kind": "og_image",
+      "format": "png",
+      "usage": "全page共通og:image replacement candidate。",
+      "source": "to_be_authored_by_implementer",
+      "spec": "1200x630。Home dark themeのEvidence Bundleを右40%、左にHONMONO +『本物の証拠で、信頼をつなぐ。』のみ。人物なし。既存OGを置換する場合も同一originに同梱。",
+      "human_depiction": false,
+      "external_dependency": false
+    }
+  ]
+}

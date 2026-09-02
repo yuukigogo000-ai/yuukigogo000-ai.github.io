@@ -1,0 +1,150 @@
+
+<script>
+'use strict';
+function recalc() {
+  let risk = 0, trust = 0, decisive = 0;
+  const checkedRisk = [], checkedTrust = [];
+  document.querySelectorAll('input[data-kind="risk"]:checked').forEach(el => {
+    const w = +el.dataset.w;
+    risk += w;
+    if (w >= 4) decisive++; // 逆画像検索ヒット・金銭誘導・AI痕跡検出などの決定的シグナル
+    checkedRisk.push(el.nextElementSibling.firstChild.textContent);
+  });
+  document.querySelectorAll('input[data-kind="trust"]:checked').forEach(el => {
+    trust += +el.dataset.w;
+    checkedTrust.push(el.nextElementSibling.firstChild.textContent);
+  });
+  // 決定的シグナルはスコア下限を保証する(1つで「中」、2つ以上で「高」に到達)
+  const floor = decisive >= 2 ? 65 : decisive === 1 ? 40 : 0;
+  const base = Math.max(Math.round(risk / MAX * 100), floor);
+  const pct = Math.min(100, Math.max(0, base - trust * 3));
+  const band = BANDS.find(b => pct < b.max) || BANDS[2];
+  const checked = checkedRisk.length + checkedTrust.length;
+
+  if ($('scoreNum').textContent !== String(pct)) {
+    $('scoreNum').classList.remove('bump');
+    void $('scoreNum').offsetWidth;
+    $('scoreNum').classList.add('bump');
+  }
+  $('scoreNum').textContent = pct;
+  $('bandLabel').textContent = band.label;
+  $('bandLabel').style.color = band.color;
+  $('scorefill').style.transform = 'scaleX(' + (pct / 100) + ')';
+  $('scorefill').style.background = band.color;
+  $('checkedCount').textContent = checked + ' / ' + TOTAL_ITEMS + ' 項目を確認';
+
+  // 0点を「安全」に見せない。全項目を見終わるまでは暫定であることを常に併記する
+  $('stageLabel').textContent = checked === 0
+    ? '未判定 — まだ1項目も確認していません'
+    : (checked < TOTAL_ITEMS ? '暫定 — ' + checked + ' / ' + TOTAL_ITEMS + ' 項目まで確認' : '全項目を確認しました');
+  $('advice').textContent = band.advice + (checkedTrust.length ? '(信頼シグナルによりスコアを減点済み)' : '');
+  return { pct, band, checkedRisk, checkedTrust };
+}
+
+document.addEventListener('change', e => { if (e.target.matches('input[type=checkbox]')) recalc(); });
+
+$('copyResult').addEventListener('click', async () => {
+  const { pct, band, checkedRisk, checkedTrust } = recalc();
+  const lines = [
+    `【AIアカウント鑑定結果】リスクスコア ${pct}/100 (${band.label})`,
+    '',
+    checkedRisk.length ? '■ 該当した注意信号:' : '■ 注意信号の該当なし',
+    ...checkedRisk.map(t => `・${t}`),
+    ...(checkedTrust.length ? ['', '■ 信頼シグナル:', ...checkedTrust.map(t => `・${t}`)] : []),
+    '',
+    '診断: HONMONO AIアカウント鑑定(判定は参考情報です)',
+  ];
+  const text = lines.join('\n');
+  try { await navigator.clipboard.writeText(text); }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); ta.remove();
+  }
+  $('copied').hidden = false;
+  setTimeout(() => { $('copied').hidden = true; }, 2000);
+});
+
+/* ========== 結果画像の生成(SNSシェア用・1200x630) ========== */
+const BAND_COLORS = { 'リスク: 低': '#82B38A', 'リスク: 中': '#E2AC4C', 'リスク: 高': '#E36B5D' };
+
+function wrapText(ctx, text, maxWidth) {
+  const out = [];
+  let line = '';
+  for (const ch of text) {
+    if (ctx.measureText(line + ch).width > maxWidth) { out.push(line); line = ch; }
+    else line += ch;
+  }
+  if (line) out.push(line);
+  return out;
+}
+
+$('saveImage').addEventListener('click', () => {
+  const { pct, band, checkedRisk } = recalc();
+  const c = document.createElement('canvas');
+  c.width = 1200; c.height = 630;
+  const ctx = c.getContext('2d');
+  const color = BAND_COLORS[band.label] || '#82B38A';
+
+  ctx.fillStyle = '#0B0E10';
+  ctx.fillRect(0, 0, 1200, 630);
+  ctx.fillStyle = '#8F201A';
+  ctx.fillRect(0, 0, 1200, 10);
+
+  ctx.fillStyle = '#D3AB67';
+  ctx.font = '700 34px system-ui, sans-serif';
+  ctx.fillText('HONMONO', 70, 92);
+  ctx.fillStyle = '#F2E2C6';
+  ctx.font = '700 46px system-ui, sans-serif';
+  ctx.fillText('AIアカウント鑑定 結果', 70, 158);
+
+  // スコア
+  ctx.fillStyle = color;
+  ctx.font = '800 150px system-ui, sans-serif';
+  const scoreText = String(pct);
+  ctx.fillText(scoreText, 70, 340);
+  const w = ctx.measureText(scoreText).width;
+  ctx.fillStyle = '#B6A98F';
+  ctx.font = '600 40px system-ui, sans-serif';
+  ctx.fillText('/ 100', 80 + w, 340);
+  ctx.fillStyle = color;
+  ctx.font = '800 52px system-ui, sans-serif';
+  ctx.fillText(band.label, 70, 420);
+
+  // スコアバー
+  ctx.fillStyle = '#5A5145';
+  ctx.beginPath(); ctx.roundRect(70, 448, 500, 22, 11); ctx.fill();
+  ctx.fillStyle = color;
+  ctx.beginPath(); ctx.roundRect(70, 448, Math.max(22, 500 * pct / 100), 22, 11); ctx.fill();
+
+  // 該当シグナル(右カラム・最大6件)
+  ctx.fillStyle = '#B6A98F';
+  ctx.font = '600 26px system-ui, sans-serif';
+  ctx.fillText(checkedRisk.length ? `該当した注意信号 (${checkedRisk.length}件)` : '注意信号の該当なし', 640, 230);
+  ctx.fillStyle = '#F2E2C6';
+  ctx.font = '400 24px system-ui, sans-serif';
+  let y = 272;
+  for (const item of checkedRisk.slice(0, 6)) {
+    const lines = wrapText(ctx, '・' + item, 490).slice(0, 2);
+    for (const ln of lines) { if (y > 500) break; ctx.fillText(ln, 640, y); y += 34; }
+    y += 4;
+  }
+  if (checkedRisk.length > 6) { ctx.fillStyle = '#B6A98F'; ctx.fillText(`…ほか ${checkedRisk.length - 6}件`, 640, Math.min(y, 530)); }
+
+  ctx.fillStyle = '#B6A98F';
+  ctx.font = '400 24px system-ui, sans-serif';
+  ctx.fillText('無料診断: yuukigogo000-ai.github.io/honmono/aicheck/  ※参考情報です。特定の個人の断定には使えません', 70, 585);
+
+  c.toBlob(blob => {
+    if (!blob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'honmono-aicheck.png';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }, 'image/png');
+});
+
+
+recalc();
+</script>

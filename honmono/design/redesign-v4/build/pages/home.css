@@ -1,0 +1,86 @@
+
+  /* HOME = BRAND_CRITICAL。この密度をタスク画面へ持ち込まない */
+  /* 見出しは作品画像の「半透明スリーブ」の帯に重なる。
+     その帯の位置は画像の縦中央付近なので、作品画像の高さと切り取り位置を固定して、
+     文字が暗い上端に乗らないようにする。 */
+  .hero { position: relative; padding: 0 0 var(--sp-12); }
+  .hero__art {
+    position: absolute; top: 0; right: calc(var(--sp-4) * -1);
+    width: 56%; aspect-ratio: 219 / 590;
+    border-radius: var(--r-2) 0 0 var(--r-2);
+    overflow: hidden;
+  }
+  @media (min-width: 430px) { .hero__art { right: -20px; } }
+  /* 作品画像の左3分の1は無地の暗い背景なので、証拠束の側を見せる */
+  .hero__art img { width: 100%; height: 100%; object-fit: cover; object-position: 100% 50%; display: block; }
+  /* 見出しと本文が乗る側を紙の地色へ戻す。
+     DESIGN_SYSTEM の「本文と操作ラベルは 4.5:1 以上」を満たすために必要。
+     ぼかしは使わない(ガラスモーフィズム禁止) */
+  .hero__art::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(to right,
+      var(--c-canvas) 0%, var(--c-canvas) 20%, transparent 54%);
+  }
+  .hero__copy { position: relative; z-index: 1; max-width: 16.5rem; padding-top: 46%; }
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.1rem, 8.8vw, 3.5rem); line-height: 1.22; font-weight: 400;
+    margin: 0 0 var(--sp-4);
+  }
+  .hero p { margin: 0 0 var(--sp-4); }
+  .hero .local-sign { margin-bottom: var(--sp-6); }
+
+  .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-3); }
+  .pillar .ico { width: 28px; height: 28px; color: var(--c-brass); }
+  .pillar .n { display: block; color: var(--c-seal); font-weight: 700; font-size: .8125rem; margin-top: var(--sp-2); }
+  .pillar h3 { font-family: var(--font-display); font-size: 1rem; margin: 0 0 var(--sp-1); }
+  .pillar p { font-size: .8125rem; line-height: 1.55; color: var(--c-muted); margin: 0; }
+
+  .tools { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--sp-2); }
+  .tool {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: var(--sp-2); padding: var(--sp-4) var(--sp-2);
+    background: var(--c-surface); border: 1px solid var(--c-line-soft);
+    border-radius: var(--r-2); text-decoration: none; color: var(--c-text);
+    transition: border-color var(--dur-fast) var(--ease-out);
+  }
+  .tool:hover { border-color: var(--c-brass); color: var(--c-text); }
+  .tool .ico { width: 28px; height: 28px; color: var(--c-brass); }
+  .tool b { font-family: var(--font-display); font-size: 1rem; line-height: 1.4; font-weight: 600; }
+  .tool .go {
+    width: 32px; height: 32px; border-radius: 999px;
+    background: var(--c-seal-deep); color: var(--c-on-seal);
+    display: grid; place-items: center; margin-top: auto;
+  }
+  .tool .go svg { width: 16px; height: 16px; }
+
+  .more { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); }
+  .more a {
+    display: flex; align-items: center; gap: var(--sp-2);
+    min-height: 52px; padding: var(--sp-2) var(--sp-3);
+    background: var(--c-surface); border: 1px solid var(--c-line-soft);
+    border-radius: var(--r-1); text-decoration: none; color: var(--c-text);
+    font-size: .8125rem; line-height: 1.4; font-weight: 600;
+  }
+  .more a:hover { border-color: var(--c-brass); color: var(--c-brass); }
+  .more .ico { width: 20px; height: 20px; flex: 0 0 auto; color: var(--c-brass); }
+  .more .arrow { margin-left: auto; color: var(--c-muted); }
+
+  .section-label {
+    text-align: center; font-family: var(--font-display);
+    font-size: 1.25rem; line-height: 1.45; font-weight: 600;
+    margin: var(--sp-12) 0 var(--sp-6);
+  }
+  .section-label::after {
+    content: ""; display: block; width: 40px; height: 2px;
+    background: var(--c-seal); margin: var(--sp-2) auto 0;
+  }
+  .now { border-top: 1px solid var(--c-line-soft); margin-top: var(--sp-12); padding-top: var(--sp-6); }
+  .now h2 { margin-top: 0; }
+  .now ul { margin: var(--sp-2) 0 0; padding-left: 1.2em; font-size: .8125rem; line-height: 1.75; color: var(--c-muted); }
+
+  @media (min-width: 640px) {
+    .hero__art { width: 46%; aspect-ratio: 3 / 4; top: var(--sp-6); border-radius: var(--r-2); }
+    .hero__copy { max-width: 26rem; padding-top: var(--sp-16); padding-bottom: var(--sp-16); }
+    .pillar p, .more a { font-size: 1rem; line-height: 1.75; }
+  }

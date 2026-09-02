@@ -1,0 +1,3 @@
+  /* DOCUMENT。著作権表示は折り返せるようにする(法的な表示義務) */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+  .doc pre, .doc code, .doc td { overflow-wrap: anywhere; }

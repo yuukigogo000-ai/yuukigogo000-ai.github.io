@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>実在クリエイター名鑑 — HONMONO</title>
 <meta name="description" content="「AI不使用・実在証明済み」を掲げるクリエイターのディレクトリ。本物の人間に仕事を頼みたい企業・ファンのための検索台帳。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z' fill='none' stroke='%237F5A23' stroke-width='3'/><text x='32' y='42' font-size='26' text-anchor='middle' fill='%237F5A23' font-family='serif'>本</text></svg>">
 <meta property="og:type" content="website">
 <meta property="og:title" content="実在クリエイター名鑑 — HONMONO">
 <meta property="og:description" content="実在を証明したクリエイターだけを載せる無料ディレクトリ。本物の人間に仕事を頼みたい企業・応援したいファンのために。">
@@ -15,88 +15,140 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
-  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
-  .filters button { margin: 0; padding: 7px 16px; font-size: .85rem; border-radius: 999px;
-    background: var(--card); color: var(--fg); border: 1px solid var(--line); }
-  .filters button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .creator { position: relative; }
-  .creator .vbadge { display: inline-block; font-size: .7rem; font-weight: 800; color: #fff;
-    background: var(--accent); border-radius: 999px; padding: 2px 10px; letter-spacing: .04em; }
-  .creator .sample { position: absolute; top: 12px; right: 14px; font-size: .7rem; font-weight: 700;
-    color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 2px 10px; }
-  .creator h3 { margin: 8px 0 2px; font-size: 1.05rem; }
-  .creator .cat { font-size: .8rem; color: var(--muted); margin: 0 0 8px; }
-  .creator .desc { font-size: .87rem; margin: 0 0 10px; }
-  .creator .links { font-size: .82rem; display: flex; gap: 12px; flex-wrap: wrap; }
-  .promise { font-size: .8rem; color: var(--muted); border-top: 1px dashed var(--line); margin-top: 10px; padding-top: 8px; }
-  .promise b { color: var(--ok); }
-  #empty { text-align: center; color: var(--muted); padding: 30px 0; display: none; }
+  /* CREATORS = TASK_CRITICAL。0件を正直に見せつつ、募集を前向きに成立させる */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+  .recruit { border-color: var(--c-brass); }
+
+  .filters { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); margin: var(--sp-3) 0; }
+  .filters button {
+    display: flex; align-items: center; justify-content: center; gap: var(--sp-1);
+    min-height: 44px; padding: var(--sp-2) var(--sp-3);
+    background: var(--c-surface); color: var(--c-text);
+    border: 1px solid var(--c-line); border-radius: var(--r-1);
+    font-family: var(--font-ui); font-size: .8125rem; font-weight: 600;
+    cursor: pointer;
+  }
+  .filters button:hover { border-color: var(--c-brass); }
+  .filters button.active { border-color: var(--c-seal); color: var(--c-seal); background: var(--c-seal-soft); }
+  .filters button .tick { width: 14px; height: 14px; display: none; }
+  .filters button.active .tick { display: block; }
+
+  .entry {
+    background: var(--c-surface); border: 1px solid var(--c-line-soft);
+    border-radius: var(--r-2); padding: var(--sp-4); margin: 0 0 var(--sp-3);
+  }
+  .entry__tags { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-bottom: var(--sp-2); }
+  .entry h3 { font-family: var(--font-display); font-size: 1.25rem; margin: 0 0 var(--sp-1); }
+  .entry .cat { font-size: .8125rem; color: var(--c-muted); margin: 0 0 var(--sp-2); }
+  .entry .desc { margin: 0 0 var(--sp-3); }
+  .entry .links { display: flex; flex-wrap: wrap; gap: var(--sp-2) var(--sp-4); font-size: .8125rem; }
+  .entry .promise {
+    font-size: .8125rem; line-height: 1.55; color: var(--c-muted);
+    border-top: 1px dashed var(--c-line-soft); margin-top: var(--sp-3); padding-top: var(--sp-2);
+  }
+  .entry .promise b { color: var(--c-ok); }
+  #list { transition: opacity 120ms linear; }
+  #list.swapping { opacity: .65; }
 </style>
 </head>
 <body>
+
 <header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO</a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/" aria-current="page">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
-  </nav>
+  <a class="brand" href="../">
+    <span class="seal" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z" stroke="currentColor" stroke-width="2"/><path d="M32 9 49 19v26L32 55 15 45V19L32 9Z" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="32" y="40" text-anchor="middle" font-size="24" font-family="serif" fill="currentColor">本</text></svg></span>
+    <span class="word">HONMONO</span>
+  </a>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="siteMenu" aria-label="メニューを開く">
+    <span class="ico-open" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></span>
+    <span class="ico-close" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+  </button>
 </div></header>
 
+<nav class="site-menu" id="siteMenu" hidden aria-label="サイト内の移動"><div class="wrap">
+  <div class="menu-group">
+    <h2>調べる</h2>
+    <ul class="menu-list">
+      <li><a href="../checker/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10H4z"/><path d="m6 12 3.5-4 2.5 3 2-2 4 3"/><circle cx="16.5" cy="17.5" r="3.5"/><path d="m19.5 20.5 1.8 1.8"/></svg></span>画像来歴チェッカー</a></li>
+      <li><a href="../aicheck/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 11-4.7"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M16 17.5h3"/></svg></span>AIアカウント鑑定</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>証明・探す</h2>
+    <ul class="menu-list">
+      <li><a href="../badge/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v6.5c0 3.4-2.9 6-7 7.5-4.1-1.5-7-4.1-7-7.5V7z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg></span>実在証明バッジ</a></li>
+      <li><a href="../creators/" aria-current="page"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 13h8M8 16h5"/></svg></span>実在クリエイター名鑑</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>理解する</h2>
+    <ul class="menu-list">
+      <li><a href="../docs/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></span>説明書</a></li>
+    </ul>
+  </div>
+  <div class="menu-group menu-sub">
+    <ul class="menu-list">
+      <li><a href="../report/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 18V9M12 18V4M18 18v-6"/></svg></span>実測レポートを読む</a></li>
+      <li><a href="../business/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6l7-3v17"/><path d="M11 9h9v11"/><path d="M7 9h.01M7 13h.01M15 13h.01M15 17h.01"/></svg></span>法人・開発者の方へ</a></li>
+    </ul>
+  </div>
+</div></nav>
 <main class="wrap">
-  <h1>🌟 実在クリエイター名鑑</h1>
-  <p class="lead">「実在する人間であること」を証明ページ付きで宣言したクリエイターの台帳です。
-  AI量産コンテンツではなく<b>本物の人間</b>に仕事を頼みたい企業・本物を応援したいファンのための検索ディレクトリを目指しています。</p>
+  <h1>実在クリエイター名鑑</h1>
+  <p class="lede">実在を証明したクリエイターを、見つけられる場所につなぐ。</p>
 
-  <div class="card" style="background:var(--accent-soft); border-color:var(--accent)">
-    <b>📣 掲載クリエイター募集中(無料)</b>
-    <p style="font-size:.88rem; margin:6px 0 0">
-      掲載条件は「<a href="../badge/">実在証明バッジ</a>で証明ページを公開し、SNSとの相互リンクを完成させていること」。
-      準備ができたら
-      <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%E5%90%8D%E9%91%91%E6%8E%B2%E8%BC%89%E7%94%B3%E8%AB%8B&body=%E6%B4%BB%E5%8B%95%E5%90%8D%3A%0A%E3%82%B8%E3%83%A3%E3%83%B3%E3%83%AB%3A%0A%E8%A8%BC%E6%98%8E%E3%83%9A%E3%83%BC%E3%82%B8URL%3A%0A%E4%B8%BB%E3%81%AASNS%3A%0A%E7%B4%B9%E4%BB%8B%E6%96%87%28100%E5%AD%97%E4%BB%A5%E5%86%85%29%3A"
-      target="_blank" rel="noopener">掲載申請フォーム(GitHub Issue)</a>からご連絡ください。
-      相互リンクを確認のうえ掲載します。
-    </p>
-  </div>
-
-  <div class="notice" style="margin-top:20px">
+  <!-- PL-2: 見本より前に、実在の掲載が0件であることを読ませる -->
+  <div class="note-block" id="sampleNotice">
     <b>実在のクリエイターの掲載は、まだ0件です。</b>
-    下に並んでいるのは<b>カードの見本</b>で、どんな項目が載るかを示すためだけのものです。実在の人物ではありません。
+    <p style="margin:var(--sp-2) 0 0">下に並んでいるのは<b>カードの見本</b>で、どんな項目が載るかを示すためだけのものです。実在の人物ではありません。
     <b>実在を売りにする名鑑で架空の人物をでっち上げるのは筋が通らない</b>ので、人名は載せていません。
-    掲載申請を受け付け次第、見本は順次差し替えます。
+    掲載申請を受け付け次第、見本は順次差し替えます。</p>
   </div>
 
-  <label for="q" style="margin-top:20px">キーワード検索</label>
-  <input type="text" id="q" placeholder="名前・ジャンル・キーワードで絞り込み">
-  <div class="filters" id="filters"></div>
+  <div class="dossier recruit">
+    <h2 style="margin-top:0">掲載クリエイター募集中（無料）</h2>
+    <p style="margin:var(--sp-2) 0 var(--sp-4)">掲載条件は「<a href="../badge/">実在証明バッジ</a>で証明ページを公開し、SNSとの相互リンクを完成させていること」だけです。
+    運営が相互リンクの輪を確認したうえで掲載します。</p>
+    <a class="btn" href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%E5%90%8D%E9%91%91%E6%8E%B2%E8%BC%89%E7%94%B3%E8%AB%8B&body=%E6%B4%BB%E5%8B%95%E5%90%8D%3A%0A%E3%82%B8%E3%83%A3%E3%83%B3%E3%83%AB%3A%0A%E8%A8%BC%E6%98%8E%E3%83%9A%E3%83%BC%E3%82%B8URL%3A%0A%E4%B8%BB%E3%81%AASNS%3A%0A%E7%B4%B9%E4%BB%8B%E6%96%87%28100%E5%AD%97%E4%BB%A5%E5%86%85%29%3A"
+       target="_blank" rel="noopener">掲載を申請する（GitHub Issue）</a>
+  </div>
 
-  <div class="grid" id="list"></div>
-  <div id="empty">該当するクリエイターが見つかりませんでした。</div>
+  <h2>探す</h2>
+  <label for="q">キーワード検索</label>
+  <input type="search" id="q" placeholder="名前・ジャンル・キーワードで絞り込み">
+  <div class="filters" id="filters"></div>
+  <p class="note" id="resultCount" aria-live="polite"></p>
+
+  <div id="list"></div>
+  <p id="empty" class="dossier" style="display:none">
+    該当するクリエイターが見つかりませんでした。<br>
+    <button class="btn btn--ghost" type="button" id="clearFilters" style="margin-top:var(--sp-3)">条件をクリア</button>
+  </p>
 
   <p class="note">掲載は実在を保証する審査ではなく、<b>相互リンク証明の輪が閉じていることの確認</b>に基づくものです。
-  掲載料・審査料・優先表示料は一切いただきません(<a href="../legal/terms.html">利用規約</a>第6条)。</p>
+  掲載料・審査料・優先表示料は一切いただきません（<a href="../legal/terms.html">利用規約</a>第6条）。</p>
 </main>
 
 <footer class="site-foot"><div class="wrap">
-  <div style="margin-bottom:6px">
-  <a href="../">HONMONO</a> ·
-  <a href="../docs/">説明書</a> ·
-  <a href="../report/">実測レポート</a> ·
-  <a href="../business/">法人向け</a> ·
-  <a href="../legal/privacy.html">プライバシー</a> ·
-  <a href="../legal/terms.html">利用規約</a> ·
-  <a href="../legal/credits.html">クレジット</a>
+  <div class="foot-links">
+    <a href="../">HONMONO</a>
+    <a href="../docs/">説明書</a>
+    <a href="../report/">実測レポート</a>
+    <a href="../business/">法人向け</a>
+    <a href="../legal/privacy.html">プライバシー</a>
+    <a href="../legal/terms.html">利用規約</a>
+    <a href="../legal/credits.html">クレジット</a>
   </div>
-  <div style="font-size:.82rem; opacity:.8">HONMONO プロジェクト — 掲載料・審査料はいただきません。</div>
+  <p style="margin:0">HONMONO プロジェクト — 掲載料・審査料はいただきません。</p>
 </div></footer>
+
+<script src="../shell.js"></script>
 
 <script>
 'use strict';
 
 /* 掲載データは creators.json で管理(掲載申請を確認後にJSONへ追記する)。
    file:// などfetch不可の環境向けに同内容のフォールバックを持つ。 */
+
 const FALLBACK_CREATORS = [
   {
     sample: true,
@@ -132,17 +184,22 @@ const FALLBACK_CREATORS = [
   },
 ];
 
+
 let CREATORS = [];
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+const GLYPH_OK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2H2v12h2M12 2h2v12h-2"/><path d="m5.5 8 1.8 2L10.5 6"/></svg>';
+const GLYPH_WARN = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M11 2 5 14"/></svg>';
+const TICK = '<span class="tick" aria-hidden="true">' + GLYPH_OK + '</span>';
 
 let activeCat = 'すべて';
 
 function initFilters() {
   const cats = ['すべて', ...new Set(CREATORS.map(c => c.category))];
   $('filters').innerHTML = cats.map(c =>
-    `<button data-cat="${esc(c)}" class="${c === activeCat ? 'active' : ''}">${esc(c)}</button>`).join('');
+    `<button type="button" data-cat="${esc(c)}" class="${c === activeCat ? 'active' : ''}" aria-pressed="${c === activeCat}">${TICK}${esc(c)}</button>`).join('');
 }
 
 function render() {
@@ -153,9 +210,11 @@ function render() {
     return (c.name + c.category + c.desc + c.promise).toLowerCase().includes(q);
   });
   $('list').innerHTML = shown.map(c =>
-    `<div class="card creator">` +
-    (c.sample ? '<span class="sample">見本</span>' : '') +
-    `<span class="vbadge">✓ 実在証明ページあり</span>` +
+    `<article class="entry">` +
+    `<div class="entry__tags">` +
+    `<span class="chip chip--ok"><span class="glyph" aria-hidden="true">${GLYPH_OK}</span>実在証明ページあり</span>` +
+    (c.sample ? `<span class="chip chip--warn"><span class="glyph" aria-hidden="true">${GLYPH_WARN}</span>見本</span>` : '') +
+    `</div>` +
     `<h3>${esc(c.name)}</h3>` +
     `<p class="cat">${esc(c.category)}</p>` +
     `<p class="desc">${esc(c.desc)}</p>` +
@@ -164,18 +223,39 @@ function render() {
       `<a href="${esc(url)}" ${url === '#' ? '' : 'target="_blank" rel="noopener"'}>${esc(label)}</a>`).join('') +
     `</div>` +
     `<div class="promise">約束: <b>${esc(c.promise)}</b></div>` +
-    `</div>`).join('');
+    `</article>`).join('');
   $('empty').style.display = shown.length ? 'none' : 'block';
+  // いまどの条件で何件見えているかを、絞り込みのすぐ下に出す
+  $('resultCount').textContent = activeCat === 'すべて' && !q
+    ? shown.length + '件をすべて表示中'
+    : `${shown.length}件 / 条件: ${activeCat}${q ? '・「' + q + '」' : ''}`;
+}
+
+function rerender() {
+  const list = $('list');
+  list.classList.add('swapping');
+  render();
+  requestAnimationFrame(() => list.classList.remove('swapping'));
 }
 
 $('filters').addEventListener('click', e => {
   const btn = e.target.closest('button[data-cat]');
   if (!btn) return;
   activeCat = btn.dataset.cat;
-  document.querySelectorAll('#filters button').forEach(b => b.classList.toggle('active', b === btn));
-  render();
+  document.querySelectorAll('#filters button').forEach(b => {
+    const on = b === btn;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on);
+  });
+  rerender();
 });
-$('q').addEventListener('input', render);
+$('q').addEventListener('input', rerender);
+$('clearFilters').addEventListener('click', () => {
+  $('q').value = '';
+  activeCat = 'すべて';
+  initFilters();
+  rerender();
+});
 
 (async () => {
   try {
@@ -191,5 +271,6 @@ $('q').addEventListener('input', render);
   render();
 })();
 </script>
+
 </body>
 </html>

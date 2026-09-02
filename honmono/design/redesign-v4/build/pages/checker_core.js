@@ -1,0 +1,795 @@
+/* ========== 生成AIツールの既知パターン ========== */
+const AI_PATTERNS = [
+  { re: /midjourney/i,                     name: 'Midjourney' },
+  { re: /niji ?journey/i,                  name: 'nijijourney' },
+  { re: /dall[\s·・-]?e/i,        name: 'DALL·E' },
+  { re: /\bopenai\b/i,                     name: 'OpenAI' },
+  { re: /stable ?[\-_]?diffusion/i,        name: 'Stable Diffusion' },
+  { re: /\bsdxl\b/i,                       name: 'SDXL' },
+  { re: /comfyui/i,                        name: 'ComfyUI' },
+  { re: /automatic1111|\ba1111\b/i,        name: 'Stable Diffusion WebUI (AUTOMATIC1111)' },
+  { re: /fooocus/i,                        name: 'Fooocus' },
+  { re: /invokeai/i,                       name: 'InvokeAI' },
+  { re: /novelai/i,                        name: 'NovelAI' },
+  { re: /adobe ?firefly|\bfirefly\b/i,     name: 'Adobe Firefly' },
+  { re: /leonardo\.?ai/i,                  name: 'Leonardo.Ai' },
+  { re: /ideogram/i,                       name: 'Ideogram' },
+  { re: /flux\.1|flux[\-_](dev|schnell|pro)/i, name: 'FLUX.1' },
+  { re: /draw ?things/i,                   name: 'Draw Things' },
+  { re: /seaart/i,                         name: 'SeaArt' },
+  { re: /pixai/i,                          name: 'PixAI' },
+  { re: /tensor\.art/i,                    name: 'Tensor.Art' },
+  { re: /\bkrea\b/i,                       name: 'KREA' },
+  { re: /recraft/i,                        name: 'Recraft' },
+  { re: /civitai/i,                        name: 'Civitai' },
+  { re: /grok imagine|xai.?grok/i,         name: 'Grok' },
+  { re: /google.?imagen|imagen[ \-_]?[23]/i, name: 'Google Imagen' },
+  { re: /\bsora\b/i,                       name: 'Sora (OpenAI)' },
+  { re: /google.?veo|veo[ \-_]?[23]/i,     name: 'Google Veo' },
+  { re: /kling.?ai|kuaishou.?kling/i,      name: 'Kling' },
+  { re: /runway(ml| ?gen)/i,               name: 'Runway' },
+  { re: /pika ?labs|pika\.art/i,           name: 'Pika' },
+  { re: /lumalabs|dream ?machine/i,        name: 'Luma Dream Machine' },
+  { re: /hailuo|minimax.?video/i,          name: 'Hailuo (MiniMax)' },
+  // 汎用の自己申告(素材サイトのタイトル・キーワード等に多い)
+  { re: /generative[\s\-_]?ai\b/i,                                    name: '「Generative AI」表記' },
+  { re: /\bai[\s\-_]?generated\b|\bgenerated (?:by|with|using) (?:an? )?ai\b/i, name: '「AI generated」表記' },
+  { re: /生成AI|AI生成|AIで生成|AIイラスト/,                              name: '「生成AI」表記(日本語)' },
+];
+
+/* ストック素材サイトの痕跡(プロフィール写真として使われていれば流用・架空人物のサイン) */
+const STOCK_PATTERNS = [
+  { re: /adobe ?stock|stock\.adobe\.com/i, name: 'Adobe Stock' },
+  { re: /shutterstock/i,                    name: 'Shutterstock' },
+  { re: /getty ?images|gettyimages/i,       name: 'Getty Images' },
+  { re: /\bistock(photo)?\b/i,             name: 'iStock' },
+  { re: /depositphotos/i,                   name: 'Depositphotos' },
+  { re: /\b123rf\b/i,                      name: '123RF' },
+  { re: /dreamstime/i,                      name: 'Dreamstime' },
+  { re: /\balamy\b/i,                      name: 'Alamy' },
+  { re: /\bpixta\b/i,                      name: 'PIXTA' },
+  { re: /photo-?ac\b|photoac/i,             name: '写真AC' },
+  { re: /\bfreepik\b/i,                    name: 'Freepik' },
+  { re: /\benvato\b/i,                     name: 'Envato' },
+  { re: /vecteezy/i,                        name: 'Vecteezy' },
+  { re: /\bpexels\b/i,                     name: 'Pexels' },
+  { re: /\bunsplash\b/i,                   name: 'Unsplash' },
+  { re: /\bpixabay\b/i,                    name: 'Pixabay' },
+];
+function matchStock(text) {
+  const hits = [];
+  for (const p of STOCK_PATTERNS) if (p.re.test(text)) hits.push(p.name);
+  return [...new Set(hits)];
+}
+
+/* XMPから主要フィールドを取り出す(属性形式と rdf:li 形式の両方に対応) */
+function xmpField(xmp, tag) {
+  const attr = xmp.match(new RegExp(tag + '="([^"]{1,400})"'));
+  if (attr) return attr[1];
+  const el = xmp.match(new RegExp('<' + tag + '[^>]*>([\\s\\S]{0,4000}?)</' + tag + '>'));
+  if (!el) return '';
+  const inner = el[1];
+  const items = [...inner.matchAll(/<rdf:li[^>]*>([^<]{1,400})<\/rdf:li>/g)].map(m => m[1].trim()).filter(Boolean);
+  if (items.length) return items.join(', ');
+  return inner.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+const XMP_FIELDS = [
+  ['dc:title', 'タイトル (XMP)'], ['dc:description', '説明 (XMP)'], ['dc:subject', 'キーワード (XMP)'],
+  ['dc:creator', '作者 (XMP)'], ['dc:rights', '権利表記 (XMP)'], ['photoshop:Credit', 'クレジット (XMP)'],
+  ['xmpRights:WebStatement', '権利URL (XMP)'], ['plus:ImageSupplierName', '供給元 (XMP)'],
+];
+
+/* 生成AIの定番出力サイズ(両辺一致で弱い手がかりとする) */
+const AI_SIZES = new Set([
+  '512x512', '512x768', '768x512', '640x640', '768x768', '768x1024', '1024x768',
+  '896x1152', '1152x896', '832x1216', '1216x832', '1024x1024', '1024x1536',
+  '1536x1024', '1344x768', '768x1344', '1152x768', '768x1152',
+]);
+
+const IFD0_TAGS = {
+  0x010F: 'メーカー (Make)',
+  0x0110: '機種 (Model)',
+  0x0131: 'ソフトウェア (Software)',
+  0x0132: '更新日時 (DateTime)',
+  0x013B: '作者 (Artist)',
+  0x8298: '著作権 (Copyright)',
+};
+const EXIF_TAGS = {
+  0x9003: '撮影日時 (DateTimeOriginal)',
+  0xA433: 'レンズメーカー (LensMake)',
+  0xA434: 'レンズ (LensModel)',
+  0xA430: 'カメラ所有者 (OwnerName)',
+  0x9291: '撮影日時サブ秒',
+};
+const TYPE_SIZE = { 1:1, 2:1, 3:2, 4:4, 5:8, 6:1, 7:1, 8:2, 9:4, 10:8, 11:4, 12:8 };
+
+/* ========== ユーティリティ ========== */
+const ascii = (bytes, off, len) => {
+  let s = '';
+  const end = Math.min(off + len, bytes.length);
+  for (let i = off; i < end; i++) s += String.fromCharCode(bytes[i]);
+  return s;
+};
+const utf8 = (bytes) => { try { return new TextDecoder('utf-8', { fatal: false }).decode(bytes); } catch { return ''; } };
+
+async function inflate(data, maxOut = 8 * 1024 * 1024) {
+  // 展開サイズを制限する(小さな入力が巨大に膨らむ zip爆弾 対策)
+  try {
+    if (data.length > 5 * 1024 * 1024) return null;
+    const ds = new DecompressionStream('deflate');
+    const reader = new Blob([data]).stream().pipeThrough(ds).getReader();
+    const parts = [];
+    let total = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.length;
+      parts.push(value);
+      if (total >= maxOut) { try { await reader.cancel(); } catch {} break; }
+    }
+    const out = new Uint8Array(Math.min(total, maxOut));
+    let p = 0;
+    for (const part of parts) {
+      const room = out.length - p;
+      if (room <= 0) break;
+      out.set(part.subarray(0, room), p);
+      p += part.length;
+    }
+    return out;
+  } catch { return null; }
+}
+
+/* ファイル全体から可読ASCII文字列を抽出(最後の砦のスキャン用) */
+function extractStrings(bytes, minLen = 6, cap = 4 * 1024 * 1024) {
+  const out = [];
+  let cur = '';
+  const end = Math.min(bytes.length, cap);
+  for (let i = 0; i < end; i++) {
+    const b = bytes[i];
+    if (b >= 0x20 && b < 0x7F) { cur += String.fromCharCode(b); }
+    else { if (cur.length >= minLen) out.push(cur); cur = ''; }
+  }
+  if (cur.length >= minLen) out.push(cur);
+  return out;
+}
+
+/* ========== TIFF/EXIF パーサ ========== */
+function parseTIFF(bytes) {
+  const tags = {};
+  let thumb = null;
+  const empty = { tags, thumb };
+  if (bytes.length < 8) return empty;
+  const le = bytes[0] === 0x49 && bytes[1] === 0x49;
+  const be = bytes[0] === 0x4D && bytes[1] === 0x4D;
+  if (!le && !be) return empty;
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const u16 = o => dv.getUint16(o, le);
+  const u32 = o => dv.getUint32(o, le);
+  if (u16(2) !== 42) return empty;
+
+  const visited = new Set(); // IFDポインタのループによる無限再帰対策
+  const readIFD = (off, tagMap) => {
+    if (off <= 0 || off + 2 > bytes.length) return 0;
+    if (visited.has(off) || visited.size > 32) return 0;
+    visited.add(off);
+    const n = u16(off);
+    if (n > 500) return 0; // 壊れたデータ対策
+    for (let i = 0; i < n; i++) {
+      const e = off + 2 + i * 12;
+      if (e + 12 > bytes.length) break;
+      const tag = u16(e), type = u16(e + 2), count = u32(e + 4);
+      if (tag === 0x8769) { readIFD(u32(e + 8), EXIF_TAGS); continue; }
+      if (tag === 0x8825) { tags['GPS情報'] = 'あり(位置情報タグ検出)'; continue; }
+      const name = tagMap[tag];
+      if (!name || type !== 2) continue;
+      const size = (TYPE_SIZE[type] || 1) * count;
+      const valOff = size > 4 ? u32(e + 8) : e + 8;
+      if (valOff + size > bytes.length) continue;
+      const v = ascii(bytes, valOff, count).replace(/\0+$/, '').trim();
+      if (v) tags[name] = v;
+    }
+    const nextOff = off + 2 + n * 12;
+    return nextOff + 4 <= bytes.length ? u32(nextOff) : 0;
+  };
+  const ifd1 = readIFD(u32(4), IFD0_TAGS);
+
+  // IFD1 = 撮影時に埋め込まれたサムネイル(改ざん検知の材料)
+  if (ifd1 > 0 && ifd1 + 2 <= bytes.length && !visited.has(ifd1)) {
+    visited.add(ifd1);
+    const n = u16(ifd1);
+    let tOff = 0, tLen = 0;
+    if (n <= 500) {
+      for (let i = 0; i < n; i++) {
+        const e = ifd1 + 2 + i * 12;
+        if (e + 12 > bytes.length) break;
+        const tag = u16(e);
+        if (tag === 0x0201) tOff = u32(e + 8);
+        if (tag === 0x0202) tLen = u32(e + 8);
+      }
+    }
+    if (tOff > 0 && tLen > 100 && tLen < 2 * 1024 * 1024 && tOff + tLen <= bytes.length) {
+      thumb = bytes.subarray(tOff, tOff + tLen);
+    }
+  }
+  return { tags, thumb };
+}
+
+/* ========== JPEG ========== */
+function parseJPEG(bytes) {
+  const r = { exif: {}, xmp: '', comments: [], c2paPayloads: [], segments: [],
+              dqt: [], sof: null, hasJFIF: false, thumb: null };
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let off = 2;
+  while (off + 4 <= bytes.length) {
+    if (bytes[off] !== 0xFF) break;
+    const marker = bytes[off + 1];
+    if (marker === 0xFF) { off++; continue; } // フィルバイト(0xFF連続)をスキップ
+    if (marker === 0xD8 || marker === 0x01 || (marker >= 0xD0 && marker <= 0xD7)) { off += 2; continue; }
+    if (marker === 0xDA || marker === 0xD9) break; // 画像データ開始/終端
+    const len = dv.getUint16(off + 2);
+    if (len < 2) break;
+    const segStart = off + 4, segEnd = off + 2 + len;
+    if (segEnd > bytes.length) break;
+    const seg = bytes.subarray(segStart, segEnd);
+
+    if (marker === 0xE1) { // APP1: EXIF or XMP
+      const head = ascii(seg, 0, 29);
+      if (head.startsWith('Exif\0\0')) {
+        const t = parseTIFF(seg.subarray(6));
+        Object.assign(r.exif, t.tags);
+        if (t.thumb) r.thumb = t.thumb;
+        r.segments.push('APP1/EXIF');
+      } else if (head.startsWith('http://ns.adobe.com/xap/1.0/')) {
+        r.xmp += utf8(seg.subarray(29));
+        r.segments.push('APP1/XMP');
+      } else if (head.startsWith('http://ns.adobe.com/xmp/extension/')) {
+        r.xmp += utf8(seg.subarray(75)); // 拡張XMP(ヘッダ35 + GUID32 + 長さ情報8)
+        r.segments.push('APP1/XMP拡張');
+      }
+    } else if (marker === 0xEB) { // APP11: JUMBF (C2PA)
+      const s = ascii(seg, 0, Math.min(seg.length, 64));
+      if (s.includes('c2pa') || s.includes('jumb') || ascii(seg, 0, seg.length).includes('c2pa')) {
+        r.c2paPayloads.push(seg);
+        r.segments.push('APP11/JUMBF(C2PA)');
+      }
+    } else if (marker === 0xFE) { // COM
+      const c = utf8(seg).trim();
+      if (c) { r.comments.push(c); r.segments.push('COM(コメント)'); }
+    } else if (marker === 0xE0) { // APP0: JFIF
+      if (ascii(seg, 0, 4) === 'JFIF') r.hasJFIF = true;
+    } else if (marker === 0xDB) { // DQT: 量子化テーブル(再圧縮品質の推定材料)
+      let p = 0;
+      while (p < seg.length) {
+        const pq = seg[p] >> 4, tq = seg[p] & 15;
+        p++;
+        const cnt = pq ? 128 : 64;
+        if (p + cnt > seg.length) break;
+        const table = [];
+        for (let i = 0; i < 64; i++) table.push(pq ? ((seg[p + i * 2] << 8) | seg[p + i * 2 + 1]) : seg[p + i]);
+        r.dqt.push({ tq, table });
+        p += cnt;
+      }
+    } else if ([0xC0, 0xC1, 0xC2, 0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF].includes(marker)) {
+      // SOF: 画像サイズとプログレッシブ判定
+      if (seg.length >= 5) r.sof = { progressive: marker === 0xC2, h: (seg[1] << 8) | seg[2], w: (seg[3] << 8) | seg[4] };
+    }
+    off = segEnd;
+  }
+  return r;
+}
+
+/* ========== PNG ========== */
+async function parsePNG(bytes) {
+  const r = { texts: {}, xmp: '', exif: {}, c2paPayloads: [], segments: [] };
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let off = 8;
+  while (off + 12 <= bytes.length) {
+    const len = dv.getUint32(off);
+    const type = ascii(bytes, off + 4, 4);
+    const dataEnd = off + 8 + len;
+    if (dataEnd + 4 > bytes.length + 4 || len > bytes.length) break;
+    const data = bytes.subarray(off + 8, Math.min(dataEnd, bytes.length));
+
+    if (type === 'IHDR') {
+      if (len >= 8) r.dims = { w: dv.getUint32(off + 8), h: dv.getUint32(off + 12) };
+    } else if (type === 'tEXt') {
+      const z = data.indexOf(0);
+      if (z > 0) {
+        const key = ascii(data, 0, z);
+        r.texts[key] = utf8(data.subarray(z + 1));
+        r.segments.push(`tEXt:${key}`);
+      }
+    } else if (type === 'zTXt') {
+      const z = data.indexOf(0);
+      if (z > 0) {
+        const key = ascii(data, 0, z);
+        const raw = await inflate(data.subarray(z + 2));
+        if (raw) { r.texts[key] = utf8(raw); r.segments.push(`zTXt:${key}`); }
+      }
+    } else if (type === 'iTXt') {
+      const z = data.indexOf(0);
+      if (z > 0) {
+        const key = ascii(data, 0, z);
+        const compFlag = data[z + 1];
+        // 言語タグ・翻訳キーワード(2つのNUL終端)をスキップ
+        let p = z + 3;
+        while (p < data.length && data[p] !== 0) p++;
+        p++;
+        while (p < data.length && data[p] !== 0) p++;
+        p++;
+        let body = data.subarray(p);
+        if (compFlag === 1) { const raw = await inflate(body); body = raw || new Uint8Array(0); }
+        const text = utf8(body);
+        if (key === 'XML:com.adobe.xmp') r.xmp += text;
+        else r.texts[key] = text;
+        r.segments.push(`iTXt:${key}`);
+      }
+    } else if (type === 'eXIf') {
+      Object.assign(r.exif, parseTIFF(data).tags);
+      r.segments.push('eXIf');
+    } else if (type === 'caBX') {
+      r.c2paPayloads.push(data);
+      r.segments.push('caBX(C2PA)');
+    } else if (type === 'IEND') break;
+    off = dataEnd + 4; // データ + CRC
+  }
+  return r;
+}
+
+/* ========== WebP ========== */
+function parseWebP(bytes) {
+  const r = { exif: {}, xmp: '', c2paPayloads: [], segments: [] };
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let off = 12; // "RIFF" + size + "WEBP"
+  while (off + 8 <= bytes.length) {
+    const four = ascii(bytes, off, 4);
+    const len = dv.getUint32(off + 4, true);
+    const data = bytes.subarray(off + 8, Math.min(off + 8 + len, bytes.length));
+    if (four === 'EXIF') {
+      const tiff = ascii(data, 0, 6).startsWith('Exif\0\0') ? data.subarray(6) : data;
+      Object.assign(r.exif, parseTIFF(tiff).tags);
+      r.segments.push('EXIF');
+    } else if (four === 'XMP ') {
+      r.xmp += utf8(data);
+      r.segments.push('XMP');
+    } else if (four === 'C2PA' || ascii(data, 0, Math.min(data.length, 32)).includes('c2pa')) {
+      r.c2paPayloads.push(data);
+      r.segments.push(`${four}(C2PA)`);
+    }
+    off += 8 + len + (len % 2); // チャンクは偶数境界
+  }
+  return r;
+}
+
+/* ========== HEIC / AVIF (ISO BMFF) ========== */
+const latin1 = (bytes, cap = 16 * 1024 * 1024) => {
+  try { return new TextDecoder('latin1').decode(bytes.subarray(0, Math.min(bytes.length, cap))); }
+  catch { return ascii(bytes, 0, Math.min(bytes.length, cap)); }
+};
+function findBytes(hay, needle, from = 0) {
+  outer: for (let i = from; i + needle.length <= hay.length; i++) {
+    for (let j = 0; j < needle.length; j++) if (hay[i + j] !== needle[j]) continue outer;
+    return i;
+  }
+  return -1;
+}
+/* フルデコードはせず、Exif/XMP/C2PAの各アイテムを走査で抽出する実利優先パーサ */
+function parseBMFF(bytes) {
+  const r = { exif: {}, xmp: '', c2paPayloads: [], segments: [] };
+  const exifIdx = findBytes(bytes, [0x45, 0x78, 0x69, 0x66, 0x00, 0x00]); // "Exif\0\0"
+  if (exifIdx >= 0) {
+    Object.assign(r.exif, parseTIFF(bytes.subarray(exifIdx + 6)).tags);
+    r.segments.push('Exifアイテム');
+  }
+  // 動画等ではメタデータ(moov)がファイル末尾にあることも多いため、先頭+末尾を走査する
+  let latin = latin1(bytes);
+  if (bytes.length > 16 * 1024 * 1024) latin += '\n' + latin1(bytes.subarray(bytes.length - 8 * 1024 * 1024));
+  const xs = latin.indexOf('<x:xmpmeta');
+  if (xs >= 0) {
+    const xe = latin.indexOf('</x:xmpmeta>', xs);
+    if (xe > xs) { r.xmp = latin.slice(xs, xe + 12); r.segments.push('XMPアイテム'); }
+  }
+  if (latin.includes('jumb') && latin.includes('c2pa')) {
+    r.c2paPayloads.push(bytes); // 存在検出+文字列走査用(構造解析はSDKに委ねる)
+    r.segments.push('JUMBF(C2PA)');
+  }
+  return r;
+}
+
+/* ========== JPEG再圧縮品質の推定 ========== */
+/* IJG標準の輝度量子化テーブルとの照合で、最後に保存された時の品質(1-100)を推定する */
+const STD_LUM = [16,11,10,16,24,40,51,61,12,12,14,19,26,58,60,55,14,13,16,24,40,57,69,56,
+                 14,17,22,29,51,87,80,62,18,22,37,56,68,109,103,77,24,35,55,64,81,104,113,92,
+                 49,64,78,87,103,121,120,101,72,92,95,98,112,100,103,99];
+const ZIGZAG = [0,1,8,16,9,2,3,10,17,24,32,25,18,11,4,5,12,19,26,33,40,48,41,34,27,20,13,6,
+                7,14,21,28,35,42,49,56,57,50,43,36,29,22,15,23,30,37,44,51,58,59,52,45,38,31,
+                39,46,53,60,61,54,47,55,62,63];
+function estimateJpegQuality(zigzagTable) {
+  const natural = new Array(64);
+  for (let i = 0; i < 64; i++) natural[ZIGZAG[i]] = zigzagTable[i];
+  let bestQ = 0, bestErr = Infinity;
+  for (let q = 1; q <= 100; q++) {
+    const s = q < 50 ? 5000 / q : 200 - 2 * q;
+    let err = 0;
+    for (let i = 0; i < 64; i++) {
+      const v = Math.max(1, Math.min(255, Math.floor((STD_LUM[i] * s + 50) / 100)));
+      err += Math.abs(v - natural[i]);
+    }
+    if (err < bestErr) { bestErr = err; bestQ = q; }
+  }
+  return { q: bestQ, standard: bestErr < 64 };
+}
+
+/* ========== EXIFサムネイルと本体の照合(差し替え・大幅加工の検知) ========== */
+function bitmapToRGB(bmp, quarterTurns) {
+  const c = document.createElement('canvas');
+  c.width = 32; c.height = 32;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.save();
+  ctx.translate(16, 16);
+  ctx.rotate(quarterTurns * Math.PI / 2);
+  ctx.drawImage(bmp, -16, -16, 32, 32);
+  ctx.restore();
+  const d = ctx.getImageData(0, 0, 32, 32).data;
+  const out = new Float32Array(3072); // RGB各チャンネル(輝度だけだと赤⇔緑等の差し替えを見逃す)
+  for (let i = 0; i < 1024; i++) {
+    out[i * 3] = d[i * 4];
+    out[i * 3 + 1] = d[i * 4 + 1];
+    out[i * 3 + 2] = d[i * 4 + 2];
+  }
+  return out;
+}
+/* JPEGバイト列からSOFの寸法だけを読む(デコード爆弾の事前検知用) */
+function jpegDims(bytes) {
+  if (bytes.length < 4 || bytes[0] !== 0xFF || bytes[1] !== 0xD8) return null;
+  let off = 2;
+  while (off + 9 <= bytes.length) {
+    if (bytes[off] !== 0xFF) break;
+    const m = bytes[off + 1];
+    if (m === 0xFF) { off++; continue; }
+    if (m === 0xD8 || m === 0x01 || (m >= 0xD0 && m <= 0xD7)) { off += 2; continue; }
+    if (m === 0xDA || m === 0xD9) break;
+    const len = (bytes[off + 2] << 8) | bytes[off + 3];
+    if (len < 2) break;
+    if ([0xC0,0xC1,0xC2,0xC3,0xC5,0xC6,0xC7,0xC9,0xCA,0xCB,0xCD,0xCE,0xCF].includes(m)) {
+      return { h: (bytes[off + 5] << 8) | bytes[off + 6], w: (bytes[off + 7] << 8) | bytes[off + 8] };
+    }
+    off += 2 + len;
+  }
+  return null;
+}
+
+async function thumbMismatch(file, thumbBytes, mainDims) {
+  try {
+    // 解凍爆弾ガード: 宣言サイズが異常なものはデコードしない
+    const td = jpegDims(thumbBytes);
+    if (td && td.w * td.h > 4 * 1024 * 1024) return false;      // サムネイルが4MP超は異常
+    if (mainDims && mainDims.w * mainDims.h > 80 * 1024 * 1024) return false; // 本体80MP超は照合を諦める
+    const [main, thumb] = await Promise.all([
+      createImageBitmap(file),
+      createImageBitmap(new Blob([thumbBytes], { type: 'image/jpeg' })),
+    ]);
+    const ga = bitmapToRGB(main, 0);
+    let best = Infinity;
+    for (const rot of [0, 1, 2, 3]) { // Orientation回転による見かけ違いを許容
+      const gb = bitmapToRGB(thumb, rot);
+      let d = 0;
+      for (let i = 0; i < 3072; i++) d += Math.abs(ga[i] - gb[i]);
+      best = Math.min(best, d / 3072);
+    }
+    main.close(); thumb.close();
+    return best > 40; // 平均チャンネル差(0-255)。リサイズ・再圧縮由来の差は通常15未満
+  } catch { return false; }
+}
+
+/* ========== 解析の統合 ========== */
+function matchAI(text) {
+  const hits = [];
+  for (const p of AI_PATTERNS) if (p.re.test(text)) hits.push(p.name);
+  return [...new Set(hits)];
+}
+
+async function analyze(file) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const findings = [];   // {level, title, detail}
+  const meta = {};       // 表示用テーブル
+  let format = null, parsed = null;
+
+  if (bytes.length > 3 && bytes[0] === 0xFF && bytes[1] === 0xD8) {
+    format = 'JPEG'; parsed = parseJPEG(bytes);
+  } else if (bytes.length > 8 && bytes[0] === 0x89 && ascii(bytes, 1, 3) === 'PNG') {
+    format = 'PNG'; parsed = await parsePNG(bytes);
+  } else if (ascii(bytes, 0, 4) === 'RIFF' && ascii(bytes, 8, 4) === 'WEBP') {
+    format = 'WebP'; parsed = parseWebP(bytes);
+  } else if (bytes.length > 12 && ascii(bytes, 4, 4) === 'ftyp') {
+    const brand = ascii(bytes, 8, 4).toLowerCase().trim();
+    const imageBrands = ['heic', 'heix', 'heim', 'heis', 'hevc', 'hevx', 'mif1', 'msf1', 'avif', 'avis'];
+    if (brand === 'avif' || brand === 'avis') format = 'AVIF';
+    else if (imageBrands.includes(brand)) format = 'HEIC/HEIF';
+    else format = '動画 (MP4/MOV)';
+    parsed = parseBMFF(bytes);
+  } else {
+    return { format: '不明', findings: [{ level: 'warn', title: '非対応のファイル形式です',
+      detail: '画像は JPEG / PNG / WebP / HEIC / AVIF、動画は MP4 / MOV に対応しています。他の形式は変換してからお試しください。' }], meta, xmp: '', verdict: 'unknown', hasC2PA: false };
+  }
+  const isVideo = format.startsWith('動画');
+
+  const exif = parsed.exif || {};
+  const xmp = parsed.xmp || '';
+  const aiHits = new Set();
+  const stockHits = new Set();
+
+  /* --- C2PA --- */
+  const hasC2PA = (parsed.c2paPayloads || []).length > 0;
+  if (hasC2PA) {
+    const c2paText = parsed.c2paPayloads.map(p => extractStrings(p, 4).join(' ')).join(' ');
+    const gens = matchAI(c2paText);
+    gens.forEach(g => aiHits.add(g + '(C2PA記載)'));
+    if (/trainedAlgorithmicMedia/i.test(c2paText)) {
+      aiHits.add('AI生成申告(C2PA内)');
+      findings.push({
+        level: 'bad',
+        title: 'C2PA来歴データ内に「AI生成」の申告があります',
+        detail: '来歴の作成アクションに digitalSourceType: trainedAlgorithmicMedia(AI生成メディア)が記録されています。国際標準に基づく自己申告です。',
+      });
+    }
+    findings.push({
+      level: gens.length ? 'bad' : 'info',
+      title: 'C2PA(コンテンツ来歴)データが埋め込まれています',
+      detail: gens.length
+        ? `来歴データ内に生成AIツールの記載を検出: ${gens.join(', ')}。この画像はAI生成であると自己申告しています。`
+        : '下の「C2PA署名の検証」で署名の真正性を確認できます。来歴があること自体は透明性の高い運用の証拠です。',
+    });
+    meta['C2PA来歴'] = 'あり';
+  }
+
+  /* --- XMP --- */
+  if (xmp) {
+    meta['XMPメタデータ'] = 'あり';
+    if (/trainedAlgorithmicMedia/i.test(xmp)) {
+      const composite = /compositeWithTrainedAlgorithmicMedia/i.test(xmp);
+      findings.push({
+        level: 'bad',
+        title: composite ? 'XMPに「AI生成物との合成」の申告があります' : 'XMPに「AI生成メディア」の申告があります',
+        detail: `IPTC規格の digitalSourceType が ${composite ? 'compositeWithTrainedAlgorithmicMedia(AI合成)' : 'trainedAlgorithmicMedia(AI生成)'} に設定されています。国際標準に基づくAI生成の自己申告です。`,
+      });
+      aiHits.add('digitalSourceType申告');
+    }
+    const ct = xmp.match(/CreatorTool(?:="([^"]{1,200})"|[^>]*>([^<]{1,200})<)/);
+    const tool = ct && (ct[1] || ct[2]);
+    if (tool) {
+      meta['作成ツール (XMP CreatorTool)'] = tool.trim();
+      matchAI(tool).forEach(g => aiHits.add(g));
+      matchStock(tool).forEach(sname => stockHits.add(sname));
+    }
+    for (const [tag, label] of XMP_FIELDS) {
+      const v = xmpField(xmp, tag);
+      if (!v) continue;
+      meta[label] = v.slice(0, 300);
+      matchAI(v).forEach(g => aiHits.add(g + '(' + label.replace(' (XMP)', '') + ')'));
+      matchStock(v).forEach(sname => stockHits.add(sname));
+    }
+    matchAI(xmp).forEach(g => aiHits.add(g));
+    matchStock(xmp).forEach(sname => stockHits.add(sname));
+  }
+
+  /* --- PNGテキストチャンク(Stable Diffusion系の定番) --- */
+  const texts = parsed.texts || {};
+  if (texts['parameters']) {
+    aiHits.add('Stable Diffusion WebUI');
+    findings.push({ level: 'bad', title: 'Stable Diffusion系の生成パラメータを検出',
+      detail: 'PNGの "parameters" チャンクにプロンプト・Seed等が記録されています: ' + texts['parameters'].slice(0, 300) });
+  }
+  if (texts['prompt'] || texts['workflow']) {
+    aiHits.add('ComfyUI');
+    findings.push({ level: 'bad', title: 'ComfyUIのワークフローデータを検出',
+      detail: 'PNGに生成グラフ(prompt/workflow)が埋め込まれています。' });
+  }
+  if (texts['Software'] && /novelai/i.test(texts['Software'])) {
+    aiHits.add('NovelAI');
+    findings.push({ level: 'bad', title: 'NovelAIの署名を検出', detail: `Software: ${texts['Software']}` });
+  }
+  if (texts['Comment'] && /"(sampler|seed|steps)"/i.test(texts['Comment'])) {
+    aiHits.add('NovelAI系');
+    findings.push({ level: 'bad', title: '生成パラメータ(JSON)を検出',
+      detail: 'Commentチャンク: ' + texts['Comment'].slice(0, 300) });
+  }
+  for (const [k, v] of Object.entries(texts)) {
+    if (!['parameters', 'prompt', 'workflow', 'Comment'].includes(k) && v) meta[`PNGテキスト:${k}`] = v.slice(0, 200);
+  }
+
+  /* --- EXIF --- */
+  for (const [k, v] of Object.entries(exif)) meta[k] = v;
+  const software = exif['ソフトウェア (Software)'] || '';
+  matchAI(software).forEach(g => aiHits.add(g));
+  matchStock([software, exif['作者 (Artist)'] || '', exif['著作権 (Copyright)'] || ''].join(' ')).forEach(sname => stockHits.add(sname));
+  const hasCameraExif = !!(exif['メーカー (Make)'] || exif['機種 (Model)'] || exif['撮影日時 (DateTimeOriginal)']);
+  if (hasCameraExif && aiHits.size === 0) {
+    findings.push({
+      level: 'ok',
+      title: 'カメラ撮影のメタデータが残っています',
+      detail: [exif['メーカー (Make)'], exif['機種 (Model)'], exif['撮影日時 (DateTimeOriginal)'] && `撮影: ${exif['撮影日時 (DateTimeOriginal)']}`]
+        .filter(Boolean).join(' / ') + '。実写の可能性を高める材料ですが、EXIFは偽装可能な点に注意。',
+    });
+  }
+
+  /* --- JPEGコメント --- */
+  for (const c of (parsed.comments || [])) {
+    meta['JPEGコメント'] = c.slice(0, 200);
+    matchAI(c).forEach(g => aiHits.add(g));
+    matchStock(c).forEach(sname => stockHits.add(sname));
+  }
+
+  /* --- 画像サイズと生成AI定番サイズの照合 --- */
+  let dims = parsed.dims || (parsed.sof ? { w: parsed.sof.w, h: parsed.sof.h } : null);
+  if (!dims && !isVideo) {
+    try { const bmp = await createImageBitmap(file); dims = { w: bmp.width, h: bmp.height }; bmp.close(); } catch {}
+  }
+  let aiSizeHit = false;
+  if (dims && dims.w > 0) {
+    meta['画像サイズ'] = `${dims.w} × ${dims.h}`;
+    if (!hasCameraExif && !isVideo && AI_SIZES.has(dims.w + 'x' + dims.h)) {
+      aiSizeHit = true;
+      findings.push({
+        level: 'warn',
+        title: '生成AIでよく使われる画像サイズです',
+        detail: `${dims.w}×${dims.h} は Stable Diffusion 等の定番出力サイズです。単独では弱い手がかりですが、撮影情報が皆無であることと合わせると注意に値します。`,
+      });
+    }
+  }
+
+  /* --- ストック素材サイト由来 --- */
+  const stockList = [...stockHits];
+  if (stockList.length) {
+    findings.push({
+      level: 'warn',
+      title: `ストック素材サイト由来の画像です(${stockList.join(', ')})`,
+      detail: '素材サイトで配布されている画像の痕跡がメタデータにあります。SNS・マッチングアプリの「本人写真」としてこの画像が使われている場合、他人の素材の流用または架空の人物である可能性が高くなります。素材サイトで同じ画像を探し、「生成AI」ラベルの有無も確認してください(下の逆画像検索が有効です)。',
+    });
+    meta['ストック素材の痕跡'] = stockList.join(', ');
+  }
+
+  /* --- 画像の経緯(どう保存されてきたか)の推定 --- */
+  const traceNotes = [];
+  if (format === 'JPEG') {
+    if (parsed.hasJFIF && Object.keys(exif).length === 0 && !xmp && !hasC2PA) {
+      traceNotes.push('EXIF・XMPが存在せず、メタデータを保持しないソフトで再保存されています(SNS・メッセージアプリ経由の典型)');
+    }
+    if ((parsed.segments || []).some(sg => /EXIF/i.test(sg)) && !hasCameraExif) {
+      traceNotes.push('EXIFブロックはあるがカメラ機種・撮影日時が含まれていません(編集ソフト・配信システムからの書き出し、または撮影情報を除去済み。生成AIの出力にもよく見られる形)');
+    }
+    if (parsed.sof && parsed.sof.progressive) {
+      traceNotes.push('プログレッシブJPEG — Web/SNS配信用に再圧縮された画像によく見られる形式');
+    }
+    const lum = (parsed.dqt || []).find(t => t.tq === 0);
+    if (lum && lum.table.length === 64) {
+      const est = estimateJpegQuality(lum.table);
+      if (est.q) traceNotes.push(`最後に保存された時の圧縮品質はおよそ ${est.q}/100${est.standard ? '' : '(非標準の圧縮テーブル使用)'}`);
+    }
+  }
+  if (/^(screen ?shot|screenshot|スクリーンショット|スクショ)/i.test(file.name)) {
+    traceNotes.push('ファイル名がスクリーンショットであることを示唆 — 元画像のメタデータは残っていません');
+  }
+  if (traceNotes.length) {
+    findings.push({ level: 'info', title: 'この画像がたどった経緯(推定)', detail: traceNotes.join(' / ') });
+  }
+
+  /* --- EXIFサムネイルと本体の照合 --- */
+  if (parsed.thumb) {
+    meta['埋め込みサムネイル'] = 'あり';
+    if (await thumbMismatch(file, parsed.thumb, dims)) {
+      findings.push({
+        level: 'warn',
+        title: '埋め込みサムネイルと本体画像が一致しません',
+        detail: 'EXIF内に残っている撮影時のサムネイルと、現在の画像の内容が大きく異なります。撮影後に別の画像へ差し替えられた・大幅に加工された痕跡の可能性があります。',
+      });
+    }
+  }
+
+  /* --- 最後の砦: ファイル全体の文字列スキャン(大きいファイルは末尾も) --- */
+  let allStrings = extractStrings(bytes).join('\n');
+  if (bytes.length > 4 * 1024 * 1024) {
+    allStrings += '\n' + extractStrings(bytes.subarray(bytes.length - 4 * 1024 * 1024)).join('\n');
+  }
+  matchAI(allStrings).forEach(g => aiHits.add(g));
+  if (!hasC2PA && /c2pa\.(assertions|claim|signature)/.test(allStrings)) {
+    findings.push({ level: 'info', title: 'C2PAらしきデータ断片を検出',
+      detail: '標準的な位置以外にC2PA関連の文字列が見つかりました。' });
+  }
+
+  /* --- AI検出のまとめ --- */
+  const aiList = [...aiHits];
+  if (aiList.length && !findings.some(f => f.level === 'bad')) {
+    findings.push({ level: 'bad', title: '生成AIツールの痕跡を検出',
+      detail: `検出: ${aiList.join(', ')}` });
+  } else if (aiList.length) {
+    findings.push({ level: 'bad', title: '検出された生成AIツール', detail: aiList.join(', ') });
+  }
+
+  /* --- 何も見つからない場合 --- */
+  if (!findings.length) {
+    findings.push({
+      level: 'warn',
+      title: '判定材料となるメタデータがありません',
+      detail: 'SNSへの投稿・スクリーンショット・再保存の過程でメタデータは削除されるのが普通です。「痕跡がない」は人間の証明にもAIの証明にもなりません。可能であれば投稿前の元データを入手して再チェックしてください。',
+    });
+  }
+
+  meta['ファイル形式'] = format;
+  meta['ファイルサイズ'] = (bytes.length / 1024).toFixed(1) + ' KB';
+  if ((parsed.segments || []).length) meta['検出セグメント'] = parsed.segments.join(', ');
+
+  const verdict = aiList.length ? 'ai' : hasC2PA ? 'c2pa' : stockList.length ? 'stock' : hasCameraExif ? 'camera' : aiSizeHit ? 'weak' : 'unknown';
+  return { format, findings, meta, xmp, verdict, hasC2PA };
+}
+
+
+/* C2PA検証の結果表示。色だけに意味を持たせず、形と言葉を必ず添える */
+function c2paState(level, tag, title, bodyHtml) {
+  return `<div class="verdict verdict--${level}" style="margin:0 0 var(--sp-3)">` +
+    `<span class="chip chip--${level}"><span class="glyph" aria-hidden="true">${GLYPH[level]}</span>${tag}</span>` +
+    `<h2 style="font-size:1.25rem">${title}</h2><p>${bodyHtml}</p></div>`;
+}
+
+/* ========== C2PA署名検証(同梱SDK・遅延読み込み) ========== */
+let c2paInstance = null;
+async function getC2pa() {
+  if (!c2paInstance) {
+    const mod = await import(new URL('../vendor/c2pa/c2pa.esm.min.js', location.href).href);
+    c2paInstance = await mod.createC2pa({
+      wasmSrc: new URL('../vendor/c2pa/assets/wasm/toolkit_bg.wasm', location.href).href,
+      workerSrc: new URL('../vendor/c2pa/c2pa.worker.min.js', location.href).href,
+    });
+  }
+  return c2paInstance;
+}
+
+async function verifyC2pa(file) {
+  let c2pa;
+  try {
+    c2pa = await getC2pa();
+  } catch (e) {
+    return c2paState('warn', '注意', '署名検証エンジンを読み込めませんでした',
+      'オフライン、または file:// で開いている場合は動作しません。公開サイト上で再度お試しいただくか、' +
+      '<a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">公式の検証ツール</a>をご利用ください。');
+  }
+  let store;
+  try {
+    const result = await c2pa.read(file);
+    store = result && result.manifestStore;
+  } catch (e) {
+    return c2paState('warn', '注意', '来歴データを読み取れませんでした',
+      'C2PAらしきデータはありますが、解析できませんでした(破損・非標準形式の可能性)。' + esc(e && e.message || ''));
+  }
+  if (!store || !store.activeManifest) {
+    return '<p class="note">C2PAらしきデータはありますが、有効なマニフェストは見つかりませんでした。</p>';
+  }
+  const m = store.activeManifest;
+  const status = store.validationStatus || [];
+  const sig = m.signatureInfo || {};
+  const rows = [];
+  if (sig.issuer) rows.push(['署名発行者', sig.issuer]);
+  if (sig.cert_serial_number) rows.push(['証明書シリアル', sig.cert_serial_number]);
+  if (sig.time) rows.push(['署名日時', sig.time]);
+  if (m.claimGenerator) rows.push(['作成ツール', String(m.claimGenerator).split('(')[0].trim()]);
+  if (m.title) rows.push(['タイトル', m.title]);
+  const ingredients = (m.ingredients || []).length;
+  if (ingredients) rows.push(['素材(取り込み元)', `${ingredients}件`]);
+
+  let head;
+  if (status.length === 0) {
+    head = c2paState('ok', '確認', '署名後の改ざんなし',
+      'この画像は署名された後、改ざんされていません。') +
+      '<p class="note">ただし「署名発行者が信頼できる組織か」の照合(トラストリスト)は行っていません。発行者名でご自身で判断してください。</p>';
+  } else {
+    const items = status.map(s => `<li>${esc(s.code || '')} ${esc(s.explanation || '')}</li>`).join('');
+    head = c2paState('bad', '危険', '署名検証で問題が見つかりました',
+      '署名後にデータが改変されているか、署名が不正な可能性があります。') +
+      `<ul class="note">${items}</ul>`;
+  }
+  const table = rows.length
+    ? '<table><tbody>' + rows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('') + '</tbody></table>'
+    : '';
+  return head + table;
+}
+

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <path d="M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z" stroke="currentColor" stroke-width="2"/>
+  <path d="M32 9 49 19v26L32 55 15 45V19L32 9Z" stroke="currentColor" stroke-width="1" opacity=".55"/>
+  <text x="32" y="40" text-anchor="middle" font-size="24" font-family="serif" fill="currentColor">本</text>
+</svg>

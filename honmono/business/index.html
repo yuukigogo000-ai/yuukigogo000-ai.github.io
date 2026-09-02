@@ -5,41 +5,79 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>法人・開発者向け — HONMONO</title>
-<meta name="description" content="端末内で動くAI画像判定モデルのライセンス提供。商用利用可のデータだけで学習し、実測値と弱点を全て公開しています。マッチング・フリマ・ファンプラットフォーム等での組込のご相談を承ります。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta name="description" content="画像を自社サーバーに送らずにAI生成かどうかを判定するモデルのライセンス提供。実測値と弱点を先に開示しています。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z' fill='none' stroke='%237F5A23' stroke-width='3'/><text x='32' y='42' font-size='26' text-anchor='middle' fill='%237F5A23' font-family='serif'>本</text></svg>">
 <meta property="og:type" content="website">
 <meta property="og:title" content="法人・開発者向け — HONMONO">
-<meta property="og:description" content="画像を自社サーバーに送らずに済む、端末内で動くAI画像判定モデル。学習データは全て商用利用可。実測値と弱点を公開しています。">
+<meta property="og:description" content="画像を自社サーバーに送らずにAI生成かどうかを判定するモデルのライセンス提供。実測値と弱点を先に開示しています。">
 <meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/business/">
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
-  h2 { margin-top: 30px; }
-  main p, main li, main td, main th { font-size: .9rem; }
-  .kpi { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin: 14px 0; }
-  .kpi div { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
-  .kpi b { display: block; font-size: 1.5rem; color: var(--accent-strong); line-height: 1.2; }
-  .kpi span { font-size: .78rem; color: var(--muted); }
-  .rev { font-size: .82rem; color: var(--muted); }
-  .scroll { overflow-x: auto; }
+  /* DOCUMENT。数字の直後に必ず弱点が来る */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+  .kpi { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--sp-2); margin: var(--sp-4) 0; }
+  .kpi div {
+    background: var(--c-surface); border: 1px solid var(--c-line-soft);
+    border-radius: var(--r-1); padding: var(--sp-3);
+  }
+  .kpi b {
+    display: block; font-family: var(--font-display);
+    font-size: 1.75rem; line-height: 1.2; font-weight: 600;
+    color: var(--c-brass); font-variant-numeric: tabular-nums;
+  }
+  .kpi span { font-size: .8125rem; line-height: 1.55; color: var(--c-muted); }
+  .rev { font-size: .8125rem; color: var(--c-muted); }
+  .num { text-align: right; white-space: nowrap; }
 </style>
 </head>
 <body>
+
 <header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO<small>実在性証明プロジェクト</small></a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
-  </nav>
+  <a class="brand" href="../">
+    <span class="seal" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z" stroke="currentColor" stroke-width="2"/><path d="M32 9 49 19v26L32 55 15 45V19L32 9Z" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="32" y="40" text-anchor="middle" font-size="24" font-family="serif" fill="currentColor">本</text></svg></span>
+    <span class="word">HONMONO</span>
+  </a>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="siteMenu" aria-label="メニューを開く">
+    <span class="ico-open" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></span>
+    <span class="ico-close" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+  </button>
 </div></header>
 
+<nav class="site-menu" id="siteMenu" hidden aria-label="サイト内の移動"><div class="wrap">
+  <div class="menu-group">
+    <h2>調べる</h2>
+    <ul class="menu-list">
+      <li><a href="../checker/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10H4z"/><path d="m6 12 3.5-4 2.5 3 2-2 4 3"/><circle cx="16.5" cy="17.5" r="3.5"/><path d="m19.5 20.5 1.8 1.8"/></svg></span>画像来歴チェッカー</a></li>
+      <li><a href="../aicheck/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 11-4.7"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M16 17.5h3"/></svg></span>AIアカウント鑑定</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>証明・探す</h2>
+    <ul class="menu-list">
+      <li><a href="../badge/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v6.5c0 3.4-2.9 6-7 7.5-4.1-1.5-7-4.1-7-7.5V7z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg></span>実在証明バッジ</a></li>
+      <li><a href="../creators/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 13h8M8 16h5"/></svg></span>実在クリエイター名鑑</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>理解する</h2>
+    <ul class="menu-list">
+      <li><a href="../docs/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></span>説明書</a></li>
+    </ul>
+  </div>
+  <div class="menu-group menu-sub">
+    <ul class="menu-list">
+      <li><a href="../report/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 18V9M12 18V4M18 18v-6"/></svg></span>実測レポートを読む</a></li>
+      <li><a href="../business/" aria-current="page"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6l7-3v17"/><path d="M11 9h9v11"/><path d="M7 9h.01M7 13h.01M15 13h.01M15 17h.01"/></svg></span>法人・開発者の方へ</a></li>
+    </ul>
+  </div>
+</div></nav>
 <main class="wrap">
+<div class="doc">
   <h1>法人・開発者向けのご案内</h1>
-  <p class="lead"><b>画像を自社サーバーに送らずに、AI生成かどうかを判定したい</b>——
+  <p class="lede">判定モデルを製品に組み込むための条件を確かめる。</p>
+  <p class="lede"><b>画像を自社サーバーに送らずに、AI生成かどうかを判定したい</b>——
   そのための判定モデルを、ライセンス提供しています。
   <a href="../checker/">来歴チェッカー</a>で動いているものと同じモデルです。今すぐ無料でお試しいただけます。</p>
 
@@ -53,7 +91,7 @@
   <b>数字の出どころ、測り方、外れた場面は<a href="../report/">実測レポート</a>に全部書いています。</b></p>
 
   <h2>1. こういう場面で使われます</h2>
-  <div class="card">
+  <div class="dossier">
     <ul style="margin:0; padding-left:1.3em">
       <li><b>マッチング・婚活サービス</b> — プロフィール写真がAI生成でないかの一次スクリーニング</li>
       <li><b>フリマ・中古売買</b> — 出品画像の捏造検出</li>
@@ -64,7 +102,7 @@
   </div>
 
   <h2>2. なぜ他ではなくこれなのか</h2>
-  <div class="card">
+  <div class="dossier">
     <h3 style="margin-top:0">① 画像を外に出さずに済む</h3>
     <p style="margin:4px 0 14px">端末内(ブラウザ・アプリ内)で完結します。クラウドAPI型の検出サービスと違い、
     <b>利用者の画像を自社サーバーにも第三者にも送る必要がありません。</b>
@@ -84,7 +122,7 @@
   </div>
 
   <h2>3. 先に弱点をお伝えします</h2>
-  <div class="notice">
+  <div class="note-block">
     <ul style="margin:0; padding-left:1.3em">
       <li><b>2025年世代の生成器は4割近く見逃します</b>(Seedream 4・Gemini 2.5・FLUX Pro 等で検出 62.6%)</li>
       <li><b>「AIではない」ことの証明には使えません。</b>検出しなかった=人間、ではありません</li>
@@ -95,19 +133,19 @@
   <p class="note">3つ目が、継続的なご契約をおすすめしている理由です。買って終わりにすると、1年で陳腐化します。</p>
 
   <h2>4. 提供の形</h2>
-  <div class="scroll"><table>
+  <div class="scroll-wrap"><p class="scroll-hint">← 横にスクロールできます</p><div class="scroll"><table>
     <tr><th>形態</th><th>内容</th><th>価格の目安</th></tr>
     <tr><td><b>評価・検証</b></td><td>モデルを実際に落として、御社のデータで測っていただく</td><td><b>無料</b>(<a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/vendor/models/LICENSE.md" target="_blank" rel="noopener">モデルライセンス</a>の範囲内)</td></tr>
     <tr><td><b>買い切りライセンス</b></td><td>重み + 推論コード + 実測レポート + 1年間の更新</td><td>30〜100万円</td></tr>
     <tr><td><b>年間ライセンス</b></td><td>上記 + 新しい生成器への追随(定期更新)+ 技術サポート</td><td>月額 5〜20万円</td></tr>
     <tr><td><b>API 従量</b></td><td>サーバー側で判定。御社での実装が不要な形</td><td>ご相談</td></tr>
     <tr><td><b>導入支援・追加学習</b></td><td>組込作業、御社のデータでの再学習・しきい値調整</td><td>ご相談</td></tr>
-  </table></div>
+  </table></div></div>
   <p class="note">用途・規模・提供形態で条件が変わるため、確定価格ではなく目安を記載しています。
   <b>まずは無料で測っていただき、御社のデータで実用に足るかを確かめてからのご相談で構いません。</b></p>
 
   <h2>5. お問い合わせ</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin-top:0">現在、お問い合わせは GitHub Issue で受け付けています。</p>
     <p style="margin:0 0 12px">
       <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%5B%E6%B3%95%E4%BA%BA%5D%20HONMONO%20%E5%88%A4%E5%AE%9A%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E3%81%94%E7%9B%B8%E8%AB%87&body=%E4%BC%9A%E7%A4%BE%E5%90%8D%3A%0A%E3%81%94%E6%8B%85%E5%BD%93%E8%80%85%E5%90%8D%3A%0A%E3%81%94%E9%80%A3%E7%B5%A1%E5%85%88%3A%0A%0A%E7%94%A8%E9%80%94%28%E3%81%A9%E3%81%AE%E5%A0%B4%E9%9D%A2%E3%81%A7%E4%BD%BF%E3%81%84%E3%81%9F%E3%81%84%E3%81%8B%29%3A%0A%E6%83%B3%E5%AE%9A%E3%81%99%E3%82%8B%E5%88%A4%E5%AE%9A%E4%BB%B6%E6%95%B0%2F%E6%9C%88%3A%0A%E7%AB%AF%E6%9C%AB%E5%86%85%E3%81%A7%E5%8B%95%E3%81%8B%E3%81%99%E5%BF%85%E8%A6%81%E3%81%8C%E3%81%82%E3%82%8B%E3%81%8B%3A%0A%E5%B8%8C%E6%9C%9B%E3%81%AE%E6%8F%90%E4%BE%9B%E5%BD%A2%E6%85%8B%3A" target="_blank" rel="noopener"><b>お問い合わせフォーム(GitHub Issue)を開く →</b></a>
@@ -117,7 +155,7 @@
   </div>
 
   <h2>6. お引き受けしないこと</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin-top:0">このプロジェクトは「実在する人が、AIと疑われずに済むように」という目的で作っています。
     次のご依頼はお断りします。</p>
     <ul style="margin:0; padding-left:1.3em">
@@ -131,16 +169,22 @@
   <p class="rev">最終更新: 2026-08-20 / HONMONO プロジェクト ·
   <a href="../legal/terms.html">利用規約</a> ·
   <a href="../legal/privacy.html">プライバシーポリシー</a></p>
+</div>
 </main>
 
 <footer class="site-foot"><div class="wrap">
-  <a href="../">HONMONO</a> ·
-  <a href="../docs/">説明書</a> ·
-  <a href="../report/">実測レポート</a> ·
-  <a href="./">法人向け</a> ·
-  <a href="../legal/privacy.html">プライバシー</a> ·
-  <a href="../legal/terms.html">利用規約</a> ·
-  <a href="../legal/credits.html">クレジット</a>
+  <div class="foot-links">
+    <a href="../">HONMONO</a>
+    <a href="../docs/">説明書</a>
+    <a href="../report/">実測レポート</a>
+    <a href="../business/">法人向け</a>
+    <a href="../legal/privacy.html">プライバシー</a>
+    <a href="../legal/terms.html">利用規約</a>
+    <a href="../legal/credits.html">クレジット</a>
+  </div>
+  <p style="margin:0">HONMONO プロジェクト — 先に弱点をお伝えします。</p>
 </div></footer>
+
+<script src="../shell.js"></script>
 </body>
 </html>

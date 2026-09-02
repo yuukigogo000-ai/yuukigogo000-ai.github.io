@@ -5,50 +5,82 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>説明書 — HONMONO</title>
-<meta name="description" content="HONMONOプロジェクトの目的・各ツールの使い方・制限事項・プライバシーについての公式説明書。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta name="description" content="HONMONOプロジェクトの目的、各ツールの使い方、制限事項をまとめた公式ドキュメント。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z' fill='none' stroke='%237F5A23' stroke-width='3'/><text x='32' y='42' font-size='26' text-anchor='middle' fill='%237F5A23' font-family='serif'>本</text></svg>">
 <meta property="og:type" content="website">
 <meta property="og:title" content="説明書 — HONMONO">
-<meta property="og:description" content="HONMONOの目的・各ツールの使い方・制限事項・プライバシーをまとめた公式ドキュメント。">
+<meta property="og:description" content="HONMONOプロジェクトの目的、各ツールの使い方、制限事項をまとめた公式ドキュメント。">
 <meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/docs/">
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
-  .toc { font-size: .9rem; }
-  .toc a { display: inline-block; margin: 2px 10px 2px 0; }
-  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* DOCUMENT。読みやすさと索引だけを担保する */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
   .usecase-table td:first-child { white-space: nowrap; font-weight: 600; }
-  .step-flow { counter-reset: fstep; padding-left: 0; list-style: none; margin: 8px 0; }
-  .step-flow li { counter-increment: fstep; position: relative; padding: 5px 0 5px 40px; font-size: .9rem; }
-  .step-flow li::before {
-    content: counter(fstep); position: absolute; left: 0; top: 7px;
-    width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff;
-    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .8rem;
+  .step-flow { counter-reset: fstep; padding-left: 0; list-style: none; margin: var(--sp-2) 0; }
+  .step-flow li {
+    counter-increment: fstep; position: relative;
+    padding: var(--sp-1) 0 var(--sp-1) var(--sp-8);
+    font-size: .8125rem; line-height: 1.75;
   }
-  .qa dt { font-weight: 700; font-size: .92rem; margin-top: 16px; }
-  .qa dt::before { content: "Q. "; color: var(--accent); }
-  .qa dd { margin: 4px 0 0; font-size: .88rem; color: var(--muted); }
-  .qa dd::before { content: "A. "; color: var(--ok); font-weight: 700; }
+  .step-flow li::before {
+    content: counter(fstep); position: absolute; left: 0; top: .35em;
+    width: 24px; height: 24px; border-radius: 999px;
+    background: var(--c-seal-deep); color: var(--c-on-seal);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .8125rem;
+  }
 </style>
 </head>
 <body>
+
 <header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO</a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/">実在クリエイター名鑑</a>
-    <a href="./" aria-current="page">説明書</a>
-  </nav>
+  <a class="brand" href="../">
+    <span class="seal" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z" stroke="currentColor" stroke-width="2"/><path d="M32 9 49 19v26L32 55 15 45V19L32 9Z" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="32" y="40" text-anchor="middle" font-size="24" font-family="serif" fill="currentColor">本</text></svg></span>
+    <span class="word">HONMONO</span>
+  </a>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="siteMenu" aria-label="メニューを開く">
+    <span class="ico-open" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></span>
+    <span class="ico-close" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+  </button>
 </div></header>
 
+<nav class="site-menu" id="siteMenu" hidden aria-label="サイト内の移動"><div class="wrap">
+  <div class="menu-group">
+    <h2>調べる</h2>
+    <ul class="menu-list">
+      <li><a href="../checker/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10H4z"/><path d="m6 12 3.5-4 2.5 3 2-2 4 3"/><circle cx="16.5" cy="17.5" r="3.5"/><path d="m19.5 20.5 1.8 1.8"/></svg></span>画像来歴チェッカー</a></li>
+      <li><a href="../aicheck/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 11-4.7"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M16 17.5h3"/></svg></span>AIアカウント鑑定</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>証明・探す</h2>
+    <ul class="menu-list">
+      <li><a href="../badge/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v6.5c0 3.4-2.9 6-7 7.5-4.1-1.5-7-4.1-7-7.5V7z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg></span>実在証明バッジ</a></li>
+      <li><a href="../creators/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 13h8M8 16h5"/></svg></span>実在クリエイター名鑑</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>理解する</h2>
+    <ul class="menu-list">
+      <li><a href="../docs/" aria-current="page"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></span>説明書</a></li>
+    </ul>
+  </div>
+  <div class="menu-group menu-sub">
+    <ul class="menu-list">
+      <li><a href="../report/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 18V9M12 18V4M18 18v-6"/></svg></span>実測レポートを読む</a></li>
+      <li><a href="../business/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6l7-3v17"/><path d="M11 9h9v11"/><path d="M7 9h.01M7 13h.01M15 13h.01M15 17h.01"/></svg></span>法人・開発者の方へ</a></li>
+    </ul>
+  </div>
+</div></nav>
 <main class="wrap">
-  <h1>📖 HONMONO 説明書</h1>
-  <p class="lead">HONMONOプロジェクトの目的、各ツールの使い方、制限事項をまとめた公式ドキュメントです。</p>
+<div class="doc">
+  <h1>HONMONO 説明書</h1>
+  <p class="lede">目的・使い方・制限を、ひととおり読む。</p>
+  <p class="lede">HONMONOプロジェクトの目的、各ツールの使い方、制限事項をまとめた公式ドキュメントです。</p>
 
-  <div class="card toc">
+  <div class="doc-index">
     <b>目次:</b>
     <a href="#purpose">目的</a>
     <a href="#which">どのツールを使う?</a>
@@ -67,7 +99,7 @@
   </div>
 
   <h2 id="purpose">1. このソフトの目的</h2>
-  <div class="card" style="font-size:.92rem">
+  <div class="dossier">
     <p style="margin-top:0">生成AIによる「実在しない美男美女」のアカウント・コンテンツは、誰でも量産できるため急速に増え続けています。
     その結果、次の3つの問題が起きています。</p>
     <ul style="padding-left:1.3em">
@@ -81,16 +113,16 @@
   </div>
 
   <h2 id="which">2. どのツールを使えばいい?</h2>
-  <div class="scroll"><table class="usecase-table">
+  <div class="scroll-wrap"><p class="scroll-hint">← 横にスクロールできます</p><div class="scroll"><table class="usecase-table">
     <tr><th>あなたの状況</th><th>使うツール</th></tr>
-    <tr><td>この画像、AI生成か知りたい</td><td><a href="../checker/">🔍 来歴チェッカー</a> に画像をドロップ</td></tr>
-    <tr><td>このアカウント、実在する人か怪しい</td><td><a href="../aicheck/">🕵️ AIアカウント鑑定</a> でチェックリスト診断(画像があれば来歴チェッカーも併用)</td></tr>
-    <tr><td>クリエイターとして「本物」を証明したい</td><td><a href="../badge/">🪪 実在証明バッジ</a> で証明ページを作成 → <a href="../creators/">🌟 名鑑</a> に掲載申請</td></tr>
-    <tr><td>実在する人に仕事を頼みたい・応援したい</td><td><a href="../creators/">🌟 実在クリエイター名鑑</a> で検索</td></tr>
-  </table></div>
+    <tr><td>この画像、AI生成か知りたい</td><td><a href="../checker/">来歴チェッカー</a> に画像をドロップ</td></tr>
+    <tr><td>このアカウント、実在する人か怪しい</td><td><a href="../aicheck/">AIアカウント鑑定</a> でチェックリスト診断(画像があれば来歴チェッカーも併用)</td></tr>
+    <tr><td>クリエイターとして「本物」を証明したい</td><td><a href="../badge/">実在証明バッジ</a> で証明ページを作成 → <a href="../creators/">名鑑</a> に掲載申請</td></tr>
+    <tr><td>実在する人に仕事を頼みたい・応援したい</td><td><a href="../creators/">実在クリエイター名鑑</a> で検索</td></tr>
+  </table></div></div>
 
   <h2 id="checker">3. 画像来歴チェッカーの使い方</h2>
-  <div class="card">
+  <div class="dossier">
     <ol class="step-flow">
       <li>調べたい画像(JPEG / PNG / WebP / HEIC / AVIF)または動画(MP4 / MOV)を用意します。<b>できるだけ「元データ」に近いもの</b>が有効です(SNSの再保存やスクリーンショットはメタデータが消えています)</li>
       <li>ページの点線枠に画像をドロップ、またはクリックして選択します</li>
@@ -99,23 +131,23 @@
       <li>C2PA来歴があれば「C2PA署名の検証」欄で<b>署名の真正性(改ざんの有無)</b>が自動検証されます</li>
       <li>メタデータが消されていた場合は「次の一手」の<b>逆画像検索ボタン</b>で盗用元・使い回しを探せます</li>
     </ol>
-    <table>
+    <div class="scroll-wrap"><p class="scroll-hint">← 横にスクロールできます</p><div class="scroll"><table>
       <tr><th>判定</th><th>意味</th></tr>
-      <tr><td>🤖 AI生成の痕跡があります</td><td>生成AIツールの記録・国際規格(IPTC)のAI申告・生成パラメータ等が画像内に見つかった</td></tr>
-      <tr><td>📜 コンテンツ来歴(C2PA)付き</td><td>編集履歴の来歴データが埋め込まれている。署名の真正性はページ内の「C2PA署名の検証」で自動チェックされる</td></tr>
-      <tr><td>📷 カメラ撮影の痕跡があります</td><td>カメラ機種・撮影日時などのEXIFが残っている(実写の可能性を高める材料)</td></tr>
-      <tr><td>🗂️ ストック素材サイト由来</td><td>Adobe Stock 等の素材サイトの痕跡がある。SNSの「本人写真」としては不自然で、流用または架空人物の疑い</td></tr>
-      <tr><td>🟡 AI生成を疑う手がかり(弱)</td><td>決定的な証拠はないが、生成AI定番サイズなど注意すべき特徴がある</td></tr>
-      <tr><td>❓ 判定材料がありません</td><td>メタデータなし。<b>「AIではない」という意味ではない</b>点に注意</td></tr>
-    </table>
+      <tr><td>AI生成の痕跡があります</td><td>生成AIツールの記録・国際規格(IPTC)のAI申告・生成パラメータ等が画像内に見つかった</td></tr>
+      <tr><td>コンテンツ来歴(C2PA)付き</td><td>編集履歴の来歴データが埋め込まれている。署名の真正性はページ内の「C2PA署名の検証」で自動チェックされる</td></tr>
+      <tr><td>カメラ撮影の痕跡があります</td><td>カメラ機種・撮影日時などのEXIFが残っている(実写の可能性を高める材料)</td></tr>
+      <tr><td>ストック素材サイト由来</td><td>Adobe Stock 等の素材サイトの痕跡がある。SNSの「本人写真」としては不自然で、流用または架空人物の疑い</td></tr>
+      <tr><td>AI生成を疑う手がかり(弱)</td><td>決定的な証拠はないが、生成AI定番サイズなど注意すべき特徴がある</td></tr>
+      <tr><td>判定材料がありません</td><td>メタデータなし。<b>「AIではない」という意味ではない</b>点に注意</td></tr>
+    </table></div></div>
     <p class="note">検出対象: C2PA来歴(署名検証つき)/ IPTC digitalSourceType(AI申告)/ Stable Diffusion・ComfyUI・NovelAI・Midjourney・DALL·E・Firefly・Sora・Kling など30種超のAIツール痕跡 / カメラEXIF / XMP / JPEGコメント。
     素材サイトのタイトル・キーワードにある「Generative AI」等の表記や、Adobe Stock・Shutterstock 等<b>ストック素材サイトの痕跡</b>も検出します。さらにメタデータが消されている場合も、<b>再圧縮品質・プログレッシブ形式・AI定番サイズ・EXIFサムネイルとの不一致</b>などから
     「このファイルがどんな経緯をたどったか」を推定して提示します。署名検証はC2PA公式のオープンソースSDK(WASM)を同梱しており、外部送信なしで完結します。</p>
   </div>
 
   <h2 id="badge">4. 実在証明バッジの使い方</h2>
-  <div class="card">
-    <p style="font-size:.9rem; margin-top:0"><b>対象:</b> 「実在する人間である」ことを差別化にしたいクリエイター(イラストレーター・モデル・コスプレイヤー・配信者など)。</p>
+  <div class="dossier">
+    <p><b>対象:</b> 「実在する人間である」ことを差別化にしたいクリエイター(イラストレーター・モデル・コスプレイヤー・配信者など)。</p>
     <ol class="step-flow">
       <li>フォームに活動名・SNSリンク(2つ以上推奨)・実在宣言を入力し、「生成する」を押します</li>
       <li>プレビューを確認し、証明ページ(<code>honmono-proof.html</code>)をダウンロードします</li>
@@ -128,26 +160,26 @@
   </div>
 
   <h2 id="aicheck">5. AIアカウント鑑定の使い方</h2>
-  <div class="card">
+  <div class="dossier">
     <ol class="step-flow">
       <li>調べたいアカウントの投稿・プロフィール・DMでのやり取りを思い浮かべながら、当てはまる項目にチェックを入れます</li>
       <li>画面下部にリスクスコア(0〜100)と判定(低・中・高)がリアルタイムで表示されます</li>
       <li>「信頼シグナル」(ビデオ通話で確認した等)に該当があればチェック — スコアが減点されます</li>
       <li>「診断結果をコピー」でテキストを、「結果画像を保存」で結果カード画像(PNG)を出力できます。<b>相手のアカウント名や写真とあわせて公開し、特定の人を「AI」「詐欺」と断定して晒す使い方はしないでください</b>(名誉毀損にあたるおそれがあります)。通報はプラットフォームの窓口か警察へ</li>
     </ol>
-    <table>
+    <div class="scroll-wrap"><p class="scroll-hint">← 横にスクロールできます</p><div class="scroll"><table>
       <tr><th>スコア</th><th>判定</th><th>推奨アクション</th></tr>
       <tr><td>0〜19</td><td>低</td><td>強い危険信号なし。ただし金銭の話が出たら即再評価</td></tr>
       <tr><td>20〜44</td><td>中</td><td>ビデオ通話・逆画像検索・来歴チェッカーで検証を。金銭・個人情報は渡さない</td></tr>
       <tr><td>45〜100</td><td>高</td><td>典型的特徴に多数一致。ブロック・通報を検討。被害時は警察相談 #9110</td></tr>
-    </table>
+    </table></div></div>
     <p class="note">「逆画像検索で別人がヒット」「金銭・投資への誘導」などの決定的シグナルは、1つでスコア40以上、2つで65以上になるよう下限が設定されています。</p>
   </div>
 
   <h2 id="creators">6. 実在クリエイター名鑑の使い方</h2>
-  <div class="card">
-    <p style="font-size:.9rem; margin-top:0"><b>探す側:</b> キーワード検索・ジャンルボタンで絞り込み、各カードの「証明ページ」リンクから相互リンクの輪を自分の目で検証できます。</p>
-    <p style="font-size:.9rem"><b>載りたい側:</b></p>
+  <div class="dossier">
+    <p><b>探す側:</b> キーワード検索・ジャンルボタンで絞り込み、各カードの「証明ページ」リンクから相互リンクの輪を自分の目で検証できます。</p>
+    <p><b>載りたい側:</b></p>
     <ol class="step-flow">
       <li><a href="../badge/">実在証明バッジ</a>で証明ページを作成・公開し、SNSとの相互リンクを完成させます</li>
       <li>名鑑ページの「掲載申請フォーム(GitHub Issue)」から、活動名・ジャンル・証明ページURL・紹介文を送ります</li>
@@ -156,14 +188,14 @@
   </div>
 
   <h2 id="faq">7. よくある質問</h2>
-  <div class="card">
+  <div class="dossier">
     <dl class="qa" style="margin:0">
       <dt>「判定材料がありません」と出たら、その画像は本物?</dt>
       <dd>いいえ。SNS・メッセージアプリ・スクリーンショットを経由するとメタデータはほぼ確実に消えます。判定不能=中立です。可能なら投稿前の元データを入手して再チェックしてください。</dd>
       <dt>「カメラ撮影の痕跡あり」なら実写と断定できる?</dt>
       <dd>断定はできません。EXIFは専用ツールで偽装可能です。あくまで「実写の可能性を高める材料の1つ」として、他の証拠(ライブ配信・相互リンク証明など)と組み合わせてください。</dd>
       <dt>AIで作った画像なのに「痕跡なし」になった。バグ?</dt>
-      <dd>バグではありません。メタデータを削除してから配布されたAI画像は、メタデータ検査では検出できません(これはあらゆる検査ツール共通の限界です)。そこで、画素そのものからAIらしさを推定する<b>自前学習モデル(HONMONO v3.1)</b>を「🧪実験: 画素からのAI判定(参考値)」として搭載しました(2026-08-19)。学習に使っていない外部545枚での実測は、実写をAIと誤判定 1.8%・AI画像の検出 70%。人物の顔だけを別に測った615枚では、<b>実在の人の顔を誤判定する割合は1.1%、AI生成の顔の検出は92%</b>です。ただし2025年世代の生成器(Seedream 4・Gemini 2.5・FLUX Pro 等)は4割見逃し、古いGAN風に切り取られた顔では誤判定が5%まで上がるので、「AIではない」証明には使えません。学習データは商用利用が明示的に許されたものだけを使っています。公開されている判定モデル9本も実測しましたが、8本は実写を10〜88%の割合でAIと誤判定するため不採用でした。評価の詳細は <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/design/AI_DETECTOR_EVAL.md" target="_blank" rel="noopener">実測レポート</a> を公開しています。</dd>
+      <dd>バグではありません。メタデータを削除してから配布されたAI画像は、メタデータ検査では検出できません(これはあらゆる検査ツール共通の限界です)。そこで、画素そのものからAIらしさを推定する<b>自前学習モデル(HONMONO v3.1)</b>を「実験: 画素からのAI判定(参考値)」として搭載しました(2026-08-19)。学習に使っていない外部545枚での実測は、実写をAIと誤判定 1.8%・AI画像の検出 70%。人物の顔だけを別に測った615枚では、<b>実在の人の顔を誤判定する割合は1.1%、AI生成の顔の検出は92%</b>です。ただし2025年世代の生成器(Seedream 4・Gemini 2.5・FLUX Pro 等)は4割見逃し、古いGAN風に切り取られた顔では誤判定が5%まで上がるので、「AIではない」証明には使えません。学習データは商用利用が明示的に許されたものだけを使っています。公開されている判定モデル9本も実測しましたが、8本は実写を10〜88%の割合でAIと誤判定するため不採用でした。評価の詳細は <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/design/AI_DETECTOR_EVAL.md" target="_blank" rel="noopener">実測レポート</a> を公開しています。</dd>
       <dt>画像をアップロードして大丈夫?</dt>
       <dd>画像はサーバーに送信されません。解析はすべてあなたのブラウザの中で行われ、ページを閉じれば何も残りません。ただし<b>ページそのものの読み込みには通信が必要です</b>(オフラインでは開けません。またC2PAの署名検証エンジンはオフラインでは動作しません)。端末に保存されるもの・外部に伝わりうるものは<a href="../legal/privacy.html">プライバシーポリシー</a>に全て書いています。</dd>
       <dt>鑑定スコアが「高」だったら、その人は偽物?</dt>
@@ -174,7 +206,7 @@
   </div>
 
   <h2 id="limits">8. 制限事項と免責</h2>
-  <div class="card" style="font-size:.88rem">
+  <div class="dossier">
     <ul style="margin:0; padding-left:1.3em">
       <li>本ツール群の出力はすべて<b>参考情報</b>であり、真正性・実在性を法的に保証するものではありません</li>
       <li>メタデータは追加・編集・削除が可能です。「痕跡なし」は人間の証明にならず、「カメラ情報あり」も偽装可能です</li>
@@ -188,7 +220,7 @@
   </div>
 
   <h2 id="privacy">9. プライバシー</h2>
-  <div class="card" style="font-size:.88rem">
+  <div class="dossier">
     <ul style="margin:0; padding-left:1.3em">
       <li>画像・フォーム入力・チェック内容は、<b>一切サーバーに送信されません</b>。全処理がブラウザ内で完結します</li>
       <li>本サイトは独自のCookie・トラッキング・アクセス解析を使用していません(ホスティングのGitHub Pagesが標準的なアクセスログを記録します)</li>
@@ -199,19 +231,22 @@
     <a href="../legal/privacy.html">プライバシーポリシー</a></b> / 守っていただきたいこと: <a href="../legal/terms.html">利用規約</a> /
     使わせてもらっているソフトウェアとデータ: <a href="../legal/credits.html">クレジット</a></p>
   </div>
+</div>
 </main>
 
 <footer class="site-foot"><div class="wrap">
-  <div style="margin-bottom:6px">
-  <a href="../">HONMONO</a> ·
-  <a href="../docs/">説明書</a> ·
-  <a href="../report/">実測レポート</a> ·
-  <a href="../business/">法人向け</a> ·
-  <a href="../legal/privacy.html">プライバシー</a> ·
-  <a href="../legal/terms.html">利用規約</a> ·
-  <a href="../legal/credits.html">クレジット</a>
+  <div class="foot-links">
+    <a href="../">HONMONO</a>
+    <a href="../docs/">説明書</a>
+    <a href="../report/">実測レポート</a>
+    <a href="../business/">法人向け</a>
+    <a href="../legal/privacy.html">プライバシー</a>
+    <a href="../legal/terms.html">利用規約</a>
+    <a href="../legal/credits.html">クレジット</a>
   </div>
-  <div style="font-size:.82rem; opacity:.8">HONMONO プロジェクト — 最終更新: 2026-08-20</div>
+  <p style="margin:0">HONMONO プロジェクト — 最終更新: 2026-09-02</p>
 </div></footer>
+
+<script src="../shell.js"></script>
 </body>
 </html>

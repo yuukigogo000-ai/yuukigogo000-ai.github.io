@@ -1,0 +1,35 @@
+<main class="wrap">
+  <h1>実在クリエイター名鑑</h1>
+  <p class="lede">実在を証明したクリエイターを、見つけられる場所につなぐ。</p>
+
+  <!-- PL-2: 見本より前に、実在の掲載が0件であることを読ませる -->
+  <div class="note-block" id="sampleNotice">
+    <b>実在のクリエイターの掲載は、まだ0件です。</b>
+    <p style="margin:var(--sp-2) 0 0">下に並んでいるのは<b>カードの見本</b>で、どんな項目が載るかを示すためだけのものです。実在の人物ではありません。
+    <b>実在を売りにする名鑑で架空の人物をでっち上げるのは筋が通らない</b>ので、人名は載せていません。
+    掲載申請を受け付け次第、見本は順次差し替えます。</p>
+  </div>
+
+  <div class="dossier recruit">
+    <h2 style="margin-top:0">掲載クリエイター募集中（無料）</h2>
+    <p style="margin:var(--sp-2) 0 var(--sp-4)">掲載条件は「<a href="../badge/">実在証明バッジ</a>で証明ページを公開し、SNSとの相互リンクを完成させていること」だけです。
+    運営が相互リンクの輪を確認したうえで掲載します。</p>
+    <a class="btn" href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%E5%90%8D%E9%91%91%E6%8E%B2%E8%BC%89%E7%94%B3%E8%AB%8B&body=%E6%B4%BB%E5%8B%95%E5%90%8D%3A%0A%E3%82%B8%E3%83%A3%E3%83%B3%E3%83%AB%3A%0A%E8%A8%BC%E6%98%8E%E3%83%9A%E3%83%BC%E3%82%B8URL%3A%0A%E4%B8%BB%E3%81%AASNS%3A%0A%E7%B4%B9%E4%BB%8B%E6%96%87%28100%E5%AD%97%E4%BB%A5%E5%86%85%29%3A"
+       target="_blank" rel="noopener">掲載を申請する（GitHub Issue）</a>
+  </div>
+
+  <h2>探す</h2>
+  <label for="q">キーワード検索</label>
+  <input type="search" id="q" placeholder="名前・ジャンル・キーワードで絞り込み">
+  <div class="filters" id="filters"></div>
+  <p class="note" id="resultCount" aria-live="polite"></p>
+
+  <div id="list"></div>
+  <p id="empty" class="dossier" style="display:none">
+    該当するクリエイターが見つかりませんでした。<br>
+    <button class="btn btn--ghost" type="button" id="clearFilters" style="margin-top:var(--sp-3)">条件をクリア</button>
+  </p>
+
+  <p class="note">掲載は実在を保証する審査ではなく、<b>相互リンク証明の輪が閉じていることの確認</b>に基づくものです。
+  掲載料・審査料・優先表示料は一切いただきません（<a href="../legal/terms.html">利用規約</a>第6条）。</p>
+</main>

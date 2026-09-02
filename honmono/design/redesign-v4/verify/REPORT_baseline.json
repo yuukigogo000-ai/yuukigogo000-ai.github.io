@@ -98,7 +98,7 @@
     {
       "name": "PL-1 晒し警告が持ち出し操作より前",
       "ok": true,
-      "detail": "{\"warn\":6380,\"copy\":6543,\"save\":6632,\"hidden\":false}"
+      "detail": "{\"warn\":14724,\"copy\":14940,\"save\":15023,\"hidden\":false}"
     },
     {
       "name": "RUNTIME /honmono/aicheck/",
@@ -108,7 +108,7 @@
     {
       "name": "PL-2 見本の注意が掲載項目より前",
       "ok": true,
-      "detail": "{\"notice\":1324,\"cards\":1955}"
+      "detail": "{\"notice\":4459,\"cards\":7320}"
     },
     {
       "name": "RUNTIME /honmono/creators/",
@@ -202,7 +202,7 @@
       "F-HOME-001": {
         "ok": true,
         "method": "browser",
-        "detail": "冒頭の主張が読める"
+        "detail": "冒頭の主張(AI生成が増えるほど実在の価値が上がる)が読める"
       },
       "F-HOME-002": {
         "ok": true,
@@ -517,7 +517,7 @@
       "F-AIC-010": {
         "ok": true,
         "method": "browser",
-        "detail": "警告=6380 コピー=6543 画像=6632 折りたたみ=false"
+        "detail": "警告=14724 コピー=14940 画像=15023 折りたたみ=false"
       },
       "F-AIC-011": {
         "ok": true,
@@ -567,7 +567,7 @@
       "F-CRE-002": {
         "ok": true,
         "method": "browser",
-        "detail": "{\"notice\":1324,\"cards\":1955}"
+        "detail": "{\"notice\":4459,\"cards\":7320}"
       },
       "F-CRE-003": {
         "ok": true,
@@ -639,12 +639,12 @@
       "S-THEME-LIGHT": {
         "ok": true,
         "method": "browser",
-        "detail": "bg=rgb(250, 250, 249) fg=rgb(28, 25, 23)"
+        "detail": "bg=rgb(243, 237, 226) fg=rgb(25, 24, 22)"
       },
       "S-THEME-DARK": {
         "ok": true,
         "method": "browser",
-        "detail": "bg=rgb(22, 24, 29) fg=rgb(231, 229, 228)"
+        "detail": "bg=rgb(11, 14, 16) fg=rgb(242, 226, 198)"
       },
       "S-FOCUS-VISIBLE": {
         "ok": true,
@@ -674,32 +674,32 @@
       "S-CHK-V-UNKNOWN": {
         "ok": true,
         "method": "browser",
-        "detail": "❓ 判定材料がありません"
+        "detail": "中立 / INFO"
       },
       "S-CHK-V-AI": {
         "ok": true,
         "method": "browser",
-        "detail": "🤖 AI生成の痕跡があります"
+        "detail": "AI痕跡"
       },
       "S-CHK-V-CAMERA": {
         "ok": true,
         "method": "browser",
-        "detail": "📷 カメラ撮影の痕跡があります"
+        "detail": "実写材料"
       },
       "S-CHK-V-STOCK": {
         "ok": true,
         "method": "browser",
-        "detail": "🗂️ ストック素材サイト由来の画像です"
+        "detail": "注意"
       },
       "S-CHK-V-WEAK": {
         "ok": true,
         "method": "browser",
-        "detail": "🟡 AI生成を疑う手がかりがあります(弱)"
+        "detail": "弱い手がかり"
       },
       "S-CHK-V-C2PA": {
         "ok": true,
         "method": "browser",
-        "detail": "📜 コンテンツ来歴(C2PA)付きの画像です"
+        "detail": "来歴"
       },
       "S-CHK-C2PA-UNREADABLE": {
         "ok": true,
@@ -759,7 +759,7 @@
       "S-CHK-PIXEL-MID": {
         "ok": true,
         "method": "browser(推論を差し替え)",
-        "detail": "AI生成の疑いあり(弱)"
+        "detail": "AI生成の疑いあり（弱）"
       },
       "S-CHK-PIXEL-LOW": {
         "ok": true,

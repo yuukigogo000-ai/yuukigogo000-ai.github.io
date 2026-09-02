@@ -1,0 +1,136 @@
+
+<script>
+'use strict';
+/* 生成される証明ページの中身とバッジSVGは変えていない。変えたのは画面の見せ方だけ。 */
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// href に使うURLは http/https のみ許可(javascript: 等の危険スキーム対策)
+const safeUrl = u => /^https?:\/\//i.test(String(u).trim()) ? String(u).trim() : '';
+
+const BADGE_SVG = (
+  '<svg xmlns="http://www.w3.org/2000/svg" width="232" height="44" role="img" aria-label="実在クリエイター宣言">' +
+  '<rect width="232" height="44" rx="8" fill="#0e7490"/>' +
+  '<rect x="2" y="2" width="228" height="40" rx="6" fill="none" stroke="#ffffff55"/>' +
+  '<text x="14" y="27" font-family="system-ui,sans-serif" font-size="13" font-weight="700" fill="#fff">✓ 実在クリエイター宣言</text>' +
+  '<text x="168" y="27" font-family="system-ui,sans-serif" font-size="11" font-weight="800" letter-spacing="1" fill="#a5f3fc">HONMONO</text>' +
+  '</svg>');
+
+function proofPageHTML(d) {
+  const linkItems = d.links.map(u =>
+    `      <li><a href="${esc(u)}" rel="me noopener" target="_blank">${esc(u)}</a></li>`).join('\n');
+  const videoBlock = d.video
+    ? `    <h2>実在の裏付け</h2>\n    <p><a href="${esc(d.video)}" target="_blank" rel="noopener">${esc(d.video)}</a></p>\n`
+    : '';
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(d.name)} — 実在証明ページ</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, -apple-system, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+         max-width: 680px; margin: 0 auto; padding: 32px 20px; line-height: 1.8; }
+  .badge { display: inline-block; background: #0e7490; color: #fff; border-radius: 8px;
+           padding: 6px 14px; font-weight: 700; font-size: .85rem; letter-spacing: .05em; }
+  h1 { margin: 14px 0 2px; font-size: 1.5rem; }
+  .cat { color: #888; margin: 0 0 20px; }
+  h2 { font-size: 1.05rem; border-left: 4px solid #0e7490; padding-left: 10px; margin-top: 32px; }
+  blockquote { background: #0e74901a; border-radius: 8px; padding: 14px 18px; margin: 0; font-size: .95rem; }
+  ul { padding-left: 1.3em; }
+  .how { font-size: .85rem; color: #888; border-top: 1px solid #8884; margin-top: 36px; padding-top: 14px; }
+  footer { margin-top: 30px; font-size: .78rem; color: #999; }
+</style>
+</head>
+<body>
+  <span class="badge">✓ 実在クリエイター宣言 | HONMONO</span>
+  <h1>${esc(d.name)}</h1>
+  <p class="cat">${esc(d.category || 'クリエイター')}</p>
+
+  <h2>実在宣言</h2>
+  <blockquote>${esc(d.statement)}</blockquote>
+
+  <h2>本人が運用するアカウント</h2>
+  <ul>
+${linkItems}
+  </ul>
+${videoBlock}
+  <h2>このページの検証方法</h2>
+  <div class="how">
+    <p>① 上記の各SNSプロフィール(bio)に、<b>このページのURLが記載されている</b>ことを確認してください。<br>
+    ② 相互リンクが確認できれば、これらのアカウントとこのページは同一の人物が管理しています。<br>
+    ③ 裏付けリンク(ライブ配信・イベント記録など)で、運用者が実在の人間であることを確認できます。</p>
+  </div>
+
+  <footer>発行日: ${esc(d.date)} / この証明ページは <a href="${esc(d.generatorUrl)}">HONMONO 実在証明バッジ</a> で生成されました。</footer>
+</body>
+</html>
+`;
+}
+
+
+let currentHTML = '';
+
+$('generate').addEventListener('click', () => {
+  const nameEl = $('name');
+  const name = nameEl.value.trim();
+  if (!name) {
+    // 上部にまとめず、直したい入力のすぐ下に出す
+    nameEl.setAttribute('aria-invalid', 'true');
+    $('nameError').hidden = false;
+    nameEl.focus();
+    return;
+  }
+  nameEl.removeAttribute('aria-invalid');
+  $('nameError').hidden = true;
+
+  const links = $('links').value.split('\n').map(s => s.trim()).filter(s => /^https?:\/\//.test(s));
+  const d = {
+    name,
+    category: $('category').value.trim(),
+    links: links.length ? links : ['(SNSリンク未入力 — 追記してください)'],
+    video: safeUrl($('video').value),
+    statement: $('statement').value.trim(),
+    proofUrl: safeUrl($('proofUrl').value) || 'https://(証明ページを公開したURL)',
+    date: new Date().toISOString().slice(0, 10),
+    generatorUrl: location.origin.startsWith('http') ? location.href : 'https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io',
+  };
+
+  currentHTML = proofPageHTML(d);
+  $('previewFrame').srcdoc = currentHTML;
+  $('badgeBox').innerHTML = `<a href="${esc(d.proofUrl)}" target="_blank" rel="noopener">${BADGE_SVG}</a>`;
+  $('snippetHtml').textContent =
+    `<a href="${d.proofUrl}" target="_blank" rel="noopener" title="実在証明ページを見る">\n` +
+    BADGE_SVG + '\n</a>';
+  $('snippetMd').textContent =
+    `[![実在クリエイター宣言 | HONMONO](https://img.shields.io/badge/HONMONO-%E5%AE%9F%E5%9C%A8%E3%82%AF%E3%83%AA%E3%82%A8%E3%82%A4%E3%82%BF%E3%83%BC%E5%AE%A3%E8%A8%80-0e7490)](${d.proofUrl})`;
+  $('output').style.display = 'block';
+  $('output').classList.add('state-motion');
+  $('finalSeal').classList.add('state-motion');
+  $('output').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+});
+
+$('download').addEventListener('click', () => {
+  const blob = new Blob([currentHTML], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'honmono-proof.html';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+});
+
+document.querySelectorAll('button[data-copy]').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const text = $(btn.dataset.copy).textContent;
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const ta = document.createElement('textarea');
+      ta.value = text; document.body.appendChild(ta); ta.select();
+      document.execCommand('copy'); ta.remove();
+    }
+    const flag = $(btn.dataset.flag);
+    flag.hidden = false;
+    setTimeout(() => { flag.hidden = true; }, 2000);
+  });
+});
+</script>

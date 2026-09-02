@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>実在証明バッジ — HONMONO</title>
 <meta name="description" content="クリエイター向け。「私はAIではなく実在の人間です」を相互リンク方式で証明するページとバッジを無料生成。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z' fill='none' stroke='%237F5A23' stroke-width='3'/><text x='32' y='42' font-size='26' text-anchor='middle' fill='%237F5A23' font-family='serif'>本</text></svg>">
 <meta property="og:type" content="website">
 <meta property="og:title" content="実在証明バッジ — HONMONO">
 <meta property="og:description" content="「私はAIではなく実在の人間です」を相互リンク方式で証明。証明ページとバッジを無料生成。">
@@ -15,111 +15,212 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
-  .steps { counter-reset: step; padding-left: 0; list-style: none; margin: 0; }
-  .steps li { counter-increment: step; position: relative; padding: 6px 0 6px 42px; font-size: .9rem; }
-  .steps li::before {
-    content: counter(step); position: absolute; left: 0; top: 8px;
-    width: 26px; height: 26px; border-radius: 50%; background: var(--accent); color: #fff;
-    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .85rem;
+  /* BADGE = TASK_CRITICAL。仕組みを理解してから入力させる */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+
+  .steps { list-style: none; margin: var(--sp-4) 0; padding-left: var(--sp-6); }
+  .steps li { padding: var(--sp-2) 0 var(--sp-4); }
+  .steps b { display: block; }
+  .steps span { display: block; font-size: .8125rem; line-height: 1.55; color: var(--c-muted); }
+
+  .wire { display: flex; gap: var(--sp-4); align-items: flex-start; flex-wrap: wrap; }
+  .wire__page {
+    flex: 0 0 108px; display: flex; flex-direction: column; gap: var(--sp-2);
+    background: var(--c-surface-2); border: 1px solid var(--c-line-soft);
+    border-radius: var(--r-1); padding: var(--sp-3);
   }
-  #previewFrame { width: 100%; height: 460px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
-  .badge-preview { padding: 14px; border: 1px dashed var(--line); border-radius: 10px; display: inline-block; }
-  .copy-ok { color: var(--ok); font-size: .8rem; margin-left: 10px; }
+  .wire__badge {
+    font-size: .6875rem; font-weight: 700; color: var(--c-on-seal);
+    background: var(--c-seal-deep); border-radius: var(--r-1);
+    padding: 2px var(--sp-2); align-self: flex-start;
+  }
+  .wire__line { display: block; height: 6px; width: 100%; border-radius: 999px; background: var(--c-line-soft); }
+  .wire__line--title { height: 10px; width: 68%; background: var(--c-line); }
+  .wire > div { flex: 1 1 12rem; min-width: 0; }
+
+  #previewFrame {
+    width: 100%; height: 420px;
+    border: 1px solid var(--c-line-soft); border-radius: var(--r-1);
+    background: #FFFDF8;
+  }
+  .badge-preview {
+    padding: var(--sp-4); margin-bottom: var(--sp-4);
+    border: 1px dashed var(--c-line); border-radius: var(--r-1);
+    display: flex; justify-content: center;
+  }
+  .badge-preview svg { max-width: 100%; height: auto; }
+
+  .final-seal {
+    background: var(--c-surface); border: 1px solid var(--c-seal);
+    border-left-width: 3px; border-radius: var(--r-2);
+    padding: var(--sp-4);
+  }
+  .final-seal b { color: var(--c-seal); }
+
+  #output .btn[data-copy] { margin-bottom: var(--sp-2); }
 </style>
 </head>
 <body>
+
 <header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO</a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/" aria-current="page">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
-  </nav>
+  <a class="brand" href="../">
+    <span class="seal" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z" stroke="currentColor" stroke-width="2"/><path d="M32 9 49 19v26L32 55 15 45V19L32 9Z" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="32" y="40" text-anchor="middle" font-size="24" font-family="serif" fill="currentColor">本</text></svg></span>
+    <span class="word">HONMONO</span>
+  </a>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="siteMenu" aria-label="メニューを開く">
+    <span class="ico-open" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></span>
+    <span class="ico-close" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+  </button>
 </div></header>
 
+<nav class="site-menu" id="siteMenu" hidden aria-label="サイト内の移動"><div class="wrap">
+  <div class="menu-group">
+    <h2>調べる</h2>
+    <ul class="menu-list">
+      <li><a href="../checker/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10H4z"/><path d="m6 12 3.5-4 2.5 3 2-2 4 3"/><circle cx="16.5" cy="17.5" r="3.5"/><path d="m19.5 20.5 1.8 1.8"/></svg></span>画像来歴チェッカー</a></li>
+      <li><a href="../aicheck/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 11-4.7"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M16 17.5h3"/></svg></span>AIアカウント鑑定</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>証明・探す</h2>
+    <ul class="menu-list">
+      <li><a href="../badge/" aria-current="page"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v6.5c0 3.4-2.9 6-7 7.5-4.1-1.5-7-4.1-7-7.5V7z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg></span>実在証明バッジ</a></li>
+      <li><a href="../creators/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 13h8M8 16h5"/></svg></span>実在クリエイター名鑑</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>理解する</h2>
+    <ul class="menu-list">
+      <li><a href="../docs/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></span>説明書</a></li>
+    </ul>
+  </div>
+  <div class="menu-group menu-sub">
+    <ul class="menu-list">
+      <li><a href="../report/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 18V9M12 18V4M18 18v-6"/></svg></span>実測レポートを読む</a></li>
+      <li><a href="../business/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6l7-3v17"/><path d="M11 9h9v11"/><path d="M7 9h.01M7 13h.01M15 13h.01M15 17h.01"/></svg></span>法人・開発者の方へ</a></li>
+    </ul>
+  </div>
+</div></nav>
 <main class="wrap">
-  <h1>🪪 実在証明バッジ</h1>
-  <p class="lead">AI製アカウントが溢れる今、「実在する人間である」ことはクリエイターの強い差別化になります。
-  このツールは<b>相互リンク方式の証明ページ</b>とバッジを生成します。入力内容はブラウザ外に送信されません。</p>
+  <h1>実在証明バッジ</h1>
+  <p class="lede">「実在する人間である」ことを、第三者が検証できる形にする。</p>
+  <p>AI製アカウントが溢れる今、実在することはクリエイターの強い差別化になります。
+  このツールは<b>相互リンク方式の証明ページ</b>とバッジを生成します。</p>
+  <p><span class="local-sign">
+    <span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+    <span>入力内容はすべて端末内で処理され、外部へ送信されません</span>
+  </span></p>
 
-  <div class="card">
-    <h2 style="margin-top:0">仕組み(相互リンク証明)</h2>
-    <ol class="steps">
-      <li><b>証明ページを生成</b> — あなたの活動名・SNS一覧・実在宣言を記載したHTMLをダウンロード</li>
-      <li><b>自分の管理下で公開</b> — 自分のサイトやGitHub Pagesにアップロード(URLの所有=第一の証明)</li>
-      <li><b>各SNSのプロフィールに証明ページのURLを記載</b> — これで「SNS ⇄ 証明ページ」の相互リンクが完成</li>
-      <li><b>バッジを設置</b> — 見た人は、バッジ → 証明ページ → 各SNSのプロフィール、と辿って相互リンクを確認できます。なりすましは他人のSNSプロフィールを書き換えられないため、この輪を作るのは困難です(<b>不可能ではありません</b> — アカウントの乗っ取り等では破られます)</li>
-    </ol>
+  <h2>仕組み — 相互リンク証明</h2>
+  <ol class="steps spine">
+    <li class="spine__node"><b>証明ページを生成</b><span>活動名・SNS一覧・実在宣言を書いたHTMLをダウンロードします。</span></li>
+    <li class="spine__node"><b>自分の管理下で公開</b><span>自分のサイトやGitHub Pagesにアップロードします（URLの所有が第一の証明）。</span></li>
+    <li class="spine__node"><b>各SNSのプロフィールに証明ページのURLを記載</b><span>これで「SNS ⇄ 証明ページ」の相互リンクが完成します。</span></li>
+    <li class="spine__node"><b>バッジを設置</b><span>見た人は、バッジ → 証明ページ → 各SNSのプロフィール、と辿って相互リンクを確認できます。
+    なりすましは他人のSNSプロフィールを書き換えられないため、この輪を作るのは困難です（<b>不可能ではありません</b> — アカウントの乗っ取り等では破られます）。</span></li>
+  </ol>
+
+  <h2>生成すると手に入るもの</h2>
+  <div class="dossier wire">
+    <div class="wire__page" aria-hidden="true">
+      <span class="wire__badge">✓ 実在クリエイター宣言</span>
+      <span class="wire__line wire__line--title"></span>
+      <span class="wire__line" style="width:52%"></span>
+      <span class="wire__line" style="width:88%"></span>
+      <span class="wire__line" style="width:74%"></span>
+    </div>
+    <div>
+      <p style="margin-top:0"><b>証明ページ（HTML 1枚）</b><br>
+      <span class="note">活動名・ジャンル・実在宣言・SNS一覧・裏付けリンク・検証手順が入ります。自分のURLで公開します。</span></p>
+      <p style="margin-bottom:0"><b>バッジ（HTML / Markdown）</b><br>
+      <span class="note">サイトやREADMEに貼るスニペット。リンク先は公開した証明ページです。</span></p>
+    </div>
   </div>
 
   <h2>1. 情報を入力</h2>
-  <div class="card">
-    <label for="name">活動名(必須)</label>
+  <div class="dossier">
+    <label for="name">活動名（必須）</label>
     <input type="text" id="name" placeholder="例: 山田ハナ / hana_creates">
+    <p class="field-error" id="nameError" hidden>活動名を入れてください。</p>
+
     <label for="category">活動ジャンル</label>
     <input type="text" id="category" placeholder="例: イラストレーター / コスプレイヤー / 写真家">
-    <label for="links">SNS・公式リンク(1行に1つ、2つ以上推奨)</label>
+
+    <label for="links">SNS・公式リンク（1行に1つ、2つ以上推奨）</label>
     <textarea id="links" placeholder="https://x.com/your_account&#10;https://www.instagram.com/your_account&#10;https://www.youtube.com/@your_channel"></textarea>
-    <label for="video">実在の裏付けリンク(任意)</label>
+
+    <label for="video">実在の裏付けリンク（任意）</label>
     <input type="url" id="video" placeholder="例: ライブ配信アーカイブ、イベント出演記録、対談動画などのURL">
-    <label for="statement">実在宣言(編集可)</label>
+
+    <label for="statement">実在宣言（編集可）</label>
     <textarea id="statement">私はAIによって生成された架空の人物ではなく、実在する人間のクリエイターです。このページに記載したSNSアカウントはすべて私本人が運用しており、各プロフィールには本ページのURLを記載しています。私の作品における生成AIの利用有無は、各作品の説明に明記します。</textarea>
-    <label for="proofUrl">証明ページを公開する予定のURL(任意・バッジのリンク先になります)</label>
+
+    <label for="proofUrl">証明ページを公開する予定のURL（任意・バッジのリンク先になります）</label>
     <input type="url" id="proofUrl" placeholder="例: https://あなたのID.github.io/proof.html">
-    <button id="generate">証明ページとバッジを生成する</button>
+
+    <p style="margin-bottom:0"><button class="btn btn--block" type="button" id="generate">証明ページとバッジを生成する</button></p>
   </div>
 
   <section id="output" style="display:none">
     <h2>2. 証明ページのプレビュー</h2>
     <iframe id="previewFrame" title="証明ページのプレビュー"></iframe>
-    <button id="download">証明ページ(HTML)をダウンロード</button>
+    <p><button class="btn btn--block" type="button" id="download">証明ページ（HTML）をダウンロード</button></p>
 
     <h2>3. バッジを設置</h2>
-    <div class="card">
+    <div class="dossier">
       <div class="badge-preview" id="badgeBox"></div>
-      <h3>HTML用(サイト・ブログに貼る)<span id="copiedHtml" class="copy-ok" hidden>コピーしました ✓</span></h3>
+
+      <h3>HTML用（サイト・ブログに貼る）</h3>
       <pre class="snippet" id="snippetHtml"></pre>
-      <button class="secondary" data-copy="snippetHtml" data-flag="copiedHtml">HTMLをコピー</button>
-      <h3>Markdown用(GitHub READMEなど)<span id="copiedMd" class="copy-ok" hidden>コピーしました ✓</span></h3>
+      <button class="btn btn--ghost" type="button" data-copy="snippetHtml" data-flag="copiedHtml">HTMLをコピー<span id="copiedHtml" hidden> — コピーしました ✓</span></button>
+
+      <h3>Markdown用（GitHub READMEなど）</h3>
       <pre class="snippet" id="snippetMd"></pre>
-      <button class="secondary" data-copy="snippetMd" data-flag="copiedMd">Markdownをコピー</button>
-      <p class="note">Markdown版のバッジ画像は shields.io(外部サービス)を利用しています。自サイトに貼る場合はHTML版(完全自己完結のSVG)がおすすめです。</p>
+      <button class="btn btn--ghost" type="button" data-copy="snippetMd" data-flag="copiedMd">Markdownをコピー<span id="copiedMd" hidden> — コピーしました ✓</span></button>
+
+      <p class="note" style="margin-bottom:0">Markdown版のバッジ画像は shields.io（外部サービス）を利用しています。
+      自サイトに貼る場合はHTML版（完全自己完結のSVG）がおすすめです。</p>
     </div>
 
-    <h2>4. 仕上げ(重要)</h2>
-    <div class="card" style="font-size:.9rem">
-      <ol style="margin:0; padding-left:1.4em">
+    <!-- PL-5: 最後の1手。ダウンロード導線と同じ画面に置き、弱くしない -->
+    <h2>4. 最後の封印</h2>
+    <div class="final-seal" id="finalSeal">
+      <p style="margin-top:0"><b>ここまでで証明は完成していません。</b>
+      入力した<b>すべてのSNSプロフィール（bio）に証明ページのURLを記載</b>してください。これを忘れると証明の輪が閉じません。</p>
+      <ol style="margin:0; padding-left:1.3em">
         <li>ダウンロードした <code>honmono-proof.html</code> を自分のサイト・GitHub Pagesにアップロード</li>
-        <li>入力した<b>すべてのSNSプロフィール(bio)に証明ページのURLを記載</b>する — これを忘れると証明の輪が完成しません</li>
+        <li><b>すべてのSNSプロフィール（bio）に証明ページのURLを記載する</b></li>
         <li>バッジをサイトやREADMEに設置し、リンク先を公開した証明ページのURLにする</li>
       </ol>
     </div>
   </section>
 
-  <div class="notice">
-    <b>この証明が示すこと・示さないこと:</b> 相互リンク証明は「これらのアカウント群を同一人物(組織)が管理している」ことを示します。
+  <div class="note-block">
+    <b>この証明が示すこと・示さないこと。</b>
+    <p style="margin:var(--sp-2) 0 0">相互リンク証明は「これらのアカウント群を同一人物（組織）が管理している」ことを示します。
     運用者が実在の人間であることの確からしさは、ライブ配信・イベント出演など裏付けリンクの質で決まります。
-    虚偽の宣言はご自身の信用を損なうだけでなく、法的責任を問われる可能性があります。
+    虚偽の宣言はご自身の信用を損なうだけでなく、法的責任を問われる可能性があります。</p>
   </div>
 </main>
 
 <footer class="site-foot"><div class="wrap">
-  <div style="margin-bottom:6px">
-  <a href="../">HONMONO</a> ·
-  <a href="../docs/">説明書</a> ·
-  <a href="../report/">実測レポート</a> ·
-  <a href="../business/">法人向け</a> ·
-  <a href="../legal/privacy.html">プライバシー</a> ·
-  <a href="../legal/terms.html">利用規約</a> ·
-  <a href="../legal/credits.html">クレジット</a>
+  <div class="foot-links">
+    <a href="../">HONMONO</a>
+    <a href="../docs/">説明書</a>
+    <a href="../report/">実測レポート</a>
+    <a href="../business/">法人向け</a>
+    <a href="../legal/privacy.html">プライバシー</a>
+    <a href="../legal/terms.html">利用規約</a>
+    <a href="../legal/credits.html">クレジット</a>
   </div>
-  <div style="font-size:.82rem; opacity:.8">HONMONO プロジェクト — 入力内容はブラウザ外に送信されません。</div>
+  <p style="margin:0">HONMONO プロジェクト — 入力内容はブラウザ外に送信されません。ページの読み込みには通信が必要です。</p>
 </div></footer>
+
+<script src="../shell.js"></script>
 
 <script>
 'use strict';
+/* 生成される証明ページの中身とバッジSVGは変えていない。変えたのは画面の見せ方だけ。 */
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // href に使うURLは http/https のみ許可(javascript: 等の危険スキーム対策)
@@ -186,12 +287,22 @@ ${videoBlock}
 `;
 }
 
+
 let currentHTML = '';
 
 $('generate').addEventListener('click', () => {
-  const name = $('name').value.trim();
-  if (!name) { $('name').focus(); $('name').style.borderColor = 'var(--bad)'; return; }
-  $('name').style.borderColor = '';
+  const nameEl = $('name');
+  const name = nameEl.value.trim();
+  if (!name) {
+    // 上部にまとめず、直したい入力のすぐ下に出す
+    nameEl.setAttribute('aria-invalid', 'true');
+    $('nameError').hidden = false;
+    nameEl.focus();
+    return;
+  }
+  nameEl.removeAttribute('aria-invalid');
+  $('nameError').hidden = true;
+
   const links = $('links').value.split('\n').map(s => s.trim()).filter(s => /^https?:\/\//.test(s));
   const d = {
     name,
@@ -213,7 +324,9 @@ $('generate').addEventListener('click', () => {
   $('snippetMd').textContent =
     `[![実在クリエイター宣言 | HONMONO](https://img.shields.io/badge/HONMONO-%E5%AE%9F%E5%9C%A8%E3%82%AF%E3%83%AA%E3%82%A8%E3%82%A4%E3%82%BF%E3%83%BC%E5%AE%A3%E8%A8%80-0e7490)](${d.proofUrl})`;
   $('output').style.display = 'block';
-  $('output').scrollIntoView({ behavior: 'smooth' });
+  $('output').classList.add('state-motion');
+  $('finalSeal').classList.add('state-motion');
+  $('output').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
 });
 
 $('download').addEventListener('click', () => {
@@ -240,5 +353,6 @@ document.querySelectorAll('button[data-copy]').forEach(btn => {
   });
 });
 </script>
+
 </body>
 </html>

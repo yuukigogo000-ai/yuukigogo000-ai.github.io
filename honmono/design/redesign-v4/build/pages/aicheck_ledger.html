@@ -1,0 +1,109 @@
+<script>
+'use strict';
+/* 一覧はここで組み立てる。あとから差し込むと下の内容が押し下げられて画面が跳ねる。 */
+const GROUPS = [
+  {
+    title: '🖼 画像・動画の特徴',
+    items: [
+      { w: 3, text: '手の指・歯・耳・髪の生え際に不自然な崩れや溶けがある',
+        why: '生成AIが最も苦手とする部位。複数の画像で繰り返し見られたら強いシグナル。' },
+      { w: 2, text: '背景の文字・看板・ロゴが読めない、または歪んでいる',
+        why: 'AIは背景の文字列を正しく描けないことが多い。' },
+      { w: 2, text: 'アクセサリー・服の模様・ほくろが投稿ごとに食い違う',
+        why: '実在人物なら一貫するディテールが、生成のたびに変わる。' },
+      { w: 2, text: '全投稿が似た構図・過剰につるっとした肌質感で統一されている',
+        why: '同一モデル・同一プロンプトからの量産に典型的な均質さ。' },
+      { w: 3, text: 'ライブ配信・生の動画・雑談動画が一切ない(静止画のみ)',
+        why: 'リアルタイム動画はAI偽装のコストが最も高い。実在の証拠が静止画だけなのは不自然。' },
+      { w: 4, text: '逆画像検索(Google レンズ等)で別人・別名義がヒットする',
+        why: '他人の写真の盗用(なりすまし)の直接証拠。' },
+      { w: 4, text: '「画像来歴チェッカー」等でAI生成の痕跡が出た',
+        why: 'メタデータによる自己申告レベルの強い証拠。' },
+    ],
+  },
+  {
+    title: '📜 アカウントの履歴',
+    items: [
+      { w: 2, text: 'アカウント作成から日が浅いのに投稿数・フォロワーが多い',
+        why: '買われたフォロワー+一括投稿で「実績」を偽装するのが定番。' },
+      { w: 2, text: '過去の投稿が短期間に一括で投稿されている',
+        why: '数年分の生活履歴を一晩で偽造した痕跡。投稿日時を確認。' },
+      { w: 2, text: '友人・家族・他人と一緒に写った写真が1枚もない',
+        why: '他者との関係の写真はAI量産アカウントには作りにくい。' },
+      { w: 3, text: 'イベント出演・雑誌掲載・第三者による言及が検索で確認できない',
+        why: '実在の活動者は本人以外の発信(タグ付け・レポ・記事)が必ず残る。' },
+    ],
+  },
+  {
+    title: '💬 行動・コミュニケーション',
+    items: [
+      { w: 4, text: 'DMで早い段階から金銭・投資・暗号資産・別アプリへ誘導された',
+        why: 'ロマンス詐欺の最重要シグナル。この項目単独でも即ブロック推奨。' },
+      { w: 2, text: '日本語(使用言語)が微妙に不自然、返信がテンプレ的で噛み合わない',
+        why: '翻訳ツール・チャットボット運用の痕跡。' },
+      { w: 3, text: 'ビデオ通話・音声通話を理由をつけて断り続ける',
+        why: 'リアルタイムの顔出しはAI・なりすましが最も避けたい検証手段。' },
+      { w: 2, text: '会話よりも「限定写真」「サブスク」等への課金誘導が中心',
+        why: 'AI美女ビジネスの主要な収益導線。' },
+    ],
+  },
+  {
+    title: '🔗 クロスチェック',
+    items: [
+      { w: 2, text: '他のSNSアカウントとの相互リンクがない・一方通行',
+        why: '実在の活動者は複数プラットフォームが相互に繋がっている。' },
+      { w: 2, text: '活動名で検索しても本人発信以外の情報が出てこない',
+        why: '外部からの言及ゼロは「昨日生まれたペルソナ」の特徴。' },
+      { w: 2, text: 'プロフィールの経歴(学校・所属・受賞歴)が具体的に検証できない',
+        why: '検証可能な固有名詞を避けるのは偽装ペルソナの定石。' },
+    ],
+  },
+];
+
+const TRUST_ITEMS = [
+  { w: 5, text: 'ビデオ通話や配信で、写真と同一人物が動いて話すのを確認した' },
+  { w: 5, text: 'イベント・オフ会など対面で本人に会ったことがある' },
+  { w: 3, text: '第三者(共通の知人・公式メディア)が本人の実在を裏付けている' },
+  { w: 3, text: '実在証明ページ(相互リンク証明)を公開しており、輪が検証できた' },
+];
+
+const BANDS = [
+  { max: 20, label: 'リスク: 低', color: 'var(--c-ok)',
+    advice: '現時点で強い危険信号はありません。ただし金銭の話が出た瞬間に再評価を。' },
+  { max: 45, label: 'リスク: 中', color: 'var(--c-warn)',
+    advice: '複数の注意信号があります。ビデオ通話・逆画像検索・来歴チェッカーでの検証を強くおすすめします。金銭・個人情報は渡さないでください。' },
+  { max: 101, label: 'リスク: 高', color: 'var(--c-bad)',
+    advice: 'AI製・なりすまし・詐欺アカウントの典型的特徴に多数一致しています。金銭・個人情報のやり取りは絶対に避け、ブロック・通報を検討してください。' },
+];
+
+
+const MAX = GROUPS.flatMap(g => g.items).reduce((s, i) => s + i.w, 0);
+const TOTAL_ITEMS = GROUPS.flatMap(g => g.items).length + TRUST_ITEMS.length;
+
+const $ = id => document.getElementById(id);
+/* 章タイトル先頭の絵文字は現行データの装飾。アイコン言語は線画に統一するため表示では落とす */
+const stripMark = t => String(t).replace(/^[^\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}A-Za-z0-9]+/u, '');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* チェックリスト描画 */
+let riskIdx = 0, trustIdx = 0;
+$('checklists').innerHTML = GROUPS.map((g, gi) =>
+  `<section class="chapter">` +
+  `<p class="chapter__meta">${gi + 1} / ${GROUPS.length}</p>` +
+  `<h2>${esc(stripMark(g.title))}</h2><div class="ledger">` +
+  g.items.map(it => {
+    const id = 'r' + (riskIdx++);
+    return `<div class="row"><input type="checkbox" id="${id}" data-w="${it.w}" data-kind="risk">` +
+      `<label for="${id}">${esc(it.text)}<span class="w">+${it.w}</span>` +
+      `<span class="why">${esc(it.why)}</span></label></div>`;
+  }).join('') + '</div></section>'
+).join('');
+
+$('trustlist').innerHTML = '<div class="ledger">' + TRUST_ITEMS.map(it => {
+  const id = 't' + (trustIdx++);
+  return `<div class="row"><input type="checkbox" id="${id}" data-w="${it.w}" data-kind="trust">` +
+    `<label for="${id}">${esc(it.text)}<span class="w">-${it.w}</span></label></div>`;
+}).join('') + '</div>';
+
+
+</script>

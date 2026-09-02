@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AIアカウント鑑定 — HONMONO</title>
 <meta name="description" content="SNS・マッチングアプリのアカウントがAI製・なりすましでないかをチェックリストでリスク診断。ロマンス詐欺対策にも。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z' fill='none' stroke='%237F5A23' stroke-width='3'/><text x='32' y='42' font-size='26' text-anchor='middle' fill='%237F5A23' font-family='serif'>本</text></svg>">
 <meta property="og:type" content="website">
 <meta property="og:title" content="AIアカウント鑑定 — HONMONO">
 <meta property="og:description" content="そのアカウント、実在する人間ですか? AI製・なりすまし・ロマンス詐欺のリスクを無料でチェックリスト診断。">
@@ -15,89 +15,136 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
-  .check { display: flex; gap: 10px; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--line); }
-  .check:last-child { border-bottom: 0; }
-  .check input { margin-top: 5px; width: 17px; height: 17px; accent-color: var(--accent); flex: 0 0 auto; }
-  .check label { margin: 0; font-weight: 500; font-size: .92rem; cursor: pointer; }
-  .check .why { display: block; font-size: .8rem; color: var(--muted); font-weight: 400; }
-  .weight { font-size: .72rem; font-weight: 700; color: var(--accent-strong); background: var(--accent-soft);
-            border-radius: 999px; padding: 1px 8px; margin-left: 6px; white-space: nowrap; }
-  .trust-card { border-color: var(--ok); }
-  .trust-card h2 { color: var(--ok); }
-  #scorebar { height: 14px; border-radius: 999px; background: var(--line); overflow: hidden; margin: 10px 0; }
-  #scorefill { height: 100%; width: 0%; background: var(--ok); transition: width .4s, background .4s; }
-  .score-num { font-size: 2rem; font-weight: 800; }
-  #resultArea { position: sticky; bottom: 0; background: var(--bg); padding: 10px 0; border-top: 1px solid var(--line); }
+  /* AICHECK = TASK_CRITICAL。22項目を最後まで進ませることが最優先 */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+
+  /* 章(4つのリスク章 + 信頼章)の台帳 */
+  .chapter { margin: var(--sp-8) 0 0; }
+  .chapter > h2 { margin-top: 0; }
+  .chapter__meta {
+    font-size: .8125rem; line-height: 1.55; font-weight: 600; letter-spacing: .12em;
+    color: var(--c-seal); margin: 0 0 var(--sp-1);
+  }
+  .ledger { border-top: 1px solid var(--c-line-soft); }
+  .row {
+    display: flex; gap: var(--sp-3); align-items: flex-start;
+    padding: var(--sp-3) 0;
+    border-bottom: 1px solid var(--c-line-soft);
+  }
+  .row input {
+    width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto;
+    accent-color: var(--c-seal);
+  }
+  .row label { margin: 0; font-weight: 500; cursor: pointer; min-height: 24px; }
+  .row .why { display: block; font-size: .8125rem; line-height: 1.55; color: var(--c-muted); font-weight: 400; }
+  .row .w {
+    display: inline-block; margin-left: var(--sp-2);
+    font-size: .8125rem; font-weight: 700; color: var(--c-brass);
+    border: 1px solid var(--c-line-soft); border-radius: var(--r-1);
+    padding: 0 var(--sp-2); white-space: nowrap;
+  }
+  .trust-chapter .row .w { color: var(--c-ok); }
+
+  /* 下に固定する結果。入力を隠さないよう本文側に同じだけ余白を取る */
+  #resultArea {
+    position: sticky; bottom: 0; z-index: 30;
+    background: var(--c-canvas);
+    border-top: 1px solid var(--c-line);
+  }
+  #resultArea .docket {
+    display: grid; grid-template-columns: auto 1fr; gap: 0 var(--sp-3);
+    align-items: center;
+    padding: var(--sp-2) var(--sp-4);
+    min-height: 64px; max-height: 76px;
+  }
+  .docket__score { display: flex; align-items: baseline; gap: 2px; }
+  .score-num { font-family: var(--font-display); font-size: 1.75rem; line-height: 1.2; font-weight: 600; }
+  .docket__band { display: flex; flex-direction: column; line-height: 1.35; }
+  .docket__band > span:first-child { font-weight: 700; }
+  .docket__rail {
+    grid-column: 1 / -1; height: 4px; border-radius: 999px;
+    background: var(--c-line-soft); overflow: hidden; margin-top: var(--sp-1);
+  }
+  .docket__rail > div {
+    height: 100%; width: 100%;
+    transform-origin: left center; transform: scaleX(0);
+    background: var(--c-ok);
+    transition: transform var(--dur-base) var(--ease-out);
+  }
+  main { padding-bottom: var(--sp-16); }
+
+  #exportRow { margin: var(--sp-4) 0 var(--sp-8); }
+
+  /* 数値が入れ替わったことを短く伝える(reduced-motion では出さない) */
+  .score-num.bump { animation: score-bump 140ms var(--ease-standard); }
+  @keyframes score-bump {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .score-num.bump { animation: none; } }
 </style>
 </head>
 <body>
+
 <header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO</a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/" aria-current="page">AIアカウント鑑定</a>
-    <a href="../creators/">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
-  </nav>
+  <a class="brand" href="../">
+    <span class="seal" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z" stroke="currentColor" stroke-width="2"/><path d="M32 9 49 19v26L32 55 15 45V19L32 9Z" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="32" y="40" text-anchor="middle" font-size="24" font-family="serif" fill="currentColor">本</text></svg></span>
+    <span class="word">HONMONO</span>
+  </a>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="siteMenu" aria-label="メニューを開く">
+    <span class="ico-open" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></span>
+    <span class="ico-close" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+  </button>
 </div></header>
 
+<nav class="site-menu" id="siteMenu" hidden aria-label="サイト内の移動"><div class="wrap">
+  <div class="menu-group">
+    <h2>調べる</h2>
+    <ul class="menu-list">
+      <li><a href="../checker/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10H4z"/><path d="m6 12 3.5-4 2.5 3 2-2 4 3"/><circle cx="16.5" cy="17.5" r="3.5"/><path d="m19.5 20.5 1.8 1.8"/></svg></span>画像来歴チェッカー</a></li>
+      <li><a href="../aicheck/" aria-current="page"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 11-4.7"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M16 17.5h3"/></svg></span>AIアカウント鑑定</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>証明・探す</h2>
+    <ul class="menu-list">
+      <li><a href="../badge/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v6.5c0 3.4-2.9 6-7 7.5-4.1-1.5-7-4.1-7-7.5V7z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg></span>実在証明バッジ</a></li>
+      <li><a href="../creators/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 13h8M8 16h5"/></svg></span>実在クリエイター名鑑</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>理解する</h2>
+    <ul class="menu-list">
+      <li><a href="../docs/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></span>説明書</a></li>
+    </ul>
+  </div>
+  <div class="menu-group menu-sub">
+    <ul class="menu-list">
+      <li><a href="../report/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 18V9M12 18V4M18 18v-6"/></svg></span>実測レポートを読む</a></li>
+      <li><a href="../business/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6l7-3v17"/><path d="M11 9h9v11"/><path d="M7 9h.01M7 13h.01M15 13h.01M15 17h.01"/></svg></span>法人・開発者の方へ</a></li>
+    </ul>
+  </div>
+</div></nav>
 <main class="wrap">
-  <h1>🕵️ AIアカウント鑑定</h1>
-  <p class="lead">SNS・マッチングアプリで出会ったアカウントについて、当てはまる項目にチェックを入れてください。
-  AI製アカウント・なりすまし・ロマンス詐欺に共通する特徴から<b>リスクスコア</b>を算出します。すべてブラウザ内で完結します。</p>
+  <h1>AIアカウント鑑定</h1>
+  <p class="lede">そのアカウントが実在の人間か、自分の観察を構造化して確かめる。</p>
+  <p>SNS・マッチングアプリで出会ったアカウントについて、当てはまる項目にチェックを入れてください。
+  AI製アカウント・なりすまし・ロマンス詐欺に共通する特徴から<b>リスクスコア</b>を算出します。</p>
+  <p><span class="local-sign">
+    <span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+    <span>チェック内容はすべて端末内で処理され、外部へ送信されません</span>
+  </span></p>
 
   <div id="checklists"></div>
 
-  <div class="card trust-card">
-    <h2 style="margin-top:0">✅ 信頼シグナル(当てはまればリスク減点)</h2>
+  <section class="dossier trust-chapter">
+    <h2 style="margin-top:0">信頼シグナル</h2>
+    <p class="note" style="margin-top:0">当てはまればスコアを<b>減点</b>します。断定を避けるための材料です。</p>
     <div id="trustlist"></div>
-  </div>
-
-  <div id="resultArea">
-    <div class="card" style="margin:0">
-      <div style="display:flex; justify-content:space-between; align-items:baseline; flex-wrap:wrap; gap:8px">
-        <div><span class="score-num" id="scoreNum">0</span><span class="note"> / 100 リスクスコア</span></div>
-        <div id="bandLabel" style="font-weight:800; font-size:1.05rem">リスク: 低</div>
-      </div>
-      <div id="scorebar"><div id="scorefill"></div></div>
-      <p id="advice" class="note" style="margin:4px 0 0">チェックを入れると診断が更新されます。</p>
-      <p class="note" style="margin:14px 0 6px; border-left:3px solid var(--warn); padding-left:10px">
-        <b>持ち出す前に:</b> この結果は<b>あなた自身が判断するための記録</b>です。
-        相手のアカウント名・写真とあわせて公開し、特定の人を「AI」「詐欺」と<b>断定して晒す使い方はしないでください</b>。
-        事実に反した場合、名誉毀損・信用毀損にあたるおそれがあります。
-        通報するなら、公開の場ではなく<b>プラットフォームの通報窓口や警察(#9110)へ</b>。
-      </p>
-      <button class="secondary" id="copyResult" style="margin-top:4px">診断結果をコピー</button>
-      <button class="secondary" id="saveImage" style="margin-top:4px">結果画像を保存</button>
-      <span id="copied" style="color:var(--ok); font-size:.8rem; margin-left:8px" hidden>コピーしました ✓</span>
-    </div>
-  </div>
-
-  <div class="notice">
-    <b>免責:</b> この診断は統計的な傾向に基づく参考情報です。実在の人でも当てはまる項目はありますし、
-    巧妙な詐欺は項目を回避します。<b>金銭・投資・暗号資産の話が出たら、スコアに関わらず詐欺を疑ってください。</b>
-    被害が疑われる場合は警察相談専用電話「#9110」または
-    <a href="https://www.npa.go.jp/bureau/cyber/index.html" target="_blank" rel="noopener">警察庁サイバー犯罪相談窓口</a>へ。
-  </div>
-</main>
-
-<footer class="site-foot"><div class="wrap">
-  <div style="margin-bottom:6px">
-  <a href="../">HONMONO</a> ·
-  <a href="../docs/">説明書</a> ·
-  <a href="../report/">実測レポート</a> ·
-  <a href="../business/">法人向け</a> ·
-  <a href="../legal/privacy.html">プライバシー</a> ·
-  <a href="../legal/terms.html">利用規約</a> ·
-  <a href="../legal/credits.html">クレジット</a>
-  </div>
-  <div style="font-size:.82rem; opacity:.8">HONMONO プロジェクト — チェック内容はブラウザ外に送信されません。</div>
-</div></footer>
-
+  </section>
 <script>
 'use strict';
-
+/* 一覧はここで組み立てる。あとから差し込むと下の内容が押し下げられて画面が跳ねる。 */
 const GROUPS = [
   {
     title: '🖼 画像・動画の特徴',
@@ -164,36 +211,113 @@ const TRUST_ITEMS = [
   { w: 3, text: '実在証明ページ(相互リンク証明)を公開しており、輪が検証できた' },
 ];
 
-const MAX = GROUPS.flatMap(g => g.items).reduce((s, i) => s + i.w, 0);
-
-const $ = id => document.getElementById(id);
-
-/* チェックリスト描画 */
-let riskIdx = 0, trustIdx = 0;
-$('checklists').innerHTML = GROUPS.map(g =>
-  `<div class="card"><h2 style="margin-top:0">${g.title}</h2>` +
-  g.items.map(it => {
-    const id = 'r' + (riskIdx++);
-    return `<div class="check"><input type="checkbox" id="${id}" data-w="${it.w}" data-kind="risk">` +
-      `<label for="${id}">${it.text}<span class="weight">+${it.w}</span><span class="why">${it.why}</span></label></div>`;
-  }).join('') + '</div>'
-).join('');
-
-$('trustlist').innerHTML = TRUST_ITEMS.map(it => {
-  const id = 't' + (trustIdx++);
-  return `<div class="check"><input type="checkbox" id="${id}" data-w="${it.w}" data-kind="trust">` +
-    `<label for="${id}">${it.text}<span class="weight">−${it.w}</span></label></div>`;
-}).join('');
-
 const BANDS = [
-  { max: 20, label: 'リスク: 低', color: 'var(--ok)',
+  { max: 20, label: 'リスク: 低', color: 'var(--c-ok)',
     advice: '現時点で強い危険信号はありません。ただし金銭の話が出た瞬間に再評価を。' },
-  { max: 45, label: 'リスク: 中', color: 'var(--warn)',
+  { max: 45, label: 'リスク: 中', color: 'var(--c-warn)',
     advice: '複数の注意信号があります。ビデオ通話・逆画像検索・来歴チェッカーでの検証を強くおすすめします。金銭・個人情報は渡さないでください。' },
-  { max: 101, label: 'リスク: 高', color: 'var(--bad)',
+  { max: 101, label: 'リスク: 高', color: 'var(--c-bad)',
     advice: 'AI製・なりすまし・詐欺アカウントの典型的特徴に多数一致しています。金銭・個人情報のやり取りは絶対に避け、ブロック・通報を検討してください。' },
 ];
 
+
+const MAX = GROUPS.flatMap(g => g.items).reduce((s, i) => s + i.w, 0);
+const TOTAL_ITEMS = GROUPS.flatMap(g => g.items).length + TRUST_ITEMS.length;
+
+const $ = id => document.getElementById(id);
+/* 章タイトル先頭の絵文字は現行データの装飾。アイコン言語は線画に統一するため表示では落とす */
+const stripMark = t => String(t).replace(/^[^\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}A-Za-z0-9]+/u, '');
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* チェックリスト描画 */
+let riskIdx = 0, trustIdx = 0;
+$('checklists').innerHTML = GROUPS.map((g, gi) =>
+  `<section class="chapter">` +
+  `<p class="chapter__meta">${gi + 1} / ${GROUPS.length}</p>` +
+  `<h2>${esc(stripMark(g.title))}</h2><div class="ledger">` +
+  g.items.map(it => {
+    const id = 'r' + (riskIdx++);
+    return `<div class="row"><input type="checkbox" id="${id}" data-w="${it.w}" data-kind="risk">` +
+      `<label for="${id}">${esc(it.text)}<span class="w">+${it.w}</span>` +
+      `<span class="why">${esc(it.why)}</span></label></div>`;
+  }).join('') + '</div></section>'
+).join('');
+
+$('trustlist').innerHTML = '<div class="ledger">' + TRUST_ITEMS.map(it => {
+  const id = 't' + (trustIdx++);
+  return `<div class="row"><input type="checkbox" id="${id}" data-w="${it.w}" data-kind="trust">` +
+    `<label for="${id}">${esc(it.text)}<span class="w">-${it.w}</span></label></div>`;
+}).join('') + '</div>';
+
+
+</script>
+
+
+  <h2>診断結果</h2>
+  <div class="dossier" id="resultDocket">
+    <div class="spine">
+      <div class="spine__node">
+        <p class="note" style="margin:0" id="stageLabel">未判定</p>
+        <p id="advice" style="margin:var(--sp-2) 0 0">チェックを入れると診断が更新されます。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PL-1: 結果を持ち出す操作より前に、必ずこれが読める。折りたたまない -->
+  <div class="note-block" id="exposureWarning">
+    <b>持ち出す前に。</b>
+    <p style="margin:var(--sp-2) 0 0">この結果は<b>あなた自身が判断するための記録</b>です。
+    相手のアカウント名・写真とあわせて公開し、特定の人を「AI」「詐欺」と<b>断定して晒す使い方はしないでください</b>。
+    事実に反した場合、名誉毀損・信用毀損にあたるおそれがあります。
+    通報するなら、公開の場ではなく<b>プラットフォームの通報窓口や警察（#9110）へ</b>。</p>
+  </div>
+
+  <div class="chips-row" id="exportRow">
+    <button class="btn btn--ghost" type="button" id="copyResult">診断結果をコピー</button>
+    <button class="btn btn--ghost" type="button" id="saveImage">結果画像を保存</button>
+    <span id="copied" class="note" style="color:var(--c-ok); align-self:center" hidden>コピーしました ✓</span>
+  </div>
+
+  <div class="note-block">
+    <b>免責。</b>
+    <p style="margin:var(--sp-2) 0 0">この診断は統計的な傾向に基づく参考情報です。実在の人でも当てはまる項目はありますし、
+    巧妙な詐欺は項目を回避します。<b>金銭・投資・暗号資産の話が出たら、スコアに関わらず詐欺を疑ってください。</b>
+    被害が疑われる場合は警察相談専用電話「#9110」または
+    <a href="https://www.npa.go.jp/bureau/cyber/index.html" target="_blank" rel="noopener">警察庁サイバー犯罪相談窓口</a>へ。</p>
+  </div>
+</main>
+
+<!-- スクロール中も、その時点の結果を参照できるようにする -->
+<div id="resultArea" aria-live="polite">
+  <div class="wrap docket">
+    <div class="docket__score">
+      <span class="score-num" id="scoreNum">0</span><span class="note"> / 100</span>
+    </div>
+    <div class="docket__band">
+      <span id="bandLabel">リスク: 低</span>
+      <span class="note" id="checkedCount">0 / 22 項目を確認</span>
+    </div>
+    <div class="docket__rail"><div id="scorefill"></div></div>
+  </div>
+</div>
+
+<footer class="site-foot"><div class="wrap">
+  <div class="foot-links">
+    <a href="../">HONMONO</a>
+    <a href="../docs/">説明書</a>
+    <a href="../report/">実測レポート</a>
+    <a href="../business/">法人向け</a>
+    <a href="../legal/privacy.html">プライバシー</a>
+    <a href="../legal/terms.html">利用規約</a>
+    <a href="../legal/credits.html">クレジット</a>
+  </div>
+  <p style="margin:0">HONMONO プロジェクト — チェック内容はブラウザ外に送信されません。ページの読み込みには通信が必要です。</p>
+</div></footer>
+
+<script src="../shell.js"></script>
+
+<script>
+'use strict';
 function recalc() {
   let risk = 0, trust = 0, decisive = 0;
   const checkedRisk = [], checkedTrust = [];
@@ -212,13 +336,25 @@ function recalc() {
   const base = Math.max(Math.round(risk / MAX * 100), floor);
   const pct = Math.min(100, Math.max(0, base - trust * 3));
   const band = BANDS.find(b => pct < b.max) || BANDS[2];
+  const checked = checkedRisk.length + checkedTrust.length;
 
+  if ($('scoreNum').textContent !== String(pct)) {
+    $('scoreNum').classList.remove('bump');
+    void $('scoreNum').offsetWidth;
+    $('scoreNum').classList.add('bump');
+  }
   $('scoreNum').textContent = pct;
   $('bandLabel').textContent = band.label;
   $('bandLabel').style.color = band.color;
-  $('scorefill').style.width = pct + '%';
+  $('scorefill').style.transform = 'scaleX(' + (pct / 100) + ')';
   $('scorefill').style.background = band.color;
-  $('advice').textContent = band.advice + (checkedTrust.length ? ' (信頼シグナルによりスコアを減点済み)' : '');
+  $('checkedCount').textContent = checked + ' / ' + TOTAL_ITEMS + ' 項目を確認';
+
+  // 0点を「安全」に見せない。全項目を見終わるまでは暫定であることを常に併記する
+  $('stageLabel').textContent = checked === 0
+    ? '未判定 — まだ1項目も確認していません'
+    : (checked < TOTAL_ITEMS ? '暫定 — ' + checked + ' / ' + TOTAL_ITEMS + ' 項目まで確認' : '全項目を確認しました');
+  $('advice').textContent = band.advice + (checkedTrust.length ? '(信頼シグナルによりスコアを減点済み)' : '');
   return { pct, band, checkedRisk, checkedTrust };
 }
 
@@ -247,7 +383,7 @@ $('copyResult').addEventListener('click', async () => {
 });
 
 /* ========== 結果画像の生成(SNSシェア用・1200x630) ========== */
-const BAND_COLORS = { 'リスク: 低': '#22c55e', 'リスク: 中': '#f59e0b', 'リスク: 高': '#ef4444' };
+const BAND_COLORS = { 'リスク: 低': '#82B38A', 'リスク: 中': '#E2AC4C', 'リスク: 高': '#E36B5D' };
 
 function wrapText(ctx, text, maxWidth) {
   const out = [];
@@ -265,17 +401,17 @@ $('saveImage').addEventListener('click', () => {
   const c = document.createElement('canvas');
   c.width = 1200; c.height = 630;
   const ctx = c.getContext('2d');
-  const color = BAND_COLORS[band.label] || '#22c55e';
+  const color = BAND_COLORS[band.label] || '#82B38A';
 
-  ctx.fillStyle = '#151a21';
+  ctx.fillStyle = '#0B0E10';
   ctx.fillRect(0, 0, 1200, 630);
-  ctx.fillStyle = '#0e7490';
+  ctx.fillStyle = '#8F201A';
   ctx.fillRect(0, 0, 1200, 10);
 
-  ctx.fillStyle = '#67cfe8';
+  ctx.fillStyle = '#D3AB67';
   ctx.font = '700 34px system-ui, sans-serif';
   ctx.fillText('HONMONO', 70, 92);
-  ctx.fillStyle = '#e7e5e4';
+  ctx.fillStyle = '#F2E2C6';
   ctx.font = '700 46px system-ui, sans-serif';
   ctx.fillText('AIアカウント鑑定 結果', 70, 158);
 
@@ -285,7 +421,7 @@ $('saveImage').addEventListener('click', () => {
   const scoreText = String(pct);
   ctx.fillText(scoreText, 70, 340);
   const w = ctx.measureText(scoreText).width;
-  ctx.fillStyle = '#9ca3af';
+  ctx.fillStyle = '#B6A98F';
   ctx.font = '600 40px system-ui, sans-serif';
   ctx.fillText('/ 100', 80 + w, 340);
   ctx.fillStyle = color;
@@ -293,16 +429,16 @@ $('saveImage').addEventListener('click', () => {
   ctx.fillText(band.label, 70, 420);
 
   // スコアバー
-  ctx.fillStyle = '#363b45';
+  ctx.fillStyle = '#5A5145';
   ctx.beginPath(); ctx.roundRect(70, 448, 500, 22, 11); ctx.fill();
   ctx.fillStyle = color;
   ctx.beginPath(); ctx.roundRect(70, 448, Math.max(22, 500 * pct / 100), 22, 11); ctx.fill();
 
   // 該当シグナル(右カラム・最大6件)
-  ctx.fillStyle = '#9ca3af';
+  ctx.fillStyle = '#B6A98F';
   ctx.font = '600 26px system-ui, sans-serif';
   ctx.fillText(checkedRisk.length ? `該当した注意信号 (${checkedRisk.length}件)` : '注意信号の該当なし', 640, 230);
-  ctx.fillStyle = '#e7e5e4';
+  ctx.fillStyle = '#F2E2C6';
   ctx.font = '400 24px system-ui, sans-serif';
   let y = 272;
   for (const item of checkedRisk.slice(0, 6)) {
@@ -310,9 +446,9 @@ $('saveImage').addEventListener('click', () => {
     for (const ln of lines) { if (y > 500) break; ctx.fillText(ln, 640, y); y += 34; }
     y += 4;
   }
-  if (checkedRisk.length > 6) { ctx.fillStyle = '#9ca3af'; ctx.fillText(`…ほか ${checkedRisk.length - 6}件`, 640, Math.min(y, 530)); }
+  if (checkedRisk.length > 6) { ctx.fillStyle = '#B6A98F'; ctx.fillText(`…ほか ${checkedRisk.length - 6}件`, 640, Math.min(y, 530)); }
 
-  ctx.fillStyle = '#6b7280';
+  ctx.fillStyle = '#B6A98F';
   ctx.font = '400 24px system-ui, sans-serif';
   ctx.fillText('無料診断: yuukigogo000-ai.github.io/honmono/aicheck/  ※参考情報です。特定の個人の断定には使えません', 70, 585);
 
@@ -326,7 +462,9 @@ $('saveImage').addEventListener('click', () => {
   }, 'image/png');
 });
 
+
 recalc();
 </script>
+
 </body>
 </html>

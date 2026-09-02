@@ -5,48 +5,85 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>利用規約 — HONMONO</title>
-<meta name="description" content="HONMONOの利用規約。判定結果の位置づけ、禁止事項(他人をAI・詐欺と断定して公表しないこと)、責任の範囲を定めています。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta name="description" content="HONMONOのツール群をお使いになる方に守っていただきたいことと、運営者が負う責任の範囲。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z' fill='none' stroke='%237F5A23' stroke-width='3'/><text x='32' y='42' font-size='26' text-anchor='middle' fill='%237F5A23' font-family='serif'>本</text></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="利用規約 — HONMONO">
+<meta property="og:description" content="HONMONOのツール群をお使いになる方に守っていただきたいことと、運営者が負う責任の範囲。">
+<meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/legal/terms.html">
+<meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
-  h2 { font-size: 1.05rem; margin-top: 26px; }
-  main p, main li, main dd { font-size: .9rem; }
-  .rev { font-size: .82rem; color: var(--muted); }
+  /* DOCUMENT。著作権表示は折り返せるようにする(法的な表示義務) */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+  .doc pre, .doc code, .doc td { overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
+
 <header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO<small>実在性証明プロジェクト</small></a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
-  </nav>
+  <a class="brand" href="../">
+    <span class="seal" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z" stroke="currentColor" stroke-width="2"/><path d="M32 9 49 19v26L32 55 15 45V19L32 9Z" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="32" y="40" text-anchor="middle" font-size="24" font-family="serif" fill="currentColor">本</text></svg></span>
+    <span class="word">HONMONO</span>
+  </a>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="siteMenu" aria-label="メニューを開く">
+    <span class="ico-open" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></span>
+    <span class="ico-close" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+  </button>
 </div></header>
 
+<nav class="site-menu" id="siteMenu" hidden aria-label="サイト内の移動"><div class="wrap">
+  <div class="menu-group">
+    <h2>調べる</h2>
+    <ul class="menu-list">
+      <li><a href="../checker/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10H4z"/><path d="m6 12 3.5-4 2.5 3 2-2 4 3"/><circle cx="16.5" cy="17.5" r="3.5"/><path d="m19.5 20.5 1.8 1.8"/></svg></span>画像来歴チェッカー</a></li>
+      <li><a href="../aicheck/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 11-4.7"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M16 17.5h3"/></svg></span>AIアカウント鑑定</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>証明・探す</h2>
+    <ul class="menu-list">
+      <li><a href="../badge/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v6.5c0 3.4-2.9 6-7 7.5-4.1-1.5-7-4.1-7-7.5V7z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg></span>実在証明バッジ</a></li>
+      <li><a href="../creators/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 13h8M8 16h5"/></svg></span>実在クリエイター名鑑</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>理解する</h2>
+    <ul class="menu-list">
+      <li><a href="../docs/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></span>説明書</a></li>
+    </ul>
+  </div>
+  <div class="menu-group menu-sub">
+    <ul class="menu-list">
+      <li><a href="../report/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 18V9M12 18V4M18 18v-6"/></svg></span>実測レポートを読む</a></li>
+      <li><a href="../business/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6l7-3v17"/><path d="M11 9h9v11"/><path d="M7 9h.01M7 13h.01M15 13h.01M15 17h.01"/></svg></span>法人・開発者の方へ</a></li>
+    </ul>
+  </div>
+</div></nav>
 <main class="wrap">
+<div class="doc">
   <h1>利用規約</h1>
-  <p class="lead">HONMONO(以下「本サイト」)のツール群をお使いになる方に、守っていただきたいことと、
+  <p class="lede">守っていただきたいことと、運営者が負う責任の範囲。</p>
+  <p class="lede">HONMONO(以下「本サイト」)のツール群をお使いになる方に、守っていただきたいことと、
   本サイトが引き受けられる責任の範囲を定めます。</p>
 
-  <div class="notice">
+  <div class="note-block">
     <b>いちばん大事なこと:</b> 本サイトの判定はすべて<b>確率と手がかりであって、真偽の断定ではありません。</b>
     <b>実在する誰かを「AIだ」「偽物だ」「詐欺だ」と決めつけて公表する目的で使わないでください。</b>
     この道具は、実在する人が疑われずに済むために作られたものです。逆の使い方をされるのが、いちばん困ります。
   </div>
 
   <h2>第1条(適用)</h2>
-  <div class="card"><p style="margin:0">本規約は、本サイトが提供するすべてのツール(来歴チェッカー・実在証明バッジ・AIアカウント鑑定・実在クリエイター名鑑)および付随する文書・データの利用に適用されます。
+  <div class="dossier"><p style="margin:0">本規約は、本サイトが提供するすべてのツール(来歴チェッカー・実在証明バッジ・AIアカウント鑑定・実在クリエイター名鑑)および付随する文書・データの利用に適用されます。
   本サイトを利用した時点で、本規約に同意したものとみなします。</p></div>
 
   <h2>第2条(料金)</h2>
-  <div class="card"><p style="margin:0">本サイトのツールはすべて無料で、登録も不要です。利用にあたって通信費はご負担ください。
+  <div class="dossier"><p style="margin:0">本サイトのツールはすべて無料で、登録も不要です。利用にあたって通信費はご負担ください。
   法人・開発者向けのモデルライセンス等、有償のご提供については個別に契約を締結します。</p></div>
 
   <h2>第3条(判定結果の位置づけ)</h2>
-  <div class="card">
+  <div class="dossier">
     <ul style="margin:0; padding-left:1.3em">
       <li>本サイトの出力は<b>参考情報</b>であり、真正性・実在性・違法性を法的に保証するものではありません</li>
       <li>メタデータは追加・編集・削除できます。「AIの痕跡なし」は人間である証明にならず、「カメラ情報あり」も偽装できます</li>
@@ -57,7 +94,7 @@
   </div>
 
   <h2>第4条(禁止事項)</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin-top:0">次の行為を禁止します。</p>
     <ul style="margin:0; padding-left:1.3em">
       <li><b>特定の個人・団体を「AI生成」「なりすまし」「詐欺」と断定して公表・拡散すること。</b>
@@ -71,7 +108,7 @@
   </div>
 
   <h2>第5条(実在証明バッジ・証明ページ)</h2>
-  <div class="card">
+  <div class="dossier">
     <ul style="margin:0; padding-left:1.3em">
       <li>バッジと証明ページはあなたの端末で生成され、<b>本サイトは内容を一切保持・審査しません</b></li>
       <li>証明ページの公開・管理・記載内容の正確性は、作成した本人の責任です</li>
@@ -80,7 +117,7 @@
   </div>
 
   <h2>第6条(実在クリエイター名鑑)</h2>
-  <div class="card">
+  <div class="dossier">
     <ul style="margin:0; padding-left:1.3em">
       <li>掲載は無料です。掲載料・審査料・優先表示料は一切いただきません</li>
       <li>掲載時に確認するのは<b>相互リンクの輪が閉じているかどうか</b>だけです。<b>掲載は、その人物が実在すること・AIを使っていないことの保証ではありません</b></li>
@@ -90,7 +127,7 @@
   </div>
 
   <h2>第7条(著作権・ライセンス)</h2>
-  <div class="card">
+  <div class="dossier">
     <ul style="margin:0; padding-left:1.3em">
       <li>本サイトが生成したバッジ・証明ページ・結果画像は、生成した方が自由に利用できます</li>
       <li>本サイトが利用している第三者のソフトウェアと、AI判定モデルの学習に使ったデータの出典は<a href="./credits.html">クレジット</a>に記載しています</li>
@@ -99,7 +136,7 @@
   </div>
 
   <h2>第8条(免責)</h2>
-  <div class="card">
+  <div class="dossier">
     <ul style="margin:0; padding-left:1.3em">
       <li>本サイトは、ツールの正確性・完全性・特定目的への適合性・継続的な提供を保証しません。予告なく内容の変更・中断・終了を行うことがあります</li>
       <li>本サイトの利用によって利用者または第三者に生じた損害について、<b>本サイト運営者の故意または重大な過失による場合を除き、責任を負いません</b></li>
@@ -110,22 +147,28 @@
   </div>
 
   <h2>第9条(準拠法・管轄)</h2>
-  <div class="card"><p style="margin:0">本規約は日本法に準拠します。本サイトに関して紛争が生じた場合は、運営者の所在地を管轄する日本の裁判所を第一審の専属的合意管轄裁判所とします。</p></div>
+  <div class="dossier"><p style="margin:0">本規約は日本法に準拠します。本サイトに関して紛争が生じた場合は、運営者の所在地を管轄する日本の裁判所を第一審の専属的合意管轄裁判所とします。</p></div>
 
   <h2>第10条(改定)</h2>
-  <div class="card"><p style="margin:0">本規約は必要に応じて改定します。改定した場合はこのページの日付を更新します。</p></div>
+  <div class="dossier"><p style="margin:0">本規約は必要に応じて改定します。改定した場合はこのページの日付を更新します。</p></div>
 
   <p class="rev">最終更新: 2026-08-20 / HONMONO プロジェクト</p>
+</div>
 </main>
 
 <footer class="site-foot"><div class="wrap">
-  <a href="../">HONMONO</a> ·
-  <a href="../docs/">説明書</a> ·
-  <a href="../report/">実測レポート</a> ·
-  <a href="../business/">法人向け</a> ·
-  <a href="./privacy.html">プライバシー</a> ·
-  <a href="./terms.html">利用規約</a> ·
-  <a href="./credits.html">クレジット</a>
+  <div class="foot-links">
+    <a href="../">HONMONO</a>
+    <a href="../docs/">説明書</a>
+    <a href="../report/">実測レポート</a>
+    <a href="../business/">法人向け</a>
+    <a href="../legal/privacy.html">プライバシー</a>
+    <a href="../legal/terms.html">利用規約</a>
+    <a href="../legal/credits.html">クレジット</a>
+  </div>
+  <p style="margin:0">HONMONO プロジェクト — 免責は故意または重大な過失を除く範囲に限定しています。</p>
 </div></footer>
+
+<script src="../shell.js"></script>
 </body>
 </html>

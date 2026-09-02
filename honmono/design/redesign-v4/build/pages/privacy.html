@@ -1,0 +1,69 @@
+<main class="wrap">
+<div class="doc">
+  <h1>プライバシーポリシー</h1>
+  <p class="lede">送信しないもの、端末に残るもの、外部に伝わりうるもの。</p>
+  <p class="lede">HONMONO(以下「本サイト」)が、あなたの情報をどう扱うかを正確に書きます。
+  <b>「何も送っていません」で済ませず、外部に伝わりうるものも漏らさず挙げます。</b></p>
+
+  <h2>1. 本サイトがサーバーに送信しないもの</h2>
+  <div class="dossier">
+    <p style="margin-top:0">次のものは、<b>一切サーバーに送信されません。</b>すべてあなたのブラウザの中だけで処理されます。</p>
+    <ul style="margin:0; padding-left:1.3em">
+      <li>来歴チェッカーに読み込ませた<b>画像・動画ファイルとその中身</b>(メタデータを含む)</li>
+      <li>実在証明バッジに入力した<b>活動名・SNSリンク・宣言文</b>と、生成された証明ページ</li>
+      <li>AIアカウント鑑定で<b>チェックした項目・スコア・生成した結果画像</b></li>
+    </ul>
+    <p class="note" style="margin-bottom:0">本サイトはフォームの送信先を持ちません。画像解析・署名検証・AI判定はすべてあなたの端末上で実行されます。</p>
+  </div>
+
+  <h2>2. あなたの端末に保存されるもの</h2>
+  <div class="dossier">
+    <div class="scroll-wrap"><p class="scroll-hint">← 横にスクロールできます</p><div class="scroll"><table>
+      <tr><th>保存されるもの</th><th>仕組み</th><th>目的</th><th>消し方</th></tr>
+      <tr><td><code>honmono_pixel_auto</code>(オン/オフの1文字)</td><td>localStorage</td><td>画素判定を自動実行する設定を覚えておくため</td><td>ブラウザのサイトデータ削除</td></tr>
+      <tr><td>AI判定モデル(約90MB)</td><td>Cache Storage</td><td>2回目以降に90MBを再ダウンロードさせないため</td><td>ブラウザのサイトデータ削除</td></tr>
+    </table></div></div>
+    <p class="note" style="margin-bottom:0"><b>いずれも本サイトから読み出すことはできません</b>(サーバーが無いため)。個人を識別する情報も含みません。</p>
+  </div>
+
+  <h2>3. Cookie・アクセス解析</h2>
+  <div class="dossier">
+    <p style="margin:0">本サイトは<b>独自のCookie・トラッキング・広告・アクセス解析を一切使用していません</b>。
+    第三者の解析タグ(Google Analytics 等)も設置していません。</p>
+  </div>
+
+  <h2>4. それでも外部に伝わりうる情報(正直に書きます)</h2>
+  <div class="dossier">
+    <p style="margin-top:0">本サイトが送らなくても、<b>あなたのブラウザが通信する相手には、通信の事実とIPアドレスが伝わります。</b>該当するのは次の場合です。</p>
+    <div class="scroll-wrap"><p class="scroll-hint">← 横にスクロールできます</p><div class="scroll"><table>
+      <tr><th>通信先</th><th>いつ</th><th>伝わるもの</th></tr>
+      <tr><td><b>GitHub</b>(ホスティング元)</td><td>ページやAI判定モデルを読み込むとき</td><td>IPアドレス・アクセス日時・読み込んだファイル名・User-Agent(GitHubが標準的なアクセスログとして記録します)</td></tr>
+      <tr><td><b>逆画像検索サービス</b>(Google・Bing・Yandex・TinEye)</td><td>来歴チェッカーの「次の一手」で検索ボタンを押したとき<b>のみ</b></td><td>あなたがそのサービスへ移動したこと。各社のプライバシーポリシーが適用されます</td></tr>
+      <tr><td><b>shields.io</b></td><td>あなたが Markdown 版バッジを<b>自分のサイトに貼った場合に、その閲覧者のブラウザから</b></td><td>バッジ画像の取得。本サイトの閲覧では通信しません。気になる場合は完全自己完結のHTML版バッジをお使いください</td></tr>
+      <tr><td><b>GitHub Issues</b></td><td>名鑑の掲載申請・法人からのお問い合わせを送るとき</td><td>あなたが入力した内容と GitHub アカウント名。<b>Issue の内容は公開されます</b></td></tr>
+    </table></div></div>
+    <p class="note" style="margin-bottom:0">外部サイトへのリンクを押した先での扱いについて、本サイトは責任を負えません。各サイトのポリシーをご確認ください。</p>
+  </div>
+
+  <h2>5. お問い合わせで受け取った情報</h2>
+  <div class="dossier">
+    <p style="margin:0">法人・開発者からのお問い合わせで受け取った氏名・会社名・連絡先は、<b>そのお問い合わせへの回答と、その後のご相談のためだけに使用</b>します。
+    ご本人の同意なく第三者に提供することはありません。削除のご希望があれば削除します。</p>
+  </div>
+
+  <h2>6. 名鑑への掲載について</h2>
+  <div class="dossier">
+    <p style="margin:0">実在クリエイター名鑑への掲載申請は公開の GitHub Issue を通じて行われ、<b>申請内容は誰でも閲覧できます</b>。
+    掲載される情報は、申請者が自分で公開している活動名・ジャンル・証明ページURL・紹介文に限ります。
+    掲載の取り下げはいつでも受け付けます。</p>
+  </div>
+
+  <h2>7. 改定</h2>
+  <div class="dossier">
+    <p style="margin:0">内容を変更した場合は、このページの日付を更新します。
+    <b>ホスティング先の変更や有料サービスの開始など、扱う情報が変わる場合は、変更前に本ページを更新します。</b></p>
+  </div>
+
+  <p class="rev">最終更新: 2026-08-20 / HONMONO プロジェクト</p>
+</div>
+</main>

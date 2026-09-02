@@ -1,0 +1,67 @@
+  /* AICHECK = TASK_CRITICAL。22項目を最後まで進ませることが最優先 */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+
+  /* 章(4つのリスク章 + 信頼章)の台帳 */
+  .chapter { margin: var(--sp-8) 0 0; }
+  .chapter > h2 { margin-top: 0; }
+  .chapter__meta {
+    font-size: .8125rem; line-height: 1.55; font-weight: 600; letter-spacing: .12em;
+    color: var(--c-seal); margin: 0 0 var(--sp-1);
+  }
+  .ledger { border-top: 1px solid var(--c-line-soft); }
+  .row {
+    display: flex; gap: var(--sp-3); align-items: flex-start;
+    padding: var(--sp-3) 0;
+    border-bottom: 1px solid var(--c-line-soft);
+  }
+  .row input {
+    width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto;
+    accent-color: var(--c-seal);
+  }
+  .row label { margin: 0; font-weight: 500; cursor: pointer; min-height: 24px; }
+  .row .why { display: block; font-size: .8125rem; line-height: 1.55; color: var(--c-muted); font-weight: 400; }
+  .row .w {
+    display: inline-block; margin-left: var(--sp-2);
+    font-size: .8125rem; font-weight: 700; color: var(--c-brass);
+    border: 1px solid var(--c-line-soft); border-radius: var(--r-1);
+    padding: 0 var(--sp-2); white-space: nowrap;
+  }
+  .trust-chapter .row .w { color: var(--c-ok); }
+
+  /* 下に固定する結果。入力を隠さないよう本文側に同じだけ余白を取る */
+  #resultArea {
+    position: sticky; bottom: 0; z-index: 30;
+    background: var(--c-canvas);
+    border-top: 1px solid var(--c-line);
+  }
+  #resultArea .docket {
+    display: grid; grid-template-columns: auto 1fr; gap: 0 var(--sp-3);
+    align-items: center;
+    padding: var(--sp-2) var(--sp-4);
+    min-height: 64px; max-height: 76px;
+  }
+  .docket__score { display: flex; align-items: baseline; gap: 2px; }
+  .score-num { font-family: var(--font-display); font-size: 1.75rem; line-height: 1.2; font-weight: 600; }
+  .docket__band { display: flex; flex-direction: column; line-height: 1.35; }
+  .docket__band > span:first-child { font-weight: 700; }
+  .docket__rail {
+    grid-column: 1 / -1; height: 4px; border-radius: 999px;
+    background: var(--c-line-soft); overflow: hidden; margin-top: var(--sp-1);
+  }
+  .docket__rail > div {
+    height: 100%; width: 100%;
+    transform-origin: left center; transform: scaleX(0);
+    background: var(--c-ok);
+    transition: transform var(--dur-base) var(--ease-out);
+  }
+  main { padding-bottom: var(--sp-16); }
+
+  #exportRow { margin: var(--sp-4) 0 var(--sp-8); }
+
+  /* 数値が入れ替わったことを短く伝える(reduced-motion では出さない) */
+  .score-num.bump { animation: score-bump 140ms var(--ease-standard); }
+  @keyframes score-bump {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @media (prefers-reduced-motion: reduce) { .score-num.bump { animation: none; } }

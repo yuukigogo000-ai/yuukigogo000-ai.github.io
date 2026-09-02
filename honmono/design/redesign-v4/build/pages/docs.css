@@ -1,0 +1,16 @@
+  /* DOCUMENT。読みやすさと索引だけを担保する */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+  .usecase-table td:first-child { white-space: nowrap; font-weight: 600; }
+  .step-flow { counter-reset: fstep; padding-left: 0; list-style: none; margin: var(--sp-2) 0; }
+  .step-flow li {
+    counter-increment: fstep; position: relative;
+    padding: var(--sp-1) 0 var(--sp-1) var(--sp-8);
+    font-size: .8125rem; line-height: 1.75;
+  }
+  .step-flow li::before {
+    content: counter(fstep); position: absolute; left: 0; top: .35em;
+    width: 24px; height: 24px; border-radius: 999px;
+    background: var(--c-seal-deep); color: var(--c-on-seal);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: .8125rem;
+  }

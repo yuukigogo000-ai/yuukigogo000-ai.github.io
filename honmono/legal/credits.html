@@ -5,37 +5,72 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>クレジット・ライセンス — HONMONO</title>
-<meta name="description" content="HONMONOが利用しているオープンソースソフトウェアと、AI判定モデルの学習に使ったデータセットの出典・ライセンス一覧。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<meta name="description" content="同梱しているオープンソースソフトウェアと、判定モデルの学習に使ったデータの出典・ライセンス。">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z' fill='none' stroke='%237F5A23' stroke-width='3'/><text x='32' y='42' font-size='26' text-anchor='middle' fill='%237F5A23' font-family='serif'>本</text></svg>">
+<meta property="og:type" content="website">
+<meta property="og:title" content="クレジット・ライセンス — HONMONO">
+<meta property="og:description" content="同梱しているオープンソースソフトウェアと、判定モデルの学習に使ったデータの出典・ライセンス。">
+<meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/legal/credits.html">
+<meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
-  h2 { font-size: 1.05rem; margin-top: 26px; }
-  main p, main li { font-size: .9rem; }
-  .lic { font-size: .8rem; color: var(--muted); }
-  .rev { font-size: .82rem; color: var(--muted); }
-  .scroll { overflow-x: auto; }
+  /* DOCUMENT。著作権表示は折り返せるようにする(法的な表示義務) */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+  .doc pre, .doc code, .doc td { overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
+
 <header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO<small>実在性証明プロジェクト</small></a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
-  </nav>
+  <a class="brand" href="../">
+    <span class="seal" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z" stroke="currentColor" stroke-width="2"/><path d="M32 9 49 19v26L32 55 15 45V19L32 9Z" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="32" y="40" text-anchor="middle" font-size="24" font-family="serif" fill="currentColor">本</text></svg></span>
+    <span class="word">HONMONO</span>
+  </a>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="siteMenu" aria-label="メニューを開く">
+    <span class="ico-open" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></span>
+    <span class="ico-close" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+  </button>
 </div></header>
 
+<nav class="site-menu" id="siteMenu" hidden aria-label="サイト内の移動"><div class="wrap">
+  <div class="menu-group">
+    <h2>調べる</h2>
+    <ul class="menu-list">
+      <li><a href="../checker/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10H4z"/><path d="m6 12 3.5-4 2.5 3 2-2 4 3"/><circle cx="16.5" cy="17.5" r="3.5"/><path d="m19.5 20.5 1.8 1.8"/></svg></span>画像来歴チェッカー</a></li>
+      <li><a href="../aicheck/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 11-4.7"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M16 17.5h3"/></svg></span>AIアカウント鑑定</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>証明・探す</h2>
+    <ul class="menu-list">
+      <li><a href="../badge/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v6.5c0 3.4-2.9 6-7 7.5-4.1-1.5-7-4.1-7-7.5V7z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg></span>実在証明バッジ</a></li>
+      <li><a href="../creators/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 13h8M8 16h5"/></svg></span>実在クリエイター名鑑</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>理解する</h2>
+    <ul class="menu-list">
+      <li><a href="../docs/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></span>説明書</a></li>
+    </ul>
+  </div>
+  <div class="menu-group menu-sub">
+    <ul class="menu-list">
+      <li><a href="../report/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 18V9M12 18V4M18 18v-6"/></svg></span>実測レポートを読む</a></li>
+      <li><a href="../business/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6l7-3v17"/><path d="M11 9h9v11"/><path d="M7 9h.01M7 13h.01M15 13h.01M15 17h.01"/></svg></span>法人・開発者の方へ</a></li>
+    </ul>
+  </div>
+</div></nav>
 <main class="wrap">
+<div class="doc">
   <h1>クレジット・ライセンス</h1>
-  <p class="lead">本サイトは、他の人が公開してくれたソフトウェアとデータの上に成り立っています。
+  <p class="lede">使わせてもらっているソフトウェアとデータの出典。</p>
+  <p class="lede">本サイトは、他の人が公開してくれたソフトウェアとデータの上に成り立っています。
   使わせてもらっているものを、条件とあわせて全部書きます。</p>
 
   <h2>1. 同梱しているオープンソースソフトウェア</h2>
   <p>いずれも本サイト内に同梱しており、外部のCDNからは読み込んでいません(そのほうが、あなたの通信が第三者に伝わらないためです)。</p>
-  <div class="card">
+  <div class="dossier">
     <h3 style="margin-top:0">c2pa-js</h3>
     <p style="margin:4px 0">C2PA(コンテンツ来歴)の署名検証に使用しています。
     <a href="https://github.com/contentauth/c2pa-js-legacy" target="_blank" rel="noopener">contentauth/c2pa-js</a></p>
@@ -43,14 +78,14 @@
     同梱物には lodash(MIT License / Copyright OpenJS Foundation and other contributors、Underscore.js に基づく)および debug(MIT License / Copyright TJ Holowaychuk, Josh Junon)が含まれます。<br>
     ライセンス全文: <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/vendor/c2pa/LICENSE" target="_blank" rel="noopener">vendor/c2pa/LICENSE</a></p>
   </div>
-  <div class="card">
+  <div class="dossier">
     <h3 style="margin-top:0">ONNX Runtime Web v1.27.0</h3>
     <p style="margin:4px 0">画素からのAI判定モデルをブラウザ内で実行するために使用しています。
     <a href="https://github.com/microsoft/onnxruntime" target="_blank" rel="noopener">microsoft/onnxruntime</a></p>
     <p class="lic" style="margin:0">MIT License / Copyright (c) Microsoft Corporation. All rights reserved.<br>
     ライセンス全文: <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/vendor/ort/LICENSE" target="_blank" rel="noopener">vendor/ort/LICENSE</a></p>
   </div>
-  <div class="card">
+  <div class="dossier">
     <h3 style="margin-top:0">YuNet(OpenCV 顔検出モデル)</h3>
     <p style="margin:4px 0">学習データを作る工程で、写真から顔の部分を切り出すために使用しました(サイトには同梱していません)。
     <a href="https://github.com/opencv/opencv_zoo" target="_blank" rel="noopener">opencv/opencv_zoo</a></p>
@@ -58,26 +93,26 @@
   </div>
 
   <h2>2. AI判定モデルの学習に使ったデータ</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin-top:0">方針は<b>「商用利用が明示的に許諾されたデータのみを使う。条件が不明なものは使わない」</b>です。
     条件が未記載・非商用・研究目的限定だった<b>22件のデータセットは、性能が上がると分かっていても除外しました</b>。
     学習に使った画像そのものは配布していません(配布する権利を持たないため)。</p>
     <p style="margin-bottom:0"><b>出典の一覧と、除外したデータセット・その理由は
     <a href="../report/#data">実測レポートの「学習データの出典」</a>に全て記載しています。</b></p>
   </div>
-  <div class="scroll"><table>
+  <div class="scroll-wrap"><p class="scroll-hint">← 横にスクロールできます</p><div class="scroll"><table>
     <tr><th>用途</th><th>提供元</th><th>ライセンス</th></tr>
     <tr><td>AI生成画像</td><td>Rapidata(text-to-image 人間選好データセット 11本 + dev 1本)</td><td>CDLA-Permissive-2.0</td></tr>
     <tr><td>AI生成画像</td><td>bitmind/nano-banana、ehristoforu/dalle-3-images、ehristoforu/midjourney-images、julienlucas/…、javi22/this-person-does-not-exist-10k</td><td>MIT</td></tr>
     <tr><td>実写画像</td><td>Open Images V7(bitmind/open-images-v7-subset 経由)</td><td><a href="https://storage.googleapis.com/openimages/web/factsfigures_v7.html" target="_blank" rel="noopener">CC BY 2.0</a></td></tr>
     <tr><td>実写画像</td><td><a href="https://unsplash.com/" target="_blank" rel="noopener">Unsplash</a></td><td><a href="https://unsplash.com/license" target="_blank" rel="noopener">Unsplash License</a>(商用利用可)</td></tr>
     <tr><td>実写画像(選択用・顔ベンチマーク)</td><td><a href="https://www.pexels.com/" target="_blank" rel="noopener">Pexels</a></td><td><a href="https://www.pexels.com/license/" target="_blank" rel="noopener">Pexels License</a>(商用利用可)</td></tr>
-  </table></div>
+  </table></div></div>
   <p class="note">Open Images V7 の写真は、Flickr の利用者が CC BY 2.0 で公開したものです。数万点にのぼるため個々の撮影者名を列挙できませんが、
   出典元をたどれる形で記載しています。撮影者ご本人から掲載・利用についてご連絡をいただいた場合は、個別に対応します。</p>
 
   <h2>3. AI判定モデル本体の利用条件</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin-top:0"><b>HONMONO 画素判定モデル v3.1</b> は、本サイトでの利用・個人の利用・学術研究・評価・報道のために<b>無償で使えます</b>。
     製品やサービスへの組込・再配布・サービスとしての提供には、別途の合意が必要です。</p>
     <p style="margin-bottom:0">
@@ -88,22 +123,28 @@
   </div>
 
   <h2>4. 訂正・削除のご依頼</h2>
-  <div class="card">
+  <div class="dossier">
     <p style="margin:0">クレジットの誤り、記載漏れ、学習データに含まれる写真の取り扱いについてのご指摘は、
     <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%E3%82%AF%E3%83%AC%E3%82%B8%E3%83%83%E3%83%88%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6" target="_blank" rel="noopener">GitHub Issue</a> でお知らせください。確認のうえ訂正します。</p>
   </div>
 
   <p class="rev">最終更新: 2026-08-20 / HONMONO プロジェクト</p>
+</div>
 </main>
 
 <footer class="site-foot"><div class="wrap">
-  <a href="../">HONMONO</a> ·
-  <a href="../docs/">説明書</a> ·
-  <a href="../report/">実測レポート</a> ·
-  <a href="../business/">法人向け</a> ·
-  <a href="./privacy.html">プライバシー</a> ·
-  <a href="./terms.html">利用規約</a> ·
-  <a href="./credits.html">クレジット</a>
+  <div class="foot-links">
+    <a href="../">HONMONO</a>
+    <a href="../docs/">説明書</a>
+    <a href="../report/">実測レポート</a>
+    <a href="../business/">法人向け</a>
+    <a href="../legal/privacy.html">プライバシー</a>
+    <a href="../legal/terms.html">利用規約</a>
+    <a href="../legal/credits.html">クレジット</a>
+  </div>
+  <p style="margin:0">HONMONO プロジェクト — 他の人が公開してくれたソフトウェアとデータの上に成り立っています。</p>
 </div></footer>
+
+<script src="../shell.js"></script>
 </body>
 </html>

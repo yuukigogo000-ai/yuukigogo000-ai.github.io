@@ -1,0 +1,66 @@
+<main class="wrap">
+  <h1>AIアカウント鑑定</h1>
+  <p class="lede">そのアカウントが実在の人間か、自分の観察を構造化して確かめる。</p>
+  <p>SNS・マッチングアプリで出会ったアカウントについて、当てはまる項目にチェックを入れてください。
+  AI製アカウント・なりすまし・ロマンス詐欺に共通する特徴から<b>リスクスコア</b>を算出します。</p>
+  <p><span class="local-sign">
+    <span class="ico" aria-hidden="true">__ICO_LOCK__</span>
+    <span>チェック内容はすべて端末内で処理され、外部へ送信されません</span>
+  </span></p>
+
+  <div id="checklists"></div>
+
+  <section class="dossier trust-chapter">
+    <h2 style="margin-top:0">信頼シグナル</h2>
+    <p class="note" style="margin-top:0">当てはまればスコアを<b>減点</b>します。断定を避けるための材料です。</p>
+    <div id="trustlist"></div>
+  </section>
+__RENDER_LEDGER__
+
+  <h2>診断結果</h2>
+  <div class="dossier" id="resultDocket">
+    <div class="spine">
+      <div class="spine__node">
+        <p class="note" style="margin:0" id="stageLabel">未判定</p>
+        <p id="advice" style="margin:var(--sp-2) 0 0">チェックを入れると診断が更新されます。</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PL-1: 結果を持ち出す操作より前に、必ずこれが読める。折りたたまない -->
+  <div class="note-block" id="exposureWarning">
+    <b>持ち出す前に。</b>
+    <p style="margin:var(--sp-2) 0 0">この結果は<b>あなた自身が判断するための記録</b>です。
+    相手のアカウント名・写真とあわせて公開し、特定の人を「AI」「詐欺」と<b>断定して晒す使い方はしないでください</b>。
+    事実に反した場合、名誉毀損・信用毀損にあたるおそれがあります。
+    通報するなら、公開の場ではなく<b>プラットフォームの通報窓口や警察（#9110）へ</b>。</p>
+  </div>
+
+  <div class="chips-row" id="exportRow">
+    <button class="btn btn--ghost" type="button" id="copyResult">診断結果をコピー</button>
+    <button class="btn btn--ghost" type="button" id="saveImage">結果画像を保存</button>
+    <span id="copied" class="note" style="color:var(--c-ok); align-self:center" hidden>コピーしました ✓</span>
+  </div>
+
+  <div class="note-block">
+    <b>免責。</b>
+    <p style="margin:var(--sp-2) 0 0">この診断は統計的な傾向に基づく参考情報です。実在の人でも当てはまる項目はありますし、
+    巧妙な詐欺は項目を回避します。<b>金銭・投資・暗号資産の話が出たら、スコアに関わらず詐欺を疑ってください。</b>
+    被害が疑われる場合は警察相談専用電話「#9110」または
+    <a href="https://www.npa.go.jp/bureau/cyber/index.html" target="_blank" rel="noopener">警察庁サイバー犯罪相談窓口</a>へ。</p>
+  </div>
+</main>
+
+<!-- スクロール中も、その時点の結果を参照できるようにする -->
+<div id="resultArea" aria-live="polite">
+  <div class="wrap docket">
+    <div class="docket__score">
+      <span class="score-num" id="scoreNum">0</span><span class="note"> / 100</span>
+    </div>
+    <div class="docket__band">
+      <span id="bandLabel">リスク: 低</span>
+      <span class="note" id="checkedCount">0 / 22 項目を確認</span>
+    </div>
+    <div class="docket__rail"><div id="scorefill"></div></div>
+  </div>
+</div>

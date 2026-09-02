@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>画像来歴チェッカー — HONMONO</title>
 <meta name="description" content="画像のC2PA(コンテンツ来歴)・EXIF・XMP・生成AIツールの痕跡をブラウザ内で解析。AI生成画像かカメラ撮影かの判定材料を提示します。">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><path d='M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z' fill='none' stroke='%237F5A23' stroke-width='3'/><text x='32' y='42' font-size='26' text-anchor='middle' fill='%237F5A23' font-family='serif'>本</text></svg>">
 <meta property="og:type" content="website">
 <meta property="og:title" content="画像来歴チェッカー — HONMONO">
 <meta property="og:description" content="画像をドロップするだけで、AI生成の痕跡・C2PA来歴・カメラEXIFをブラウザ内で解析。アップロード不要・無料。">
@@ -15,136 +15,290 @@
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
 <style>
+
+  /* CHECKER = TASK_CRITICAL。Home の装飾密度は持ち込まず、Evidence Spine だけを継承する */
+  .lede { color: var(--c-muted); margin: 0 0 var(--sp-4); }
+
   #drop {
-    border: 2px dashed var(--line); border-radius: 14px; padding: 44px 20px;
-    text-align: center; cursor: pointer; transition: border-color .15s, background .15s;
-    background: var(--card);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: var(--sp-3); text-align: center;
+    min-height: 208px; padding: var(--sp-8) var(--sp-4);
+    background: var(--c-surface);
+    border: 1px dashed var(--c-line); border-radius: var(--r-2);
+    cursor: pointer;
+    transition: border-color var(--dur-fast) var(--ease-out);
   }
-  #drop.over { border-color: var(--accent); background: var(--accent-soft); }
-  #drop .big { font-size: 1.05rem; font-weight: 700; }
-  #preview { max-width: 180px; max-height: 180px; border-radius: 10px; border: 1px solid var(--line); }
-  .file-meta { font-size: .85rem; color: var(--muted); }
+  #drop:hover { border-color: var(--c-brass); }
+  #drop.over { border-color: var(--c-brass); border-style: solid; }
+  #drop .mark {
+    width: 44px; height: 44px; color: var(--c-seal);
+    transition: transform var(--dur-fast) var(--ease-out);
+  }
+  #drop.over .mark { transform: scale(1.02); }
+  #drop .big { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; }
+  #drop .drop-alt { display: none; }
+  #drop.over .drop-idle { display: none; }
+  #drop.over .drop-alt { display: block; }
+
   #result { display: none; }
-  .result-head { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+
+  .file-card { display: flex; gap: var(--sp-3); align-items: flex-start; flex-wrap: wrap; }
+  .file-card .thumb {
+    width: 88px; height: 88px; flex: 0 0 auto;
+    border: 1px solid var(--c-line-soft); border-radius: var(--r-1);
+    overflow: hidden; background: var(--c-surface-2);
+  }
+  .file-card .thumb img, .file-card .thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .file-card .facts { flex: 1 1 10rem; min-width: 0; }
+  .file-card .facts b { display: block; overflow-wrap: anywhere; }
+
+  .kicker {
+    font-size: .8125rem; line-height: 1.55; font-weight: 600; letter-spacing: .12em;
+    color: var(--c-seal); margin: var(--sp-8) 0 var(--sp-2);
+  }
+  .verdict h2 {
+    font-family: var(--font-display); font-size: 1.75rem; line-height: 1.35;
+    margin: 0 0 var(--sp-2);
+  }
+  .verdict p { margin: var(--sp-3) 0 0; }
+  .verdict .chip { margin-bottom: var(--sp-2); }
+  .verdict--bad h2  { color: var(--c-bad); }
+  .verdict--warn h2 { color: var(--c-warn); }
+  .verdict--ok h2   { color: var(--c-ok); }
+  .verdict--info h2 { color: var(--c-text); }
+
+  .limits {
+    background: var(--c-surface); border: 1px solid var(--c-warn);
+    border-radius: var(--r-1); padding: var(--sp-4);
+    margin: var(--sp-4) 0;
+  }
+  .limits h3 { margin: 0 0 var(--sp-2); color: var(--c-warn); }
+  .limits p { margin: 0; font-size: .8125rem; line-height: 1.75; }
+
+  .finding {
+    display: flex; gap: var(--sp-3); align-items: flex-start;
+    background: var(--c-surface); border: 1px solid var(--c-line-soft);
+    border-radius: var(--r-1); padding: var(--sp-3);
+    margin: 0 0 var(--sp-2);
+  }
+  .finding .chip { flex: 0 0 auto; }
+  .finding b { display: block; }
+  .finding .detail { display: block; font-size: .8125rem; line-height: 1.55; color: var(--c-muted); }
+  @media (max-width: 379px) { .finding { flex-direction: column; gap: var(--sp-2); } }
+
+  .chips-row { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-3); }
+  .chips-row .btn { padding: var(--sp-2) var(--sp-3); font-size: .8125rem; min-height: 40px; }
+
+  /* LAB = 実験区画。破線と見出しで本判定から明確に格下げする(PL-4) */
+  .lab {
+    margin-top: var(--sp-12);
+    border-top: 1px dashed var(--c-line);
+    padding-top: var(--sp-6);
+  }
+  .lab__tag {
+    font-size: .8125rem; font-weight: 600; letter-spacing: .12em;
+    color: var(--c-seal); margin: 0 0 var(--sp-2);
+  }
+  .lab h2 { margin-top: 0; }
+  .lab-score { display: flex; align-items: baseline; gap: var(--sp-3); flex-wrap: wrap; margin-top: var(--sp-3); }
+  .lab-score .pct { font-family: var(--font-display); font-size: 1.75rem; line-height: 1.35; font-weight: 600; }
+  .lab-controls { display: flex; flex-wrap: wrap; gap: var(--sp-2); align-items: center; margin-top: var(--sp-4); }
+  .switch {
+    display: inline-flex; align-items: center; gap: var(--sp-2);
+    min-height: 44px; padding: var(--sp-2) var(--sp-3);
+    border: 1px solid var(--c-line); border-radius: var(--r-1);
+    font-size: .8125rem; font-weight: 600; margin: 0; cursor: pointer;
+  }
+  .switch input { width: 18px; height: 18px; accent-color: var(--c-seal); }
 </style>
 </head>
 <body>
+
 <header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO</a>
-  <nav>
-    <a href="../checker/" aria-current="page">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
-  </nav>
+  <a class="brand" href="../">
+    <span class="seal" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none"><path d="M32 3 55 16.5v31L32 61 9 47.5v-31L32 3Z" stroke="currentColor" stroke-width="2"/><path d="M32 9 49 19v26L32 55 15 45V19L32 9Z" stroke="currentColor" stroke-width="1" opacity=".55"/><text x="32" y="40" text-anchor="middle" font-size="24" font-family="serif" fill="currentColor">本</text></svg></span>
+    <span class="word">HONMONO</span>
+  </a>
+  <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="siteMenu" aria-label="メニューを開く">
+    <span class="ico-open" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 8h16M4 16h16"/></svg></span>
+    <span class="ico-close" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+  </button>
 </div></header>
 
+<nav class="site-menu" id="siteMenu" hidden aria-label="サイト内の移動"><div class="wrap">
+  <div class="menu-group">
+    <h2>調べる</h2>
+    <ul class="menu-list">
+      <li><a href="../checker/" aria-current="page"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10H4z"/><path d="m6 12 3.5-4 2.5 3 2-2 4 3"/><circle cx="16.5" cy="17.5" r="3.5"/><path d="m19.5 20.5 1.8 1.8"/></svg></span>画像来歴チェッカー</a></li>
+      <li><a href="../aicheck/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 11-4.7"/><circle cx="17.5" cy="17.5" r="3.5"/><path d="M16 17.5h3"/></svg></span>AIアカウント鑑定</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>証明・探す</h2>
+    <ul class="menu-list">
+      <li><a href="../badge/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 4v6.5c0 3.4-2.9 6-7 7.5-4.1-1.5-7-4.1-7-7.5V7z"/><path d="m9 12 2.2 2.2L15.5 10"/></svg></span>実在証明バッジ</a></li>
+      <li><a href="../creators/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4z"/><path d="M4 9h16M8 13h8M8 16h5"/></svg></span>実在クリエイター名鑑</a></li>
+    </ul>
+  </div>
+  <div class="menu-group">
+    <h2>理解する</h2>
+    <ul class="menu-list">
+      <li><a href="../docs/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H12v16H6.5A2.5 2.5 0 0 0 4 21.5z"/><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H12v16h5.5a2.5 2.5 0 0 1 2.5 2.5z"/></svg></span>説明書</a></li>
+    </ul>
+  </div>
+  <div class="menu-group menu-sub">
+    <ul class="menu-list">
+      <li><a href="../report/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M6 18V9M12 18V4M18 18v-6"/></svg></span>実測レポートを読む</a></li>
+      <li><a href="../business/"><span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V6l7-3v17"/><path d="M11 9h9v11"/><path d="M7 9h.01M7 13h.01M15 13h.01M15 17h.01"/></svg></span>法人・開発者の方へ</a></li>
+    </ul>
+  </div>
+</div></nav>
 <main class="wrap">
-  <h1>🔍 画像来歴チェッカー</h1>
-  <p class="lead">画像や動画をドロップすると、C2PA(コンテンツ来歴)・EXIF・XMP・生成AIツールの痕跡をその場で解析します。
-  メタデータが消されている場合も、再圧縮の痕跡から「どんな経緯をたどったファイルか」を推定します。
-  ファイルは<b>あなたのブラウザ内だけ</b>で処理され、どこにもアップロードされません。</p>
+  <h1>画像来歴チェッカー</h1>
+  <p class="lede">画像・動画の来歴と痕跡を、端末内で調べる。</p>
+  <p>C2PA（コンテンツ来歴）・EXIF・XMP・生成AIツールの痕跡をその場で解析します。
+  メタデータが消えている場合も、再圧縮の痕跡から「どんな経緯をたどったファイルか」を推定します。</p>
+  <p><span class="local-sign">
+    <span class="ico" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span>
+    <span>ファイルは<b>あなたのブラウザ内だけ</b>で処理され、どこにもアップロードされません</span>
+  </span></p>
 
-  <div id="drop" tabindex="0" role="button" aria-label="画像・動画を選択">
-    <div class="big">画像・動画をここにドロップ / クリックして選択</div>
-    <div class="note">画像: JPEG / PNG / WebP / HEIC / AVIF ・ 動画: MP4 / MOV(Sora等のC2PA来歴にも対応)</div>
+  <div id="drop" tabindex="0" role="button" aria-label="画像・動画を選ぶ">
+    <span class="mark" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v10H4z"/><path d="m6 12 3.5-4 2.5 3 2-2 4 3"/><circle cx="16.5" cy="17.5" r="3.5"/><path d="m19.5 20.5 1.8 1.8"/></svg></span>
+    <span class="big drop-idle">ファイルを選ぶ</span>
+    <span class="big drop-alt">ここで離して解析</span>
+    <span class="note drop-idle">またはここに画像・動画をドロップ</span>
+    <span class="note">画像: JPEG / PNG / WebP / HEIC / AVIF ・ 動画: MP4 / MOV（Sora等のC2PA来歴にも対応）</span>
     <input type="file" id="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.avif,.mp4,.mov,.m4v,image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif,video/mp4,video/quicktime" hidden>
   </div>
+  <p class="note">解析は数秒で終わります。できるだけ<b>元データに近いファイル</b>のほうが手がかりが残っています。</p>
 
   <section id="result">
-    <div class="card result-head">
-      <img id="preview" alt="解析対象のプレビュー">
-      <video id="previewVid" controls muted playsinline style="display:none; max-width:240px; max-height:180px; border-radius:10px"></video>
-      <div>
-        <div id="fileName" style="font-weight:700"></div>
-        <div class="file-meta" id="fileMeta"></div>
+
+    <div class="dossier file-card">
+      <span class="thumb">
+        <img id="preview" alt="解析対象のプレビュー">
+        <video id="previewVid" controls muted playsinline style="display:none"></video>
+      </span>
+      <span class="facts">
+        <span class="note" style="letter-spacing:.12em">解析したファイル</span>
+        <b id="fileName"></b>
+        <span class="note" id="fileMeta"></span>
+      </span>
+      <button type="button" class="btn btn--ghost" id="pickAnother">別のファイルを調べる</button>
+    </div>
+
+    <p class="kicker">判定結果</p>
+    <div class="spine">
+      <div id="verdict" class="spine__node"></div>
+      <div class="limits spine__node">
+        <h3>断定しない — 判定の限界</h3>
+        <p>メタデータは編集・削除できます。「痕跡なし」は人間の証明にはならず（SNS・スクリーンショット経由でメタデータは消えます）、「カメラ情報あり」も偽装可能です。
+        結論ではなく、次の検証材料として使ってください。
+        C2PA署名の暗号学的検証は <a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">Content Credentials Verify（公式）</a> でも確認できます。</p>
       </div>
     </div>
-    <div id="verdict"></div>
-    <div class="card" id="c2paCard" style="display:none">
+
+    <div class="dossier" id="c2paCard" style="display:none">
       <h2 style="margin-top:0">C2PA署名の検証</h2>
       <div id="c2paBody"></div>
     </div>
-    <div class="card" id="pixelCard" style="display:none; border-color: var(--warn)">
-      <h2 style="margin-top:0">🧪 実験: 画素からのAI判定(参考値)</h2>
-      <p class="note" id="pixelIntro">メタデータではなく<b>画像そのもの</b>を学習済みモデルで判定します。ブラウザ内で動作し、画像は送信されません。
-        初回はモデル(<span id="pixelSize">約90MB</span>)を読み込みます(2回目以降は端末内キャッシュ)。PC推奨。</p>
-      <div id="pixelControls">
-        <button id="pixelRun" class="secondary" style="margin-top:0">画素判定を実行する</button>
-        <label style="display:inline-block; margin:0 0 0 12px; font-weight:400; font-size:.85rem"><input type="checkbox" id="pixelAuto"> 次回から自動で実行</label>
-      </div>
-      <div id="pixelProgress" class="note" style="display:none"></div>
-      <div id="pixelResult" style="display:none">
-        <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:8px">
-          <span id="pixelScore" style="font-size:2rem; font-weight:800"></span>
-          <span id="pixelLabel" style="font-weight:700"></span>
-          <span class="note" id="pixelMeta"></span>
-        </div>
-        <div style="height:12px; border-radius:999px; background:var(--line); overflow:hidden; margin:8px 0">
-          <div id="pixelBar" style="height:100%; width:0%; background:var(--warn); transition:width .4s"></div>
-        </div>
-        <p class="note" id="pixelNote"></p>
-      </div>
-      <p class="note" id="pixelEval"></p>
-      <p class="note" style="margin-bottom:0">
-        <a href="../report/">測り方・外れた場面・学習データの出典を全部見る →</a>
-        <span style="opacity:.7"> / </span>
-        <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/vendor/models/LICENSE.md" target="_blank" rel="noopener">モデルの利用条件</a>
-      </p>
-    </div>
-    <div class="card">
-      <h2 style="margin-top:0">検出されたシグナル</h2>
-      <div id="findings"></div>
-    </div>
-    <div class="card">
-      <h3 style="margin-top:0">次の一手: 逆画像検索で確かめる</h3>
-      <p class="note" style="margin-top:4px">メタデータが消されていても、逆画像検索で「盗用元の別人」や「同じ画像の使い回し」が見つかることがあります。
+
+    <h2>根拠</h2>
+    <p class="note" style="margin-top:calc(var(--sp-2) * -1)">根拠は1件ずつ、重みと一緒に読む。</p>
+    <div id="findings"></div>
+
+    <h2>次の一手</h2>
+    <div class="dossier">
+      <h3 style="margin-top:0">逆画像検索で確かめる</h3>
+      <p class="note" style="margin-top:var(--sp-1)">メタデータが消えていても、逆画像検索で「盗用元の別人」や「同じ画像の使い回し」が見つかることがあります。
       下記サービスを開き、同じ画像ファイルを検索窓にドラッグしてください。</p>
-      <a class="btn secondary" href="https://lens.google.com/" target="_blank" rel="noopener">Google レンズ</a>
-      <a class="btn secondary" href="https://www.bing.com/visualsearch" target="_blank" rel="noopener">Bing ビジュアル検索</a>
-      <a class="btn secondary" href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex Images</a>
-      <a class="btn secondary" href="https://tineye.com/" target="_blank" rel="noopener">TinEye</a>
+      <div class="chips-row">
+        <a class="btn btn--ghost" href="https://lens.google.com/" target="_blank" rel="noopener">Google レンズ</a>
+        <a class="btn btn--ghost" href="https://www.bing.com/visualsearch" target="_blank" rel="noopener">Bing ビジュアル検索</a>
+        <a class="btn btn--ghost" href="https://yandex.com/images/" target="_blank" rel="noopener">Yandex Images</a>
+        <a class="btn btn--ghost" href="https://tineye.com/" target="_blank" rel="noopener">TinEye</a>
+      </div>
     </div>
-    <div class="card" id="metaCard">
-      <h2 style="margin-top:0">抽出メタデータ</h2>
+
+    <h2>生データ</h2>
+    <details class="dossier" id="metaCard">
+      <summary>抽出メタデータをすべて見る<span class="note" id="metaCount" style="margin-left:auto"></span></summary>
       <div id="metaTable"></div>
       <details id="xmpDetails" style="display:none">
-        <summary>XMPデータ(生データ)を表示</summary>
+        <summary>XMPデータ（生データ）を表示</summary>
         <pre class="snippet" id="xmpRaw"></pre>
       </details>
-    </div>
-    <div class="notice">
-      <b>判定の限界:</b> メタデータは編集・削除できます。「痕跡なし」は人間の証明にはならず
-      (SNS・スクリーンショット経由でメタデータは消えます)、「カメラ情報あり」も偽装可能です。
-      C2PA署名の暗号学的検証は
-      <a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">Content Credentials Verify(公式)</a>
-      でも確認できます。
-    </div>
+    </details>
+
+    <section class="lab" id="pixelCard" style="display:none">
+      <p class="lab__tag">LAB / 実験機能</p>
+      <h2>画素からのAI判定（参考値）</h2>
+      <p class="note" id="pixelIntro">メタデータとは別の実験機能です。<b>画像そのもの</b>を端末内のモデルで判定します。画像は送信されません。
+        初回のみ<span id="pixelSize">約90MB</span>を読み込み、2回目以降は端末内キャッシュ。PC推奨。</p>
+
+      <div class="note-block">
+        <b>押す前に読む</b>
+        <p id="pixelEval" style="margin:var(--sp-1) 0 0"></p>
+        <p style="margin:var(--sp-2) 0 0">「AIではない」ことの証明には使えません。</p>
+      </div>
+
+      <div id="pixelProgress" class="note" style="display:none"></div>
+      <div class="progress-rail" id="pixelDlRail" style="display:none" role="presentation">
+        <div class="progress-rail__fill" id="pixelDlFill"></div>
+      </div>
+
+      <div id="pixelResult" style="display:none">
+        <div class="lab-score">
+          <span class="pct" id="pixelScore"></span>
+          <span id="pixelLabel" style="font-weight:700"></span>
+        </div>
+        <div class="progress-rail"><div class="progress-rail__fill" id="pixelBar"></div></div>
+        <p class="note" id="pixelNote" style="margin:var(--sp-2) 0 0"></p>
+        <p class="note" id="pixelMeta" style="margin:var(--sp-1) 0 0"></p>
+      </div>
+
+      <div id="pixelControls" class="lab-controls">
+        <button id="pixelRun" class="btn" type="button">約90MBを読み込んで実行</button>
+        <label class="switch" for="pixelAuto">
+          <input type="checkbox" id="pixelAuto">
+          次回から自動で実行: <span id="pixelAutoState">OFF</span>
+        </label>
+      </div>
+
+      <p class="note" style="margin-top:var(--sp-4)">
+        <a href="../report/">実測値・モデル条件・弱点を見る →</a>
+        <span style="opacity:.6"> / </span>
+        <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/vendor/models/LICENSE.md" target="_blank" rel="noopener">モデルの利用条件</a>
+      </p>
+    </section>
+
   </section>
 
   <h2>使いどころ</h2>
-  <div class="card" style="font-size:.9rem">
+  <div class="dossier">
     <ul style="margin:0; padding-left:1.3em">
       <li>SNSで見かけた「実在するか怪しい人物」の画像の一次チェックに</li>
-      <li>自分の作品・写真に来歴データ(C2PA)が正しく付いているかの確認に</li>
-      <li>フリマ・マッチングアプリのプロフィール画像の検証に(可能なら「元データ」を入手して調べるのが有効)</li>
+      <li>自分の作品・写真に来歴データ（C2PA）が正しく付いているかの確認に</li>
+      <li>フリマ・マッチングアプリのプロフィール画像の検証に（可能なら「元データ」を入手して調べるのが有効）</li>
     </ul>
   </div>
 </main>
 
 <footer class="site-foot"><div class="wrap">
-  <div style="margin-bottom:6px">
-  <a href="../">HONMONO</a> ·
-  <a href="../docs/">説明書</a> ·
-  <a href="../report/">実測レポート</a> ·
-  <a href="../business/">法人向け</a> ·
-  <a href="../legal/privacy.html">プライバシー</a> ·
-  <a href="../legal/terms.html">利用規約</a> ·
-  <a href="../legal/credits.html">クレジット</a>
+  <div class="foot-links">
+    <a href="../">HONMONO</a>
+    <a href="../docs/">説明書</a>
+    <a href="../report/">実測レポート</a>
+    <a href="../business/">法人向け</a>
+    <a href="../legal/privacy.html">プライバシー</a>
+    <a href="../legal/terms.html">利用規約</a>
+    <a href="../legal/credits.html">クレジット</a>
   </div>
-  <div style="font-size:.82rem; opacity:.8">HONMONO プロジェクト — 画像はブラウザ外に送信されません。</div>
+  <p style="margin:0">HONMONO プロジェクト — 画像はブラウザ外に送信されません。ページの読み込みには通信が必要です。</p>
 </div></footer>
+
+<script src="../shell.js"></script>
 
 <script>
 // 画素判定モデルの設定(自前学習 HONMONO v2・2026-08-18)。数値は学習に使っていない外部545枚での実測。
@@ -155,7 +309,7 @@ window.HONMONO_PIXEL_CONFIG = {
   parts: ['../vendor/models/honmono_v31_int8.onnx.part1', '../vendor/models/honmono_v31_int8.onnx.part2'],
   totalBytes: 90283577,
   threshold: 0.8,
-  evalNote: '実測(学習に一切使っていない外部545枚): 実写をAIと誤判定 1.8%・AI画像の検出 70%。2025年世代の生成器(Seedream 4 / Gemini 2.5 / FLUX Pro 等)の検出は63%。人物の顔で別に測った615枚では、実在の人の顔の誤判定 1.1%・AI生成の顔の検出 92%。学習データは商用利用可のものだけを使用。'
+  evalNote: '実測(学習に一切使っていない外部545枚): 実写をAIと誤判定 1.8%・AI画像の検出 70.0%。2025年世代の生成器(Seedream 4 / Gemini 2.5 / FLUX Pro 等)の検出は 62.6%(約4割を見逃す)。人物の顔で別に測った615枚では、実在の人の顔の誤判定 1.1%・AI生成の顔の検出 92.2%。学習データは商用利用可のものだけを使用。'
 };
 </script>
 <script src="pixel.js"></script>
@@ -887,6 +1041,14 @@ async function analyze(file) {
   return { format, findings, meta, xmp, verdict, hasC2PA };
 }
 
+
+/* C2PA検証の結果表示。色だけに意味を持たせず、形と言葉を必ず添える */
+function c2paState(level, tag, title, bodyHtml) {
+  return `<div class="verdict verdict--${level}" style="margin:0 0 var(--sp-3)">` +
+    `<span class="chip chip--${level}"><span class="glyph" aria-hidden="true">${GLYPH[level]}</span>${tag}</span>` +
+    `<h2 style="font-size:1.25rem">${title}</h2><p>${bodyHtml}</p></div>`;
+}
+
 /* ========== C2PA署名検証(同梱SDK・遅延読み込み) ========== */
 let c2paInstance = null;
 async function getC2pa() {
@@ -905,16 +1067,17 @@ async function verifyC2pa(file) {
   try {
     c2pa = await getC2pa();
   } catch (e) {
-    return `<p class="note">署名検証エンジンを読み込めませんでした(オフライン、または file:// で開いている場合は動作しません)。` +
-      `公開サイト上で再度お試しいただくか、<a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">公式の検証ツール</a>をご利用ください。</p>`;
+    return c2paState('warn', '注意', '署名検証エンジンを読み込めませんでした',
+      'オフライン、または file:// で開いている場合は動作しません。公開サイト上で再度お試しいただくか、' +
+      '<a href="https://contentcredentials.org/verify" target="_blank" rel="noopener">公式の検証ツール</a>をご利用ください。');
   }
   let store;
   try {
     const result = await c2pa.read(file);
     store = result && result.manifestStore;
   } catch (e) {
-    return `<div class="verdict warn" style="margin:0"><h2>⚠ 来歴データを読み取れませんでした</h2>` +
-      `<p>C2PAらしきデータはありますが、SDKで解析できませんでした(破損・非標準形式の可能性)。${esc(e && e.message || '')}</p></div>`;
+    return c2paState('warn', '注意', '来歴データを読み取れませんでした',
+      'C2PAらしきデータはありますが、解析できませんでした(破損・非標準形式の可能性)。' + esc(e && e.message || ''));
   }
   if (!store || !store.activeManifest) {
     return '<p class="note">C2PAらしきデータはありますが、有効なマニフェストは見つかりませんでした。</p>';
@@ -933,12 +1096,14 @@ async function verifyC2pa(file) {
 
   let head;
   if (status.length === 0) {
-    head = `<div class="verdict ok" style="margin:0 0 12px"><h2>✅ 署名は有効です</h2>` +
-      `<p>この画像は署名された後、改ざんされていません。ただし「署名発行者が信頼できる組織か」は発行者名で別途判断してください(信頼リスト照合は行っていません)。</p></div>`;
+    head = c2paState('ok', '確認', '署名後の改ざんなし',
+      'この画像は署名された後、改ざんされていません。') +
+      '<p class="note">ただし「署名発行者が信頼できる組織か」の照合(トラストリスト)は行っていません。発行者名でご自身で判断してください。</p>';
   } else {
     const items = status.map(s => `<li>${esc(s.code || '')} ${esc(s.explanation || '')}</li>`).join('');
-    head = `<div class="verdict bad" style="margin:0 0 12px"><h2>❌ 署名検証で問題が見つかりました</h2>` +
-      `<p>署名後にデータが改変されているか、署名が不正な可能性があります。</p></div><ul style="font-size:.85rem">${items}</ul>`;
+    head = c2paState('bad', '危険', '署名検証で問題が見つかりました',
+      '署名後にデータが改変されているか、署名が不正な可能性があります。') +
+      `<ul class="note">${items}</ul>`;
   }
   const table = rows.length
     ? '<table><tbody>' + rows.map(([k, v]) => `<tr><th>${esc(k)}</th><td>${esc(v)}</td></tr>`).join('') + '</tbody></table>'
@@ -946,12 +1111,14 @@ async function verifyC2pa(file) {
   return head + table;
 }
 
+
 /* ========== UI ========== */
+/* 解析ロジック(この上の部分)は一切変えていない。ここは「結果をどう見せるか」だけ。 */
 const $ = id => document.getElementById(id);
 const drop = $('drop'), fileInput = $('file');
 
 drop.addEventListener('click', e => { if (e.target !== fileInput) fileInput.click(); }); // inputからのバブリングで再帰しないようガード
-drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') fileInput.click(); });
+drop.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); } });
 drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
 drop.addEventListener('dragleave', () => drop.classList.remove('over'));
 drop.addEventListener('drop', e => {
@@ -960,23 +1127,40 @@ drop.addEventListener('drop', e => {
   if (f) handle(f);
 });
 fileInput.addEventListener('change', () => { if (fileInput.files[0]) handle(fileInput.files[0]); });
+$('pickAnother').addEventListener('click', () => fileInput.click()); // 入口をもう1つ置くだけ。機能は同じ
 
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-const VERDICTS = {
-  ai:      { cls: 'bad',  icon: '🤖', title: 'AI生成の痕跡があります',
-             body: '生成AIツールの記録・申告がこの画像に埋め込まれています。詳細は下のシグナル一覧をご覧ください。' },
-  c2pa:    { cls: 'info', icon: '📜', title: 'コンテンツ来歴(C2PA)付きの画像です',
-             body: '来歴データが埋め込まれています。編集履歴・作成ツールの詳細は公式の検証ツールで確認できます。' },
-  camera:  { cls: 'ok',   icon: '📷', title: 'カメラ撮影の痕跡があります',
-             body: 'カメラ機種や撮影日時のメタデータが残っており、実写である可能性を高めます(偽装可能な点には注意)。' },
-  stock:   { cls: 'warn', icon: '🗂️', title: 'ストック素材サイト由来の画像です',
-             body: '素材サイトで配布されている画像の痕跡があります。実在アカウントの「本人写真」としては不自然で、流用または架空人物の疑いがあります。AI生成かどうかは素材サイト上の「生成AI」ラベルや、下の実験的な画素判定も参考にしてください。' },
-  weak:    { cls: 'warn', icon: '🟡', title: 'AI生成を疑う手がかりがあります(弱)',
-             body: '決定的な証拠はありませんが、注意すべき特徴が見つかりました。詳細は下のシグナル一覧を確認し、逆画像検索や元データの入手で追加検証してください。' },
-  unknown: { cls: 'warn', icon: '❓', title: '判定材料がありません',
-             body: 'メタデータが見つかりませんでした。SNS経由のファイルはメタデータが消えるため、可能なら元データで再チェックを。下の「経緯(推定)」も参考にしてください。' },
+/* 状態は「色 + 形 + 言葉」で示す。色だけに意味を持たせない */
+const GLYPH = {
+  bad:  '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1.5 14.5 8 8 14.5 1.5 8z"/><path d="M8 5v3.5M8 11h.01"/></svg>',
+  warn: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M11 2 5 14"/></svg>',
+  ok:   '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2H2v12h2M12 2h2v12h-2"/><path d="m5.5 8 1.8 2L10.5 6"/></svg>',
+  info: '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5.5"/></svg>',
 };
+const chip = (level, label) =>
+  `<span class="chip chip--${level}"><span class="glyph" aria-hidden="true">${GLYPH[level]}</span>${esc(label)}</span>`;
+
+const VERDICTS = {
+  ai:      { cls: 'bad',  tag: 'AI痕跡', title: 'AI生成の痕跡があります',
+             body: '生成AIツールの記録・申告がこの画像に埋め込まれています。何が見つかったかは下の「根拠」で1件ずつ確認できます。' },
+  c2pa:    { cls: 'info', tag: '来歴',   title: 'コンテンツ来歴（C2PA）付き',
+             body: '来歴データが埋め込まれています。良い・悪いの判定ではありません。署名が本物かどうかは下の「C2PA署名の検証」に出ます。' },
+  camera:  { cls: 'ok',   tag: '実写材料', title: 'カメラ撮影の痕跡があります',
+             body: 'カメラ機種や撮影日時のメタデータが残っており、実写である可能性を高めます。ただしEXIFは偽装できます。すぐ下の「判定の限界」も読んでください。' },
+  stock:   { cls: 'warn', tag: '注意',   title: 'ストック素材サイト由来',
+             body: '素材サイトで配布されている画像の痕跡があります。実在アカウントの「本人写真」としては不自然で、流用または架空人物の疑いがあります。悪意があると断定するものではありません。' },
+  weak:    { cls: 'warn', tag: '弱い手がかり', title: 'AI生成を疑う手がかり（弱）',
+             body: '決定的な証拠はありませんが、注意すべき特徴が見つかりました。逆画像検索や元データの入手で追加検証してください。' },
+  unknown: { cls: 'info', tag: '中立 / INFO', title: '判定材料がありません',
+             body: 'メタデータが見つからなかった、という事実です。SNSやスクリーンショット経由では珍しくありません。「AIではない」「本物である」という意味ではありません。可能なら投稿前の元データで再チェックを。' },
+};
+
+/* 結論の位置に出す警告(受け取れなかった・解析できなかった)。UIはロックしない */
+function stateDossier(level, title, body) {
+  return `<div class="verdict verdict--${level} state-motion">${chip(level, level === 'bad' ? 'エラー' : '注意')}` +
+    `<h2>${esc(title)}</h2><p>${esc(body)}</p></div>`;
+}
 
 /* ========== 実験: 画素判定のUI ========== */
 let pixelCurrentFile = null;
@@ -989,11 +1173,17 @@ function setupPixel(file, res) {
   card.style.display = 'block';
   $('pixelResult').style.display = 'none';
   $('pixelProgress').style.display = 'none';
+  $('pixelDlRail').style.display = 'none';
   $('pixelControls').style.display = '';
-  if (P.cfg.totalBytes) $('pixelSize').textContent = '約' + Math.round(P.cfg.totalBytes / 1e6) + 'MB';
+  if (P.cfg.totalBytes) {
+    const mb = '約' + Math.round(P.cfg.totalBytes / 1e6) + 'MB';
+    $('pixelSize').textContent = mb;
+    $('pixelRun').textContent = mb + 'を読み込んで実行';
+  }
   $('pixelEval').textContent = P.cfg.evalNote || '';
   const auto = localStorage.getItem('honmono_pixel_auto') === '1';
   $('pixelAuto').checked = auto;
+  $('pixelAutoState').textContent = auto ? 'ON' : 'OFF';
   if (auto) runPixel();
 }
 async function runPixel() {
@@ -1002,38 +1192,49 @@ async function runPixel() {
   if (!P || !file) return;
   $('pixelControls').style.display = 'none';
   $('pixelProgress').style.display = 'block';
+  $('pixelDlRail').style.display = 'block';
+  $('pixelDlFill').style.transform = 'scaleX(0)';
   $('pixelProgress').textContent = 'モデルを読み込み中…';
   try {
     const r = await P.predict(file, (got, total) => {
       $('pixelProgress').textContent = total
         ? `モデルを読み込み中… ${Math.round(got / 1e6)} / ${Math.round(total / 1e6)} MB`
         : `モデルを読み込み中… ${Math.round(got / 1e6)} MB`;
+      if (total) $('pixelDlFill').style.transform = 'scaleX(' + Math.min(1, got / total) + ')';
+      if (!total || got >= total) $('pixelProgress').textContent += ' / 端末内で推論中…';
     });
     if (file !== pixelCurrentFile) return; // 別ファイルに切り替わっていたら捨てる
     const pct = Math.round(r.pAI * 100);
     const thr = P.cfg.threshold;
-    let label, cls, note;
-    if (r.pAI >= thr) { label = 'AI生成の可能性が高い'; cls = 'var(--bad)'; note = 'このモデルが「AI」と言った場合の的中率は外部評価で約97%です。ただし誤りもあります(実在の人の顔写真を誤判定する割合は実測1.1%、古いGAN風に切り取られた顔では5%)。他のシグナルと合わせて判断してください。'; }
-    else if (r.pAI >= 0.5) { label = 'AI生成の疑いあり(弱)'; cls = 'var(--warn)'; note = '判定が割れる領域です。単独では根拠になりません。'; }
-    else { label = 'AI生成の兆候は薄い'; cls = 'var(--ok)'; note = '注意: このモデルはAI画像の約3割(2025年世代の生成器は約4割)を見逃します。「AIではない」証明にはなりません。'; }
+    let label, level, note;
+    if (r.pAI >= thr) { label = 'AI生成の可能性が高い'; level = 'bad'; note = 'このモデルが「AI」と言った場合の的中率は外部評価で約97%です。ただし誤りもあります(実在の人の顔写真を誤判定する割合は実測1.1%、古いGAN風に切り取られた顔では5%)。他のシグナルと合わせて判断してください。'; }
+    else if (r.pAI >= 0.5) { label = 'AI生成の疑いあり（弱）'; level = 'warn'; note = '判定が割れる領域です。単独では根拠になりません。'; }
+    else { label = 'AI生成の兆候は薄い'; level = 'info'; note = '注意: このモデルはAI画像の約3割(2025年世代の生成器は約4割)を見逃します。「AIではない」証明にはなりません。'; }
+    const color = 'var(--c-' + level + ')';
     $('pixelScore').textContent = pct + '%';
-    $('pixelScore').style.color = cls;
-    $('pixelLabel').textContent = label;
-    $('pixelLabel').style.color = cls;
-    $('pixelBar').style.width = pct + '%';
-    $('pixelBar').style.background = cls;
+    $('pixelScore').style.color = color;
+    $('pixelLabel').innerHTML = chip(level, label);
+    $('pixelBar').style.transform = 'scaleX(' + (pct / 100) + ')';
+    $('pixelBar').style.background = color;
     $('pixelMeta').textContent = `AIらしさスコア / ${r.backend === 'webgpu' ? 'GPU' : 'CPU'} ${r.ms}ms / ${P.cfg.name}${P.cfg.version ? ' ' + P.cfg.version : ''}`;
     $('pixelNote').textContent = note;
     $('pixelProgress').style.display = 'none';
+    $('pixelDlRail').style.display = 'none';
     $('pixelResult').style.display = 'block';
+    $('pixelResult').classList.remove('state-motion');
+    void $('pixelResult').offsetWidth;
+    $('pixelResult').classList.add('state-motion');
   } catch (e) {
-    $('pixelProgress').textContent = '画素判定を実行できませんでした: ' + (e && e.message || e);
+    // 実験区画の中だけで失敗を伝える。メタデータの本判定は壊さない
+    $('pixelProgress').innerHTML = chip('bad', 'エラー') + ' 画素判定を実行できませんでした: ' + esc(e && e.message || e);
+    $('pixelDlRail').style.display = 'none';
     $('pixelControls').style.display = '';
   }
 }
-document.addEventListener('DOMContentLoaded', () => {
-  const b = $('pixelRun'); if (b) b.addEventListener('click', runPixel);
-  const a = $('pixelAuto'); if (a) a.addEventListener('change', () => localStorage.setItem('honmono_pixel_auto', a.checked ? '1' : '0'));
+$('pixelRun').addEventListener('click', runPixel);
+$('pixelAuto').addEventListener('change', () => {
+  localStorage.setItem('honmono_pixel_auto', $('pixelAuto').checked ? '1' : '0');
+  $('pixelAutoState').textContent = $('pixelAuto').checked ? 'ON' : 'OFF';
 });
 
 async function handle(file) {
@@ -1042,14 +1243,21 @@ async function handle(file) {
   $('verdict').innerHTML = '';
   $('findings').innerHTML = '';
   $('metaTable').innerHTML = '';
+  $('metaCount').textContent = '';
   $('xmpDetails').style.display = 'none';
   $('c2paCard').style.display = 'none';
+  $('pixelCard').style.display = 'none';
 
   if (file.size > 300 * 1024 * 1024) {
-    $('fileMeta').textContent = 'ファイルが大きすぎます(300MBまで)。動画は冒頭部分を切り出してお試しください。';
+    $('fileMeta').textContent = 'ファイルが大きすぎます（300MBまで）';
+    $('verdict').innerHTML = stateDossier('warn', 'このファイルは受け取れません',
+      '300MBを超えています。上限は300MBです。動画は冒頭部分を切り出してからお試しください。別のファイルを選び直せます。');
     return;
   }
-  $('fileMeta').textContent = '解析中…';
+  $('fileMeta').textContent = '解析中…（数秒で終わります）';
+  $('verdict').innerHTML =
+    '<div class="wait-rail"><div class="wait-rail__highlight"></div></div>' +
+    '<p class="note" style="margin:0">解析中…</p>';
 
   for (const el of [$('preview'), $('previewVid')]) {
     if (el.src && el.src.startsWith('blob:')) URL.revokeObjectURL(el.src);
@@ -1069,24 +1277,34 @@ async function handle(file) {
     res = await analyze(file);
   } catch (err) {
     $('fileMeta').textContent = '解析エラー: ' + err.message;
+    $('verdict').innerHTML = stateDossier('bad', '解析できませんでした',
+      '原因: ' + (err && err.message || err) + '。ファイルが壊れている可能性があります。別のファイルで試せます。');
     return;
   }
 
   $('fileMeta').textContent = `${res.format} / ${(file.size / 1024).toFixed(1)} KB`;
 
-  const v = VERDICTS[res.verdict] || VERDICTS.unknown;
-  $('verdict').innerHTML =
-    `<div class="verdict ${v.cls}"><h2>${v.icon} ${esc(v.title)}</h2><p>${esc(v.body)}</p></div>`;
+  if (res.format === '不明') {
+    // 「判定材料なし」とは別の状態。対応形式を出して、変換すれば試せることを示す
+    $('verdict').innerHTML = stateDossier('warn', '対応していないファイル形式です',
+      '画像は JPEG / PNG / WebP / HEIC / AVIF、動画は MP4 / MOV に対応しています。変換してから再試行してください。');
+  } else {
+    const v = VERDICTS[res.verdict] || VERDICTS.unknown;
+    $('verdict').innerHTML =
+      `<div class="verdict verdict--${v.cls} state-motion">${chip(v.cls, v.tag)}` +
+      `<h2>${esc(v.title)}</h2><p>${esc(v.body)}</p></div>`;
+  }
 
   $('findings').innerHTML = res.findings.map(f => {
     const label = { bad: 'AI痕跡', ok: '実写材料', warn: '注意', info: '情報' }[f.level] || '情報';
-    return `<div class="finding"><span class="tag ${f.level}">${label}</span>` +
+    return `<div class="finding">${chip(f.level, label)}` +
       `<div><b>${esc(f.title)}</b><span class="detail">${esc(f.detail)}</span></div></div>`;
   }).join('');
 
   const rows = Object.entries(res.meta);
+  $('metaCount').textContent = rows.length + '件';
   $('metaTable').innerHTML = rows.length
-    ? '<table><tbody>' + rows.map(([k, v2]) => `<tr><th>${esc(k)}</th><td>${esc(v2)}</td></tr>`).join('') + '</tbody></table>'
+    ? '<div class="scroll"><table><tbody>' + rows.map(([k, v2]) => `<tr><th>${esc(k)}</th><td>${esc(v2)}</td></tr>`).join('') + '</tbody></table></div>'
     : '<p class="note">メタデータは検出されませんでした。</p>';
 
   if (res.xmp) {
@@ -1098,12 +1316,16 @@ async function handle(file) {
 
   if (res.hasC2PA) {
     $('c2paCard').style.display = 'block';
-    $('c2paBody').innerHTML = '<p class="note">署名検証エンジンを読み込み中…(初回は数秒かかります)</p>';
+    $('c2paBody').innerHTML =
+      '<div class="wait-rail"><div class="wait-rail__highlight"></div></div>' +
+      '<p class="note" style="margin:0">署名検証エンジンを読み込み中…（初回は数秒かかります）</p>';
     verifyC2pa(file)
       .then(html => { $('c2paBody').innerHTML = html; })
       .catch(() => { $('c2paBody').innerHTML = '<p class="note">署名検証中に予期しないエラーが発生しました。</p>'; });
   }
 }
+
 </script>
+
 </body>
 </html>
