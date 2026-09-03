@@ -1,0 +1,4203 @@
+{
+  "meta": {
+    "generated_by": "Claude Code (repository forensics / read-only)",
+    "role_separation": {
+      "design_authority": "ChatGPT",
+      "implementation_authority": "Claude Code"
+    },
+    "repository_commit": "f71190b50a118dad4fa2adb5531541ae36875eb3",
+    "target_app": "pachinko/index.html",
+    "frozen_design_intent": "Candidate 03 「営業中の戦い」(ChatGPT側で選定済み。仕様の正本はリポジトリに存在しない)",
+    "rule": "本ファイルの内容はリポジトリで確認した事実のみ。存在しないものは non_features / unknowns に記録されている"
+  },
+  "product": {
+    "name": "パチスロ帝国",
+    "subtitle": "ホール経営シミュレーション",
+    "type": "ターン制の経営シミュレーション + 遊技体験モード",
+    "platforms": [
+      "web(http/https)",
+      "PWA(standalone)",
+      "Electron desktop",
+      "file:"
+    ],
+    "single_player": true,
+    "offline_capable": true,
+    "server_side": false,
+    "accounts": false,
+    "monetization": false,
+    "win_condition": {
+      "metric": "net_assets(money+machine_assets-debt)",
+      "threshold": 100000000,
+      "grades": {
+        "S": "<=65days",
+        "A": "<=85days",
+        "B": "<=120days",
+        "C": ">120days"
+      }
+    },
+    "loss_condition": "資金が負のまま営業日を終え、緊急融資枠も尽きた場合に倒産",
+    "time_model": "turn_based(1操作=1営業日)。realtime/tickは存在しない",
+    "difficulties": [
+      {
+        "id": "easy",
+        "label": "のんびり",
+        "start_money": 13000000
+      },
+      {
+        "id": "normal",
+        "label": "標準",
+        "start_money": 10000000
+      },
+      {
+        "id": "hard",
+        "label": "修羅",
+        "start_money": 6500000
+      }
+    ],
+    "content_scale": {
+      "machine_catalog": 10,
+      "max_installed_machines": 60,
+      "achievements": 15,
+      "daily_events": 130,
+      "trends": 7,
+      "ad_plans": 4,
+      "history_rows": 60,
+      "chart_points": 30,
+      "status_metrics": 7,
+      "ledger_columns": 8
+    }
+  },
+  "screens": [
+    {
+      "id": "SCR-01",
+      "identifier": "SHELL (persistent chrome)",
+      "entry": "常時表示。ルーティングなし",
+      "purpose": "経営状態の常時提示と、機能領域の切替、1営業日実行の起点",
+      "primary_action": "1営業日を実行する(btnOpen)",
+      "secondary_actions": [
+        "機能領域の切替(4)",
+        "dayNoteの助言/ブーム提示"
+      ],
+      "visible_data": [
+        "営業日",
+        "資金",
+        "評判",
+        "常連",
+        "台数/上限",
+        "借入",
+        "純資産",
+        "特日/週末の別",
+        "今週のブーム"
+      ],
+      "functions": [
+        "FN-01",
+        "FN-17",
+        "FN-26"
+      ],
+      "entry_condition": "アプリ起動時から常時",
+      "exit_condition": "なし(常時)",
+      "code": "pachinko/index.html:247-262 statusbar/tabs, pachinko/index.html:367-370 daybar, pachinko/index.html:986 renderStatus",
+      "requirement": "REQUIRED"
+    },
+    {
+      "id": "SCR-02",
+      "identifier": "panel-hall",
+      "entry": "#panel-hall(既定でactive)",
+      "purpose": "設置中の台の運用。設定変更・試打・売却",
+      "primary_action": "台ごとの出玉設定変更",
+      "secondary_actions": [
+        "台の試打起動",
+        "台の売却"
+      ],
+      "visible_data": [
+        "機種名",
+        "説明文",
+        "スペック表記",
+        "状態標識",
+        "人気値",
+        "前日収支",
+        "前日客数",
+        "売却額",
+        "現在設定"
+      ],
+      "functions": [
+        "FN-02",
+        "FN-03",
+        "FN-04"
+      ],
+      "entry_condition": "起動直後 / タブ選択",
+      "exit_condition": "他タブ選択",
+      "code": "pachinko/index.html:265-271 markup, pachinko/index.html:1001 renderHall",
+      "requirement": "REQUIRED"
+    },
+    {
+      "id": "SCR-03",
+      "identifier": "panel-shop",
+      "entry": "#panel-shop",
+      "purpose": "機種カタログからの導入判断",
+      "primary_action": "新台の購入",
+      "secondary_actions": [
+        "カタログ機種の試打起動"
+      ],
+      "visible_data": [
+        "機種名",
+        "説明文",
+        "スペック表記",
+        "集客力",
+        "人気低下の速さ",
+        "価格",
+        "ブーム標識",
+        "自店設置数"
+      ],
+      "functions": [
+        "FN-05",
+        "FN-06"
+      ],
+      "entry_condition": "タブ選択",
+      "exit_condition": "他タブ選択",
+      "code": "pachinko/index.html:274-280 markup, pachinko/index.html:1059 renderShop",
+      "requirement": "REQUIRED"
+    },
+    {
+      "id": "SCR-04",
+      "identifier": "panel-mgmt",
+      "entry": "#panel-mgmt",
+      "purpose": "台以外の経営資源と、警戒度・実績・データ操作",
+      "primary_action": "経営施策の選択(広告/フェア/融資/交換率/拡張/人員)",
+      "secondary_actions": [
+        "スタッフ雇用/解雇",
+        "広告選択",
+        "新装開店",
+        "拡張",
+        "借入/返済",
+        "交換率",
+        "手動セーブ",
+        "やり直し"
+      ],
+      "visible_data": [
+        "スタッフ数",
+        "日給合計",
+        "必要人数",
+        "広告プラン4種",
+        "フェア可否",
+        "最大設置数",
+        "拡張費用",
+        "借入残高",
+        "借入枠",
+        "金利",
+        "交換率2種",
+        "警戒度",
+        "実績15件"
+      ],
+      "functions": [
+        "FN-07",
+        "FN-08",
+        "FN-09",
+        "FN-10",
+        "FN-11",
+        "FN-12",
+        "FN-13",
+        "FN-14",
+        "FN-15",
+        "FN-16",
+        "FN-24",
+        "FN-25"
+      ],
+      "entry_condition": "タブ選択",
+      "exit_condition": "他タブ選択",
+      "code": "pachinko/index.html:283-345 markup, pachinko/index.html:1109 renderMgmt",
+      "requirement": "REQUIRED"
+    },
+    {
+      "id": "SCR-05",
+      "identifier": "panel-ledger",
+      "entry": "#panel-ledger",
+      "purpose": "過去営業日の検証",
+      "primary_action": "なし(閲覧のみ)",
+      "secondary_actions": [
+        "推移上の個別日の詳細参照(hover)"
+      ],
+      "visible_data": [
+        "純利益推移(最大30日)",
+        "営業成績表(最大60日×8列)"
+      ],
+      "functions": [
+        "FN-22",
+        "FN-23"
+      ],
+      "entry_condition": "タブ選択",
+      "exit_condition": "他タブ選択",
+      "code": "pachinko/index.html:348-363 markup, pachinko/index.html:1194 renderChart, pachinko/index.html:1251 renderLedger",
+      "requirement": "REQUIRED"
+    },
+    {
+      "id": "SCR-06",
+      "identifier": "modal:tutorial",
+      "entry": "showModal() 経由 #modalBox",
+      "purpose": "製品説明と難易度選択によるゲーム開始",
+      "primary_action": "難易度を選んで開始(3択)",
+      "secondary_actions": [],
+      "visible_data": [
+        "製品概要",
+        "中心ジレンマ",
+        "特日/ブーム/シマ",
+        "融資",
+        "試打",
+        "難易度3種と初期資金"
+      ],
+      "functions": [
+        "FN-27"
+      ],
+      "entry_condition": "セーブ不在で起動 / doReset()実行後",
+      "exit_condition": "難易度選択(startGame)",
+      "code": "pachinko/index.html:1761 showTutorial, pachinko/index.html:1770-1774 difficulty buttons",
+      "requirement": "REQUIRED"
+    },
+    {
+      "id": "SCR-07",
+      "identifier": "modal:day-result",
+      "entry": "showDayResult() 経由 #modalBox",
+      "purpose": "当日結果の提示と次判断への接続",
+      "primary_action": "閉じて経営へ戻る",
+      "secondary_actions": [
+        "(7日毎)週次レポート閲覧",
+        "(達成時)クリア評価確認",
+        "(倒産時)やり直し"
+      ],
+      "visible_data": [
+        "日数",
+        "特日/週末",
+        "発生イベント文",
+        "客数と内訳3",
+        "総売上",
+        "出玉払出",
+        "経費",
+        "利息",
+        "純利益",
+        "台別収支",
+        "週間純利益",
+        "平均客数",
+        "常連数",
+        "助言",
+        "クリア評価",
+        "倒産告知"
+      ],
+      "functions": [
+        "FN-18",
+        "FN-19",
+        "FN-20",
+        "FN-21",
+        "FN-28"
+      ],
+      "entry_condition": "btnOpen実行完了",
+      "exit_condition": "閉じる操作(倒産時を除く)",
+      "code": "pachinko/index.html:1300 showDayResult, pachinko/index.html:954 weeklyReport",
+      "requirement": "REQUIRED"
+    },
+    {
+      "id": "SCR-08",
+      "identifier": "modal:bankrupt",
+      "entry": "showBankruptModal() 経由 #modalBox",
+      "purpose": "倒産の終局提示。やり直し以外を封じる",
+      "primary_action": "最初からやり直す",
+      "secondary_actions": [],
+      "visible_data": [
+        "倒産の事実",
+        "経営日数"
+      ],
+      "functions": [
+        "FN-21",
+        "FN-25"
+      ],
+      "entry_condition": "倒産状態でbtnOpen/closeModal/起動時",
+      "exit_condition": "doReset()のみ",
+      "code": "pachinko/index.html:1277 showBankruptModal, pachinko/index.html:1293 closeModalガード, pachinko/index.html:1854 起動時",
+      "requirement": "CONDITIONAL"
+    },
+    {
+      "id": "SCR-09",
+      "identifier": "modal:no-machine",
+      "entry": "showModal() 経由 #modalBox",
+      "purpose": "台0台での営業実行の無効化と次行動の案内",
+      "primary_action": "了解して戻る",
+      "secondary_actions": [],
+      "visible_data": [
+        "台0台では営業できない旨",
+        "新台購入への誘導"
+      ],
+      "functions": [
+        "FN-17",
+        "FN-28"
+      ],
+      "entry_condition": "台0台でbtnOpen",
+      "exit_condition": "閉じる操作",
+      "code": "pachinko/index.html:1791-1795",
+      "requirement": "CONDITIONAL"
+    },
+    {
+      "id": "SCR-10",
+      "identifier": "modal:trial-slot",
+      "entry": "openSlotTrial() 経由 #modalBox",
+      "purpose": "スロット実機の遊技(営業収支に影響しない)",
+      "primary_action": "レバーON(遊技開始)",
+      "secondary_actions": [
+        "3リールの停止",
+        "試打設定変更",
+        "メダル補充",
+        "試打終了"
+      ],
+      "visible_data": [
+        "機種名",
+        "スペック表記",
+        "試打設定",
+        "3リール図柄",
+        "告知ランプ",
+        "直前結果",
+        "所持メダル",
+        "総ゲーム数",
+        "BIG回数",
+        "REG回数",
+        "差枚"
+      ],
+      "functions": [
+        "FN-29",
+        "FN-30",
+        "FN-31",
+        "FN-32",
+        "FN-28"
+      ],
+      "entry_condition": "S型機種の試打起動",
+      "exit_condition": "試打を終える / 背景操作",
+      "code": "pachinko/index.html:1349 openSlotTrial",
+      "requirement": "CONDITIONAL"
+    },
+    {
+      "id": "SCR-11",
+      "identifier": "modal:trial-pachinko",
+      "entry": "openPachiTrial() 経由 #modalBox",
+      "purpose": "パチンコ実機の遊技(営業収支に影響しない)",
+      "primary_action": "回す(1回転)",
+      "secondary_actions": [
+        "オート回転切替",
+        "釘(設定)変更",
+        "玉補充",
+        "試打終了"
+      ],
+      "visible_data": [
+        "機種名",
+        "スペック表記",
+        "釘設定",
+        "3桁図柄",
+        "リーチ告知",
+        "当り/RUSH告知",
+        "持ち玉",
+        "回転数",
+        "当り回数",
+        "最高連チャン",
+        "差玉"
+      ],
+      "functions": [
+        "FN-33",
+        "FN-34",
+        "FN-35",
+        "FN-36",
+        "FN-28"
+      ],
+      "entry_condition": "P型機種の試打起動",
+      "exit_condition": "試打を終える / 背景操作",
+      "code": "pachinko/index.html:1496 openPachiTrial",
+      "requirement": "CONDITIONAL"
+    },
+    {
+      "id": "SCR-12",
+      "identifier": "overlay:toast",
+      "entry": "#toasts へ動的追加",
+      "purpose": "実績解除の一時通知(操作を妨げない)",
+      "primary_action": "なし(自動消滅)",
+      "secondary_actions": [],
+      "visible_data": [
+        "解除した実績名"
+      ],
+      "functions": [
+        "FN-24"
+      ],
+      "entry_condition": "未解除実績の条件成立",
+      "exit_condition": "3500ms経過で自動消滅",
+      "code": "pachinko/index.html:707 toast(), pachinko/index.html:372 #toasts",
+      "requirement": "CONDITIONAL"
+    }
+  ],
+  "states": [
+    {
+      "id": "ST-01",
+      "screen": "SCR-01",
+      "trigger": "通常",
+      "visible_change": "全指標が現在値で表示",
+      "available_actions": "全操作",
+      "disabled_actions": "なし",
+      "data_requirements": "state全体",
+      "exit_transition": "状態更新で再描画",
+      "code": "pachinko/index.html:986",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-02",
+      "screen": "SCR-01",
+      "trigger": "日付に7を含む",
+      "visible_change": "stDayに特日表記 / dayNoteが特日の助言に変化",
+      "available_actions": "全操作",
+      "disabled_actions": "なし",
+      "data_requirements": "state.day",
+      "exit_transition": "翌日へ",
+      "code": "pachinko/index.html:678,987,995",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-03",
+      "screen": "SCR-01",
+      "trigger": "day%7が6または0",
+      "visible_change": "stDayに週末表記",
+      "available_actions": "全操作",
+      "disabled_actions": "なし",
+      "data_requirements": "state.day",
+      "exit_transition": "翌日へ",
+      "code": "pachinko/index.html:679,987",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-04",
+      "screen": "SCR-01",
+      "trigger": "trend.idsが非空",
+      "visible_change": "dayNote末尾に今週のブーム名",
+      "available_actions": "全操作",
+      "disabled_actions": "なし",
+      "data_requirements": "state.trend",
+      "exit_transition": "週替わりで更新",
+      "code": "pachinko/index.html:994,996",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-05",
+      "screen": "SCR-01",
+      "trigger": "money<0",
+      "visible_change": "btnOpenで倒産提示へ遷移",
+      "available_actions": "やり直しのみ",
+      "disabled_actions": "経営操作すべて",
+      "data_requirements": "state.money",
+      "exit_transition": "doReset",
+      "code": "pachinko/index.html:1276,1789",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-06",
+      "screen": "SCR-02",
+      "trigger": "machines.length===0",
+      "visible_change": "空状態の案内文のみ",
+      "available_actions": "タブ移動",
+      "disabled_actions": "設定/試打/売却",
+      "data_requirements": "machines",
+      "exit_transition": "台購入で解消",
+      "code": "pachinko/index.html:1003-1006",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-07",
+      "screen": "SCR-02",
+      "trigger": "machines.length>0",
+      "visible_change": "台ごとの明細を列挙",
+      "available_actions": "設定/試打/売却",
+      "disabled_actions": "なし",
+      "data_requirements": "machines",
+      "exit_transition": "―",
+      "code": "pachinko/index.html:1008-1057",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-08",
+      "screen": "SCR-02",
+      "trigger": "day-boughtDay<5",
+      "visible_change": "NEW標識を表示",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "machine.boughtDay",
+      "exit_transition": "5日経過で消滅",
+      "code": "pachinko/index.html:1011,1025",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-09",
+      "screen": "SCR-02",
+      "trigger": "trendMult>1",
+      "visible_change": "ブーム中の標識",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "state.trend",
+      "exit_transition": "週替わりで消滅",
+      "code": "pachinko/index.html:686,1020",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-10",
+      "screen": "SCR-02",
+      "trigger": "同一機種2台以上",
+      "visible_change": "シマ効果量の標識",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "machines",
+      "exit_transition": "売却で減少",
+      "code": "pachinko/index.html:682,1021",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-11",
+      "screen": "SCR-02",
+      "trigger": "setting>=5",
+      "visible_change": "プロ警戒の標識",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "machine.setting",
+      "exit_transition": "設定変更で消滅",
+      "code": "pachinko/index.html:1022",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-12",
+      "screen": "SCR-02",
+      "trigger": "lastNet===null",
+      "visible_change": "前日収支が未計測表示",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "machine.lastNet",
+      "exit_transition": "初営業後に解消",
+      "code": "pachinko/index.html:1014-1015",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-13",
+      "screen": "SCR-02",
+      "trigger": "売却操作",
+      "visible_change": "OSの確認ダイアログ",
+      "available_actions": "確定/取消",
+      "disabled_actions": "―",
+      "data_requirements": "machineValue",
+      "exit_transition": "確定または取消",
+      "code": "pachinko/index.html:1047",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-14",
+      "screen": "SCR-03",
+      "trigger": "資金充足かつ空き枠あり",
+      "visible_change": "購入操作が有効",
+      "available_actions": "購入",
+      "disabled_actions": "なし",
+      "data_requirements": "money,cap",
+      "exit_transition": "―",
+      "code": "pachinko/index.html:1084-1090",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-15",
+      "screen": "SCR-03",
+      "trigger": "money<price",
+      "visible_change": "購入操作が資金不足表示で無効",
+      "available_actions": "―",
+      "disabled_actions": "購入",
+      "data_requirements": "money",
+      "exit_transition": "資金増で解消",
+      "code": "pachinko/index.html:1087,1089",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-16",
+      "screen": "SCR-03",
+      "trigger": "machines>=cap",
+      "visible_change": "購入操作が枠なし表示で無効",
+      "available_actions": "―",
+      "disabled_actions": "購入",
+      "data_requirements": "cap",
+      "exit_transition": "拡張/売却で解消",
+      "code": "pachinko/index.html:1086,1088",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-17",
+      "screen": "SCR-03",
+      "trigger": "同一機種を所有",
+      "visible_change": "自店設置数の標識",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "machines",
+      "exit_transition": "―",
+      "code": "pachinko/index.html:1062,1070",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-18",
+      "screen": "SCR-04",
+      "trigger": "staff<staffNeeded()",
+      "visible_change": "不足中の警告表示",
+      "available_actions": "雇用",
+      "disabled_actions": "―",
+      "data_requirements": "staff,machines",
+      "exit_transition": "雇用で解消",
+      "code": "pachinko/index.html:1112-1113",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-19",
+      "screen": "SCR-04",
+      "trigger": "staff>=staffNeeded()",
+      "visible_change": "充足の表示",
+      "available_actions": "雇用/解雇",
+      "disabled_actions": "―",
+      "data_requirements": "staff",
+      "exit_transition": "―",
+      "code": "pachinko/index.html:1112-1113",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-20",
+      "screen": "SCR-04",
+      "trigger": "staff<=1",
+      "visible_change": "解雇操作が無効",
+      "available_actions": "―",
+      "disabled_actions": "解雇",
+      "data_requirements": "staff",
+      "exit_transition": "雇用で解消",
+      "code": "pachinko/index.html:1114",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-21",
+      "screen": "SCR-04",
+      "trigger": "ad!=='none'",
+      "visible_change": "選択中プランと効果を表示",
+      "available_actions": "他プラン選択",
+      "disabled_actions": "―",
+      "data_requirements": "state.ad",
+      "exit_transition": "営業実行で解除",
+      "code": "pachinko/index.html:1131,1140-1142",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-22",
+      "screen": "SCR-04",
+      "trigger": "ad==='none'",
+      "visible_change": "未設定の説明を表示",
+      "available_actions": "プラン選択",
+      "disabled_actions": "―",
+      "data_requirements": "state.ad",
+      "exit_transition": "―",
+      "code": "pachinko/index.html:1139-1141",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-23",
+      "screen": "SCR-04",
+      "trigger": "直近購入あり+CD明け+資金充足",
+      "visible_change": "フェア開催が有効",
+      "available_actions": "開催",
+      "disabled_actions": "―",
+      "data_requirements": "machines,lastGrand,money",
+      "exit_transition": "開催で予約済へ",
+      "code": "pachinko/index.html:1150-1151",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-24",
+      "screen": "SCR-04",
+      "trigger": "grandOpen===true",
+      "visible_change": "予約済み表示で無効",
+      "available_actions": "―",
+      "disabled_actions": "開催",
+      "data_requirements": "grandOpen",
+      "exit_transition": "営業実行で消費",
+      "code": "pachinko/index.html:1149",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-25",
+      "screen": "SCR-04",
+      "trigger": "直近2日に購入なし",
+      "visible_change": "導入直後のみ可の表示で無効",
+      "available_actions": "―",
+      "disabled_actions": "開催",
+      "data_requirements": "machines.boughtDay",
+      "exit_transition": "購入で解消",
+      "code": "pachinko/index.html:1145,1150",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-26",
+      "screen": "SCR-04",
+      "trigger": "day-lastGrand<7",
+      "visible_change": "残り日数表示で無効",
+      "available_actions": "―",
+      "disabled_actions": "開催",
+      "data_requirements": "lastGrand",
+      "exit_transition": "7日経過で解消",
+      "code": "pachinko/index.html:1146,1151",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-27",
+      "screen": "SCR-04",
+      "trigger": "money<300000",
+      "visible_change": "資金不足表示で無効",
+      "available_actions": "―",
+      "disabled_actions": "開催",
+      "data_requirements": "money",
+      "exit_transition": "資金増で解消",
+      "code": "pachinko/index.html:1152",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-28",
+      "screen": "SCR-04",
+      "trigger": "cap<60かつ資金充足",
+      "visible_change": "拡張が有効",
+      "available_actions": "拡張",
+      "disabled_actions": "―",
+      "data_requirements": "cap,money",
+      "exit_transition": "拡張で+5",
+      "code": "pachinko/index.html:1121-1122",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-29",
+      "screen": "SCR-04",
+      "trigger": "money<expandCost()",
+      "visible_change": "拡張が無効",
+      "available_actions": "―",
+      "disabled_actions": "拡張",
+      "data_requirements": "money",
+      "exit_transition": "資金増で解消",
+      "code": "pachinko/index.html:1122",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-30",
+      "screen": "SCR-04",
+      "trigger": "cap>=60",
+      "visible_change": "拡張上限到達で無効",
+      "available_actions": "―",
+      "disabled_actions": "拡張",
+      "data_requirements": "cap",
+      "exit_transition": "解消なし(終端)",
+      "code": "pachinko/index.html:1116-1119",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-31",
+      "screen": "SCR-04",
+      "trigger": "debt+100万>creditLimit()",
+      "visible_change": "借入が無効",
+      "available_actions": "―",
+      "disabled_actions": "借入",
+      "data_requirements": "debt,machineAssets",
+      "exit_transition": "枠増で解消",
+      "code": "pachinko/index.html:1157",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-32",
+      "screen": "SCR-04",
+      "trigger": "debt<=0 または資金不足",
+      "visible_change": "返済が無効",
+      "available_actions": "―",
+      "disabled_actions": "返済",
+      "data_requirements": "debt,money",
+      "exit_transition": "―",
+      "code": "pachinko/index.html:1158",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-33",
+      "screen": "SCR-04",
+      "trigger": "rate==='normal'",
+      "visible_change": "等価交換が選択状態+説明",
+      "available_actions": "低換金へ切替",
+      "disabled_actions": "―",
+      "data_requirements": "state.rate",
+      "exit_transition": "切替",
+      "code": "pachinko/index.html:1163-1170",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-34",
+      "screen": "SCR-04",
+      "trigger": "rate==='low'",
+      "visible_change": "低換金が選択状態+説明",
+      "available_actions": "等価へ切替",
+      "disabled_actions": "―",
+      "data_requirements": "state.rate",
+      "exit_transition": "切替",
+      "code": "pachinko/index.html:1163-1172",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-35",
+      "screen": "SCR-04",
+      "trigger": "heat<=5",
+      "visible_change": "平常の説明",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "state.heat",
+      "exit_transition": "heat上昇",
+      "code": "pachinko/index.html:1174-1179",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-36",
+      "screen": "SCR-04",
+      "trigger": "heat>5",
+      "visible_change": "警戒レベルの説明",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "state.heat",
+      "exit_transition": "減衰または上昇",
+      "code": "pachinko/index.html:1176-1177",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-37",
+      "screen": "SCR-04",
+      "trigger": "heat>8",
+      "visible_change": "危険の説明",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "state.heat",
+      "exit_transition": "指導発生で2へ",
+      "code": "pachinko/index.html:1174-1175,795",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-38",
+      "screen": "SCR-04",
+      "trigger": "実績が解除済",
+      "visible_change": "通常表示",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "state.ach",
+      "exit_transition": "―",
+      "code": "pachinko/index.html:1185-1189",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-39",
+      "screen": "SCR-04",
+      "trigger": "実績が未解除",
+      "visible_change": "減衰表示(locked)",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "state.ach",
+      "exit_transition": "条件成立で解除",
+      "code": "pachinko/index.html:1186",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-40",
+      "screen": "SCR-04",
+      "trigger": "やり直し操作",
+      "visible_change": "OSの確認ダイアログ",
+      "available_actions": "確定/取消",
+      "disabled_actions": "―",
+      "data_requirements": "なし",
+      "exit_transition": "確定または取消",
+      "code": "pachinko/index.html:1841",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-41",
+      "screen": "SCR-05",
+      "trigger": "history.length===0",
+      "visible_change": "推移と表の空状態案内",
+      "available_actions": "タブ移動",
+      "disabled_actions": "―",
+      "data_requirements": "history",
+      "exit_transition": "初営業後に解消",
+      "code": "pachinko/index.html:1197-1200,1254-1257",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-42",
+      "screen": "SCR-05",
+      "trigger": "history.length>0",
+      "visible_change": "推移と明細を表示",
+      "available_actions": "hover参照",
+      "disabled_actions": "―",
+      "data_requirements": "history",
+      "exit_transition": "―",
+      "code": "pachinko/index.html:1201-1250,1258-1268",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-43",
+      "screen": "SCR-05",
+      "trigger": "推移上の要素をポイント",
+      "visible_change": "日付と金額の詳細を表示",
+      "available_actions": "―",
+      "disabled_actions": "なし",
+      "data_requirements": "history[i]",
+      "exit_transition": "ポインタ離脱で消滅",
+      "code": "pachinko/index.html:1240-1250",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-44",
+      "screen": "SCR-07",
+      "trigger": "通常の営業終了",
+      "visible_change": "当日の収支と内訳を提示",
+      "available_actions": "閉じる",
+      "disabled_actions": "再営業",
+      "data_requirements": "rec",
+      "exit_transition": "閉じる",
+      "code": "pachinko/index.html:1321-1334",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-45",
+      "screen": "SCR-07",
+      "trigger": "rec.day%7===0かつ履歴7件以上",
+      "visible_change": "週次レポートを追加提示",
+      "available_actions": "閉じる",
+      "disabled_actions": "再営業",
+      "data_requirements": "history7件",
+      "exit_transition": "閉じる",
+      "code": "pachinko/index.html:954-956",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-46",
+      "screen": "SCR-07",
+      "trigger": "cleared かつ clearDay===rec.day",
+      "visible_change": "達成告知と評価ランク",
+      "available_actions": "閉じる",
+      "disabled_actions": "再営業",
+      "data_requirements": "totalAssets",
+      "exit_transition": "閉じる(以後継続可)",
+      "code": "pachinko/index.html:1315-1318,951",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-47",
+      "screen": "SCR-07",
+      "trigger": "money<0",
+      "visible_change": "倒産告知。閉じる操作を出さない",
+      "available_actions": "やり直しのみ",
+      "disabled_actions": "閉じる/再営業",
+      "data_requirements": "money",
+      "exit_transition": "doReset",
+      "code": "pachinko/index.html:1312-1314,1333",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-48",
+      "screen": "SCR-10",
+      "trigger": "試打開始直後 / 1G完了",
+      "visible_change": "停止操作が無効、レバー有効",
+      "available_actions": "レバー/設定/補充/終了",
+      "disabled_actions": "停止",
+      "data_requirements": "t.credits",
+      "exit_transition": "レバーON",
+      "code": "pachinko/index.html:1434-1452,1465-1466",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-49",
+      "screen": "SCR-10",
+      "trigger": "レバーON後",
+      "visible_change": "3リールが回転表示、レバー無効",
+      "available_actions": "停止×3",
+      "disabled_actions": "レバー",
+      "data_requirements": "t.final",
+      "exit_transition": "3リール停止で確定",
+      "code": "pachinko/index.html:1441-1451",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-50",
+      "screen": "SCR-10",
+      "trigger": "big/reg成立",
+      "visible_change": "告知ランプ点灯+当選文+獲得枚数",
+      "available_actions": "レバー",
+      "disabled_actions": "―",
+      "data_requirements": "c.spec",
+      "exit_transition": "次のレバーON",
+      "code": "pachinko/index.html:1467-1477",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-51",
+      "screen": "SCR-10",
+      "trigger": "grape/cherry/replay成立",
+      "visible_change": "小役の獲得表示",
+      "available_actions": "レバー",
+      "disabled_actions": "―",
+      "data_requirements": "―",
+      "exit_transition": "次のレバーON",
+      "code": "pachinko/index.html:1470-1472",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-52",
+      "screen": "SCR-10",
+      "trigger": "none",
+      "visible_change": "獲得表示なし",
+      "available_actions": "レバー",
+      "disabled_actions": "―",
+      "data_requirements": "―",
+      "exit_transition": "次のレバーON",
+      "code": "pachinko/index.html:1464-1483",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-53",
+      "screen": "SCR-10",
+      "trigger": "credits<3",
+      "visible_change": "レバーONが無反応",
+      "available_actions": "補充/終了",
+      "disabled_actions": "レバー",
+      "data_requirements": "t.credits",
+      "exit_transition": "補充で解消",
+      "code": "pachinko/index.html:1435",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-54",
+      "screen": "SCR-11",
+      "trigger": "試打開始直後 / 演出完了",
+      "visible_change": "回転操作が有効",
+      "available_actions": "回す/オート/釘/補充/終了",
+      "disabled_actions": "―",
+      "data_requirements": "t.balls",
+      "exit_transition": "回す",
+      "code": "pachinko/index.html:1558-1560,1591",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-55",
+      "screen": "SCR-11",
+      "trigger": "回転中(busy)",
+      "visible_change": "3桁が回転表示、回転操作を受け付けない",
+      "available_actions": "終了",
+      "disabled_actions": "回す",
+      "data_requirements": "―",
+      "exit_transition": "停止演出完了",
+      "code": "pachinko/index.html:1559,1566-1571",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-56",
+      "screen": "SCR-11",
+      "trigger": "リーチ成立(当選または1/12)",
+      "visible_change": "リーチ告知を表示",
+      "available_actions": "―",
+      "disabled_actions": "回す",
+      "data_requirements": "―",
+      "exit_transition": "中図柄停止",
+      "code": "pachinko/index.html:1578-1585",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-57",
+      "screen": "SCR-11",
+      "trigger": "当選(1/denom)",
+      "visible_change": "大当り告知と獲得玉",
+      "available_actions": "―",
+      "disabled_actions": "回す",
+      "data_requirements": "c.spec.firstBalls",
+      "exit_transition": "RUSH抽選へ",
+      "code": "pachinko/index.html:1598-1606",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-58",
+      "screen": "SCR-11",
+      "trigger": "RUSH継続(rushPct)",
+      "visible_change": "連チャン数と獲得玉を更新",
+      "available_actions": "―",
+      "disabled_actions": "回す",
+      "data_requirements": "c.spec.rushBalls",
+      "exit_transition": "継続失敗まで",
+      "code": "pachinko/index.html:1608-1616",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-59",
+      "screen": "SCR-11",
+      "trigger": "RUSH終了",
+      "visible_change": "総連チャン数と総獲得玉を提示",
+      "available_actions": "回す",
+      "disabled_actions": "―",
+      "data_requirements": "t.maxRen",
+      "exit_transition": "次の回転",
+      "code": "pachinko/index.html:1618-1626",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-60",
+      "screen": "SCR-11",
+      "trigger": "オートON",
+      "visible_change": "一定間隔で自動的に回転",
+      "available_actions": "オートOFF/終了",
+      "disabled_actions": "―",
+      "data_requirements": "―",
+      "exit_transition": "オートOFF/試打終了",
+      "code": "pachinko/index.html:1632-1639",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-61",
+      "screen": "SCR-11",
+      "trigger": "balls<spinCost()",
+      "visible_change": "玉切れの通知",
+      "available_actions": "補充/終了",
+      "disabled_actions": "回す",
+      "data_requirements": "t.balls",
+      "exit_transition": "補充で解消",
+      "code": "pachinko/index.html:1561",
+      "test_evidence": "NOT_FOUND"
+    },
+    {
+      "id": "ST-62",
+      "screen": "SCR-12",
+      "trigger": "未解除実績の条件成立",
+      "visible_change": "実績名の一時通知が出現",
+      "available_actions": "なし(操作を妨げない)",
+      "disabled_actions": "なし",
+      "data_requirements": "ACHIEVEMENTS",
+      "exit_transition": "3500ms経過",
+      "code": "pachinko/index.html:698-712",
+      "test_evidence": "NOT_FOUND"
+    }
+  ],
+  "functions": [
+    {
+      "id": "FN-01",
+      "name": "機能領域の切替",
+      "description": "4領域(hall/shop/mgmt/ledger)の表示切替",
+      "entry_point": ".tab クリック",
+      "input": "領域ID",
+      "output": "対象パネルのみ表示",
+      "state_change": "DOMのみ(state非変更)",
+      "persistence": "なし",
+      "screen": "SCR-01",
+      "code": "pachinko/index.html:1779-1786",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-02",
+      "name": "出玉設定の変更",
+      "description": "台ごとに設定1〜6を選択",
+      "entry_point": "hall内の設定選択(select change)",
+      "input": "1〜6",
+      "output": "当該台のsetting更新+再描画",
+      "state_change": "machines[i].setting",
+      "persistence": "save()で即保存",
+      "screen": "SCR-02",
+      "code": "pachinko/index.html:1031-1039",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-03",
+      "name": "設置台の試打起動",
+      "description": "当該台の現在設定で遊技を開始",
+      "entry_point": "hall内の試打操作",
+      "input": "機種+設定",
+      "output": "S型/P型に応じた遊技画面",
+      "state_change": "なし(経営state非変更)",
+      "persistence": "なし",
+      "screen": "SCR-02",
+      "code": "pachinko/index.html:1040-1042, pachinko/index.html:1340",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-04",
+      "name": "設置台の売却",
+      "description": "確認後に売却額を資金へ加算し台を除去",
+      "entry_point": "hall内の売却操作",
+      "input": "対象台+確認",
+      "output": "money+=price*0.45 / machines除去",
+      "state_change": "money, machines",
+      "persistence": "save()",
+      "screen": "SCR-02",
+      "code": "pachinko/index.html:1043-1052, pachinko/index.html:674",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-05",
+      "name": "カタログ機種の試打起動",
+      "description": "未購入機種を設定3相当で試打",
+      "entry_point": "shop内の試打操作",
+      "input": "機種",
+      "output": "遊技画面",
+      "state_change": "なし",
+      "persistence": "なし",
+      "screen": "SCR-03",
+      "code": "pachinko/index.html:1081-1083",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-06",
+      "name": "新台の購入",
+      "description": "価格を支払い設置一覧へ追加",
+      "entry_point": "shop内の導入操作",
+      "input": "機種",
+      "output": "money-=price / machines追加 / boughtDay記録",
+      "state_change": "money, machines, uid",
+      "persistence": "save()",
+      "screen": "SCR-03",
+      "code": "pachinko/index.html:1091-1101",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-07",
+      "name": "スタッフの雇用",
+      "description": "スタッフを1人増やす",
+      "entry_point": "btnHire",
+      "input": "なし",
+      "output": "staff+1",
+      "state_change": "staff",
+      "persistence": "save()",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1802",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-08",
+      "name": "スタッフの解雇",
+      "description": "スタッフを1人減らす(下限1)",
+      "entry_point": "btnFire",
+      "input": "なし",
+      "output": "staff-1",
+      "state_change": "staff",
+      "persistence": "save()",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1803",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-09",
+      "name": "広告プランの選択",
+      "description": "翌営業日の集客を増やす施策を選ぶ",
+      "entry_point": "広告ボタン(4種)",
+      "input": "プランID",
+      "output": "ad更新",
+      "state_change": "ad",
+      "persistence": "save()",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1126-1132, pachinko/index.html:425-430",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-10",
+      "name": "新装開店フェアの予約",
+      "description": "翌営業日に客数1.5倍+評判上昇",
+      "entry_point": "btnGrand",
+      "input": "なし",
+      "output": "money-=300000 / grandOpen=true / lastGrand=day",
+      "state_change": "money, grandOpen, lastGrand",
+      "persistence": "save()",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1812-1820",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "CONTEXTUAL"
+    },
+    {
+      "id": "FN-11",
+      "name": "店舗の拡張",
+      "description": "最大設置数を+5(上限60)",
+      "entry_point": "btnExpand",
+      "input": "なし",
+      "output": "money-=expandCost() / cap+=5",
+      "state_change": "money, cap",
+      "persistence": "save()",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1804-1811, pachinko/index.html:1107",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-12",
+      "name": "借入",
+      "description": "100万円単位で借入(枠内)",
+      "entry_point": "btnBorrow",
+      "input": "なし",
+      "output": "money+=100万 / debt+=100万 / maxDebt更新",
+      "state_change": "money, debt, maxDebt",
+      "persistence": "save()",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1822-1829, pachinko/index.html:677",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-13",
+      "name": "返済",
+      "description": "100万円単位で返済",
+      "entry_point": "btnRepay",
+      "input": "なし",
+      "output": "money-=x / debt-=x",
+      "state_change": "money, debt",
+      "persistence": "save()",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1830-1838",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-14",
+      "name": "交換率ポリシーの切替",
+      "description": "等価交換 / 低換金",
+      "entry_point": "交換率ボタン(2種)",
+      "input": "ポリシーID",
+      "output": "rate更新",
+      "state_change": "rate",
+      "persistence": "save()",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1155-1162",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-15",
+      "name": "手動セーブ",
+      "description": "現在状態を保存し完了を通知",
+      "entry_point": "btnSave",
+      "input": "なし",
+      "output": "localStorage更新+通知",
+      "state_change": "なし",
+      "persistence": "localStorage",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1839",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "OPTIONAL"
+    },
+    {
+      "id": "FN-16",
+      "name": "最初からやり直す",
+      "description": "確認後にセーブ削除し新規開始",
+      "entry_point": "btnReset",
+      "input": "確認",
+      "output": "state初期化+チュートリアルへ",
+      "state_change": "state全体",
+      "persistence": "localStorage削除",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1840-1842, pachinko/index.html:1744",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-17",
+      "name": "1営業日の実行",
+      "description": "当日の客数・収支・評判・常連・警戒度・実績を計算し1日進める",
+      "entry_point": "btnOpen",
+      "input": "state全体",
+      "output": "結果レコードと発生イベント",
+      "state_change": "money, rep, regulars, heat, day, machines.pop, ach, history, trend, ad, grandOpen, debt",
+      "persistence": "save(true)",
+      "screen": "SCR-01",
+      "code": "pachinko/index.html:1788-1800, pachinko/index.html:718-949",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-18",
+      "name": "当日結果の提示",
+      "description": "収支・客層内訳・台別収支・イベント文を提示",
+      "entry_point": "FN-17完了時",
+      "input": "rec, notes",
+      "output": "結果画面",
+      "state_change": "なし",
+      "persistence": "なし",
+      "screen": "SCR-07",
+      "code": "pachinko/index.html:1300-1335",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-19",
+      "name": "週次レポートの提示",
+      "description": "7日毎に週間実績と助言(8条件)を提示",
+      "entry_point": "rec.day%7===0",
+      "input": "直近7日+現在state",
+      "output": "レポート追記",
+      "state_change": "なし",
+      "persistence": "なし",
+      "screen": "SCR-07",
+      "code": "pachinko/index.html:954-985",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "CONTEXTUAL"
+    },
+    {
+      "id": "FN-20",
+      "name": "クリア判定と評価",
+      "description": "純資産1億到達で告知と S/A/B/C 評価",
+      "entry_point": "FN-17内の判定",
+      "input": "clearDay",
+      "output": "cleared=true / clearDay記録 / 告知",
+      "state_change": "cleared, clearDay",
+      "persistence": "save(true)",
+      "screen": "SCR-07",
+      "code": "pachinko/index.html:945, pachinko/index.html:951, pachinko/index.html:1315-1318",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "CONTEXTUAL"
+    },
+    {
+      "id": "FN-21",
+      "name": "倒産の確定と操作封鎖",
+      "description": "money<0で終局。やり直し以外を拒否",
+      "entry_point": "FN-17後 / closeModal / 起動時",
+      "input": "なし",
+      "output": "倒産提示。全経営操作を拒否",
+      "state_change": "なし",
+      "persistence": "なし",
+      "screen": "SCR-08",
+      "code": "pachinko/index.html:1276-1283, pachinko/index.html:1312-1314, pachinko/index.html:1854",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "CONTEXTUAL"
+    },
+    {
+      "id": "FN-22",
+      "name": "損益推移の提示",
+      "description": "直近30営業日の純利益を推移として提示し個別日を参照",
+      "entry_point": "ledger表示時",
+      "input": "history30件",
+      "output": "推移表示+hover詳細",
+      "state_change": "なし",
+      "persistence": "なし",
+      "screen": "SCR-05",
+      "code": "pachinko/index.html:1194-1250",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-23",
+      "name": "営業成績の提示",
+      "description": "最大60営業日×8項目を新しい順に提示",
+      "entry_point": "ledger表示時",
+      "input": "history",
+      "output": "明細表示",
+      "state_change": "なし",
+      "persistence": "なし",
+      "screen": "SCR-05",
+      "code": "pachinko/index.html:1251-1269",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-24",
+      "name": "実績の解除と一時通知",
+      "description": "未解除条件の成立で解除し通知",
+      "entry_point": "grantAch()",
+      "input": "実績ID",
+      "output": "ach追加+一時通知",
+      "state_change": "ach",
+      "persistence": "save(true)",
+      "screen": "SCR-12",
+      "code": "pachinko/index.html:698-712, pachinko/index.html:934-945",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "CONTEXTUAL"
+    },
+    {
+      "id": "FN-25",
+      "name": "実績一覧の提示",
+      "description": "15件を名称・条件・解除状態で提示",
+      "entry_point": "mgmt表示時",
+      "input": "ACHIEVEMENTS, ach",
+      "output": "一覧表示",
+      "state_change": "なし",
+      "persistence": "なし",
+      "screen": "SCR-04",
+      "code": "pachinko/index.html:1180-1192, pachinko/index.html:604-620",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "OPTIONAL"
+    },
+    {
+      "id": "FN-26",
+      "name": "経営ステータスの常時提示",
+      "description": "7指標と特日/週末/ブームを提示",
+      "entry_point": "状態更新ごと",
+      "input": "state",
+      "output": "指標表示更新",
+      "state_change": "なし",
+      "persistence": "なし",
+      "screen": "SCR-01",
+      "code": "pachinko/index.html:986-999",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-27",
+      "name": "難易度選択によるゲーム開始",
+      "description": "3難易度から初期条件を決めて開始",
+      "entry_point": "チュートリアルの難易度操作",
+      "input": "難易度ID",
+      "output": "state初期化",
+      "state_change": "state全体",
+      "persistence": "save(true)",
+      "screen": "SCR-06",
+      "code": "pachinko/index.html:1752-1758, pachinko/index.html:391-396",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-28",
+      "name": "提示の閉了と復帰",
+      "description": "結果/案内/遊技を閉じて経営へ戻る(倒産時は不可)",
+      "entry_point": "閉じる操作 / 背景操作",
+      "input": "なし",
+      "output": "提示を閉じ再描画。遊技のタイマーを全停止",
+      "state_change": "なし",
+      "persistence": "なし",
+      "screen": "SCR-07",
+      "code": "pachinko/index.html:1285-1298",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-29",
+      "name": "スロット遊技: 開始操作",
+      "description": "3枚消費して抽選し3リールを回転",
+      "entry_point": "trLever",
+      "input": "なし",
+      "output": "credits-3 / games+1 / 抽選確定",
+      "state_change": "試打ローカル状態のみ",
+      "persistence": "なし",
+      "screen": "SCR-10",
+      "code": "pachinko/index.html:1434-1452, pachinko/index.html:1405-1416",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-30",
+      "name": "スロット遊技: リール停止と結果確定",
+      "description": "3リールを個別停止し成立役と獲得を確定",
+      "entry_point": "stop0/1/2",
+      "input": "停止対象",
+      "output": "図柄確定 / 獲得枚数 / BB・RB加算",
+      "state_change": "試打ローカル状態のみ",
+      "persistence": "なし",
+      "screen": "SCR-10",
+      "code": "pachinko/index.html:1454-1485",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-31",
+      "name": "スロット遊技: 試打設定の変更",
+      "description": "抽選確率を設定1〜6で切替(店の設定は不変)",
+      "entry_point": "trSet",
+      "input": "1〜6",
+      "output": "以後の抽選確率が変化",
+      "state_change": "試打ローカル状態のみ",
+      "persistence": "なし",
+      "screen": "SCR-10",
+      "code": "pachinko/index.html:1489, pachinko/index.html:1347",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "CONTEXTUAL"
+    },
+    {
+      "id": "FN-32",
+      "name": "スロット遊技: メダル補充",
+      "description": "所持メダルを500増やす(無償)",
+      "entry_point": "trRefill",
+      "input": "なし",
+      "output": "credits+500",
+      "state_change": "試打ローカル状態のみ",
+      "persistence": "なし",
+      "screen": "SCR-10",
+      "code": "pachinko/index.html:1490",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "CONTEXTUAL"
+    },
+    {
+      "id": "FN-33",
+      "name": "パチンコ遊技: 回転操作",
+      "description": "釘設定に応じた玉を消費し1回転を抽選",
+      "entry_point": "pSpin",
+      "input": "なし",
+      "output": "balls-cost / spins+1 / 演出",
+      "state_change": "試打ローカル状態のみ",
+      "persistence": "なし",
+      "screen": "SCR-11",
+      "code": "pachinko/index.html:1558-1596, pachinko/index.html:1550",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-34",
+      "name": "パチンコ遊技: 連続大当りの継続抽選",
+      "description": "継続率で連チャンを繰り返し総獲得を提示",
+      "entry_point": "当選時に自動",
+      "input": "c.spec.rushPct",
+      "output": "balls加算 / 連チャン数 / maxRen更新",
+      "state_change": "試打ローカル状態のみ",
+      "persistence": "なし",
+      "screen": "SCR-11",
+      "code": "pachinko/index.html:1598-1629",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "REQUIRED"
+    },
+    {
+      "id": "FN-35",
+      "name": "パチンコ遊技: 自動回転",
+      "description": "一定間隔で回転を自動実行",
+      "entry_point": "pAuto",
+      "input": "ON/OFF",
+      "output": "自動回転の開始/停止",
+      "state_change": "試打ローカル状態のみ",
+      "persistence": "なし",
+      "screen": "SCR-11",
+      "code": "pachinko/index.html:1632-1639",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "CONTEXTUAL"
+    },
+    {
+      "id": "FN-36",
+      "name": "パチンコ遊技: 釘変更と玉補充",
+      "description": "釘1〜6で消費玉が変化 / 玉を1000補充",
+      "entry_point": "trSet, pRefill",
+      "input": "1〜6 / なし",
+      "output": "spinCost変化 / balls+1000",
+      "state_change": "試打ローカル状態のみ",
+      "persistence": "なし",
+      "screen": "SCR-11",
+      "code": "pachinko/index.html:1640-1641, pachinko/index.html:1550",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "CONTEXTUAL"
+    },
+    {
+      "id": "FN-37",
+      "name": "自動保存と自動復元(保存値の無害化)",
+      "description": "状態を保存し起動時に復元。破損値は補正/除去",
+      "entry_point": "save()/load()/sanitizeState()",
+      "input": "localStorage",
+      "output": "前回状態から再開または新規開始",
+      "state_change": "state全体",
+      "persistence": "localStorage",
+      "screen": "APP_LEVEL",
+      "code": "pachinko/index.html:1652-1743, pachinko/index.html:1848-1856",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "NONE"
+    },
+    {
+      "id": "FN-38",
+      "name": "オフライン動作(Service Worker)",
+      "description": "https配信時にSWを登録しオフラインで起動可能に",
+      "entry_point": "起動時(http(s)のみ)",
+      "input": "なし",
+      "output": "キャッシュ登録 / オフライン応答",
+      "state_change": "なし",
+      "persistence": "CacheStorage",
+      "screen": "APP_LEVEL",
+      "code": "pachinko/index.html:1845-1847, pachinko/sw.js:1-32",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "NONE"
+    },
+    {
+      "id": "FN-39",
+      "name": "デスクトップ起動(Electron)",
+      "description": "同一HTMLをネイティブウィンドウで起動",
+      "entry_point": "アプリ起動",
+      "input": "なし",
+      "output": "1080x920ウィンドウでゲーム描画",
+      "state_change": "なし",
+      "persistence": "アプリ内localStorage",
+      "screen": "APP_LEVEL",
+      "code": "pachinko/desktop/main.js:1-46",
+      "test_evidence": "NOT_FOUND",
+      "design_visibility": "NONE"
+    }
+  ],
+  "actions": [
+    {
+      "id": "ACT-01",
+      "label": "営業開始",
+      "screen": "SCR-01",
+      "state": "ST-01",
+      "function": "FN-17",
+      "destructive": false,
+      "reversible": "NO(1日進行は巻き戻せない)",
+      "confirmation": false,
+      "disabled_condition": "倒産中 / 提示中 / 台0台(案内へ)",
+      "touch_frequency": "VERY_HIGH(毎日)",
+      "code": "pachinko/index.html:369,1788"
+    },
+    {
+      "id": "ACT-02",
+      "label": "ホール",
+      "screen": "SCR-01",
+      "state": "ST-01",
+      "function": "FN-01",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "HIGH",
+      "code": "pachinko/index.html:258,1779"
+    },
+    {
+      "id": "ACT-03",
+      "label": "新台購入",
+      "screen": "SCR-01",
+      "state": "ST-01",
+      "function": "FN-01",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "MEDIUM",
+      "code": "pachinko/index.html:259,1779"
+    },
+    {
+      "id": "ACT-04",
+      "label": "経営",
+      "screen": "SCR-01",
+      "state": "ST-01",
+      "function": "FN-01",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "MEDIUM",
+      "code": "pachinko/index.html:260,1779"
+    },
+    {
+      "id": "ACT-05",
+      "label": "帳簿",
+      "screen": "SCR-01",
+      "state": "ST-01",
+      "function": "FN-01",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:261,1779"
+    },
+    {
+      "id": "ACT-06",
+      "label": "設定1〜6(台ごと)",
+      "screen": "SCR-02",
+      "state": "ST-07",
+      "function": "FN-02",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "倒産中",
+      "touch_frequency": "VERY_HIGH(毎日・台数分)",
+      "code": "pachinko/index.html:1031-1039"
+    },
+    {
+      "id": "ACT-07",
+      "label": "試打(台ごと)",
+      "screen": "SCR-02",
+      "state": "ST-07",
+      "function": "FN-03",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "MEDIUM",
+      "code": "pachinko/index.html:1040-1042"
+    },
+    {
+      "id": "ACT-08",
+      "label": "売却(台ごと)",
+      "screen": "SCR-02",
+      "state": "ST-13",
+      "function": "FN-04",
+      "destructive": true,
+      "reversible": "NO",
+      "confirmation": true,
+      "disabled_condition": "倒産中",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:1043-1052"
+    },
+    {
+      "id": "ACT-09",
+      "label": "試打(カタログ)",
+      "screen": "SCR-03",
+      "state": "ST-14",
+      "function": "FN-05",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:1081-1083"
+    },
+    {
+      "id": "ACT-10",
+      "label": "導入する",
+      "screen": "SCR-03",
+      "state": "ST-14",
+      "function": "FN-06",
+      "destructive": false,
+      "reversible": "NO(売却で45%回収のみ)",
+      "confirmation": false,
+      "disabled_condition": "資金不足 / 設置枠なし / 倒産中",
+      "touch_frequency": "MEDIUM",
+      "code": "pachinko/index.html:1084-1101"
+    },
+    {
+      "id": "ACT-11",
+      "label": "雇用する (+1人)",
+      "screen": "SCR-04",
+      "state": "ST-18",
+      "function": "FN-07",
+      "destructive": false,
+      "reversible": "YES(解雇)",
+      "confirmation": false,
+      "disabled_condition": "倒産中",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:290,1802"
+    },
+    {
+      "id": "ACT-12",
+      "label": "解雇する (−1人)",
+      "screen": "SCR-04",
+      "state": "ST-19",
+      "function": "FN-08",
+      "destructive": false,
+      "reversible": "YES(雇用)",
+      "confirmation": false,
+      "disabled_condition": "staff<=1 / 倒産中",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:291,1803"
+    },
+    {
+      "id": "ACT-13",
+      "label": "広告プラン(4種)",
+      "screen": "SCR-04",
+      "state": "ST-22",
+      "function": "FN-09",
+      "destructive": false,
+      "reversible": "YES(営業前まで)",
+      "confirmation": false,
+      "disabled_condition": "倒産中",
+      "touch_frequency": "MEDIUM",
+      "code": "pachinko/index.html:1126-1132"
+    },
+    {
+      "id": "ACT-14",
+      "label": "フェアを開催する",
+      "screen": "SCR-04",
+      "state": "ST-23",
+      "function": "FN-10",
+      "destructive": false,
+      "reversible": "NO(費用は戻らない)",
+      "confirmation": false,
+      "disabled_condition": "条件未達 / CD中 / 資金不足 / 予約済 / 倒産中",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:302,1812"
+    },
+    {
+      "id": "ACT-15",
+      "label": "+5台 拡張する",
+      "screen": "SCR-04",
+      "state": "ST-28",
+      "function": "FN-11",
+      "destructive": false,
+      "reversible": "NO",
+      "confirmation": false,
+      "disabled_condition": "資金不足 / 上限60 / 倒産中",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:308,1804"
+    },
+    {
+      "id": "ACT-16",
+      "label": "借りる (+100万)",
+      "screen": "SCR-04",
+      "state": "ST-31",
+      "function": "FN-12",
+      "destructive": false,
+      "reversible": "YES(返済)",
+      "confirmation": false,
+      "disabled_condition": "枠上限 / 倒産中",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:318,1822"
+    },
+    {
+      "id": "ACT-17",
+      "label": "返済する (−100万)",
+      "screen": "SCR-04",
+      "state": "ST-32",
+      "function": "FN-13",
+      "destructive": false,
+      "reversible": "YES(借入)",
+      "confirmation": false,
+      "disabled_condition": "残高なし / 資金不足 / 倒産中",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:319,1830"
+    },
+    {
+      "id": "ACT-18",
+      "label": "交換率(2種)",
+      "screen": "SCR-04",
+      "state": "ST-33",
+      "function": "FN-14",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "倒産中",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:1155-1162"
+    },
+    {
+      "id": "ACT-19",
+      "label": "セーブ",
+      "screen": "SCR-04",
+      "state": "ST-01",
+      "function": "FN-15",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:340,1839"
+    },
+    {
+      "id": "ACT-20",
+      "label": "最初からやり直す",
+      "screen": "SCR-04",
+      "state": "ST-40",
+      "function": "FN-16",
+      "destructive": true,
+      "reversible": "NO",
+      "confirmation": true,
+      "disabled_condition": "なし",
+      "touch_frequency": "VERY_LOW",
+      "code": "pachinko/index.html:341,1840"
+    },
+    {
+      "id": "ACT-21",
+      "label": "閉じる(結果)",
+      "screen": "SCR-07",
+      "state": "ST-44",
+      "function": "FN-28",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "倒産中は提示されない",
+      "touch_frequency": "VERY_HIGH(毎日)",
+      "code": "pachinko/index.html:1333"
+    },
+    {
+      "id": "ACT-22",
+      "label": "わかった(台0台案内)",
+      "screen": "SCR-09",
+      "state": "ST-06",
+      "function": "FN-28",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "VERY_LOW",
+      "code": "pachinko/index.html:1794"
+    },
+    {
+      "id": "ACT-23",
+      "label": "最初からやり直す(倒産)",
+      "screen": "SCR-08",
+      "state": "ST-47",
+      "function": "FN-16",
+      "destructive": true,
+      "reversible": "NO",
+      "confirmation": true,
+      "disabled_condition": "なし",
+      "touch_frequency": "VERY_LOW",
+      "code": "pachinko/index.html:1281,1314"
+    },
+    {
+      "id": "ACT-24",
+      "label": "のんびり/標準/修羅",
+      "screen": "SCR-06",
+      "state": "―",
+      "function": "FN-27",
+      "destructive": false,
+      "reversible": "NO",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "VERY_LOW(開始時)",
+      "code": "pachinko/index.html:1770-1774"
+    },
+    {
+      "id": "ACT-25",
+      "label": "背景操作で閉じる",
+      "screen": "SCR-07",
+      "state": "ST-44",
+      "function": "FN-28",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "倒産中は閉じない",
+      "touch_frequency": "MEDIUM",
+      "code": "pachinko/index.html:1297"
+    },
+    {
+      "id": "ACT-26",
+      "label": "レバーON (3枚)",
+      "screen": "SCR-10",
+      "state": "ST-48",
+      "function": "FN-29",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "回転中 / メダル3枚未満",
+      "touch_frequency": "VERY_HIGH(遊技中)",
+      "code": "pachinko/index.html:1487"
+    },
+    {
+      "id": "ACT-27",
+      "label": "STOP ×3",
+      "screen": "SCR-10",
+      "state": "ST-49",
+      "function": "FN-30",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "未回転",
+      "touch_frequency": "VERY_HIGH(遊技中)",
+      "code": "pachinko/index.html:1488"
+    },
+    {
+      "id": "ACT-28",
+      "label": "試打設定(スロット)",
+      "screen": "SCR-10",
+      "state": "ST-48",
+      "function": "FN-31",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:1489"
+    },
+    {
+      "id": "ACT-29",
+      "label": "メダル補充 (+500)",
+      "screen": "SCR-10",
+      "state": "ST-53",
+      "function": "FN-32",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:1490"
+    },
+    {
+      "id": "ACT-30",
+      "label": "試打を終える",
+      "screen": "SCR-10",
+      "state": "ST-48",
+      "function": "FN-28",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "MEDIUM",
+      "code": "pachinko/index.html:1389,1533"
+    },
+    {
+      "id": "ACT-31",
+      "label": "回す",
+      "screen": "SCR-11",
+      "state": "ST-54",
+      "function": "FN-33",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "回転中 / 玉不足",
+      "touch_frequency": "VERY_HIGH(遊技中)",
+      "code": "pachinko/index.html:1631"
+    },
+    {
+      "id": "ACT-32",
+      "label": "オート",
+      "screen": "SCR-11",
+      "state": "ST-54",
+      "function": "FN-35",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:1632"
+    },
+    {
+      "id": "ACT-33",
+      "label": "釘(設定)",
+      "screen": "SCR-11",
+      "state": "ST-54",
+      "function": "FN-36",
+      "destructive": false,
+      "reversible": "YES",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:1640"
+    },
+    {
+      "id": "ACT-34",
+      "label": "玉補充 (+1000)",
+      "screen": "SCR-11",
+      "state": "ST-61",
+      "function": "FN-36",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "なし",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:1641"
+    },
+    {
+      "id": "ACT-35",
+      "label": "推移上の個別日を参照",
+      "screen": "SCR-05",
+      "state": "ST-42",
+      "function": "FN-22",
+      "destructive": false,
+      "reversible": "―",
+      "confirmation": false,
+      "disabled_condition": "履歴0件",
+      "touch_frequency": "LOW",
+      "code": "pachinko/index.html:1240-1250"
+    }
+  ],
+  "data_fields": [
+    {
+      "id": "D-01",
+      "name": "営業日",
+      "type": "integer",
+      "unit": "日",
+      "range": "1〜1,000,000(保存時クランプ)",
+      "format": "N日目 + 特日/週末の別",
+      "source": "state.day / pachinko/index.html:988,1663",
+      "update_timing": "1営業日実行ごと",
+      "screen": "SCR-01",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約12字"
+    },
+    {
+      "id": "D-02",
+      "name": "資金",
+      "type": "integer",
+      "unit": "円",
+      "range": "-1e13〜1e13(保存時クランプ)。負値で倒産",
+      "format": "¥ + 3桁区切り",
+      "source": "state.money / pachinko/index.html:989,1664,623",
+      "update_timing": "営業実行・購入・売却・融資・拡張ごと",
+      "screen": "SCR-01",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": false,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-03",
+      "name": "評判",
+      "type": "number",
+      "unit": "なし(0-100尺度)",
+      "range": "1〜100",
+      "format": "整数 / 100",
+      "source": "state.rep / pachinko/index.html:990,906,1665",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-01",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "9字"
+    },
+    {
+      "id": "D-04",
+      "name": "常連客数",
+      "type": "number",
+      "unit": "人",
+      "range": "0〜100000(保存時)。実質は収容力×0.5が上限",
+      "format": "整数+人",
+      "source": "state.regulars / pachinko/index.html:991,885-891,1666",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-01",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約8字"
+    },
+    {
+      "id": "D-05",
+      "name": "設置台数 / 最大設置数",
+      "type": "integer",
+      "unit": "台",
+      "range": "0〜60 / 10〜60",
+      "format": "N / M",
+      "source": "machines.length, state.cap / pachinko/index.html:992",
+      "update_timing": "購入・売却・拡張ごと",
+      "screen": "SCR-01",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "7字"
+    },
+    {
+      "id": "D-06",
+      "name": "借入残高",
+      "type": "integer",
+      "unit": "円",
+      "range": "0〜1e12。0のとき「なし」表記",
+      "format": "¥+区切り または なし",
+      "source": "state.debt / pachinko/index.html:993,1668",
+      "update_timing": "借入・返済・緊急融資ごと",
+      "screen": "SCR-01",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-07",
+      "name": "純資産",
+      "type": "integer",
+      "unit": "円",
+      "range": "下限なし(資金+台資産-借金)",
+      "format": "¥+区切り",
+      "source": "totalAssets() / pachinko/index.html:676,994",
+      "update_timing": "上記いずれかの更新時",
+      "screen": "SCR-01",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": false,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-08",
+      "name": "今週のブーム名",
+      "type": "string",
+      "unit": "なし",
+      "range": "TRENDS の7種のいずれか",
+      "format": "「今週:「名称」」",
+      "source": "state.trend.name / pachinko/index.html:433-441,996",
+      "update_timing": "7日ごと(day%7===1)",
+      "screen": "SCR-01",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": true,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-09",
+      "name": "機種名",
+      "type": "string",
+      "unit": "なし",
+      "range": "CATALOG 10種",
+      "format": "そのまま",
+      "source": "CATALOG[].name / pachinko/index.html:398-421",
+      "update_timing": "不変(静的)",
+      "screen": "SCR-02,SCR-03",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "13字(最長: P究極神威ゴッドラッシュ)"
+    },
+    {
+      "id": "D-10",
+      "name": "機種の説明文",
+      "type": "string",
+      "unit": "なし",
+      "range": "CATALOG 10種",
+      "format": "そのまま",
+      "source": "CATALOG[].desc / pachinko/index.html:398-421",
+      "update_timing": "不変(静的)",
+      "screen": "SCR-02,SCR-03",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "16字"
+    },
+    {
+      "id": "D-11",
+      "name": "機種スペック表記",
+      "type": "string",
+      "unit": "なし",
+      "range": "CATALOG 10種",
+      "format": "そのまま",
+      "source": "CATALOG[].spec.label / pachinko/index.html:398-421",
+      "update_timing": "不変(静的)",
+      "screen": "SCR-02,SCR-03",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "20字(甘デジ 1/99・RUSH継続50%)"
+    },
+    {
+      "id": "D-12",
+      "name": "台の現在人気",
+      "type": "number",
+      "unit": "なし(0-300尺度)",
+      "range": "15〜300(実運用は15〜165程度)",
+      "format": "整数 + 比率表現",
+      "source": "machine.pop / pachinko/index.html:689,860,1043,1690",
+      "update_timing": "営業実行ごとに機種別decayで低下",
+      "screen": "SCR-02",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "3字"
+    },
+    {
+      "id": "D-13",
+      "name": "台の前日収支(店側)",
+      "type": "integer",
+      "unit": "円",
+      "range": "負値あり",
+      "format": "+/- ¥+区切り",
+      "source": "machine.lastNet / pachinko/index.html:858,1014-1015",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-02,SCR-07",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": true,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-14",
+      "name": "台の前日客数",
+      "type": "integer",
+      "unit": "人",
+      "range": "0以上",
+      "format": "客N人",
+      "source": "machine.lastCust / pachinko/index.html:859,1015",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-02",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": true,
+      "max_realistic_length": "約7字"
+    },
+    {
+      "id": "D-15",
+      "name": "台の売却額",
+      "type": "integer",
+      "unit": "円",
+      "range": "購入価格×0.45 = 180,000〜652,500",
+      "format": "¥+区切り",
+      "source": "machineValue() / pachinko/index.html:674,1016",
+      "update_timing": "不変(機種依存)",
+      "screen": "SCR-02",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約10字"
+    },
+    {
+      "id": "D-16",
+      "name": "台の現在設定",
+      "type": "integer",
+      "unit": "段階",
+      "range": "1〜6",
+      "format": "設定N",
+      "source": "machine.setting / pachinko/index.html:1031-1039,1689",
+      "update_timing": "設定変更ごと",
+      "screen": "SCR-02,SCR-07",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "4字"
+    },
+    {
+      "id": "D-17",
+      "name": "台の状態標識",
+      "type": "string[]",
+      "unit": "なし",
+      "range": "ブーム中 / シマ+N% / プロ警戒(最大3件同時)",
+      "format": "記号+短語",
+      "source": "pachinko/index.html:1019-1023",
+      "update_timing": "営業実行・設定変更・購入売却ごと",
+      "screen": "SCR-02",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": true,
+      "max_realistic_length": "約20字"
+    },
+    {
+      "id": "D-18",
+      "name": "新台標識",
+      "type": "boolean",
+      "unit": "なし",
+      "range": "導入から5日未満",
+      "format": "短語(NEW)",
+      "source": "pachinko/index.html:1011,1025",
+      "update_timing": "日進行で失効",
+      "screen": "SCR-02",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "3字"
+    },
+    {
+      "id": "D-19",
+      "name": "機種の集客力",
+      "type": "integer",
+      "unit": "なし",
+      "range": "50〜118",
+      "format": "集客力 N",
+      "source": "CATALOG[].pop / pachinko/index.html:398-421,1073",
+      "update_timing": "不変(静的)",
+      "screen": "SCR-03",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "3字"
+    },
+    {
+      "id": "D-20",
+      "name": "機種の人気低下の速さ",
+      "type": "string",
+      "unit": "なし",
+      "range": "遅い / 普通 / 速い(decay 0.4〜2.0)",
+      "format": "3段階の語",
+      "source": "CATALOG[].decay / pachinko/index.html:1073",
+      "update_timing": "不変(静的)",
+      "screen": "SCR-03",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "2字"
+    },
+    {
+      "id": "D-21",
+      "name": "機種の価格",
+      "type": "integer",
+      "unit": "円",
+      "range": "400,000〜1,450,000",
+      "format": "¥+区切り",
+      "source": "CATALOG[].price / pachinko/index.html:398-421,1075",
+      "update_timing": "不変(静的)",
+      "screen": "SCR-03",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約10字"
+    },
+    {
+      "id": "D-22",
+      "name": "自店の同一機種設置数",
+      "type": "integer",
+      "unit": "台",
+      "range": "1〜60",
+      "format": "設置中×N",
+      "source": "pachinko/index.html:1062,1070",
+      "update_timing": "購入・売却ごと",
+      "screen": "SCR-03",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": true,
+      "max_realistic_length": "約8字"
+    },
+    {
+      "id": "D-23",
+      "name": "スタッフ数と日給合計",
+      "type": "integer",
+      "unit": "人 / 円",
+      "range": "1〜200 / 13,000×人数",
+      "format": "N人 (日給計 ¥…)",
+      "source": "state.staff / pachinko/index.html:1110,868",
+      "update_timing": "雇用・解雇ごと",
+      "screen": "SCR-04",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約22字"
+    },
+    {
+      "id": "D-24",
+      "name": "必要スタッフ数",
+      "type": "integer",
+      "unit": "人",
+      "range": "ceil(台数/8) の下限1",
+      "format": "N人 + 充足/不足の別",
+      "source": "staffNeeded() / pachinko/index.html:680,1112",
+      "update_timing": "購入・売却ごと",
+      "screen": "SCR-04",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約12字"
+    },
+    {
+      "id": "D-25",
+      "name": "広告プラン名と費用",
+      "type": "string+integer",
+      "unit": "円",
+      "range": "4種 / 0〜250,000",
+      "format": "名称 (¥費用)",
+      "source": "ADS / pachinko/index.html:425-430,1128",
+      "update_timing": "不変(静的)",
+      "screen": "SCR-04",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約20字"
+    },
+    {
+      "id": "D-26",
+      "name": "広告の効果表記",
+      "type": "string",
+      "unit": "人 / %",
+      "range": "+12〜75人 / 4〜15%",
+      "format": "客数 +N人 + 集客率N%ブースト",
+      "source": "ADS[].flat/.pct / pachinko/index.html:1142",
+      "update_timing": "選択ごと",
+      "screen": "SCR-04",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約34字"
+    },
+    {
+      "id": "D-27",
+      "name": "フェアの可否と理由",
+      "type": "string",
+      "unit": "なし",
+      "range": "5種(開催可 / 予約済 / 直後のみ / 残りN日 / 資金不足)",
+      "format": "短文",
+      "source": "pachinko/index.html:1145-1153",
+      "update_timing": "状態変化ごと",
+      "screen": "SCR-04",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約20字"
+    },
+    {
+      "id": "D-28",
+      "name": "最大設置数",
+      "type": "integer",
+      "unit": "台",
+      "range": "10〜60(上限到達表記あり)",
+      "format": "N台 (+最大)",
+      "source": "state.cap / pachinko/index.html:1116",
+      "update_timing": "拡張ごと",
+      "screen": "SCR-04",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約9字"
+    },
+    {
+      "id": "D-29",
+      "name": "拡張費用",
+      "type": "integer",
+      "unit": "円",
+      "range": "2,000,000〜5,000,000",
+      "format": "¥+区切り",
+      "source": "expandCost() / pachinko/index.html:1107,1121",
+      "update_timing": "拡張ごと",
+      "screen": "SCR-04",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約10字"
+    },
+    {
+      "id": "D-30",
+      "name": "借入可能枠",
+      "type": "integer",
+      "unit": "円",
+      "range": "2,000,000〜(台資産×0.7+200万)",
+      "format": "¥+区切り",
+      "source": "creditLimit() / pachinko/index.html:677,1156",
+      "update_timing": "購入・売却・借入ごと",
+      "screen": "SCR-04",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-31",
+      "name": "金利",
+      "type": "string",
+      "unit": "%/日",
+      "range": "0.25% 固定",
+      "format": "0.25% / 日 (経費に計上)",
+      "source": "pachinko/index.html:316,870",
+      "update_timing": "不変(静的)",
+      "screen": "SCR-04",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約22字"
+    },
+    {
+      "id": "D-32",
+      "name": "交換率ポリシー",
+      "type": "string",
+      "unit": "なし",
+      "range": "等価交換 / 低換金 (5.6枚)",
+      "format": "名称+説明",
+      "source": "state.rate / pachinko/index.html:1163-1172",
+      "update_timing": "切替ごと",
+      "screen": "SCR-04",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約13字"
+    },
+    {
+      "id": "D-33",
+      "name": "行政・組合の警戒度",
+      "type": "number",
+      "unit": "なし(0-12尺度で表現)",
+      "range": "0〜200(保存時)。表現上は0〜12を100%に対応",
+      "format": "比率表現 + 3段階の説明文",
+      "source": "state.heat / pachinko/index.html:793-799,1174-1179",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-04",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約46字(説明文)"
+    },
+    {
+      "id": "D-34",
+      "name": "実績(名称/条件/解除状態)",
+      "type": "object[]",
+      "unit": "なし",
+      "range": "15件固定",
+      "format": "名称+説明+解除状態",
+      "source": "ACHIEVEMENTS, state.ach / pachinko/index.html:604-620,1180-1192",
+      "update_timing": "条件成立ごと",
+      "screen": "SCR-04",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "名称6字/説明24字"
+    },
+    {
+      "id": "D-35",
+      "name": "帳簿: 日",
+      "type": "integer",
+      "unit": "日",
+      "range": "1〜",
+      "format": "N日目",
+      "source": "history[].day / pachinko/index.html:1262",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-05",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約7字"
+    },
+    {
+      "id": "D-36",
+      "name": "帳簿: 客数",
+      "type": "integer",
+      "unit": "人",
+      "range": "0〜(収容力×1.15が上限)",
+      "format": "N人",
+      "source": "history[].cust / pachinko/index.html:1262",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-05",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約7字"
+    },
+    {
+      "id": "D-37",
+      "name": "帳簿: 一般/常連/プロの内訳",
+      "type": "integer×3",
+      "unit": "人",
+      "range": "各0以上",
+      "format": "N / N / N",
+      "source": "history[].cas,reg,pro / pachinko/index.html:1263",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-05,SCR-07",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": true,
+      "max_realistic_length": "約14字"
+    },
+    {
+      "id": "D-38",
+      "name": "帳簿: 売上",
+      "type": "integer",
+      "unit": "円",
+      "range": "0以上",
+      "format": "¥+区切り",
+      "source": "history[].sales / pachinko/index.html:1264",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-05,SCR-07",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-39",
+      "name": "帳簿: 出玉払出",
+      "type": "integer",
+      "unit": "円",
+      "range": "負値もあり得る(粗利が負のとき売上超)",
+      "format": "¥+区切り",
+      "source": "history[].payout / pachinko/index.html:864,1264",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-05,SCR-07",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": false,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-40",
+      "name": "帳簿: 経費",
+      "type": "integer",
+      "unit": "円",
+      "range": "0以上(家賃+人件費+光熱費+広告+臨時+利息)",
+      "format": "¥+区切り",
+      "source": "history[].exp / pachinko/index.html:871,1264",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-05,SCR-07",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-41",
+      "name": "帳簿: 純利益",
+      "type": "integer",
+      "unit": "円",
+      "range": "負値あり",
+      "format": "+/- ¥+区切り",
+      "source": "history[].net / pachinko/index.html:874,1265",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-05,SCR-07",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": false,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-42",
+      "name": "帳簿: 備考",
+      "type": "string",
+      "unit": "なし",
+      "range": "特日 / 週末 / 空",
+      "format": "短語",
+      "source": "history[].note / pachinko/index.html:925,1266",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-05",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": true,
+      "max_realistic_length": "2字"
+    },
+    {
+      "id": "D-43",
+      "name": "損益推移(直近30日)",
+      "type": "integer[]",
+      "unit": "円",
+      "range": "負値あり。最大/最小/0の3基準線",
+      "format": "比率表現 + 万単位ラベル",
+      "source": "renderChart() / pachinko/index.html:1194-1239",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-05",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": false,
+      "max_realistic_length": "ラベル約8字"
+    },
+    {
+      "id": "D-44",
+      "name": "推移の個別日詳細",
+      "type": "string",
+      "unit": "円",
+      "range": "―",
+      "format": "N日目: +/-¥金額",
+      "source": "pachinko/index.html:1243-1244",
+      "update_timing": "ポイント時",
+      "screen": "SCR-05",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": false,
+      "max_realistic_length": "約24字"
+    },
+    {
+      "id": "D-45",
+      "name": "当日の発生イベント文",
+      "type": "string[]",
+      "unit": "なし",
+      "range": "130種+システム文。1日0〜複数件",
+      "format": "短文",
+      "source": "LUCK_EVENTS/COND_EVENTS / pachinko/index.html:450-601,1302",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-07",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": true,
+      "max_realistic_length": "29字(絵文字除く実測)"
+    },
+    {
+      "id": "D-46",
+      "name": "当日の利息",
+      "type": "integer",
+      "unit": "円",
+      "range": "0以上",
+      "format": "(利息¥…含む)",
+      "source": "history[].interest / pachinko/index.html:870,1328",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-07",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-47",
+      "name": "台別の店側収支一覧",
+      "type": "object[]",
+      "unit": "円",
+      "range": "台数分。降順",
+      "format": "機種名 [設定N] +/-¥金額",
+      "source": "pachinko/index.html:1303-1309",
+      "update_timing": "営業実行ごと",
+      "screen": "SCR-07",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": false,
+      "max_realistic_length": "約34字/行"
+    },
+    {
+      "id": "D-48",
+      "name": "週間純利益",
+      "type": "integer",
+      "unit": "円",
+      "range": "負値あり",
+      "format": "+/- ¥+区切り",
+      "source": "weeklyReport() / pachinko/index.html:957,981",
+      "update_timing": "7日ごと",
+      "screen": "SCR-07",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": false,
+      "max_realistic_length": "約16字"
+    },
+    {
+      "id": "D-49",
+      "name": "週間平均客数",
+      "type": "integer",
+      "unit": "人",
+      "range": "0以上",
+      "format": "N人/日",
+      "source": "pachinko/index.html:958,982",
+      "update_timing": "7日ごと",
+      "screen": "SCR-07",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約8字"
+    },
+    {
+      "id": "D-50",
+      "name": "週次の助言",
+      "type": "string[]",
+      "unit": "なし",
+      "range": "8条件のうち成立分。0件時は既定文1件",
+      "format": "短文",
+      "source": "weeklyReport() / pachinko/index.html:962-978",
+      "update_timing": "7日ごと",
+      "screen": "SCR-07",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約46字"
+    },
+    {
+      "id": "D-51",
+      "name": "クリア評価ランク",
+      "type": "string",
+      "unit": "なし",
+      "range": "S(<=65日) / A(<=85) / B(<=120) / C",
+      "format": "1文字 + 基準の併記",
+      "source": "clearRank() / pachinko/index.html:951,1316-1318",
+      "update_timing": "クリア到達日のみ",
+      "screen": "SCR-07",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": true,
+      "max_realistic_length": "1字"
+    },
+    {
+      "id": "D-52",
+      "name": "スロット: 所持メダル",
+      "type": "integer",
+      "unit": "枚",
+      "range": "0以上(補充で+500)",
+      "format": "整数+枚",
+      "source": "t.credits / pachinko/index.html:1398,1435",
+      "update_timing": "1G・補充ごと",
+      "screen": "SCR-10",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約6字"
+    },
+    {
+      "id": "D-53",
+      "name": "スロット: 総ゲーム数",
+      "type": "integer",
+      "unit": "G",
+      "range": "0以上",
+      "format": "整数+G",
+      "source": "t.games / pachinko/index.html:1399,1436",
+      "update_timing": "1Gごと",
+      "screen": "SCR-10",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約6字"
+    },
+    {
+      "id": "D-54",
+      "name": "スロット: BIG/REG回数",
+      "type": "integer×2",
+      "unit": "回",
+      "range": "0以上",
+      "format": "整数",
+      "source": "t.bb,t.rb / pachinko/index.html:1400-1401,1467-1468",
+      "update_timing": "当選ごと",
+      "screen": "SCR-10",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約4字"
+    },
+    {
+      "id": "D-55",
+      "name": "スロット: 差枚",
+      "type": "integer",
+      "unit": "枚",
+      "range": "負値あり",
+      "format": "+/-整数",
+      "source": "t.diff / pachinko/index.html:1402,1481",
+      "update_timing": "1G・当選ごと",
+      "screen": "SCR-10",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": false,
+      "max_realistic_length": "約7字"
+    },
+    {
+      "id": "D-56",
+      "name": "スロット: 直前の結果文",
+      "type": "string",
+      "unit": "枚",
+      "range": "BIG/REG/小役/リプレイ/なし",
+      "format": "記号+短文+獲得枚数",
+      "source": "pachinko/index.html:1467-1472",
+      "update_timing": "1Gごと",
+      "screen": "SCR-10",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": true,
+      "max_realistic_length": "約18字"
+    },
+    {
+      "id": "D-57",
+      "name": "パチンコ: 持ち玉",
+      "type": "integer",
+      "unit": "玉",
+      "range": "0以上(補充で+1000)",
+      "format": "整数",
+      "source": "t.balls / pachinko/index.html:1541,1560",
+      "update_timing": "1回転・当選・補充ごと",
+      "screen": "SCR-11",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約6字"
+    },
+    {
+      "id": "D-58",
+      "name": "パチンコ: 回転数",
+      "type": "integer",
+      "unit": "回転",
+      "range": "0以上",
+      "format": "整数+回転",
+      "source": "t.spins / pachinko/index.html:1542,1560",
+      "update_timing": "1回転ごと",
+      "screen": "SCR-11",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約7字"
+    },
+    {
+      "id": "D-59",
+      "name": "パチンコ: 当り回数 / 最高連チャン",
+      "type": "integer×2",
+      "unit": "回 / 連",
+      "range": "0以上",
+      "format": "整数 / 最高N連",
+      "source": "t.hits,t.maxRen / pachinko/index.html:1543-1544,1599,1621",
+      "update_timing": "当選・RUSH終了ごと",
+      "screen": "SCR-11",
+      "can_be_zero": true,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約8字"
+    },
+    {
+      "id": "D-60",
+      "name": "パチンコ: 差玉",
+      "type": "integer",
+      "unit": "玉",
+      "range": "負値あり",
+      "format": "+/-整数",
+      "source": "t.balls-t.startBalls / pachinko/index.html:1545-1546",
+      "update_timing": "1回転・当選ごと",
+      "screen": "SCR-11",
+      "can_be_zero": true,
+      "can_be_negative": true,
+      "can_be_null": false,
+      "max_realistic_length": "約8字"
+    },
+    {
+      "id": "D-61",
+      "name": "パチンコ: RUSH連チャン表記",
+      "type": "string",
+      "unit": "玉",
+      "range": "1連〜(継続率依存で上限なし)",
+      "format": "RUSH N連!! +N玉 / RUSH終了 (N連 / +N玉)",
+      "source": "pachinko/index.html:1610-1620",
+      "update_timing": "当選中",
+      "screen": "SCR-11",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": true,
+      "max_realistic_length": "約34字"
+    },
+    {
+      "id": "D-62",
+      "name": "解除した実績名(一時通知)",
+      "type": "string",
+      "unit": "なし",
+      "range": "15件のいずれか",
+      "format": "記号+実績解除+名称",
+      "source": "pachinko/index.html:704",
+      "update_timing": "条件成立ごと",
+      "screen": "SCR-12",
+      "can_be_zero": false,
+      "can_be_negative": false,
+      "can_be_null": false,
+      "max_realistic_length": "約20字"
+    }
+  ],
+  "protected_logic": [
+    {
+      "id": "P-01",
+      "category": "PROTECTED_FUNCTION",
+      "description": "1営業日の実行は利用者の明示操作のみで発生する",
+      "source": "pachinko/index.html:1788-1800",
+      "symbol": "btnOpen → simulateDay()",
+      "dependencies": "state全体",
+      "must_not_change": "自動進行・省略・複数日一括の導入",
+      "why": "1日1決断がゲームの単位そのもの"
+    },
+    {
+      "id": "P-02",
+      "category": "PROTECTED_FUNCTION",
+      "description": "結果提示中の再実行は無効",
+      "source": "pachinko/index.html:1790",
+      "symbol": "modalBg.contains('show')ガード",
+      "dependencies": "showModal",
+      "must_not_change": "ガードの除去",
+      "why": "1操作で複数日進む不具合になる"
+    },
+    {
+      "id": "P-03",
+      "category": "PROTECTED_FUNCTION",
+      "description": "倒産後はやり直し以外の全経営操作を拒否",
+      "source": "pachinko/index.html:1276-1298,1802-1838",
+      "symbol": "isDead() 15箇所",
+      "dependencies": "state.money",
+      "must_not_change": "ガードの除去・緩和",
+      "why": "売却で資金を回復させる抜け道が復活する"
+    },
+    {
+      "id": "P-04",
+      "category": "PROTECTED_FUNCTION",
+      "description": "破壊的操作の実行確認",
+      "source": "pachinko/index.html:1047,1841",
+      "symbol": "confirm()×2",
+      "dependencies": "―",
+      "must_not_change": "確認の除去",
+      "why": "誤操作で台/セーブを失う"
+    },
+    {
+      "id": "P-05",
+      "category": "PROTECTED_FUNCTION",
+      "description": "試打は経営収支に影響しない",
+      "source": "pachinko/index.html:1349-1651",
+      "symbol": "openSlotTrial/openPachiTrial のローカル t",
+      "dependencies": "state非参照(grantAch除く)",
+      "must_not_change": "試打から経営stateへの書込み追加",
+      "why": "体験モードという製品事実が崩れる"
+    },
+    {
+      "id": "P-06",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "設定別の店側粗利率",
+      "source": "pachinko/index.html:422",
+      "symbol": "MARGIN",
+      "dependencies": "simulateDay",
+      "must_not_change": "値の変更",
+      "why": "中心のトレードオフの強度が変わる"
+    },
+    {
+      "id": "P-07",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "客数モデル(収容力・集客力・充填率)",
+      "source": "pachinko/index.html:806-836",
+      "symbol": "capacity/attract/fillRate/capMax",
+      "dependencies": "machines,rep,trend,ad,diff",
+      "must_not_change": "係数・構造の変更",
+      "why": "経営バランス全体が変わる"
+    },
+    {
+      "id": "P-08",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "客層3種の分離(一般/常連/プロ)",
+      "source": "pachinko/index.html:820-843,856-857",
+      "symbol": "casual/regs/pros",
+      "dependencies": "MARGIN,DIFFS.proMul",
+      "must_not_change": "客層の統合・除去",
+      "why": "出す/渋るの意味が消える"
+    },
+    {
+      "id": "P-09",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "行政警戒度の蓄積と指導判定",
+      "source": "pachinko/index.html:793-800",
+      "symbol": "s.heat / 0.25確率 / 罰金500000",
+      "dependencies": "avgSet,DIFFS.heatMul",
+      "must_not_change": "閾値・確率・罰金の変更",
+      "why": "回収営業の抑止力が変わる"
+    },
+    {
+      "id": "P-10",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "特日/週末の判定と期待バンド",
+      "source": "pachinko/index.html:678-679,782-784,893-905",
+      "symbol": "isTokubi/isWeekend/avgSet分岐",
+      "dependencies": "state.day",
+      "must_not_change": "判定式・バンド境界の変更",
+      "why": "定期的な山場の設計が崩れる"
+    },
+    {
+      "id": "P-11",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "新台効果・シマ効果・ブーム倍率",
+      "source": "pachinko/index.html:682-695",
+      "symbol": "islandBonus/trendMult/effectivePop",
+      "dependencies": "TRENDS,boughtDay",
+      "must_not_change": "倍率・上限の変更",
+      "why": "入替戦略の価値が変わる"
+    },
+    {
+      "id": "P-12",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "常連プールの増減",
+      "source": "pachinko/index.html:879-891",
+      "symbol": "convMult / 0.025 / 上限capacity*0.5",
+      "dependencies": "avgSet,staffOK,ad.pct",
+      "must_not_change": "係数の変更",
+      "why": "固定客という長期資産の性質が変わる"
+    },
+    {
+      "id": "P-13",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "評判の増減と上下限",
+      "source": "pachinko/index.html:893-906",
+      "symbol": "(avgSet-3)*1.4 / clamp(1,100)",
+      "dependencies": "repDelta",
+      "must_not_change": "式・範囲の変更",
+      "why": "集客の基礎が変わる"
+    },
+    {
+      "id": "P-14",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "難易度係数",
+      "source": "pachinko/index.html:391-396",
+      "symbol": "DIFFS(money/rentMul/proMul/heatMul/fillMul)",
+      "dependencies": "simulateDay",
+      "must_not_change": "値の変更",
+      "why": "難易度差が失われる"
+    },
+    {
+      "id": "P-15",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "クリア条件と評価境界",
+      "source": "pachinko/index.html:387,676,945,951",
+      "symbol": "GOAL_ASSETS/totalAssets/clearRank",
+      "dependencies": "money,machineAssets,debt",
+      "must_not_change": "閾値の変更",
+      "why": "ゴールと上達の評価が変わる"
+    },
+    {
+      "id": "P-16",
+      "category": "PROTECTED_GAME_LOGIC",
+      "description": "緊急融資と倒産の成立条件",
+      "source": "pachinko/index.html:909-917,1276",
+      "symbol": "creditLimit()内なら自動融資 / それ以外で倒産",
+      "dependencies": "debt,machineAssets",
+      "must_not_change": "条件の変更",
+      "why": "破滅の曲線(警告付きの死)が変わる"
+    },
+    {
+      "id": "P-17",
+      "category": "PROTECTED_CALCULATION",
+      "description": "経費の内訳",
+      "source": "pachinko/index.html:867-871",
+      "symbol": "rent/wages/utility/ad.cost/extraCost/interest",
+      "dependencies": "cap,staff,machines,debt,DIFFS.rentMul",
+      "must_not_change": "項目の増減・係数変更",
+      "why": "固定費の圧力が変わる"
+    },
+    {
+      "id": "P-18",
+      "category": "PROTECTED_CALCULATION",
+      "description": "台別の売上と粗利",
+      "source": "pachinko/index.html:845-863",
+      "symbol": "qual/tokubiGap/spend/margin/mSales/mGross",
+      "dependencies": "MARGIN,rateBonus,pop",
+      "must_not_change": "式の変更",
+      "why": "台ごとの意思決定の意味が変わる"
+    },
+    {
+      "id": "P-19",
+      "category": "PROTECTED_CALCULATION",
+      "description": "純資産と借入枠",
+      "source": "pachinko/index.html:674-677",
+      "symbol": "machineValue(0.45)/totalAssets/creditLimit(0.7+200万)",
+      "dependencies": "CATALOG.price",
+      "must_not_change": "係数の変更",
+      "why": "入替と融資の採算が変わる"
+    },
+    {
+      "id": "P-20",
+      "category": "PROTECTED_DATA_MODEL",
+      "description": "セーブ構造とサニタイズ規則",
+      "source": "pachinko/index.html:629-658,1658-1732",
+      "symbol": "newGame()/sanitizeState()",
+      "dependencies": "localStorage",
+      "must_not_change": "フィールドの削除・クランプ範囲の緩和",
+      "why": "既存セーブの破損・注入リスクの再発"
+    },
+    {
+      "id": "P-21",
+      "category": "PROTECTED_DATA_MODEL",
+      "description": "機種カタログ10件の定義",
+      "source": "pachinko/index.html:398-421",
+      "symbol": "CATALOG(id/type/name/price/pop/decay/desc/spec)",
+      "dependencies": "試打・購入・収支",
+      "must_not_change": "件数・IDの変更",
+      "why": "保存済みセーブのcid参照が壊れる"
+    },
+    {
+      "id": "P-22",
+      "category": "PROTECTED_DATA_MODEL",
+      "description": "実績15件のIDと条件",
+      "source": "pachinko/index.html:604-620,934-945",
+      "symbol": "ACHIEVEMENTS / grantAch",
+      "dependencies": "state.ach",
+      "must_not_change": "ID変更・条件変更",
+      "why": "解除済み実績が失効する"
+    },
+    {
+      "id": "P-23",
+      "category": "PROTECTED_DATA_MODEL",
+      "description": "イベント130件の定義と抽選",
+      "source": "pachinko/index.html:450-601,753-779",
+      "symbol": "LUCK_EVENTS(80)/COND_EVENTS(50)/LUCK_DAILY_P/cd",
+      "dependencies": "state全体",
+      "must_not_change": "件数・効果キー・cdの変更",
+      "why": "創発の量と偏りが変わる"
+    },
+    {
+      "id": "P-24",
+      "category": "PROTECTED_STORAGE",
+      "description": "保存キー",
+      "source": "pachinko/index.html:386",
+      "symbol": "SAVE_KEY='pachi-teikoku-save-v1'",
+      "dependencies": "localStorage",
+      "must_not_change": "キー名の変更",
+      "why": "既存プレイヤーのセーブが消える"
+    },
+    {
+      "id": "P-25",
+      "category": "PROTECTED_STORAGE",
+      "description": "Service Workerのキャッシュ名とプリキャッシュ対象",
+      "source": "pachinko/sw.js:2-3",
+      "symbol": "CACHE='pachi-teikoku-v1' / PRECACHE 5件",
+      "dependencies": "オフライン動作",
+      "must_not_change": "対象からindex.html等を外すこと",
+      "why": "オフライン起動が壊れる"
+    },
+    {
+      "id": "P-26",
+      "category": "PROTECTED_ROUTE",
+      "description": "単一ドキュメント構成(URLルーティングなし)",
+      "source": "pachinko/index.html:1-1862",
+      "symbol": "1ファイル / タブ切替のみ",
+      "dependencies": "file:/http(s)/Electron",
+      "must_not_change": "ルーティング導入・ファイル分割",
+      "why": "file:とElectronでの動作が壊れる"
+    },
+    {
+      "id": "P-27",
+      "category": "PROTECTED_NETWORK_BEHAVIOR",
+      "description": "実行時の外部リクエストがゼロ",
+      "source": "pachinko/index.html(fetch/XHR/外部URLの出現数=0)",
+      "symbol": "―",
+      "dependencies": "CSP相当の前提",
+      "must_not_change": "外部フォント・CDN・解析の追加",
+      "why": "オフライン動作とプライバシー事実が壊れる"
+    },
+    {
+      "id": "P-28",
+      "category": "PROTECTED_RANDOMNESS",
+      "description": "抽選は全てMath.randomのクライアント内乱数(シード指定なし)",
+      "source": "pachinko/index.html:624,753,773,1410,1572,1609",
+      "symbol": "rand()/Math.random()",
+      "dependencies": "再現性なし",
+      "must_not_change": "シード化・サーバー抽選化",
+      "why": "製品事実(サーバー不在)が変わる"
+    },
+    {
+      "id": "P-29",
+      "category": "PROTECTED_TEST_HOOK",
+      "description": "インラインハンドラ用のグローバル公開3件",
+      "source": "pachinko/index.html:1298,1751,1759",
+      "symbol": "window.closeModal/doReset/startGame",
+      "dependencies": "チュートリアル・結果・倒産の各操作",
+      "must_not_change": "削除・改名",
+      "why": "難易度選択と復帰操作が動かなくなる"
+    },
+    {
+      "id": "P-30",
+      "category": "PROTECTED_TEST_HOOK",
+      "description": "DOM識別子(静的40件 / 動的含め70件)",
+      "source": "pachinko/index.html(id属性)",
+      "symbol": "$()による直接取得",
+      "dependencies": "全描画関数",
+      "must_not_change": "IDの改名・削除",
+      "why": "描画・操作の全結線が壊れる"
+    },
+    {
+      "id": "P-31",
+      "category": "PROTECTED_ASSET_REQUIREMENT",
+      "description": "PWAアイコンのパスと寸法",
+      "source": "pachinko/manifest.webmanifest:12-16",
+      "symbol": "icon-192.png(192x192)/icon-512.png(512x512)",
+      "dependencies": "PWAインストール",
+      "must_not_change": "パス・寸法の変更",
+      "why": "インストール時のアイコンが壊れる"
+    },
+    {
+      "id": "P-32",
+      "category": "PROTECTED_ASSET_REQUIREMENT",
+      "description": "デスクトップビルドのアイコンパス",
+      "source": "pachinko/desktop/package.json:36,44,49",
+      "symbol": "build/icon.png",
+      "dependencies": "3OSビルド",
+      "must_not_change": "パスの変更",
+      "why": "ビルドが失敗する"
+    },
+    {
+      "id": "P-33",
+      "category": "PROTECTED_ASSET_REQUIREMENT",
+      "description": "Electronが読み込むゲームファイルの位置",
+      "source": "pachinko/desktop/main.js:6-10,27",
+      "symbol": "resources/game/index.html / ../index.html",
+      "dependencies": "extraResources設定",
+      "must_not_change": "相対位置の変更",
+      "why": "デスクトップ版が起動しない"
+    }
+  ],
+  "technical_constraints": {
+    "single_self_contained_html": true,
+    "build_step": false,
+    "runtime_external_requests_allowed": false,
+    "web_fonts_allowed": false,
+    "canvas_used": false,
+    "webgl_used": false,
+    "audio_present": false,
+    "inline_svg_used": true,
+    "css_keyframes": 5,
+    "media_queries": 1,
+    "media_query_detail": "max-width:560px / 対象クラス .grid2 は未使用のデッドCSS",
+    "target_viewports": "UNKNOWN(U-01)",
+    "safe_area_handled": false,
+    "prefers_reduced_motion_implemented": false,
+    "minimum_touch_target": "UNKNOWN(U-02)",
+    "storage": {
+      "mechanism": "localStorage",
+      "key": "pachi-teikoku-save-v1",
+      "sanitized_on_load": true
+    },
+    "service_worker": {
+      "present": true,
+      "cache": "pachi-teikoku-v1",
+      "precache_count": 5,
+      "registered_only_on": "http(s)"
+    },
+    "electron": {
+      "window": "1080x920",
+      "min_window": "420x600",
+      "sandbox": true,
+      "context_isolation": true,
+      "node_integration": false
+    },
+    "browser_support": "UNKNOWN(U-03)",
+    "performance_targets": "UNKNOWN(U-04)",
+    "deployment": "UNKNOWN(U-08)",
+    "measured_payload_bytes": {
+      "index_html": 94305,
+      "icon_192": 44506,
+      "icon_512": 238578,
+      "manifest": 750,
+      "sw": 997
+    }
+  },
+  "asset_constraints": {
+    "new_local_raster_allowed": "YES",
+    "new_local_svg_allowed": "YES",
+    "new_audio_allowed": "UNKNOWN",
+    "external_cdn_allowed": "NO",
+    "web_font_allowed": "NO",
+    "precache_update_required_for_new_assets": true,
+    "fixed_asset_paths": [
+      {
+        "path": "pachinko/icon-192.png",
+        "size": "192x192"
+      },
+      {
+        "path": "pachinko/icon-512.png",
+        "size": "512x512"
+      },
+      {
+        "path": "pachinko/desktop/build/icon.png",
+        "size": "512x512"
+      }
+    ],
+    "artwork_content_is_design_decision": true,
+    "existing_assets": [
+      {
+        "id": "AS-01",
+        "path": "pachinko/icon-192.png",
+        "type": "PNG(RGBA)",
+        "dimensions": "192x192",
+        "bytes": "44,506 bytes",
+        "used_by": "manifest.webmanifest(icons), index.html:8 icon, index.html:9 apple-touch-icon, sw.js PRECACHE",
+        "safe_to_reuse": false
+      },
+      {
+        "id": "AS-02",
+        "path": "pachinko/icon-512.png",
+        "type": "PNG(RGBA)",
+        "dimensions": "512x512",
+        "bytes": "238,578 bytes",
+        "used_by": "manifest.webmanifest(icons: any/maskable), sw.js PRECACHE",
+        "safe_to_reuse": false
+      },
+      {
+        "id": "AS-03",
+        "path": "pachinko/desktop/build/icon.png",
+        "type": "PNG(RGBA)",
+        "dimensions": "512x512",
+        "bytes": "238,578 bytes(AS-02とsha256一致)",
+        "used_by": "pachinko/desktop/package.json:36,44,49(win/mac/linux)",
+        "safe_to_reuse": false
+      }
+    ]
+  },
+  "required_copy": [
+    {
+      "id": "CP-01",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "パチスロ帝国 (製品名)",
+      "source": "pachinko/index.html:244, pachinko/manifest.webmanifest:3"
+    },
+    {
+      "id": "CP-02",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "機種名10件(CATALOG[].name)",
+      "source": "pachinko/index.html:398-421"
+    },
+    {
+      "id": "CP-03",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "機種スペック表記10件(CATALOG[].spec.label)",
+      "source": "pachinko/index.html:398-421"
+    },
+    {
+      "id": "CP-04",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "実績15件の名称と条件文(ACHIEVEMENTS)",
+      "source": "pachinko/index.html:604-620"
+    },
+    {
+      "id": "CP-05",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "イベント文130件(LUCK_EVENTS 80 / COND_EVENTS 50)",
+      "source": "pachinko/index.html:450-601"
+    },
+    {
+      "id": "CP-06",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "広告プラン名4件(広告なし/チラシ配布/SNSキャンペーン/ローカルTV CM)",
+      "source": "pachinko/index.html:425-430"
+    },
+    {
+      "id": "CP-07",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "ブーム名7件(TRENDS[].name)",
+      "source": "pachinko/index.html:433-441"
+    },
+    {
+      "id": "CP-08",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "難易度名3件(のんびり/標準/修羅)と初期資金表記",
+      "source": "pachinko/index.html:392-394,1770-1774"
+    },
+    {
+      "id": "CP-09",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "交換率ポリシー名2件(等価交換 / 低換金 (5.6枚))",
+      "source": "pachinko/index.html:1165"
+    },
+    {
+      "id": "CP-10",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "機能領域名4件(ホール/新台購入/経営/帳簿)",
+      "source": "pachinko/index.html:258-261"
+    },
+    {
+      "id": "CP-11",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "営業開始(主要アクション)",
+      "source": "pachinko/index.html:369"
+    },
+    {
+      "id": "CP-12",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "備考の値(特日 / 週末)",
+      "source": "pachinko/index.html:925"
+    },
+    {
+      "id": "CP-13",
+      "class": "EXACT_REQUIRED_COPY",
+      "target": "STOP / BIG BONUS! / REG BONUS / リーチ!! / オート",
+      "source": "pachinko/index.html:1381-1383,1467-1468,1580,1547"
+    },
+    {
+      "id": "CP-14",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "ホールの遊び方説明(設定のメリハリ/行政指導/プロ/シマ効果/ブーム)",
+      "source": "pachinko/index.html:268"
+    },
+    {
+      "id": "CP-15",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "カタログの導入戦略説明(新台効果/シマ効果/売却45%/フェア併用)",
+      "source": "pachinko/index.html:277"
+    },
+    {
+      "id": "CP-16",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "スタッフ要件の説明(台8台につき1人/不足時の影響/日給)",
+      "source": "pachinko/index.html:286"
+    },
+    {
+      "id": "CP-17",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "広告の効果説明(未設定時 / 選択時)",
+      "source": "pachinko/index.html:1139-1142"
+    },
+    {
+      "id": "CP-18",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "新装開店フェアの条件と効果の説明",
+      "source": "pachinko/index.html:301"
+    },
+    {
+      "id": "CP-19",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "店舗拡張の注意(家賃・光熱費が増える)",
+      "source": "pachinko/index.html:310"
+    },
+    {
+      "id": "CP-20",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "融資の説明(利息の重さ/純資産がクリア条件/緊急融資)",
+      "source": "pachinko/index.html:321"
+    },
+    {
+      "id": "CP-21",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "借入枠の算出根拠(台資産×70%+200万)と金利(0.25%/日)",
+      "source": "pachinko/index.html:315-316"
+    },
+    {
+      "id": "CP-22",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "交換率の損得説明(等価 / 低換金)",
+      "source": "pachinko/index.html:1170-1172"
+    },
+    {
+      "id": "CP-23",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "警戒度の3段階説明(平常 / 警戒 / 危険)",
+      "source": "pachinko/index.html:1174-1179"
+    },
+    {
+      "id": "CP-24",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "自動セーブの説明(このブラウザ内)",
+      "source": "pachinko/index.html:343"
+    },
+    {
+      "id": "CP-25",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "試打が経営収支に影響しない旨と無償補充(スロット/パチンコ)",
+      "source": "pachinko/index.html:1387,1531"
+    },
+    {
+      "id": "CP-26",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "釘が良いほど玉持ちが良い旨",
+      "source": "pachinko/index.html:1531"
+    },
+    {
+      "id": "CP-27",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "当日結果の項目名(来店客数/総売上(打ち込み)/出玉払出/経費/本日の純利益/台別収支)",
+      "source": "pachinko/index.html:1324-1330"
+    },
+    {
+      "id": "CP-28",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "週次レポートの項目名(週間純利益/平均客数/常連客)",
+      "source": "pachinko/index.html:980-983"
+    },
+    {
+      "id": "CP-29",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "週次の助言8件",
+      "source": "pachinko/index.html:962-978"
+    },
+    {
+      "id": "CP-30",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "クリア告知と評価基準(S:65日以内 / A:85日 / B:120日)",
+      "source": "pachinko/index.html:1317-1318"
+    },
+    {
+      "id": "CP-31",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "倒産告知(資金が尽き融資枠も限界 / 経営日数)",
+      "source": "pachinko/index.html:1279,1313"
+    },
+    {
+      "id": "CP-32",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "台0台での営業ブロック案内",
+      "source": "pachinko/index.html:1792-1793"
+    },
+    {
+      "id": "CP-33",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "空状態の案内(設置台なし / 損益推移 / 営業記録)",
+      "source": "pachinko/index.html:1005,1198,1256"
+    },
+    {
+      "id": "CP-34",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "破壊的操作の確認文(売却 / やり直し)",
+      "source": "pachinko/index.html:1047,1841"
+    },
+    {
+      "id": "CP-35",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "オンボーディングの5ブロック(目的/ジレンマ/特日ブームシマ/融資/試打)",
+      "source": "pachinko/index.html:1763-1769"
+    },
+    {
+      "id": "CP-36",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "状態標識の語(NEW / ブーム中 / シマ+N% / プロ警戒 / 設置中×N / 不足中)",
+      "source": "pachinko/index.html:1019-1025,1070,1113"
+    },
+    {
+      "id": "CP-37",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "実行不可の理由表記(資金不足/設置枠なし/拡張上限に到達/あとN日で開催可能/新台導入直後のみ開催可)",
+      "source": "pachinko/index.html:1086-1089,1116-1122,1145-1152"
+    },
+    {
+      "id": "CP-38",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "帳簿の列名8件(日/客数/一般・常連・プロ/売上/出玉(払出)/経費/純利益/備考)",
+      "source": "pachinko/index.html:358"
+    },
+    {
+      "id": "CP-39",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "ステータス指標名7件(営業日/資金/評判/常連/台数/借入/純資産)",
+      "source": "pachinko/index.html:248-254"
+    },
+    {
+      "id": "CP-40",
+      "class": "SEMANTIC_REQUIRED_COPY",
+      "target": "遊技の指標名(枚/G/BIG/REG/差枚 / 持ち玉/回転/当り/最高N連/差玉)",
+      "source": "pachinko/index.html:1391-1396,1535-1540"
+    },
+    {
+      "id": "CP-41",
+      "class": "FLEXIBLE_COPY",
+      "target": "dayNoteの助言文(特日 / 通常)",
+      "source": "pachinko/index.html:995-996"
+    },
+    {
+      "id": "CP-42",
+      "class": "FLEXIBLE_COPY",
+      "target": "タグライン(ホール経営シミュレーション 〜 目指せ純資産1億円!)",
+      "source": "pachinko/index.html:245"
+    },
+    {
+      "id": "CP-43",
+      "class": "FLEXIBLE_COPY",
+      "target": "各セクション見出し(設置中の台/メーカーカタログ/スタッフ/広告 等)",
+      "source": "pachinko/index.html:267,276,285,295,300,305,313,324,329,334,338,350,355"
+    },
+    {
+      "id": "CP-44",
+      "class": "FLEXIBLE_COPY",
+      "target": "損益推移の判別方法の説明(表現方式に従属)",
+      "source": "pachinko/index.html:352"
+    },
+    {
+      "id": "CP-45",
+      "class": "FLEXIBLE_COPY",
+      "target": "手動セーブ完了の通知(セーブしました!)",
+      "source": "pachinko/index.html:1839"
+    },
+    {
+      "id": "CP-46",
+      "class": "DEBUG_INTERNAL_COPY",
+      "target": "ソースコード内の日本語コメント(利用者には表示されない)",
+      "source": "pachinko/index.html:40-238,382-449 他"
+    }
+  ],
+  "responsive_targets": {
+    "declared_in_repository": false,
+    "value": "UNKNOWN",
+    "evidence": "viewport metaは width=device-width のみ。@mediaは1件(未使用クラス向け)",
+    "must_be_declared_by": "design_authority",
+    "observed_constraints": {
+      "content_max_width_px": 980,
+      "modal_max_width_px": 460,
+      "electron_default": "1080x920",
+      "electron_min": "420x600"
+    }
+  },
+  "unknowns": [
+    {
+      "id": "U-01",
+      "topic": "対象ビューポートの明示的定義",
+      "detail": "viewport metaは width=device-width のみ。リポジトリに360/390/430等の目標幅の記述は存在しない。@mediaは560px1件のみ(しかも未使用クラス向け)。",
+      "evidence": "pachinko/index.html:5,239"
+    },
+    {
+      "id": "U-02",
+      "topic": "最小タップ領域の方針",
+      "detail": "min-height/min-width によるタップ領域の明示指定は存在しない。実寸はpadding依存。",
+      "evidence": "pachinko/index.html:98-107,116"
+    },
+    {
+      "id": "U-03",
+      "topic": "対応ブラウザ・デバイスの範囲",
+      "detail": "package.jsonにbrowserslist等の記述なし。Electronは^33系(Chromium系)。ブラウザ版の下限は未記述。",
+      "evidence": "pachinko/desktop/package.json:16-18"
+    },
+    {
+      "id": "U-04",
+      "topic": "性能目標(FPS/フレーム予算/起動時間)",
+      "detail": "数値目標の記述は存在しない。",
+      "evidence": "NOT_FOUND"
+    },
+    {
+      "id": "U-05",
+      "topic": "アセット容量の上限方針",
+      "detail": "上限を定める記述は存在しない。現状のPNG3件で計約521KB。",
+      "evidence": "pachinko/icon-*.png"
+    },
+    {
+      "id": "U-06",
+      "topic": "音声資産の可否方針",
+      "detail": "前例なし・禁止記述なしのためUNKNOWN(ASSET_POLICY参照)。",
+      "evidence": "pachinko/index.html(Audio / <audio> の出現数0)。リポジトリに音声ファイル0件"
+    },
+    {
+      "id": "U-07",
+      "topic": "アクセシビリティ方針(ARIA/コントラスト基準)",
+      "detail": "role属性はrenderChartのSVGに1件(role=img)のみ。ARIA設計・コントラスト基準の記述は存在しない。",
+      "evidence": "pachinko/index.html:1220"
+    },
+    {
+      "id": "U-08",
+      "topic": "デプロイ手順の正本",
+      "detail": "GitHub Pages前提と読めるがワークフロー定義は存在しない(CIはデスクトップビルドのみ)。公開手順の記述はpachinko/desktop/README.mdの言及に留まる。",
+      "evidence": ".github/workflows/desktop-build.yml"
+    },
+    {
+      "id": "U-09",
+      "topic": "アイコン画像の由来ライセンス",
+      "detail": "リポジトリ内生成物と読めるが、生成手順・ライセンス表記のファイルは存在しない。",
+      "evidence": "pachinko/icon-*.png"
+    },
+    {
+      "id": "U-10",
+      "topic": "Candidate 03 のビジュアル仕様そのもの",
+      "detail": "DESIGN_DECISION等の設計正本はリポジトリに存在しない。本パケットは意図の記述のみを前提とし、寸法・配色・構図は一切前提にしていない。",
+      "evidence": "リポジトリ全体(DESIGN_DECISION / DESIGN_SYSTEM / SCREEN_SPEC / MOTION_SPEC いずれも NOT_FOUND)"
+    }
+  ],
+  "conflicts": [
+    {
+      "id": "C-01",
+      "topic": "prefers-reduced-motion 対応の有無",
+      "detail": "pachinko/redesign/request/TECHNICAL_CONSTRAINTS.json(文書, 優先度5)は「prefers-reduced-motion: reduce の尊重が必須」と記述。一方 production code(優先度1)には出現数0で未実装。",
+      "resolution": "上位ソース(コード)を採用: 現状は UNIMPLEMENTED。文書側の記述は既存事実ではなく要求である。",
+      "sources": "pachinko/redesign/request/TECHNICAL_CONSTRAINTS.json vs pachinko/index.html"
+    },
+    {
+      "id": "C-02",
+      "topic": "必須対応幅 360/390/430 の出典",
+      "detail": "同文書は must_support_widths_px を [360,390,430] と記述。production codeには当該幅の指定・分岐が存在しない。",
+      "resolution": "上位ソースを採用: リポジトリ上は UNKNOWN(U-01)。当該数値は外部の検証手順に由来し、コード上の制約ではない。",
+      "sources": "pachinko/redesign/request/TECHNICAL_CONSTRAINTS.json vs pachinko/index.html:5,239"
+    },
+    {
+      "id": "C-03",
+      "topic": "テスト証跡の所在",
+      "detail": "pachinko/DESIGN.md(文書, 優先度5)はPlaywrightによる自動プレイ検証の結果を記述。リポジトリにテストコードは1件も存在しない。",
+      "resolution": "上位ソースを採用: TEST_EVIDENCE は全項目 NOT_FOUND。DESIGN.mdの記述は再現不能な外部実行の報告として扱う。",
+      "sources": "pachinko/DESIGN.md vs リポジトリ全体(テストファイル0件)"
+    },
+    {
+      "id": "C-04",
+      "topic": "機能の粒度",
+      "detail": "pachinko/redesign/request/FUNCTION_FREEZE.json(文書)はF-001〜F-045の45件。本抽出はエントリポイント基準でFN-01〜FN-39の39件。",
+      "resolution": "挙動の矛盾ではなく粒度の差(前者はリール停止・補充・実績閲覧等を個別計上)。本パケットはコードのハンドラ単位を採用。",
+      "sources": "pachinko/redesign/request/FUNCTION_FREEZE.json vs pachinko/index.html"
+    },
+    {
+      "id": "C-05",
+      "topic": "リポジトリ内の別アプリケーション",
+      "detail": "リポジトリ直下 index.html は別製品(JAN→楽天価格 取得ツール)であり、外部APIへのリクエストを行う。",
+      "resolution": "本パケットの対象は pachinko/ 配下のみ。直下index.htmlの性質(外部通信あり)を「パチスロ帝国」の事実として混同しないこと。",
+      "sources": "index.html:6,81"
+    }
+  ],
+  "non_features": [
+    {
+      "name": "オンライン機能・マルチプレイ・ランキング共有",
+      "evidence": "WebSocket/fetch/XHR/外部URLの出現数=0"
+    },
+    {
+      "name": "アカウント・ログイン・認証",
+      "evidence": "認証関連の実装・UIともに検出0"
+    },
+    {
+      "name": "サーバー・バックエンド・API",
+      "evidence": "実行時リクエスト0。リポジトリにサーバーコードなし"
+    },
+    {
+      "name": "課金・決済・実通貨の取引",
+      "evidence": "決済関連の実装・UIともに検出0"
+    },
+    {
+      "name": "クラウドセーブ・複数端末同期",
+      "evidence": "保存はlocalStorage単一キーのみ(P-24)"
+    },
+    {
+      "name": "音声・効果音・BGM",
+      "evidence": "Audio APIおよび音声ファイルの検出0"
+    },
+    {
+      "name": "Canvas / WebGL 描画",
+      "evidence": "getContext/canvas/webgl の検出0。描画はHTML+CSS+インラインSVGのみ"
+    },
+    {
+      "name": "島(シマ)という空間エンティティ",
+      "evidence": "同一機種の台数ボーナス(islandBonus)のみ存在。座席配置・島オブジェクト・座標は不在"
+    },
+    {
+      "name": "個々の客エンティティ",
+      "evidence": "客は 一般/常連/プロ の3系統の人数(数値)としてのみ存在。個体・位置・状態は不在"
+    },
+    {
+      "name": "ホール空間・フロアマップ・座席配置",
+      "evidence": "空間座標を持つデータ構造は不在"
+    },
+    {
+      "name": "実時間進行・放置進行・tick",
+      "evidence": "setIntervalは試打演出とオート回転のみ。経営はターン制"
+    },
+    {
+      "name": "ミッション・デイリー任務・ログインボーナス",
+      "evidence": "該当データ構造・実装ともに不在"
+    },
+    {
+      "name": "プッシュ通知・OS通知",
+      "evidence": "Notification APIの検出0"
+    },
+    {
+      "name": "テストスイート・CIによる自動テスト",
+      "evidence": "リポジトリにテストファイル0。CIはデスクトップビルドのみ(.github/workflows/desktop-build.yml)"
+    },
+    {
+      "name": "prefers-reduced-motion への対応",
+      "evidence": "index.html内の出現数0(未実装)"
+    },
+    {
+      "name": "safe-area-inset / env() の考慮",
+      "evidence": "出現数0(未実装)"
+    },
+    {
+      "name": "複数解像度向けの明示的ブレークポイント",
+      "evidence": "@mediaは1件のみ(max-width:560px, .grid2用)。かつ .grid2 は未使用のデッドCSS"
+    }
+  ],
+  "design_risks": [
+    {
+      "id": "RK-01",
+      "description": "「ホール全体を見渡す俯瞰」に対応する空間データが存在しない",
+      "evidence": "台は配列(machines)で保持され座標・座席・島オブジェクトを持たない。NON_FEATURES参照。pachinko/index.html:660-671,1658-1700",
+      "severity": "HIGH",
+      "design_impact": "ホール俯瞰を実データの写像として描くことはできない",
+      "safe_design_response": "俯瞰は既存データ(台数・機種・設定・人気・前日収支・客数)から構成できる範囲の表現に留める。空間配置は装飾として扱い、個々の台の位置に意味を持たせない。または俯瞰を背景美術として扱い、操作対象は既存の台一覧データに紐づける。"
+    },
+    {
+      "id": "RK-02",
+      "description": "「客・照明による密度感」に対応する個体データが存在しない",
+      "evidence": "客は 一般/常連/プロ の3系統の人数(数値)のみ。個体・位置・状態は不在。pachinko/index.html:820-843",
+      "severity": "HIGH",
+      "design_impact": "客を個体として描画・追跡する表現は根拠を持たない",
+      "safe_design_response": "密度は3系統の人数と収容力(台数×20、特日×1.15)の比率として表現する。個体の振る舞いを示唆しない。"
+    },
+    {
+      "id": "RK-03",
+      "description": "「営業中」の常時進行を示すデータが存在しない(ターン制)",
+      "evidence": "経営はターン制で、営業日の途中という状態は保持されない。setIntervalは試打演出とオート回転のみ。R-04,R-05",
+      "severity": "HIGH",
+      "design_impact": "リアルタイムに動くホールを提示すると、存在しない進行を示唆する",
+      "safe_design_response": "「営業中」は当日の結果が確定した後の静的な断面、または次の1日を待つ構えとして表現する。進行中を示すアニメーションは、実行操作から結果提示までの遷移に限定する。"
+    },
+    {
+      "id": "RK-04",
+      "description": "台1件あたりの必須表示要素が多く、俯瞰と両立しない可能性",
+      "evidence": "台ごとに9項目+最大3標識+3操作(D-09〜D-18, ACT-06〜08)。台は最大60件(R-28)",
+      "severity": "HIGH",
+      "design_impact": "俯瞰の一覧性と、台単位の操作可能性が競合する",
+      "safe_design_response": "俯瞰(概観)と台明細(操作)を段階的に分ける。ただし FN-02/03/04 への到達性は維持する。"
+    },
+    {
+      "id": "RK-05",
+      "description": "大型背景アートワークの容量と外部依存",
+      "evidence": "実行時の外部リクエストは0(P-27)。アセットはローカル同梱のみ。現状PNG3件で計約521KB",
+      "severity": "MEDIUM",
+      "design_impact": "高精細ラスタ背景は同梱容量とオフライン初回取得に直結する",
+      "safe_design_response": "背景はCSSグラデーション/インラインSVG/軽量ラスタのいずれかで構成し、sw.jsのPRECACHEに追加するか、未取得時に成立する設計にする(pachinko/sw.js:3)。"
+    },
+    {
+      "id": "RK-06",
+      "description": "暗い環境+暖色照明でのテキスト可読性",
+      "evidence": "本文・数値は7指標+帳簿8列+台明細と密度が高い(D-01〜D-07, D-35〜D-42)",
+      "severity": "MEDIUM",
+      "design_impact": "装飾層の上に高密度の数値を載せると可読性が落ちる",
+      "safe_design_response": "数値と本文は装飾層と分離した面に置く。色のみで意味を伝えない(既存にも色依存の箇所がある)。"
+    },
+    {
+      "id": "RK-07",
+      "description": "prefers-reduced-motion が未実装のまま演出を増やすと後退する",
+      "evidence": "出現数0(NON_FEATURES)。既存の@keyframesは5件で、うち2件は無限反復",
+      "severity": "MEDIUM",
+      "design_impact": "cinematicな常時演出は低減設定の利用者に配慮できない",
+      "safe_design_response": "新規モーションは reduce 時の代替を同時に定義する。実装側で reduce 分岐を追加する(既存動作の変更ではなく追加)。"
+    },
+    {
+      "id": "RK-08",
+      "description": "safe-area 未対応のまま下部固定要素を強化すると衝突する",
+      "evidence": "env()の出現数0。下部固定バーが存在(pachinko/index.html:109-118)",
+      "severity": "MEDIUM",
+      "design_impact": "端末のホームバー領域と主要アクションが重なる懸念",
+      "safe_design_response": "下部固定要素に safe-area の余白を追加する(既存レイアウトの意味を変えない範囲の追加)。"
+    },
+    {
+      "id": "RK-09",
+      "description": "対象幅の正本が存在しない",
+      "evidence": "U-01, C-02。@mediaは未使用クラス向けの1件のみ",
+      "severity": "MEDIUM",
+      "design_impact": "どの幅で成立を保証するのかが未確定のまま設計が進む",
+      "safe_design_response": "Design Authority側で対象幅を宣言してもらい、実装・検証はその宣言に従う。リポジトリからは決定できない。"
+    },
+    {
+      "id": "RK-10",
+      "description": "高精細表現とターン制の情報更新頻度の不一致",
+      "evidence": "1営業日の実行以外では経営データが変化しない(R-04)",
+      "severity": "LOW",
+      "design_impact": "常時変化する画面を装うとデータの実態と乖離する",
+      "safe_design_response": "変化は1日単位で起きるという事実に沿って、変化の見せ場を実行→結果の遷移に集約する。"
+    },
+    {
+      "id": "RK-11",
+      "description": "機種名・スペック表記が長く、俯瞰内の要素に収まらない可能性",
+      "evidence": "最長機種名13字、スペック表記20字(D-09, D-11)。いずれもEXACT_REQUIRED_COPY(CP-02, CP-03)",
+      "severity": "LOW",
+      "design_impact": "短縮・省略は必須コピーの改変にあたる",
+      "safe_design_response": "省略表示を行う場合も、原文へ到達できる経路(台明細)を保持する。"
+    },
+    {
+      "id": "RK-12",
+      "description": "デスクトップ(1080x920)とモバイル幅の同一構成での両立",
+      "evidence": "Electronの既定ウィンドウは1080x920、最小420x600(pachinko/desktop/main.js:14-17)",
+      "severity": "LOW",
+      "design_impact": "モバイル前提の俯瞰は広い窓で間延びする",
+      "safe_design_response": "同一HTMLで両立する必要がある。最大幅の扱いを定義してもらう。"
+    }
+  ],
+  "feasibility": {
+    "verdict": "FEASIBLE_WITH_VISUAL_ADAPTATION (1件のみ PRODUCT_TRUTH_CONFLICT: responsive対象幅の正本が不在)",
+    "areas": [
+      {
+        "area": "cinematic hall environment",
+        "verdict": "FEASIBLE_WITH_VISUAL_ADAPTATION",
+        "evidence": "空間・座席・島の実データが存在しない(RK-01)。ターン制で営業中の連続進行も存在しない(RK-03)",
+        "note": "美術としての俯瞰は実装可能。ただし個々の台の位置や客の個体を実データの反映として示すことはできない"
+      },
+      {
+        "area": "full-canvas artwork",
+        "verdict": "FEASIBLE_WITH_ASSETS",
+        "evidence": "Canvas/WebGLは未使用だが禁止されていない。外部リクエスト不可のため同梱必須(P-27, RK-05)",
+        "note": "インラインSVG/CSS/同梱ラスタ/Canvas描画のいずれも可。容量とPRECACHEの扱いを定義する必要がある"
+      },
+      {
+        "area": "customer density representation",
+        "verdict": "FEASIBLE_WITH_VISUAL_ADAPTATION",
+        "evidence": "客は3系統の人数のみ(RK-02)。収容力は台数×20(R-10)",
+        "note": "人数と収容力の比率としての密度表現は事実に忠実。個体表現は不可"
+      },
+      {
+        "area": "machine / island representation",
+        "verdict": "FEASIBLE_WITH_VISUAL_ADAPTATION",
+        "evidence": "台は配列。島は同一機種の台数ボーナスのみ(R-19)。座標なし",
+        "note": "機種でまとめた集団として表現するのは事実に沿う。物理的な島レイアウトは装飾に留める"
+      },
+      {
+        "area": "live operational information overlay",
+        "verdict": "FEASIBLE",
+        "evidence": "7指標が常時参照可能で、renderStatusが状態更新ごとに再描画する(FN-26, D-01〜D-07)",
+        "note": "ただし更新契機は1営業日の実行であり、秒単位で変化するものではない(RK-10)"
+      },
+      {
+        "area": "typography",
+        "verdict": "FEASIBLE_WITH_VISUAL_ADAPTATION",
+        "evidence": "Webフォントの読込は実行時外部リクエストとなり P-27 と衝突。現状はOS標準スタックのみ(pachinko/index.html:33-35)",
+        "note": "OS標準スタックでの階層設計、または同梱フォント(容量とライセンスの明示が必要)に限定される"
+      },
+      {
+        "area": "navigation",
+        "verdict": "FEASIBLE",
+        "evidence": "4領域の切替は既存(FN-01)。履歴操作は未実装でスタックも持たない(NAV_NOTES)",
+        "note": "領域の提示方法は自由。ただし営業開始への常時到達(P-01の起点)を維持する必要がある"
+      },
+      {
+        "area": "animation",
+        "verdict": "FEASIBLE_WITH_VISUAL_ADAPTATION",
+        "evidence": "既存@keyframes5件。prefers-reduced-motionは未実装(RK-07)",
+        "note": "新規モーションはreduce時の代替を伴う必要がある。ブロッキング演出は1営業日の即時性(P-01)と衝突する"
+      },
+      {
+        "area": "responsive 360 / 390 / 430",
+        "verdict": "PRODUCT_TRUTH_CONFLICT",
+        "evidence": "リポジトリに対象幅の宣言が存在しない(U-01, C-02)。@mediaは未使用クラス向け1件のみ",
+        "note": "対象幅はDesign Authority側で宣言が必要。リポジトリからは決定できない。実装は宣言に従う"
+      },
+      {
+        "area": "safe-area",
+        "verdict": "FEASIBLE",
+        "evidence": "env()未使用(RK-08)。下部固定バーが存在",
+        "note": "safe-area余白の追加は既存の意味を変えない実装追加として可能"
+      },
+      {
+        "area": "touch targets",
+        "verdict": "FEASIBLE",
+        "evidence": "最小サイズの明示指定は不在(U-02)。実寸はpadding依存",
+        "note": "最小寸法をDesign Systemで宣言してもらえば実装・自動検証ともに可能"
+      },
+      {
+        "area": "performance",
+        "verdict": "FEASIBLE_WITH_VISUAL_ADAPTATION",
+        "evidence": "単一HTML・依存ゼロで軽量。ただし台最大60件の再描画は毎回全再生成(pachinko/index.html:1008-1057)",
+        "note": "60件×装飾レイヤーの同時アニメーションは避ける必要がある。静的表現と限定的なモーションなら問題ない"
+      },
+      {
+        "area": "offline behavior",
+        "verdict": "FEASIBLE_WITH_ASSETS",
+        "evidence": "SWのPRECACHEは5件固定(pachinko/sw.js:3)。新規アセットは未登録だとオフライン初回で取得できない",
+        "note": "新規アセットを追加する場合はPRECACHEへの追加が必要(実装側の対応事項)"
+      },
+      {
+        "area": "asset loading",
+        "verdict": "FEASIBLE_WITH_ASSETS",
+        "evidence": "外部リクエスト不可(P-27)。file:とElectronでも動作する必要がある(P-26)",
+        "note": "相対パスの同梱アセットまたはインラインのみ。fetchに依存する読込は不可"
+      }
+    ]
+  },
+  "totals": {
+    "screens": 12,
+    "states": 62,
+    "functions": 39,
+    "actions": 35,
+    "data_fields": 62,
+    "protected_items": 33,
+    "assets": 3,
+    "required_copy": 40,
+    "game_rules": 50,
+    "navigation_edges": 24,
+    "unknowns": 10,
+    "conflicts": 5,
+    "design_risks": 12
+  }
+}

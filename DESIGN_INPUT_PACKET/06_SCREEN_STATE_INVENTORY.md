@@ -1,0 +1,711 @@
+# 06_SCREEN_STATE_INVENTORY
+
+<!-- 生成: リポジトリ・フォレンジクス / READ-ONLY 調査 / 対象コミット: f71190b50a118dad4fa2adb5531541ae36875eb3
+     根拠のないものは UNKNOWN / UNVERIFIED / NOT_FOUND と記載する -->
+
+TOTAL_STATES: **62**
+
+コード上で実際に分岐・表示差が発生する状態のみを列挙した。
+TEST_EVIDENCE は全件 NOT_FOUND(テストスイート不在)。
+
+## ST-01 (SCR-01)
+
+- TRIGGER: 通常
+- VISIBLE_CHANGE: 全指標が現在値で表示
+- AVAILABLE_ACTIONS: 全操作
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: state全体
+- EXIT_TRANSITION: 状態更新で再描画
+- RELATED_CODE: `pachinko/index.html:986`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-02 (SCR-01)
+
+- TRIGGER: 日付に7を含む
+- VISIBLE_CHANGE: stDayに特日表記 / dayNoteが特日の助言に変化
+- AVAILABLE_ACTIONS: 全操作
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: state.day
+- EXIT_TRANSITION: 翌日へ
+- RELATED_CODE: `pachinko/index.html:678,987,995`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-03 (SCR-01)
+
+- TRIGGER: day%7が6または0
+- VISIBLE_CHANGE: stDayに週末表記
+- AVAILABLE_ACTIONS: 全操作
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: state.day
+- EXIT_TRANSITION: 翌日へ
+- RELATED_CODE: `pachinko/index.html:679,987`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-04 (SCR-01)
+
+- TRIGGER: trend.idsが非空
+- VISIBLE_CHANGE: dayNote末尾に今週のブーム名
+- AVAILABLE_ACTIONS: 全操作
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: state.trend
+- EXIT_TRANSITION: 週替わりで更新
+- RELATED_CODE: `pachinko/index.html:994,996`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-05 (SCR-01)
+
+- TRIGGER: money<0
+- VISIBLE_CHANGE: btnOpenで倒産提示へ遷移
+- AVAILABLE_ACTIONS: やり直しのみ
+- DISABLED_ACTIONS: 経営操作すべて
+- DATA_REQUIREMENTS: state.money
+- EXIT_TRANSITION: doReset
+- RELATED_CODE: `pachinko/index.html:1276,1789`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-06 (SCR-02)
+
+- TRIGGER: machines.length===0
+- VISIBLE_CHANGE: 空状態の案内文のみ
+- AVAILABLE_ACTIONS: タブ移動
+- DISABLED_ACTIONS: 設定/試打/売却
+- DATA_REQUIREMENTS: machines
+- EXIT_TRANSITION: 台購入で解消
+- RELATED_CODE: `pachinko/index.html:1003-1006`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-07 (SCR-02)
+
+- TRIGGER: machines.length>0
+- VISIBLE_CHANGE: 台ごとの明細を列挙
+- AVAILABLE_ACTIONS: 設定/試打/売却
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: machines
+- EXIT_TRANSITION: ―
+- RELATED_CODE: `pachinko/index.html:1008-1057`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-08 (SCR-02)
+
+- TRIGGER: day-boughtDay<5
+- VISIBLE_CHANGE: NEW標識を表示
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: machine.boughtDay
+- EXIT_TRANSITION: 5日経過で消滅
+- RELATED_CODE: `pachinko/index.html:1011,1025`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-09 (SCR-02)
+
+- TRIGGER: trendMult>1
+- VISIBLE_CHANGE: ブーム中の標識
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: state.trend
+- EXIT_TRANSITION: 週替わりで消滅
+- RELATED_CODE: `pachinko/index.html:686,1020`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-10 (SCR-02)
+
+- TRIGGER: 同一機種2台以上
+- VISIBLE_CHANGE: シマ効果量の標識
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: machines
+- EXIT_TRANSITION: 売却で減少
+- RELATED_CODE: `pachinko/index.html:682,1021`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-11 (SCR-02)
+
+- TRIGGER: setting>=5
+- VISIBLE_CHANGE: プロ警戒の標識
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: machine.setting
+- EXIT_TRANSITION: 設定変更で消滅
+- RELATED_CODE: `pachinko/index.html:1022`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-12 (SCR-02)
+
+- TRIGGER: lastNet===null
+- VISIBLE_CHANGE: 前日収支が未計測表示
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: machine.lastNet
+- EXIT_TRANSITION: 初営業後に解消
+- RELATED_CODE: `pachinko/index.html:1014-1015`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-13 (SCR-02)
+
+- TRIGGER: 売却操作
+- VISIBLE_CHANGE: OSの確認ダイアログ
+- AVAILABLE_ACTIONS: 確定/取消
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: machineValue
+- EXIT_TRANSITION: 確定または取消
+- RELATED_CODE: `pachinko/index.html:1047`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-14 (SCR-03)
+
+- TRIGGER: 資金充足かつ空き枠あり
+- VISIBLE_CHANGE: 購入操作が有効
+- AVAILABLE_ACTIONS: 購入
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: money,cap
+- EXIT_TRANSITION: ―
+- RELATED_CODE: `pachinko/index.html:1084-1090`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-15 (SCR-03)
+
+- TRIGGER: money<price
+- VISIBLE_CHANGE: 購入操作が資金不足表示で無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 購入
+- DATA_REQUIREMENTS: money
+- EXIT_TRANSITION: 資金増で解消
+- RELATED_CODE: `pachinko/index.html:1087,1089`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-16 (SCR-03)
+
+- TRIGGER: machines>=cap
+- VISIBLE_CHANGE: 購入操作が枠なし表示で無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 購入
+- DATA_REQUIREMENTS: cap
+- EXIT_TRANSITION: 拡張/売却で解消
+- RELATED_CODE: `pachinko/index.html:1086,1088`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-17 (SCR-03)
+
+- TRIGGER: 同一機種を所有
+- VISIBLE_CHANGE: 自店設置数の標識
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: machines
+- EXIT_TRANSITION: ―
+- RELATED_CODE: `pachinko/index.html:1062,1070`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-18 (SCR-04)
+
+- TRIGGER: staff<staffNeeded()
+- VISIBLE_CHANGE: 不足中の警告表示
+- AVAILABLE_ACTIONS: 雇用
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: staff,machines
+- EXIT_TRANSITION: 雇用で解消
+- RELATED_CODE: `pachinko/index.html:1112-1113`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-19 (SCR-04)
+
+- TRIGGER: staff>=staffNeeded()
+- VISIBLE_CHANGE: 充足の表示
+- AVAILABLE_ACTIONS: 雇用/解雇
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: staff
+- EXIT_TRANSITION: ―
+- RELATED_CODE: `pachinko/index.html:1112-1113`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-20 (SCR-04)
+
+- TRIGGER: staff<=1
+- VISIBLE_CHANGE: 解雇操作が無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 解雇
+- DATA_REQUIREMENTS: staff
+- EXIT_TRANSITION: 雇用で解消
+- RELATED_CODE: `pachinko/index.html:1114`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-21 (SCR-04)
+
+- TRIGGER: ad!=='none'
+- VISIBLE_CHANGE: 選択中プランと効果を表示
+- AVAILABLE_ACTIONS: 他プラン選択
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: state.ad
+- EXIT_TRANSITION: 営業実行で解除
+- RELATED_CODE: `pachinko/index.html:1131,1140-1142`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-22 (SCR-04)
+
+- TRIGGER: ad==='none'
+- VISIBLE_CHANGE: 未設定の説明を表示
+- AVAILABLE_ACTIONS: プラン選択
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: state.ad
+- EXIT_TRANSITION: ―
+- RELATED_CODE: `pachinko/index.html:1139-1141`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-23 (SCR-04)
+
+- TRIGGER: 直近購入あり+CD明け+資金充足
+- VISIBLE_CHANGE: フェア開催が有効
+- AVAILABLE_ACTIONS: 開催
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: machines,lastGrand,money
+- EXIT_TRANSITION: 開催で予約済へ
+- RELATED_CODE: `pachinko/index.html:1150-1151`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-24 (SCR-04)
+
+- TRIGGER: grandOpen===true
+- VISIBLE_CHANGE: 予約済み表示で無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 開催
+- DATA_REQUIREMENTS: grandOpen
+- EXIT_TRANSITION: 営業実行で消費
+- RELATED_CODE: `pachinko/index.html:1149`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-25 (SCR-04)
+
+- TRIGGER: 直近2日に購入なし
+- VISIBLE_CHANGE: 導入直後のみ可の表示で無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 開催
+- DATA_REQUIREMENTS: machines.boughtDay
+- EXIT_TRANSITION: 購入で解消
+- RELATED_CODE: `pachinko/index.html:1145,1150`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-26 (SCR-04)
+
+- TRIGGER: day-lastGrand<7
+- VISIBLE_CHANGE: 残り日数表示で無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 開催
+- DATA_REQUIREMENTS: lastGrand
+- EXIT_TRANSITION: 7日経過で解消
+- RELATED_CODE: `pachinko/index.html:1146,1151`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-27 (SCR-04)
+
+- TRIGGER: money<300000
+- VISIBLE_CHANGE: 資金不足表示で無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 開催
+- DATA_REQUIREMENTS: money
+- EXIT_TRANSITION: 資金増で解消
+- RELATED_CODE: `pachinko/index.html:1152`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-28 (SCR-04)
+
+- TRIGGER: cap<60かつ資金充足
+- VISIBLE_CHANGE: 拡張が有効
+- AVAILABLE_ACTIONS: 拡張
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: cap,money
+- EXIT_TRANSITION: 拡張で+5
+- RELATED_CODE: `pachinko/index.html:1121-1122`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-29 (SCR-04)
+
+- TRIGGER: money<expandCost()
+- VISIBLE_CHANGE: 拡張が無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 拡張
+- DATA_REQUIREMENTS: money
+- EXIT_TRANSITION: 資金増で解消
+- RELATED_CODE: `pachinko/index.html:1122`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-30 (SCR-04)
+
+- TRIGGER: cap>=60
+- VISIBLE_CHANGE: 拡張上限到達で無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 拡張
+- DATA_REQUIREMENTS: cap
+- EXIT_TRANSITION: 解消なし(終端)
+- RELATED_CODE: `pachinko/index.html:1116-1119`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-31 (SCR-04)
+
+- TRIGGER: debt+100万>creditLimit()
+- VISIBLE_CHANGE: 借入が無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 借入
+- DATA_REQUIREMENTS: debt,machineAssets
+- EXIT_TRANSITION: 枠増で解消
+- RELATED_CODE: `pachinko/index.html:1157`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-32 (SCR-04)
+
+- TRIGGER: debt<=0 または資金不足
+- VISIBLE_CHANGE: 返済が無効
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 返済
+- DATA_REQUIREMENTS: debt,money
+- EXIT_TRANSITION: ―
+- RELATED_CODE: `pachinko/index.html:1158`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-33 (SCR-04)
+
+- TRIGGER: rate==='normal'
+- VISIBLE_CHANGE: 等価交換が選択状態+説明
+- AVAILABLE_ACTIONS: 低換金へ切替
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: state.rate
+- EXIT_TRANSITION: 切替
+- RELATED_CODE: `pachinko/index.html:1163-1170`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-34 (SCR-04)
+
+- TRIGGER: rate==='low'
+- VISIBLE_CHANGE: 低換金が選択状態+説明
+- AVAILABLE_ACTIONS: 等価へ切替
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: state.rate
+- EXIT_TRANSITION: 切替
+- RELATED_CODE: `pachinko/index.html:1163-1172`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-35 (SCR-04)
+
+- TRIGGER: heat<=5
+- VISIBLE_CHANGE: 平常の説明
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: state.heat
+- EXIT_TRANSITION: heat上昇
+- RELATED_CODE: `pachinko/index.html:1174-1179`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-36 (SCR-04)
+
+- TRIGGER: heat>5
+- VISIBLE_CHANGE: 警戒レベルの説明
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: state.heat
+- EXIT_TRANSITION: 減衰または上昇
+- RELATED_CODE: `pachinko/index.html:1176-1177`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-37 (SCR-04)
+
+- TRIGGER: heat>8
+- VISIBLE_CHANGE: 危険の説明
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: state.heat
+- EXIT_TRANSITION: 指導発生で2へ
+- RELATED_CODE: `pachinko/index.html:1174-1175,795`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-38 (SCR-04)
+
+- TRIGGER: 実績が解除済
+- VISIBLE_CHANGE: 通常表示
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: state.ach
+- EXIT_TRANSITION: ―
+- RELATED_CODE: `pachinko/index.html:1185-1189`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-39 (SCR-04)
+
+- TRIGGER: 実績が未解除
+- VISIBLE_CHANGE: 減衰表示(locked)
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: state.ach
+- EXIT_TRANSITION: 条件成立で解除
+- RELATED_CODE: `pachinko/index.html:1186`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-40 (SCR-04)
+
+- TRIGGER: やり直し操作
+- VISIBLE_CHANGE: OSの確認ダイアログ
+- AVAILABLE_ACTIONS: 確定/取消
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: なし
+- EXIT_TRANSITION: 確定または取消
+- RELATED_CODE: `pachinko/index.html:1841`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-41 (SCR-05)
+
+- TRIGGER: history.length===0
+- VISIBLE_CHANGE: 推移と表の空状態案内
+- AVAILABLE_ACTIONS: タブ移動
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: history
+- EXIT_TRANSITION: 初営業後に解消
+- RELATED_CODE: `pachinko/index.html:1197-1200,1254-1257`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-42 (SCR-05)
+
+- TRIGGER: history.length>0
+- VISIBLE_CHANGE: 推移と明細を表示
+- AVAILABLE_ACTIONS: hover参照
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: history
+- EXIT_TRANSITION: ―
+- RELATED_CODE: `pachinko/index.html:1201-1250,1258-1268`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-43 (SCR-05)
+
+- TRIGGER: 推移上の要素をポイント
+- VISIBLE_CHANGE: 日付と金額の詳細を表示
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: history[i]
+- EXIT_TRANSITION: ポインタ離脱で消滅
+- RELATED_CODE: `pachinko/index.html:1240-1250`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-44 (SCR-07)
+
+- TRIGGER: 通常の営業終了
+- VISIBLE_CHANGE: 当日の収支と内訳を提示
+- AVAILABLE_ACTIONS: 閉じる
+- DISABLED_ACTIONS: 再営業
+- DATA_REQUIREMENTS: rec
+- EXIT_TRANSITION: 閉じる
+- RELATED_CODE: `pachinko/index.html:1321-1334`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-45 (SCR-07)
+
+- TRIGGER: rec.day%7===0かつ履歴7件以上
+- VISIBLE_CHANGE: 週次レポートを追加提示
+- AVAILABLE_ACTIONS: 閉じる
+- DISABLED_ACTIONS: 再営業
+- DATA_REQUIREMENTS: history7件
+- EXIT_TRANSITION: 閉じる
+- RELATED_CODE: `pachinko/index.html:954-956`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-46 (SCR-07)
+
+- TRIGGER: cleared かつ clearDay===rec.day
+- VISIBLE_CHANGE: 達成告知と評価ランク
+- AVAILABLE_ACTIONS: 閉じる
+- DISABLED_ACTIONS: 再営業
+- DATA_REQUIREMENTS: totalAssets
+- EXIT_TRANSITION: 閉じる(以後継続可)
+- RELATED_CODE: `pachinko/index.html:1315-1318,951`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-47 (SCR-07)
+
+- TRIGGER: money<0
+- VISIBLE_CHANGE: 倒産告知。閉じる操作を出さない
+- AVAILABLE_ACTIONS: やり直しのみ
+- DISABLED_ACTIONS: 閉じる/再営業
+- DATA_REQUIREMENTS: money
+- EXIT_TRANSITION: doReset
+- RELATED_CODE: `pachinko/index.html:1312-1314,1333`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-48 (SCR-10)
+
+- TRIGGER: 試打開始直後 / 1G完了
+- VISIBLE_CHANGE: 停止操作が無効、レバー有効
+- AVAILABLE_ACTIONS: レバー/設定/補充/終了
+- DISABLED_ACTIONS: 停止
+- DATA_REQUIREMENTS: t.credits
+- EXIT_TRANSITION: レバーON
+- RELATED_CODE: `pachinko/index.html:1434-1452,1465-1466`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-49 (SCR-10)
+
+- TRIGGER: レバーON後
+- VISIBLE_CHANGE: 3リールが回転表示、レバー無効
+- AVAILABLE_ACTIONS: 停止×3
+- DISABLED_ACTIONS: レバー
+- DATA_REQUIREMENTS: t.final
+- EXIT_TRANSITION: 3リール停止で確定
+- RELATED_CODE: `pachinko/index.html:1441-1451`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-50 (SCR-10)
+
+- TRIGGER: big/reg成立
+- VISIBLE_CHANGE: 告知ランプ点灯+当選文+獲得枚数
+- AVAILABLE_ACTIONS: レバー
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: c.spec
+- EXIT_TRANSITION: 次のレバーON
+- RELATED_CODE: `pachinko/index.html:1467-1477`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-51 (SCR-10)
+
+- TRIGGER: grape/cherry/replay成立
+- VISIBLE_CHANGE: 小役の獲得表示
+- AVAILABLE_ACTIONS: レバー
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: ―
+- EXIT_TRANSITION: 次のレバーON
+- RELATED_CODE: `pachinko/index.html:1470-1472`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-52 (SCR-10)
+
+- TRIGGER: none
+- VISIBLE_CHANGE: 獲得表示なし
+- AVAILABLE_ACTIONS: レバー
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: ―
+- EXIT_TRANSITION: 次のレバーON
+- RELATED_CODE: `pachinko/index.html:1464-1483`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-53 (SCR-10)
+
+- TRIGGER: credits<3
+- VISIBLE_CHANGE: レバーONが無反応
+- AVAILABLE_ACTIONS: 補充/終了
+- DISABLED_ACTIONS: レバー
+- DATA_REQUIREMENTS: t.credits
+- EXIT_TRANSITION: 補充で解消
+- RELATED_CODE: `pachinko/index.html:1435`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-54 (SCR-11)
+
+- TRIGGER: 試打開始直後 / 演出完了
+- VISIBLE_CHANGE: 回転操作が有効
+- AVAILABLE_ACTIONS: 回す/オート/釘/補充/終了
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: t.balls
+- EXIT_TRANSITION: 回す
+- RELATED_CODE: `pachinko/index.html:1558-1560,1591`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-55 (SCR-11)
+
+- TRIGGER: 回転中(busy)
+- VISIBLE_CHANGE: 3桁が回転表示、回転操作を受け付けない
+- AVAILABLE_ACTIONS: 終了
+- DISABLED_ACTIONS: 回す
+- DATA_REQUIREMENTS: ―
+- EXIT_TRANSITION: 停止演出完了
+- RELATED_CODE: `pachinko/index.html:1559,1566-1571`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-56 (SCR-11)
+
+- TRIGGER: リーチ成立(当選または1/12)
+- VISIBLE_CHANGE: リーチ告知を表示
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 回す
+- DATA_REQUIREMENTS: ―
+- EXIT_TRANSITION: 中図柄停止
+- RELATED_CODE: `pachinko/index.html:1578-1585`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-57 (SCR-11)
+
+- TRIGGER: 当選(1/denom)
+- VISIBLE_CHANGE: 大当り告知と獲得玉
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 回す
+- DATA_REQUIREMENTS: c.spec.firstBalls
+- EXIT_TRANSITION: RUSH抽選へ
+- RELATED_CODE: `pachinko/index.html:1598-1606`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-58 (SCR-11)
+
+- TRIGGER: RUSH継続(rushPct)
+- VISIBLE_CHANGE: 連チャン数と獲得玉を更新
+- AVAILABLE_ACTIONS: ―
+- DISABLED_ACTIONS: 回す
+- DATA_REQUIREMENTS: c.spec.rushBalls
+- EXIT_TRANSITION: 継続失敗まで
+- RELATED_CODE: `pachinko/index.html:1608-1616`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-59 (SCR-11)
+
+- TRIGGER: RUSH終了
+- VISIBLE_CHANGE: 総連チャン数と総獲得玉を提示
+- AVAILABLE_ACTIONS: 回す
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: t.maxRen
+- EXIT_TRANSITION: 次の回転
+- RELATED_CODE: `pachinko/index.html:1618-1626`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-60 (SCR-11)
+
+- TRIGGER: オートON
+- VISIBLE_CHANGE: 一定間隔で自動的に回転
+- AVAILABLE_ACTIONS: オートOFF/終了
+- DISABLED_ACTIONS: ―
+- DATA_REQUIREMENTS: ―
+- EXIT_TRANSITION: オートOFF/試打終了
+- RELATED_CODE: `pachinko/index.html:1632-1639`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-61 (SCR-11)
+
+- TRIGGER: balls<spinCost()
+- VISIBLE_CHANGE: 玉切れの通知
+- AVAILABLE_ACTIONS: 補充/終了
+- DISABLED_ACTIONS: 回す
+- DATA_REQUIREMENTS: t.balls
+- EXIT_TRANSITION: 補充で解消
+- RELATED_CODE: `pachinko/index.html:1561`
+- TEST_EVIDENCE: NOT_FOUND
+
+## ST-62 (SCR-12)
+
+- TRIGGER: 未解除実績の条件成立
+- VISIBLE_CHANGE: 実績名の一時通知が出現
+- AVAILABLE_ACTIONS: なし(操作を妨げない)
+- DISABLED_ACTIONS: なし
+- DATA_REQUIREMENTS: ACHIEVEMENTS
+- EXIT_TRANSITION: 3500ms経過
+- RELATED_CODE: `pachinko/index.html:698-712`
+- TEST_EVIDENCE: NOT_FOUND
+
+## 画面別の状態数
+
+| SCREEN_ID | 状態数 |
+|---|---|
+| SCR-01 | 5 |
+| SCR-02 | 8 |
+| SCR-03 | 4 |
+| SCR-04 | 23 |
+| SCR-05 | 3 |
+| SCR-06 | 0 |
+| SCR-07 | 4 |
+| SCR-08 | 0 |
+| SCR-09 | 0 |
+| SCR-10 | 6 |
+| SCR-11 | 8 |
+| SCR-12 | 1 |
+| **合計** | **62** |
+
+**TOTAL_STATES = 62**

@@ -1,0 +1,375 @@
+ITEM_ID,CATEGORY,NAME,EXISTS,VERIFIED,SOURCE,DESIGN_MAY_SHOW,DESIGN_MAY_NOT_INVENT,NOTES
+SCR-01,SCREEN,SHELL (persistent chrome),YES,YES,pachinko/index.html:247-262 statusbar/tabs,YES,画面の新設・削除,経営状態の常時提示と、機能領域の切替、1営業日実行の起点
+SCR-02,SCREEN,panel-hall,YES,YES,pachinko/index.html:265-271 markup,YES,画面の新設・削除,設置中の台の運用。設定変更・試打・売却
+SCR-03,SCREEN,panel-shop,YES,YES,pachinko/index.html:274-280 markup,YES,画面の新設・削除,機種カタログからの導入判断
+SCR-04,SCREEN,panel-mgmt,YES,YES,pachinko/index.html:283-345 markup,YES,画面の新設・削除,台以外の経営資源と、警戒度・実績・データ操作
+SCR-05,SCREEN,panel-ledger,YES,YES,pachinko/index.html:348-363 markup,YES,画面の新設・削除,過去営業日の検証
+SCR-06,SCREEN,modal:tutorial,YES,YES,pachinko/index.html:1761 showTutorial,YES,画面の新設・削除,製品説明と難易度選択によるゲーム開始
+SCR-07,SCREEN,modal:day-result,YES,YES,pachinko/index.html:1300 showDayResult,YES,画面の新設・削除,当日結果の提示と次判断への接続
+SCR-08,SCREEN,modal:bankrupt,YES,YES,pachinko/index.html:1277 showBankruptModal,YES,画面の新設・削除,倒産の終局提示。やり直し以外を封じる
+SCR-09,SCREEN,modal:no-machine,YES,YES,pachinko/index.html:1791-1795,YES,画面の新設・削除,台0台での営業実行の無効化と次行動の案内
+SCR-10,SCREEN,modal:trial-slot,YES,YES,pachinko/index.html:1349 openSlotTrial,YES,画面の新設・削除,スロット実機の遊技(営業収支に影響しない)
+SCR-11,SCREEN,modal:trial-pachinko,YES,YES,pachinko/index.html:1496 openPachiTrial,YES,画面の新設・削除,パチンコ実機の遊技(営業収支に影響しない)
+SCR-12,SCREEN,overlay:toast,YES,YES,pachinko/index.html:707 toast(),YES,画面の新設・削除,実績解除の一時通知(操作を妨げない)
+ST-01,STATE,SCR-01 / 通常,YES,YES,pachinko/index.html:986,YES,状態の新設・削除,全指標が現在値で表示
+ST-02,STATE,SCR-01 / 日付に7を含む,YES,YES,"pachinko/index.html:678,987,995",YES,状態の新設・削除,stDayに特日表記 / dayNoteが特日の助言に変化
+ST-03,STATE,SCR-01 / day%7が6または0,YES,YES,"pachinko/index.html:679,987",YES,状態の新設・削除,stDayに週末表記
+ST-04,STATE,SCR-01 / trend.idsが非空,YES,YES,"pachinko/index.html:994,996",YES,状態の新設・削除,dayNote末尾に今週のブーム名
+ST-05,STATE,SCR-01 / money<0,YES,YES,"pachinko/index.html:1276,1789",YES,状態の新設・削除,btnOpenで倒産提示へ遷移
+ST-06,STATE,SCR-02 / machines.length===0,YES,YES,pachinko/index.html:1003-1006,YES,状態の新設・削除,空状態の案内文のみ
+ST-07,STATE,SCR-02 / machines.length>0,YES,YES,pachinko/index.html:1008-1057,YES,状態の新設・削除,台ごとの明細を列挙
+ST-08,STATE,SCR-02 / day-boughtDay<5,YES,YES,"pachinko/index.html:1011,1025",YES,状態の新設・削除,NEW標識を表示
+ST-09,STATE,SCR-02 / trendMult>1,YES,YES,"pachinko/index.html:686,1020",YES,状態の新設・削除,ブーム中の標識
+ST-10,STATE,SCR-02 / 同一機種2台以上,YES,YES,"pachinko/index.html:682,1021",YES,状態の新設・削除,シマ効果量の標識
+ST-11,STATE,SCR-02 / setting>=5,YES,YES,pachinko/index.html:1022,YES,状態の新設・削除,プロ警戒の標識
+ST-12,STATE,SCR-02 / lastNet===null,YES,YES,pachinko/index.html:1014-1015,YES,状態の新設・削除,前日収支が未計測表示
+ST-13,STATE,SCR-02 / 売却操作,YES,YES,pachinko/index.html:1047,YES,状態の新設・削除,OSの確認ダイアログ
+ST-14,STATE,SCR-03 / 資金充足かつ空き枠あり,YES,YES,pachinko/index.html:1084-1090,YES,状態の新設・削除,購入操作が有効
+ST-15,STATE,SCR-03 / money<price,YES,YES,"pachinko/index.html:1087,1089",YES,状態の新設・削除,購入操作が資金不足表示で無効
+ST-16,STATE,SCR-03 / machines>=cap,YES,YES,"pachinko/index.html:1086,1088",YES,状態の新設・削除,購入操作が枠なし表示で無効
+ST-17,STATE,SCR-03 / 同一機種を所有,YES,YES,"pachinko/index.html:1062,1070",YES,状態の新設・削除,自店設置数の標識
+ST-18,STATE,SCR-04 / staff<staffNeeded(),YES,YES,pachinko/index.html:1112-1113,YES,状態の新設・削除,不足中の警告表示
+ST-19,STATE,SCR-04 / staff>=staffNeeded(),YES,YES,pachinko/index.html:1112-1113,YES,状態の新設・削除,充足の表示
+ST-20,STATE,SCR-04 / staff<=1,YES,YES,pachinko/index.html:1114,YES,状態の新設・削除,解雇操作が無効
+ST-21,STATE,SCR-04 / ad!=='none',YES,YES,"pachinko/index.html:1131,1140-1142",YES,状態の新設・削除,選択中プランと効果を表示
+ST-22,STATE,SCR-04 / ad==='none',YES,YES,pachinko/index.html:1139-1141,YES,状態の新設・削除,未設定の説明を表示
+ST-23,STATE,SCR-04 / 直近購入あり+CD明け+資金充足,YES,YES,pachinko/index.html:1150-1151,YES,状態の新設・削除,フェア開催が有効
+ST-24,STATE,SCR-04 / grandOpen===true,YES,YES,pachinko/index.html:1149,YES,状態の新設・削除,予約済み表示で無効
+ST-25,STATE,SCR-04 / 直近2日に購入なし,YES,YES,"pachinko/index.html:1145,1150",YES,状態の新設・削除,導入直後のみ可の表示で無効
+ST-26,STATE,SCR-04 / day-lastGrand<7,YES,YES,"pachinko/index.html:1146,1151",YES,状態の新設・削除,残り日数表示で無効
+ST-27,STATE,SCR-04 / money<300000,YES,YES,pachinko/index.html:1152,YES,状態の新設・削除,資金不足表示で無効
+ST-28,STATE,SCR-04 / cap<60かつ資金充足,YES,YES,pachinko/index.html:1121-1122,YES,状態の新設・削除,拡張が有効
+ST-29,STATE,SCR-04 / money<expandCost(),YES,YES,pachinko/index.html:1122,YES,状態の新設・削除,拡張が無効
+ST-30,STATE,SCR-04 / cap>=60,YES,YES,pachinko/index.html:1116-1119,YES,状態の新設・削除,拡張上限到達で無効
+ST-31,STATE,SCR-04 / debt+100万>creditLimit(),YES,YES,pachinko/index.html:1157,YES,状態の新設・削除,借入が無効
+ST-32,STATE,SCR-04 / debt<=0 または資金不足,YES,YES,pachinko/index.html:1158,YES,状態の新設・削除,返済が無効
+ST-33,STATE,SCR-04 / rate==='normal',YES,YES,pachinko/index.html:1163-1170,YES,状態の新設・削除,等価交換が選択状態+説明
+ST-34,STATE,SCR-04 / rate==='low',YES,YES,pachinko/index.html:1163-1172,YES,状態の新設・削除,低換金が選択状態+説明
+ST-35,STATE,SCR-04 / heat<=5,YES,YES,pachinko/index.html:1174-1179,YES,状態の新設・削除,平常の説明
+ST-36,STATE,SCR-04 / heat>5,YES,YES,pachinko/index.html:1176-1177,YES,状態の新設・削除,警戒レベルの説明
+ST-37,STATE,SCR-04 / heat>8,YES,YES,"pachinko/index.html:1174-1175,795",YES,状態の新設・削除,危険の説明
+ST-38,STATE,SCR-04 / 実績が解除済,YES,YES,pachinko/index.html:1185-1189,YES,状態の新設・削除,通常表示
+ST-39,STATE,SCR-04 / 実績が未解除,YES,YES,pachinko/index.html:1186,YES,状態の新設・削除,減衰表示(locked)
+ST-40,STATE,SCR-04 / やり直し操作,YES,YES,pachinko/index.html:1841,YES,状態の新設・削除,OSの確認ダイアログ
+ST-41,STATE,SCR-05 / history.length===0,YES,YES,"pachinko/index.html:1197-1200,1254-1257",YES,状態の新設・削除,推移と表の空状態案内
+ST-42,STATE,SCR-05 / history.length>0,YES,YES,"pachinko/index.html:1201-1250,1258-1268",YES,状態の新設・削除,推移と明細を表示
+ST-43,STATE,SCR-05 / 推移上の要素をポイント,YES,YES,pachinko/index.html:1240-1250,YES,状態の新設・削除,日付と金額の詳細を表示
+ST-44,STATE,SCR-07 / 通常の営業終了,YES,YES,pachinko/index.html:1321-1334,YES,状態の新設・削除,当日の収支と内訳を提示
+ST-45,STATE,SCR-07 / rec.day%7===0かつ履歴7件以上,YES,YES,pachinko/index.html:954-956,YES,状態の新設・削除,週次レポートを追加提示
+ST-46,STATE,SCR-07 / cleared かつ clearDay===rec.day,YES,YES,"pachinko/index.html:1315-1318,951",YES,状態の新設・削除,達成告知と評価ランク
+ST-47,STATE,SCR-07 / money<0,YES,YES,"pachinko/index.html:1312-1314,1333",YES,状態の新設・削除,倒産告知。閉じる操作を出さない
+ST-48,STATE,SCR-10 / 試打開始直後 / 1G完了,YES,YES,"pachinko/index.html:1434-1452,1465-1466",YES,状態の新設・削除,停止操作が無効、レバー有効
+ST-49,STATE,SCR-10 / レバーON後,YES,YES,pachinko/index.html:1441-1451,YES,状態の新設・削除,3リールが回転表示、レバー無効
+ST-50,STATE,SCR-10 / big/reg成立,YES,YES,pachinko/index.html:1467-1477,YES,状態の新設・削除,告知ランプ点灯+当選文+獲得枚数
+ST-51,STATE,SCR-10 / grape/cherry/replay成立,YES,YES,pachinko/index.html:1470-1472,YES,状態の新設・削除,小役の獲得表示
+ST-52,STATE,SCR-10 / none,YES,YES,pachinko/index.html:1464-1483,YES,状態の新設・削除,獲得表示なし
+ST-53,STATE,SCR-10 / credits<3,YES,YES,pachinko/index.html:1435,YES,状態の新設・削除,レバーONが無反応
+ST-54,STATE,SCR-11 / 試打開始直後 / 演出完了,YES,YES,"pachinko/index.html:1558-1560,1591",YES,状態の新設・削除,回転操作が有効
+ST-55,STATE,SCR-11 / 回転中(busy),YES,YES,"pachinko/index.html:1559,1566-1571",YES,状態の新設・削除,3桁が回転表示、回転操作を受け付けない
+ST-56,STATE,SCR-11 / リーチ成立(当選または1/12),YES,YES,pachinko/index.html:1578-1585,YES,状態の新設・削除,リーチ告知を表示
+ST-57,STATE,SCR-11 / 当選(1/denom),YES,YES,pachinko/index.html:1598-1606,YES,状態の新設・削除,大当り告知と獲得玉
+ST-58,STATE,SCR-11 / RUSH継続(rushPct),YES,YES,pachinko/index.html:1608-1616,YES,状態の新設・削除,連チャン数と獲得玉を更新
+ST-59,STATE,SCR-11 / RUSH終了,YES,YES,pachinko/index.html:1618-1626,YES,状態の新設・削除,総連チャン数と総獲得玉を提示
+ST-60,STATE,SCR-11 / オートON,YES,YES,pachinko/index.html:1632-1639,YES,状態の新設・削除,一定間隔で自動的に回転
+ST-61,STATE,SCR-11 / balls<spinCost(),YES,YES,pachinko/index.html:1561,YES,状態の新設・削除,玉切れの通知
+ST-62,STATE,SCR-12 / 未解除実績の条件成立,YES,YES,pachinko/index.html:698-712,YES,状態の新設・削除,実績名の一時通知が出現
+FN-01,FUNCTION,機能領域の切替,YES,YES,pachinko/index.html:1779-1786,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-02,FUNCTION,出玉設定の変更,YES,YES,pachinko/index.html:1031-1039,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-03,FUNCTION,設置台の試打起動,YES,YES,pachinko/index.html:1040-1042,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-04,FUNCTION,設置台の売却,YES,YES,pachinko/index.html:1043-1052,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-05,FUNCTION,カタログ機種の試打起動,YES,YES,pachinko/index.html:1081-1083,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-06,FUNCTION,新台の購入,YES,YES,pachinko/index.html:1091-1101,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-07,FUNCTION,スタッフの雇用,YES,YES,pachinko/index.html:1802,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-08,FUNCTION,スタッフの解雇,YES,YES,pachinko/index.html:1803,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-09,FUNCTION,広告プランの選択,YES,YES,pachinko/index.html:1126-1132,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-10,FUNCTION,新装開店フェアの予約,YES,YES,pachinko/index.html:1812-1820,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=CONTEXTUAL
+FN-11,FUNCTION,店舗の拡張,YES,YES,pachinko/index.html:1804-1811,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-12,FUNCTION,借入,YES,YES,pachinko/index.html:1822-1829,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-13,FUNCTION,返済,YES,YES,pachinko/index.html:1830-1838,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-14,FUNCTION,交換率ポリシーの切替,YES,YES,pachinko/index.html:1155-1162,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-15,FUNCTION,手動セーブ,YES,YES,pachinko/index.html:1839,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=OPTIONAL
+FN-16,FUNCTION,最初からやり直す,YES,YES,pachinko/index.html:1840-1842,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-17,FUNCTION,1営業日の実行,YES,YES,pachinko/index.html:1788-1800,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-18,FUNCTION,当日結果の提示,YES,YES,pachinko/index.html:1300-1335,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-19,FUNCTION,週次レポートの提示,YES,YES,pachinko/index.html:954-985,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=CONTEXTUAL
+FN-20,FUNCTION,クリア判定と評価,YES,YES,pachinko/index.html:945,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=CONTEXTUAL
+FN-21,FUNCTION,倒産の確定と操作封鎖,YES,YES,pachinko/index.html:1276-1283,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=CONTEXTUAL
+FN-22,FUNCTION,損益推移の提示,YES,YES,pachinko/index.html:1194-1250,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-23,FUNCTION,営業成績の提示,YES,YES,pachinko/index.html:1251-1269,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-24,FUNCTION,実績の解除と一時通知,YES,YES,pachinko/index.html:698-712,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=CONTEXTUAL
+FN-25,FUNCTION,実績一覧の提示,YES,YES,pachinko/index.html:1180-1192,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=OPTIONAL
+FN-26,FUNCTION,経営ステータスの常時提示,YES,YES,pachinko/index.html:986-999,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-27,FUNCTION,難易度選択によるゲーム開始,YES,YES,pachinko/index.html:1752-1758,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-28,FUNCTION,提示の閉了と復帰,YES,YES,pachinko/index.html:1285-1298,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-29,FUNCTION,スロット遊技: 開始操作,YES,YES,pachinko/index.html:1434-1452,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-30,FUNCTION,スロット遊技: リール停止と結果確定,YES,YES,pachinko/index.html:1454-1485,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-31,FUNCTION,スロット遊技: 試打設定の変更,YES,YES,pachinko/index.html:1489,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=CONTEXTUAL
+FN-32,FUNCTION,スロット遊技: メダル補充,YES,YES,pachinko/index.html:1490,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=CONTEXTUAL
+FN-33,FUNCTION,パチンコ遊技: 回転操作,YES,YES,pachinko/index.html:1558-1596,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-34,FUNCTION,パチンコ遊技: 連続大当りの継続抽選,YES,YES,pachinko/index.html:1598-1629,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=REQUIRED
+FN-35,FUNCTION,パチンコ遊技: 自動回転,YES,YES,pachinko/index.html:1632-1639,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=CONTEXTUAL
+FN-36,FUNCTION,パチンコ遊技: 釘変更と玉補充,YES,YES,pachinko/index.html:1640-1641,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=CONTEXTUAL
+FN-37,FUNCTION,自動保存と自動復元(保存値の無害化),YES,YES,pachinko/index.html:1652-1743,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=NONE
+FN-38,FUNCTION,オフライン動作(Service Worker),YES,YES,pachinko/index.html:1845-1847,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=NONE
+FN-39,FUNCTION,デスクトップ起動(Electron),YES,YES,pachinko/desktop/main.js:1-46,YES,機能の追加・削除・意味変更,DESIGN_VISIBILITY=NONE
+ACT-01,ACTION,営業開始,YES,YES,pachinko/index.html:369,YES,確認の除去・破壊性の変更,freq=VERY_HIGH(毎日) destructive=NO
+ACT-02,ACTION,ホール,YES,YES,pachinko/index.html:258,YES,確認の除去・破壊性の変更,freq=HIGH destructive=NO
+ACT-03,ACTION,新台購入,YES,YES,pachinko/index.html:259,YES,確認の除去・破壊性の変更,freq=MEDIUM destructive=NO
+ACT-04,ACTION,経営,YES,YES,pachinko/index.html:260,YES,確認の除去・破壊性の変更,freq=MEDIUM destructive=NO
+ACT-05,ACTION,帳簿,YES,YES,pachinko/index.html:261,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-06,ACTION,設定1〜6(台ごと),YES,YES,pachinko/index.html:1031-1039,YES,確認の除去・破壊性の変更,freq=VERY_HIGH(毎日・台数分) destructive=NO
+ACT-07,ACTION,試打(台ごと),YES,YES,pachinko/index.html:1040-1042,YES,確認の除去・破壊性の変更,freq=MEDIUM destructive=NO
+ACT-08,ACTION,売却(台ごと),YES,YES,pachinko/index.html:1043-1052,YES,確認の除去・破壊性の変更,freq=LOW destructive=YES
+ACT-09,ACTION,試打(カタログ),YES,YES,pachinko/index.html:1081-1083,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-10,ACTION,導入する,YES,YES,pachinko/index.html:1084-1101,YES,確認の除去・破壊性の変更,freq=MEDIUM destructive=NO
+ACT-11,ACTION,雇用する (+1人),YES,YES,pachinko/index.html:290,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-12,ACTION,解雇する (−1人),YES,YES,pachinko/index.html:291,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-13,ACTION,広告プラン(4種),YES,YES,pachinko/index.html:1126-1132,YES,確認の除去・破壊性の変更,freq=MEDIUM destructive=NO
+ACT-14,ACTION,フェアを開催する,YES,YES,pachinko/index.html:302,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-15,ACTION,+5台 拡張する,YES,YES,pachinko/index.html:308,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-16,ACTION,借りる (+100万),YES,YES,pachinko/index.html:318,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-17,ACTION,返済する (−100万),YES,YES,pachinko/index.html:319,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-18,ACTION,交換率(2種),YES,YES,pachinko/index.html:1155-1162,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-19,ACTION,セーブ,YES,YES,pachinko/index.html:340,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-20,ACTION,最初からやり直す,YES,YES,pachinko/index.html:341,YES,確認の除去・破壊性の変更,freq=VERY_LOW destructive=YES
+ACT-21,ACTION,閉じる(結果),YES,YES,pachinko/index.html:1333,YES,確認の除去・破壊性の変更,freq=VERY_HIGH(毎日) destructive=NO
+ACT-22,ACTION,わかった(台0台案内),YES,YES,pachinko/index.html:1794,YES,確認の除去・破壊性の変更,freq=VERY_LOW destructive=NO
+ACT-23,ACTION,最初からやり直す(倒産),YES,YES,pachinko/index.html:1281,YES,確認の除去・破壊性の変更,freq=VERY_LOW destructive=YES
+ACT-24,ACTION,のんびり/標準/修羅,YES,YES,pachinko/index.html:1770-1774,YES,確認の除去・破壊性の変更,freq=VERY_LOW(開始時) destructive=NO
+ACT-25,ACTION,背景操作で閉じる,YES,YES,pachinko/index.html:1297,YES,確認の除去・破壊性の変更,freq=MEDIUM destructive=NO
+ACT-26,ACTION,レバーON (3枚),YES,YES,pachinko/index.html:1487,YES,確認の除去・破壊性の変更,freq=VERY_HIGH(遊技中) destructive=NO
+ACT-27,ACTION,STOP ×3,YES,YES,pachinko/index.html:1488,YES,確認の除去・破壊性の変更,freq=VERY_HIGH(遊技中) destructive=NO
+ACT-28,ACTION,試打設定(スロット),YES,YES,pachinko/index.html:1489,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-29,ACTION,メダル補充 (+500),YES,YES,pachinko/index.html:1490,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-30,ACTION,試打を終える,YES,YES,pachinko/index.html:1389,YES,確認の除去・破壊性の変更,freq=MEDIUM destructive=NO
+ACT-31,ACTION,回す,YES,YES,pachinko/index.html:1631,YES,確認の除去・破壊性の変更,freq=VERY_HIGH(遊技中) destructive=NO
+ACT-32,ACTION,オート,YES,YES,pachinko/index.html:1632,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-33,ACTION,釘(設定),YES,YES,pachinko/index.html:1640,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-34,ACTION,玉補充 (+1000),YES,YES,pachinko/index.html:1641,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+ACT-35,ACTION,推移上の個別日を参照,YES,YES,pachinko/index.html:1240-1250,YES,確認の除去・破壊性の変更,freq=LOW destructive=NO
+D-01,DATA_FIELD,営業日,YES,YES,"index.html:988,1663",YES,存在しない指標の追加,"range=1〜1,000,000(保存時クランプ)"
+D-02,DATA_FIELD,資金,YES,YES,"index.html:989,1664,623",YES,存在しない指標の追加,range=-1e13〜1e13(保存時クランプ)。負値で倒産
+D-03,DATA_FIELD,評判,YES,YES,"index.html:990,906,1665",YES,存在しない指標の追加,range=1〜100
+D-04,DATA_FIELD,常連客数,YES,YES,"index.html:991,885-891,1666",YES,存在しない指標の追加,range=0〜100000(保存時)。実質は収容力×0.5が上限
+D-05,DATA_FIELD,設置台数 / 最大設置数,YES,YES,index.html:992,YES,存在しない指標の追加,range=0〜60 / 10〜60
+D-06,DATA_FIELD,借入残高,YES,YES,"index.html:993,1668",YES,存在しない指標の追加,range=0〜1e12。0のとき「なし」表記
+D-07,DATA_FIELD,純資産,YES,YES,"index.html:676,994",YES,存在しない指標の追加,range=下限なし(資金+台資産-借金)
+D-08,DATA_FIELD,今週のブーム名,YES,YES,"index.html:433-441,996",YES,存在しない指標の追加,range=TRENDS の7種のいずれか
+D-09,DATA_FIELD,機種名,YES,YES,index.html:398-421,YES,存在しない指標の追加,range=CATALOG 10種
+D-10,DATA_FIELD,機種の説明文,YES,YES,index.html:398-421,YES,存在しない指標の追加,range=CATALOG 10種
+D-11,DATA_FIELD,機種スペック表記,YES,YES,index.html:398-421,YES,存在しない指標の追加,range=CATALOG 10種
+D-12,DATA_FIELD,台の現在人気,YES,YES,"index.html:689,860,1043,1690",YES,存在しない指標の追加,range=15〜300(実運用は15〜165程度)
+D-13,DATA_FIELD,台の前日収支(店側),YES,YES,"index.html:858,1014-1015",YES,存在しない指標の追加,range=負値あり
+D-14,DATA_FIELD,台の前日客数,YES,YES,"index.html:859,1015",YES,存在しない指標の追加,range=0以上
+D-15,DATA_FIELD,台の売却額,YES,YES,"index.html:674,1016",YES,存在しない指標の追加,"range=購入価格×0.45 = 180,000〜652,500"
+D-16,DATA_FIELD,台の現在設定,YES,YES,"index.html:1031-1039,1689",YES,存在しない指標の追加,range=1〜6
+D-17,DATA_FIELD,台の状態標識,YES,YES,index.html:1019-1023,YES,存在しない指標の追加,range=ブーム中 / シマ+N% / プロ警戒(最大3件同時)
+D-18,DATA_FIELD,新台標識,YES,YES,"index.html:1011,1025",YES,存在しない指標の追加,range=導入から5日未満
+D-19,DATA_FIELD,機種の集客力,YES,YES,"index.html:398-421,1073",YES,存在しない指標の追加,range=50〜118
+D-20,DATA_FIELD,機種の人気低下の速さ,YES,YES,index.html:1073,YES,存在しない指標の追加,range=遅い / 普通 / 速い(decay 0.4〜2.0)
+D-21,DATA_FIELD,機種の価格,YES,YES,"index.html:398-421,1075",YES,存在しない指標の追加,"range=400,000〜1,450,000"
+D-22,DATA_FIELD,自店の同一機種設置数,YES,YES,"index.html:1062,1070",YES,存在しない指標の追加,range=1〜60
+D-23,DATA_FIELD,スタッフ数と日給合計,YES,YES,"index.html:1110,868",YES,存在しない指標の追加,"range=1〜200 / 13,000×人数"
+D-24,DATA_FIELD,必要スタッフ数,YES,YES,"index.html:680,1112",YES,存在しない指標の追加,range=ceil(台数/8) の下限1
+D-25,DATA_FIELD,広告プラン名と費用,YES,YES,"index.html:425-430,1128",YES,存在しない指標の追加,"range=4種 / 0〜250,000"
+D-26,DATA_FIELD,広告の効果表記,YES,YES,index.html:1142,YES,存在しない指標の追加,range=+12〜75人 / 4〜15%
+D-27,DATA_FIELD,フェアの可否と理由,YES,YES,index.html:1145-1153,YES,存在しない指標の追加,range=5種(開催可 / 予約済 / 直後のみ / 残りN日 / 資金不足)
+D-28,DATA_FIELD,最大設置数,YES,YES,index.html:1116,YES,存在しない指標の追加,range=10〜60(上限到達表記あり)
+D-29,DATA_FIELD,拡張費用,YES,YES,"index.html:1107,1121",YES,存在しない指標の追加,"range=2,000,000〜5,000,000"
+D-30,DATA_FIELD,借入可能枠,YES,YES,"index.html:677,1156",YES,存在しない指標の追加,"range=2,000,000〜(台資産×0.7+200万)"
+D-31,DATA_FIELD,金利,YES,YES,"index.html:316,870",YES,存在しない指標の追加,range=0.25% 固定
+D-32,DATA_FIELD,交換率ポリシー,YES,YES,index.html:1163-1172,YES,存在しない指標の追加,range=等価交換 / 低換金 (5.6枚)
+D-33,DATA_FIELD,行政・組合の警戒度,YES,YES,"index.html:793-799,1174-1179",YES,存在しない指標の追加,range=0〜200(保存時)。表現上は0〜12を100%に対応
+D-34,DATA_FIELD,実績(名称/条件/解除状態),YES,YES,"index.html:604-620,1180-1192",YES,存在しない指標の追加,range=15件固定
+D-35,DATA_FIELD,帳簿: 日,YES,YES,index.html:1262,YES,存在しない指標の追加,range=1〜
+D-36,DATA_FIELD,帳簿: 客数,YES,YES,index.html:1262,YES,存在しない指標の追加,range=0〜(収容力×1.15が上限)
+D-37,DATA_FIELD,帳簿: 一般/常連/プロの内訳,YES,YES,index.html:1263,YES,存在しない指標の追加,range=各0以上
+D-38,DATA_FIELD,帳簿: 売上,YES,YES,index.html:1264,YES,存在しない指標の追加,range=0以上
+D-39,DATA_FIELD,帳簿: 出玉払出,YES,YES,"index.html:864,1264",YES,存在しない指標の追加,range=負値もあり得る(粗利が負のとき売上超)
+D-40,DATA_FIELD,帳簿: 経費,YES,YES,"index.html:871,1264",YES,存在しない指標の追加,range=0以上(家賃+人件費+光熱費+広告+臨時+利息)
+D-41,DATA_FIELD,帳簿: 純利益,YES,YES,"index.html:874,1265",YES,存在しない指標の追加,range=負値あり
+D-42,DATA_FIELD,帳簿: 備考,YES,YES,"index.html:925,1266",YES,存在しない指標の追加,range=特日 / 週末 / 空
+D-43,DATA_FIELD,損益推移(直近30日),YES,YES,index.html:1194-1239,YES,存在しない指標の追加,range=負値あり。最大/最小/0の3基準線
+D-44,DATA_FIELD,推移の個別日詳細,YES,YES,index.html:1243-1244,YES,存在しない指標の追加,range=―
+D-45,DATA_FIELD,当日の発生イベント文,YES,YES,"index.html:450-601,1302",YES,存在しない指標の追加,range=130種+システム文。1日0〜複数件
+D-46,DATA_FIELD,当日の利息,YES,YES,"index.html:870,1328",YES,存在しない指標の追加,range=0以上
+D-47,DATA_FIELD,台別の店側収支一覧,YES,YES,index.html:1303-1309,YES,存在しない指標の追加,range=台数分。降順
+D-48,DATA_FIELD,週間純利益,YES,YES,"index.html:957,981",YES,存在しない指標の追加,range=負値あり
+D-49,DATA_FIELD,週間平均客数,YES,YES,"index.html:958,982",YES,存在しない指標の追加,range=0以上
+D-50,DATA_FIELD,週次の助言,YES,YES,index.html:962-978,YES,存在しない指標の追加,range=8条件のうち成立分。0件時は既定文1件
+D-51,DATA_FIELD,クリア評価ランク,YES,YES,"index.html:951,1316-1318",YES,存在しない指標の追加,range=S(<=65日) / A(<=85) / B(<=120) / C
+D-52,DATA_FIELD,スロット: 所持メダル,YES,YES,"index.html:1398,1435",YES,存在しない指標の追加,range=0以上(補充で+500)
+D-53,DATA_FIELD,スロット: 総ゲーム数,YES,YES,"index.html:1399,1436",YES,存在しない指標の追加,range=0以上
+D-54,DATA_FIELD,スロット: BIG/REG回数,YES,YES,"index.html:1400-1401,1467-1468",YES,存在しない指標の追加,range=0以上
+D-55,DATA_FIELD,スロット: 差枚,YES,YES,"index.html:1402,1481",YES,存在しない指標の追加,range=負値あり
+D-56,DATA_FIELD,スロット: 直前の結果文,YES,YES,index.html:1467-1472,YES,存在しない指標の追加,range=BIG/REG/小役/リプレイ/なし
+D-57,DATA_FIELD,パチンコ: 持ち玉,YES,YES,"index.html:1541,1560",YES,存在しない指標の追加,range=0以上(補充で+1000)
+D-58,DATA_FIELD,パチンコ: 回転数,YES,YES,"index.html:1542,1560",YES,存在しない指標の追加,range=0以上
+D-59,DATA_FIELD,パチンコ: 当り回数 / 最高連チャン,YES,YES,"index.html:1543-1544,1599,1621",YES,存在しない指標の追加,range=0以上
+D-60,DATA_FIELD,パチンコ: 差玉,YES,YES,index.html:1545-1546,YES,存在しない指標の追加,range=負値あり
+D-61,DATA_FIELD,パチンコ: RUSH連チャン表記,YES,YES,index.html:1610-1620,YES,存在しない指標の追加,range=1連〜(継続率依存で上限なし)
+D-62,DATA_FIELD,解除した実績名(一時通知),YES,YES,index.html:704,YES,存在しない指標の追加,range=15件のいずれか
+P-01,PROTECTED,1営業日の実行は利用者の明示操作のみで発生する,YES,YES,pachinko/index.html:1788-1800,NO(内部仕様),自動進行・省略・複数日一括の導入,PROTECTED_FUNCTION
+P-02,PROTECTED,結果提示中の再実行は無効,YES,YES,pachinko/index.html:1790,NO(内部仕様),ガードの除去,PROTECTED_FUNCTION
+P-03,PROTECTED,倒産後はやり直し以外の全経営操作を拒否,YES,YES,"pachinko/index.html:1276-1298,1802-1838",NO(内部仕様),ガードの除去・緩和,PROTECTED_FUNCTION
+P-04,PROTECTED,破壊的操作の実行確認,YES,YES,"pachinko/index.html:1047,1841",NO(内部仕様),確認の除去,PROTECTED_FUNCTION
+P-05,PROTECTED,試打は経営収支に影響しない,YES,YES,pachinko/index.html:1349-1651,NO(内部仕様),試打から経営stateへの書込み追加,PROTECTED_FUNCTION
+P-06,PROTECTED,設定別の店側粗利率,YES,YES,pachinko/index.html:422,NO(内部仕様),値の変更,PROTECTED_GAME_LOGIC
+P-07,PROTECTED,客数モデル(収容力・集客力・充填率),YES,YES,pachinko/index.html:806-836,NO(内部仕様),係数・構造の変更,PROTECTED_GAME_LOGIC
+P-08,PROTECTED,客層3種の分離(一般/常連/プロ),YES,YES,"pachinko/index.html:820-843,856-857",NO(内部仕様),客層の統合・除去,PROTECTED_GAME_LOGIC
+P-09,PROTECTED,行政警戒度の蓄積と指導判定,YES,YES,pachinko/index.html:793-800,NO(内部仕様),閾値・確率・罰金の変更,PROTECTED_GAME_LOGIC
+P-10,PROTECTED,特日/週末の判定と期待バンド,YES,YES,"pachinko/index.html:678-679,782-784,893-905",NO(内部仕様),判定式・バンド境界の変更,PROTECTED_GAME_LOGIC
+P-11,PROTECTED,新台効果・シマ効果・ブーム倍率,YES,YES,pachinko/index.html:682-695,NO(内部仕様),倍率・上限の変更,PROTECTED_GAME_LOGIC
+P-12,PROTECTED,常連プールの増減,YES,YES,pachinko/index.html:879-891,NO(内部仕様),係数の変更,PROTECTED_GAME_LOGIC
+P-13,PROTECTED,評判の増減と上下限,YES,YES,pachinko/index.html:893-906,NO(内部仕様),式・範囲の変更,PROTECTED_GAME_LOGIC
+P-14,PROTECTED,難易度係数,YES,YES,pachinko/index.html:391-396,NO(内部仕様),値の変更,PROTECTED_GAME_LOGIC
+P-15,PROTECTED,クリア条件と評価境界,YES,YES,"pachinko/index.html:387,676,945,951",NO(内部仕様),閾値の変更,PROTECTED_GAME_LOGIC
+P-16,PROTECTED,緊急融資と倒産の成立条件,YES,YES,"pachinko/index.html:909-917,1276",NO(内部仕様),条件の変更,PROTECTED_GAME_LOGIC
+P-17,PROTECTED,経費の内訳,YES,YES,pachinko/index.html:867-871,NO(内部仕様),項目の増減・係数変更,PROTECTED_CALCULATION
+P-18,PROTECTED,台別の売上と粗利,YES,YES,pachinko/index.html:845-863,NO(内部仕様),式の変更,PROTECTED_CALCULATION
+P-19,PROTECTED,純資産と借入枠,YES,YES,pachinko/index.html:674-677,NO(内部仕様),係数の変更,PROTECTED_CALCULATION
+P-20,PROTECTED,セーブ構造とサニタイズ規則,YES,YES,"pachinko/index.html:629-658,1658-1732",NO(内部仕様),フィールドの削除・クランプ範囲の緩和,PROTECTED_DATA_MODEL
+P-21,PROTECTED,機種カタログ10件の定義,YES,YES,pachinko/index.html:398-421,NO(内部仕様),件数・IDの変更,PROTECTED_DATA_MODEL
+P-22,PROTECTED,実績15件のIDと条件,YES,YES,"pachinko/index.html:604-620,934-945",NO(内部仕様),ID変更・条件変更,PROTECTED_DATA_MODEL
+P-23,PROTECTED,イベント130件の定義と抽選,YES,YES,"pachinko/index.html:450-601,753-779",NO(内部仕様),件数・効果キー・cdの変更,PROTECTED_DATA_MODEL
+P-24,PROTECTED,保存キー,YES,YES,pachinko/index.html:386,NO(内部仕様),キー名の変更,PROTECTED_STORAGE
+P-25,PROTECTED,Service Workerのキャッシュ名とプリキャッシュ対象,YES,YES,pachinko/sw.js:2-3,NO(内部仕様),対象からindex.html等を外すこと,PROTECTED_STORAGE
+P-26,PROTECTED,単一ドキュメント構成(URLルーティングなし),YES,YES,pachinko/index.html:1-1862,NO(内部仕様),ルーティング導入・ファイル分割,PROTECTED_ROUTE
+P-27,PROTECTED,実行時の外部リクエストがゼロ,YES,YES,pachinko/index.html(fetch/XHR/外部URLの出現数=0),NO(内部仕様),外部フォント・CDN・解析の追加,PROTECTED_NETWORK_BEHAVIOR
+P-28,PROTECTED,抽選は全てMath.randomのクライアント内乱数(シード指定なし),YES,YES,"pachinko/index.html:624,753,773,1410,1572,1609",NO(内部仕様),シード化・サーバー抽選化,PROTECTED_RANDOMNESS
+P-29,PROTECTED,インラインハンドラ用のグローバル公開3件,YES,YES,"pachinko/index.html:1298,1751,1759",NO(内部仕様),削除・改名,PROTECTED_TEST_HOOK
+P-30,PROTECTED,DOM識別子(静的40件 / 動的含め70件),YES,YES,pachinko/index.html(id属性),NO(内部仕様),IDの改名・削除,PROTECTED_TEST_HOOK
+P-31,PROTECTED,PWAアイコンのパスと寸法,YES,YES,pachinko/manifest.webmanifest:12-16,NO(内部仕様),パス・寸法の変更,PROTECTED_ASSET_REQUIREMENT
+P-32,PROTECTED,デスクトップビルドのアイコンパス,YES,YES,"pachinko/desktop/package.json:36,44,49",NO(内部仕様),パスの変更,PROTECTED_ASSET_REQUIREMENT
+P-33,PROTECTED,Electronが読み込むゲームファイルの位置,YES,YES,"pachinko/desktop/main.js:6-10,27",NO(内部仕様),相対位置の変更,PROTECTED_ASSET_REQUIREMENT
+AS-01,ASSET,pachinko/icon-192.png,YES,YES,pachinko/icon-192.png,YES,パス・寸法の変更,アプリアイコン(小)
+AS-02,ASSET,pachinko/icon-512.png,YES,YES,pachinko/icon-512.png,YES,パス・寸法の変更,アプリアイコン(大/マスカブル)
+AS-03,ASSET,pachinko/desktop/build/icon.png,YES,YES,pachinko/desktop/build/icon.png,YES,パス・寸法の変更,デスクトップビルド用アイコン
+CP-01,COPY,パチスロ帝国 (製品名),YES,YES,"pachinko/index.html:244, pachinko/manifest.webmanifest:3",YES,意味の変更,EXACT_REQUIRED_COPY
+CP-02,COPY,機種名10件(CATALOG[].name),YES,YES,pachinko/index.html:398-421,YES,意味の変更,EXACT_REQUIRED_COPY
+CP-03,COPY,機種スペック表記10件(CATALOG[].spec.label),YES,YES,pachinko/index.html:398-421,YES,意味の変更,EXACT_REQUIRED_COPY
+CP-04,COPY,実績15件の名称と条件文(ACHIEVEMENTS),YES,YES,pachinko/index.html:604-620,YES,意味の変更,EXACT_REQUIRED_COPY
+CP-05,COPY,イベント文130件(LUCK_EVENTS 80 / COND_EVENTS 50),YES,YES,pachinko/index.html:450-601,YES,意味の変更,EXACT_REQUIRED_COPY
+CP-06,COPY,広告プラン名4件(広告なし/チラシ配布/SNSキャンペーン/ローカルTV CM),YES,YES,pachinko/index.html:425-430,YES,意味の変更,EXACT_REQUIRED_COPY
+CP-07,COPY,ブーム名7件(TRENDS[].name),YES,YES,pachinko/index.html:433-441,YES,意味の変更,EXACT_REQUIRED_COPY
+CP-08,COPY,難易度名3件(のんびり/標準/修羅)と初期資金表記,YES,YES,"pachinko/index.html:392-394,1770-1774",YES,意味の変更,EXACT_REQUIRED_COPY
+CP-09,COPY,交換率ポリシー名2件(等価交換 / 低換金 (5.6枚)),YES,YES,pachinko/index.html:1165,YES,意味の変更,EXACT_REQUIRED_COPY
+CP-10,COPY,機能領域名4件(ホール/新台購入/経営/帳簿),YES,YES,pachinko/index.html:258-261,YES,意味の変更,EXACT_REQUIRED_COPY
+CP-11,COPY,営業開始(主要アクション),YES,YES,pachinko/index.html:369,YES,意味の変更,EXACT_REQUIRED_COPY
+CP-12,COPY,備考の値(特日 / 週末),YES,YES,pachinko/index.html:925,YES,意味の変更,EXACT_REQUIRED_COPY
+CP-13,COPY,STOP / BIG BONUS! / REG BONUS / リーチ!! / オート,YES,YES,"pachinko/index.html:1381-1383,1467-1468,1580,1547",YES,意味の変更,EXACT_REQUIRED_COPY
+CP-14,COPY,ホールの遊び方説明(設定のメリハリ/行政指導/プロ/シマ効果/ブーム),YES,YES,pachinko/index.html:268,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-15,COPY,カタログの導入戦略説明(新台効果/シマ効果/売却45%/フェア併用),YES,YES,pachinko/index.html:277,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-16,COPY,スタッフ要件の説明(台8台につき1人/不足時の影響/日給),YES,YES,pachinko/index.html:286,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-17,COPY,広告の効果説明(未設定時 / 選択時),YES,YES,pachinko/index.html:1139-1142,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-18,COPY,新装開店フェアの条件と効果の説明,YES,YES,pachinko/index.html:301,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-19,COPY,店舗拡張の注意(家賃・光熱費が増える),YES,YES,pachinko/index.html:310,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-20,COPY,融資の説明(利息の重さ/純資産がクリア条件/緊急融資),YES,YES,pachinko/index.html:321,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-21,COPY,借入枠の算出根拠(台資産×70%+200万)と金利(0.25%/日),YES,YES,pachinko/index.html:315-316,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-22,COPY,交換率の損得説明(等価 / 低換金),YES,YES,pachinko/index.html:1170-1172,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-23,COPY,警戒度の3段階説明(平常 / 警戒 / 危険),YES,YES,pachinko/index.html:1174-1179,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-24,COPY,自動セーブの説明(このブラウザ内),YES,YES,pachinko/index.html:343,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-25,COPY,試打が経営収支に影響しない旨と無償補充(スロット/パチンコ),YES,YES,"pachinko/index.html:1387,1531",YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-26,COPY,釘が良いほど玉持ちが良い旨,YES,YES,pachinko/index.html:1531,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-27,COPY,当日結果の項目名(来店客数/総売上(打ち込み)/出玉払出/経費/本日の純利益/台別収支),YES,YES,pachinko/index.html:1324-1330,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-28,COPY,週次レポートの項目名(週間純利益/平均客数/常連客),YES,YES,pachinko/index.html:980-983,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-29,COPY,週次の助言8件,YES,YES,pachinko/index.html:962-978,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-30,COPY,クリア告知と評価基準(S:65日以内 / A:85日 / B:120日),YES,YES,pachinko/index.html:1317-1318,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-31,COPY,倒産告知(資金が尽き融資枠も限界 / 経営日数),YES,YES,"pachinko/index.html:1279,1313",YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-32,COPY,台0台での営業ブロック案内,YES,YES,pachinko/index.html:1792-1793,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-33,COPY,空状態の案内(設置台なし / 損益推移 / 営業記録),YES,YES,"pachinko/index.html:1005,1198,1256",YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-34,COPY,破壊的操作の確認文(売却 / やり直し),YES,YES,"pachinko/index.html:1047,1841",YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-35,COPY,オンボーディングの5ブロック(目的/ジレンマ/特日ブームシマ/融資/試打),YES,YES,pachinko/index.html:1763-1769,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-36,COPY,状態標識の語(NEW / ブーム中 / シマ+N% / プロ警戒 / 設置中×N / 不足中),YES,YES,"pachinko/index.html:1019-1025,1070,1113",YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-37,COPY,実行不可の理由表記(資金不足/設置枠なし/拡張上限に到達/あとN日で開催可能/新台導入直後のみ開催可),YES,YES,"pachinko/index.html:1086-1089,1116-1122,1145-1152",YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-38,COPY,帳簿の列名8件(日/客数/一般・常連・プロ/売上/出玉(払出)/経費/純利益/備考),YES,YES,pachinko/index.html:358,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-39,COPY,ステータス指標名7件(営業日/資金/評判/常連/台数/借入/純資産),YES,YES,pachinko/index.html:248-254,YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-40,COPY,遊技の指標名(枚/G/BIG/REG/差枚 / 持ち玉/回転/当り/最高N連/差玉),YES,YES,"pachinko/index.html:1391-1396,1535-1540",YES,意味の変更,SEMANTIC_REQUIRED_COPY
+CP-41,COPY,dayNoteの助言文(特日 / 通常),YES,YES,pachinko/index.html:995-996,YES,―,FLEXIBLE_COPY
+CP-42,COPY,タグライン(ホール経営シミュレーション 〜 目指せ純資産1億円!),YES,YES,pachinko/index.html:245,YES,―,FLEXIBLE_COPY
+CP-43,COPY,各セクション見出し(設置中の台/メーカーカタログ/スタッフ/広告 等),YES,YES,"pachinko/index.html:267,276,285,295,300,305,313,324,329,334,338,350,355",YES,―,FLEXIBLE_COPY
+CP-44,COPY,損益推移の判別方法の説明(表現方式に従属),YES,YES,pachinko/index.html:352,YES,―,FLEXIBLE_COPY
+CP-45,COPY,手動セーブ完了の通知(セーブしました!),YES,YES,pachinko/index.html:1839,YES,―,FLEXIBLE_COPY
+CP-46,COPY,ソースコード内の日本語コメント(利用者には表示されない),YES,YES,"pachinko/index.html:40-238,382-449 他",YES,―,DEBUG_INTERNAL_COPY
+R-01,GAME_RULE,"クリア条件は純資産(資金+台資産-借金)が100,000,000以上",YES,YES,"pachinko/index.html:387,676,945",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-02,GAME_RULE,倒産は資金が負のまま営業日を終え、かつ緊急融資枠も尽きたとき,YES,YES,"pachinko/index.html:909-917,1276,1312",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-03,GAME_RULE,クリア評価は到達日数で S<=65 / A<=85 / B<=120 / それ以外C,YES,YES,pachinko/index.html:951,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-04,GAME_RULE,1営業日は利用者の操作1回で1日だけ進む,YES,YES,"pachinko/index.html:931,1788-1800",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-05,GAME_RULE,時間モデルはターン制(1操作=1営業日)。実時間経過やtickは存在しない,YES,YES,pachinko/index.html(setInterval は試打演出とオート回転のみ),NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-06,GAME_RULE,日付に数字7を含む日が特日。客数倍率1.7,YES,YES,"pachinko/index.html:678,782",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-07,GAME_RULE,day%7が6または0の日が週末。客数倍率1.3(特日でない場合のみ適用),YES,YES,"pachinko/index.html:679,783",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-08,GAME_RULE,設定別の店側粗利率は 1:0.25 / 2:0.21 / 3:0.16 / 4:0.11 / 5:0.05 / 6:-0.02,YES,YES,pachinko/index.html:422,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-09,GAME_RULE,低換金ポリシーで粗利+0.025、フリ客×0.88、常連×0.95,YES,YES,"pachinko/index.html:814,829,850",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-10,GAME_RULE,収容力は台数×20。特日または新装開店の日は×1.15まで詰められる,YES,YES,"pachinko/index.html:806,835",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-11,GAME_RULE,一般客は 収容力×充填率×補正+広告。充填率=(0.10+評判/100×0.66)×集客力×難易度係数,YES,YES,pachinko/index.html:811-820,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-12,GAME_RULE,集客力は 0.55+平均人気/65×0.45+新台数×0.03、0.65〜1.25にクランプ,YES,YES,pachinko/index.html:809-812,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-13,GAME_RULE,常連の来店は プール×0.65(特日0.9)×(低換金0.95)×揺らぎ,YES,YES,pachinko/index.html:829,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-14,GAME_RULE,プロは設定5以上の台数×3×難易度proMul(特日1.5倍)。上限は収容力の15%,YES,YES,pachinko/index.html:830-833,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-15,GAME_RULE,"プロの粗利貢献は 客単価45,000×(margin-0.16) すなわち高設定ほど店の損失",YES,YES,pachinko/index.html:857,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-16,GAME_RULE,"客単価はP機30,000/S機36,000に、台鮮度(0.75〜1.00)と特日渋り(0.7)と揺らぎ(0.8〜1.2)を乗算",YES,YES,pachinko/index.html:853-854,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-17,GAME_RULE,常連の客単価は一般の1.35倍,YES,YES,pachinko/index.html:856-857,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-18,GAME_RULE,台の重みは 素の人気×新台1.4×(1+(設定-3)×0.05)×シマ×ブーム,YES,YES,pachinko/index.html:689-695,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-19,GAME_RULE,シマ効果は同一機種で+6%/台、上限+30%,YES,YES,pachinko/index.html:682-685,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-20,GAME_RULE,ブーム機種の重みは1.4倍。ブームは7日ごと(day%7===1)にTRENDS7種から抽選,YES,YES,"pachinko/index.html:686-688,745-751",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-21,GAME_RULE,新台効果は導入から5日未満に人気1.4倍,YES,YES,pachinko/index.html:690-691,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-22,GAME_RULE,台の人気は営業ごとに 機種decay×(0.7〜1.3) 低下し、下限15,YES,YES,pachinko/index.html:860,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-23,GAME_RULE,"経費は 家賃(30,000+cap×2,500)×難易度rentMul + 人件費13,000×人数 + 光熱費2,500×台数 + 広告費 + 臨時支出 + ",YES,YES,pachinko/index.html:867-871,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-24,GAME_RULE,借入利息は残高×0.0025/日で経費に計上,YES,YES,pachinko/index.html:870,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-25,GAME_RULE,"借入枠は 台資産×0.7+2,000,000。台資産は購入価格×0.45の合計",YES,YES,pachinko/index.html:674-677,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-26,GAME_RULE,"資金が負になった時点で枠内なら不足額+200,000が自動融資される",YES,YES,pachinko/index.html:909-917,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-27,GAME_RULE,必要スタッフは ceil(台数/8) の下限1。不足時は客数×0.85と評判-2,YES,YES,"pachinko/index.html:680,822-828",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-28,GAME_RULE,"店舗拡張は+5台、費用 2,000,000+(cap-10)×300,000、上限60台",YES,YES,"pachinko/index.html:388,1107,1804-1811",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-29,GAME_RULE,"新装開店フェアは 直近2日以内の購入 かつ 前回から7日以上 かつ 資金300,000以上 で予約可。翌営業日に客数1.5倍・評判+2",YES,YES,"pachinko/index.html:785-790,1812-1820",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-30,GAME_RULE,警戒度は 平均設定2.6未満で (2.6-平均)×2.2×難易度heatMul 増加、それ以外は×0.65-0.2で減衰,YES,YES,pachinko/index.html:793-794,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-31,GAME_RULE,"警戒度8超で25%の確率で行政指導: 罰金500,000・評判-8・警戒度2へリセット",YES,YES,pachinko/index.html:795-799,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-32,GAME_RULE,評判は (平均設定-3)×1.4 を基本に、特日は 4.5以上+5 / 4以上+4 / 3.5以上±0 / 3以上-1 / 3未満-6,YES,YES,pachinko/index.html:893-905,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-33,GAME_RULE,評判は毎日±0.5の揺らぎを受け、1〜100にクランプ,YES,YES,pachinko/index.html:906,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-34,GAME_RULE,常連は 平均設定3.4以上かつ人員充足の日に (一般客×0.025+0.5)×倍率 増加。倍率は特日4.5以上で2倍・4以上で1.5倍、新装開店で2倍、広告pc,YES,YES,pachinko/index.html:879-886,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-35,GAME_RULE,常連は 平均設定2.5未満で×0.94、特日3未満で×0.85(3.5未満で×0.95)、評判35未満で×0.97 流出。上限は収容力×0.5,YES,YES,pachinko/index.html:887-891,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-36,GAME_RULE,運イベントは毎日50%で1件、80件から重み抽選,YES,YES,"pachinko/index.html:540,753-758",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-37,GAME_RULE,数値依存イベントは条件成立かつクールダウン経過の候補から確率抽選し、その中から1件のみ発生,YES,YES,pachinko/index.html:770-779,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-38,GAME_RULE,履歴は先頭追加で最大60件保持,YES,YES,pachinko/index.html:928-929,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-39,GAME_RULE,損益推移は直近30件を古い順に描画。基準線は0と最大と最小,YES,YES,pachinko/index.html:1196-1239,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-40,GAME_RULE,実績は15件。条件成立時に一度だけ解除され、通知は3500msで消滅,YES,YES,"pachinko/index.html:604-620,698-712,934-945",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-41,GAME_RULE,"難易度は初期資金 13,000,000/10,000,000/6,500,000、家賃×0.75/1.0/1.35、プロ×0.5/1.0/1.6、警戒×0.7/",YES,YES,pachinko/index.html:391-396,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-42,GAME_RULE,試打スロットの当選確率は設定1と6の分母を線形補間して算出,YES,YES,"pachinko/index.html:1347,1407-1408",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-43,GAME_RULE,試打スロットの小役は ぶどう1/6.5・チェリー1/33・リプレイ1/7.3(固定)。獲得は8/2/3枚,YES,YES,"pachinko/index.html:1411-1413,1470-1472",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-44,GAME_RULE,試打スロットは1G3枚消費。ボーナス獲得枚数は機種のbigPay/regPay,YES,YES,"pachinko/index.html:1435,1467-1468",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-45,GAME_RULE,"試打パチンコの1回転消費玉は max(2, round(5.5-設定×0.5))",YES,YES,pachinko/index.html:1550,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-46,GAME_RULE,試打パチンコの当選は1/denom。リーチは当選時または1/12で発生,YES,YES,pachinko/index.html:1573-1574,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-47,GAME_RULE,試打パチンコのRUSHは継続率rushPctで連チャン。初当り出玉firstBalls、連チャン中rushBalls,YES,YES,pachinko/index.html:1598-1629,NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-48,GAME_RULE,試打は経営stateを変更しない(実績解除のみ副作用),YES,YES,"pachinko/index.html:1349-1651,1474-1476,1602",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-49,GAME_RULE,保存はlocalStorageの単一キー。読込時に全フィールドを型検証・範囲クランプし、未知IDは除去,YES,YES,"pachinko/index.html:386,1652-1743",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+R-50,GAME_RULE,乱数はすべてMath.random。シード指定・再現性の仕組みは存在しない,YES,YES,"pachinko/index.html:624,753,773,1410,1572,1609",NO(内部仕様),数値・式の変更,confidence=HIGH test=NOT_FOUND
+NF-01,NON_FEATURE,オンライン機能・マルチプレイ・ランキング共有,NO,YES,WebSocket/fetch/XHR/外部URLの出現数=0,NO,存在するかのように描くこと,調査で不在を確認
+NF-02,NON_FEATURE,アカウント・ログイン・認証,NO,YES,認証関連の実装・UIともに検出0,NO,存在するかのように描くこと,調査で不在を確認
+NF-03,NON_FEATURE,サーバー・バックエンド・API,NO,YES,実行時リクエスト0。リポジトリにサーバーコードなし,NO,存在するかのように描くこと,調査で不在を確認
+NF-04,NON_FEATURE,課金・決済・実通貨の取引,NO,YES,決済関連の実装・UIともに検出0,NO,存在するかのように描くこと,調査で不在を確認
+NF-05,NON_FEATURE,クラウドセーブ・複数端末同期,NO,YES,保存はlocalStorage単一キーのみ(P-24),NO,存在するかのように描くこと,調査で不在を確認
+NF-06,NON_FEATURE,音声・効果音・BGM,NO,YES,Audio APIおよび音声ファイルの検出0,NO,存在するかのように描くこと,調査で不在を確認
+NF-07,NON_FEATURE,Canvas / WebGL 描画,NO,YES,getContext/canvas/webgl の検出0。描画はHTML+CSS+インラインSVGのみ,NO,存在するかのように描くこと,調査で不在を確認
+NF-08,NON_FEATURE,島(シマ)という空間エンティティ,NO,YES,同一機種の台数ボーナス(islandBonus)のみ存在。座席配置・島オブジェクト・座標は不在,NO,存在するかのように描くこと,調査で不在を確認
+NF-09,NON_FEATURE,個々の客エンティティ,NO,YES,客は 一般/常連/プロ の3系統の人数(数値)としてのみ存在。個体・位置・状態は不在,NO,存在するかのように描くこと,調査で不在を確認
+NF-10,NON_FEATURE,ホール空間・フロアマップ・座席配置,NO,YES,空間座標を持つデータ構造は不在,NO,存在するかのように描くこと,調査で不在を確認
+NF-11,NON_FEATURE,実時間進行・放置進行・tick,NO,YES,setIntervalは試打演出とオート回転のみ。経営はターン制,NO,存在するかのように描くこと,調査で不在を確認
+NF-12,NON_FEATURE,ミッション・デイリー任務・ログインボーナス,NO,YES,該当データ構造・実装ともに不在,NO,存在するかのように描くこと,調査で不在を確認
+NF-13,NON_FEATURE,プッシュ通知・OS通知,NO,YES,Notification APIの検出0,NO,存在するかのように描くこと,調査で不在を確認
+NF-14,NON_FEATURE,テストスイート・CIによる自動テスト,NO,YES,リポジトリにテストファイル0。CIはデスクトップビルドのみ(.github/workflows/desktop-build.yml),NO,存在するかのように描くこと,調査で不在を確認
+NF-15,NON_FEATURE,prefers-reduced-motion への対応,NO,YES,index.html内の出現数0(未実装),NO,存在するかのように描くこと,調査で不在を確認
+NF-16,NON_FEATURE,safe-area-inset / env() の考慮,NO,YES,出現数0(未実装),NO,存在するかのように描くこと,調査で不在を確認
+NF-17,NON_FEATURE,複数解像度向けの明示的ブレークポイント,NO,YES,"@mediaは1件のみ(max-width:560px, .grid2用)。かつ .grid2 は未使用のデッドCSS",NO,存在するかのように描くこと,調査で不在を確認
+U-01,UNKNOWN,対象ビューポートの明示的定義,UNKNOWN,NO,"pachinko/index.html:5,239",NO,推測で確定させること,viewport metaは width=device-width のみ。リポジトリに360/390/430等の目標幅の記述は存在しない。@mediaは560px1件のみ(しかも未使用クラス向け)。
+U-02,UNKNOWN,最小タップ領域の方針,UNKNOWN,NO,"pachinko/index.html:98-107,116",NO,推測で確定させること,min-height/min-width によるタップ領域の明示指定は存在しない。実寸はpadding依存。
+U-03,UNKNOWN,対応ブラウザ・デバイスの範囲,UNKNOWN,NO,pachinko/desktop/package.json:16-18,NO,推測で確定させること,package.jsonにbrowserslist等の記述なし。Electronは^33系(Chromium系)。ブラウザ版の下限は未記述。
+U-04,UNKNOWN,性能目標(FPS/フレーム予算/起動時間),UNKNOWN,NO,NOT_FOUND,NO,推測で確定させること,数値目標の記述は存在しない。
+U-05,UNKNOWN,アセット容量の上限方針,UNKNOWN,NO,pachinko/icon-*.png,NO,推測で確定させること,上限を定める記述は存在しない。現状のPNG3件で計約521KB。
+U-06,UNKNOWN,音声資産の可否方針,UNKNOWN,NO,pachinko/index.html(Audio / <audio> の出現数0)。リポジトリに音声ファイル0件,NO,推測で確定させること,前例なし・禁止記述なしのためUNKNOWN(ASSET_POLICY参照)。
+U-07,UNKNOWN,アクセシビリティ方針(ARIA/コントラスト基準),UNKNOWN,NO,pachinko/index.html:1220,NO,推測で確定させること,role属性はrenderChartのSVGに1件(role=img)のみ。ARIA設計・コントラスト基準の記述は存在しない。
+U-08,UNKNOWN,デプロイ手順の正本,UNKNOWN,NO,.github/workflows/desktop-build.yml,NO,推測で確定させること,GitHub Pages前提と読めるがワークフロー定義は存在しない(CIはデスクトップビルドのみ)。公開手順の記述はpachinko/desktop/README.mdの言及に留まる。
+U-09,UNKNOWN,アイコン画像の由来ライセンス,UNKNOWN,NO,pachinko/icon-*.png,NO,推測で確定させること,リポジトリ内生成物と読めるが、生成手順・ライセンス表記のファイルは存在しない。
+U-10,UNKNOWN,Candidate 03 のビジュアル仕様そのもの,UNKNOWN,NO,リポジトリ全体(DESIGN_DECISION / DESIGN_SYSTEM / SCREEN_SPEC / MOTION_SPEC いずれも NOT_FOUND),NO,推測で確定させること,DESIGN_DECISION等の設計正本はリポジトリに存在しない。本パケットは意図の記述のみを前提とし、寸法・配色・構図は一切前提にしていない。
+C-01,CONFLICT,prefers-reduced-motion 対応の有無,―,YES,pachinko/redesign/request/TECHNICAL_CONSTRAINTS.json vs pachinko/index.html,NO,下位ソースの記述を採用すること,上位ソース(コード)を採用: 現状は UNIMPLEMENTED。文書側の記述は既存事実ではなく要求である。
+C-02,CONFLICT,必須対応幅 360/390/430 の出典,―,YES,"pachinko/redesign/request/TECHNICAL_CONSTRAINTS.json vs pachinko/index.html:5,239",NO,下位ソースの記述を採用すること,上位ソースを採用: リポジトリ上は UNKNOWN(U-01)。当該数値は外部の検証手順に由来し、コード上の制約ではない。
+C-03,CONFLICT,テスト証跡の所在,―,YES,pachinko/DESIGN.md vs リポジトリ全体(テストファイル0件),NO,下位ソースの記述を採用すること,上位ソースを採用: TEST_EVIDENCE は全項目 NOT_FOUND。DESIGN.mdの記述は再現不能な外部実行の報告として扱う。
+C-04,CONFLICT,機能の粒度,―,YES,pachinko/redesign/request/FUNCTION_FREEZE.json vs pachinko/index.html,NO,下位ソースの記述を採用すること,挙動の矛盾ではなく粒度の差(前者はリール停止・補充・実績閲覧等を個別計上)。本パケットはコードのハンドラ単位を採用。
+C-05,CONFLICT,リポジトリ内の別アプリケーション,―,YES,"index.html:6,81",NO,下位ソースの記述を採用すること,本パケットの対象は pachinko/ 配下のみ。直下index.htmlの性質(外部通信あり)を「パチスロ帝国」の事実として混同しないこと。
