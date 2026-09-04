@@ -1,5 +1,5 @@
 // パチスロ帝国 Service Worker: ネットワーク優先+オフラインフォールバック
-const CACHE = "pachi-teikoku-v1";
+const CACHE = "pachi-teikoku-v2";
 const PRECACHE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
