@@ -50,3 +50,7 @@ exclude:
   # デスクトップ版のビルド定義(Webサイトとしては配信しない)
   - desktop/
   - pachinko/desktop/
+
+  # --- 2026-09-04 追加: APP RANK ALPHA(研究プロジェクト。サイトではない) ---
+  # コード・仕様・計画書のみ。取得データは .gitignore でそもそもコミットしない
+  - APP_RANK_ALPHA/

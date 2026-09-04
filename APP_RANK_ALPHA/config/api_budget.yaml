@@ -1,0 +1,13 @@
+# AppTweak credit 上限(仕様 §6)。実装者はこの値を超える呼び出しを行わない。
+# total は「トライアル 18,000 − 事故用バッファ 2,000」。発注者は実残高に合わせて起動前に書き換えてよい。
+apptweak:
+  max_credits_per_run: 2000
+  max_credits_per_day: 5000
+  max_credits_total: 16000
+  reserve_buffer: 2000
+  ledger_path: data/manifests/credit_ledger.csv
+  day_boundary_timezone: Asia/Tokyo
+# J-Quants は credit 制ではない。レート制限を指数バックオフで順守する。
+jquants:
+  max_requests_per_minute: 60
+  retry_backoff_seconds: [2, 4, 8, 16]
