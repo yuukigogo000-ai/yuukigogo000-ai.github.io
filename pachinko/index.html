@@ -139,14 +139,14 @@ svg{flex:0 0 auto}
 .badge.warn{color:var(--warn)}
 
 /* 島オーバーレイ(既存データ: 同一機種グループ) */
-.isl{position:absolute;z-index:4;min-width:74px;padding:3px 5px;border-radius:2px;
+#islandOv .isl{position:absolute;z-index:4;min-width:74px;padding:3px 5px;border-radius:2px;
   border:1px solid currentColor;background:linear-gradient(180deg,rgba(6,8,12,.88),rgba(3,4,7,.92));
   box-shadow:0 0 14px rgba(0,0,0,.7),0 0 12px currentColor;backdrop-filter:blur(1px)}
-.isl .nm{font-size:9px;font-weight:800;letter-spacing:0;color:currentColor;
+#islandOv .isl .nm{font-size:9px;font-weight:800;letter-spacing:0;color:currentColor;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:104px}
-.isl .row{display:flex;justify-content:space-between;gap:7px;font-size:8px;color:var(--tx-2);margin-top:1px;white-space:nowrap}
-.isl .row b{font-family:var(--f-num);font-size:9.5px;font-weight:800;color:var(--tx)}
-.isl .row b.pos{color:var(--pos)} .isl .row b.neg{color:var(--neg)}
+#islandOv .isl .row{display:flex;justify-content:space-between;gap:7px;font-size:8px;color:var(--tx-2);margin-top:1px;white-space:nowrap}
+#islandOv .isl .row b{font-family:var(--f-num);font-size:9.5px;font-weight:800;color:var(--tx)}
+#islandOv .isl .row b.pos{color:var(--pos)} #islandOv .isl .row b.neg{color:var(--neg)}
 
 /* ステージ上の経営パネル */
 .ov{position:absolute;z-index:5;width:104px}
@@ -240,6 +240,37 @@ svg{flex:0 0 auto}
 .ms[aria-selected="true"] .n{color:#221605;background:linear-gradient(180deg,#ffe9a8,#d9a52a)}
 .ms .dot{position:absolute;left:3px;top:3px;width:6px;height:6px;border-radius:50%;background:var(--mc);
   box-shadow:0 0 6px var(--mc)}
+
+/* ---------- 設定変更(全台一覧) ---------- */
+.sl-sum{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line-w);margin-bottom:8px;
+  border:1px solid var(--line);border-radius:3px;overflow:hidden}
+.sl-sum > div{background:#0a0c11;padding:5px 6px;text-align:center}
+.sl-sum .k{font-size:8px;color:var(--tx-3);white-space:nowrap}
+.sl-sum .v{font-family:var(--f-num);font-size:16px;font-weight:900;color:var(--gold-hi);line-height:1.2}
+.sl-sum .v small{font-size:9px;color:var(--tx-3)}
+.sl-sort{display:flex;gap:4px;margin-bottom:8px}
+.sl-sort button{flex:1;min-height:34px;border-radius:2px;font-size:10.5px;font-weight:800;
+  border:1px solid rgba(255,212,59,.22);color:var(--tx-2);background:linear-gradient(180deg,#161922,#0a0b10)}
+.sl-sort button.on{color:#221605;border-color:var(--gold);
+  background:linear-gradient(180deg,#ffe9a8,#dfa92c);box-shadow:0 0 10px rgba(255,196,60,.35)}
+.sl-list{display:flex;flex-direction:column;gap:6px;max-height:min(60vh,520px);overflow-y:auto;
+  -webkit-overflow-scrolling:touch;padding-right:2px}
+.sl-row{border:1px solid var(--line-w);border-radius:3px;padding:5px 6px 6px;
+  background:linear-gradient(180deg,rgba(22,25,34,.9),rgba(8,9,13,.94))}
+.sl-row .sl-head{display:flex;gap:7px;align-items:center;margin-bottom:5px}
+.sl-thumb{width:34px;height:44px;flex:0 0 auto;object-fit:cover;border-radius:2px;
+  border:1px solid rgba(255,212,59,.30)}
+.sl-id{min-width:0;flex:1}
+.sl-nm{font-size:11.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl-no{font-family:var(--f-num);font-size:9px;color:var(--tx-3);margin-left:5px}
+.sl-meta{font-size:9px;color:var(--tx-3);margin-top:2px;display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+.sl-meta b{font-family:var(--f-num);font-size:10.5px;color:var(--tx-2)}
+.sl-meta .tag{font-size:8px;font-weight:800;padding:0 3px;border:1px solid currentColor;border-radius:2px}
+.sl-meta .tag.boom{color:var(--neon-g)} .sl-meta .tag.isl{color:var(--neon-b)} .sl-meta .tag.pro{color:var(--red)}
+.sl-play{width:var(--tap);height:var(--tap);flex:0 0 auto;border-radius:2px;display:grid;place-items:center;
+  border:1px solid rgba(255,212,59,.28);color:var(--gold);background:linear-gradient(180deg,#181b24,#0a0c11)}
+.sl-play svg{width:16px;height:16px}
+.sl-row .seg button{min-height:40px;font-size:12.5px}
 
 /* ---------- 640–710px : status band ---------- */
 #statusBand{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:4px;padding:6px 8px 0}
@@ -588,6 +619,11 @@ svg{flex:0 0 auto}
 .switch input:checked::after{transform:translateX(14px);background:#1c1305}
 
 /* ---------- 実績 ---------- */
+.ach-g{display:flex;align-items:center;gap:8px;padding:7px 8px 5px;border-top:1px solid var(--line-w);
+  background:linear-gradient(180deg,rgba(255,196,60,.10),transparent)}
+.ach-g:first-child{border-top:0}
+.ach-g b{font-size:11px;font-weight:900;letter-spacing:.12em;color:var(--gold-hi)}
+.ach-g span{margin-left:auto;font-family:var(--f-num);font-size:10.5px;font-weight:800;color:var(--tx-3)}
 .ach{display:flex;align-items:center;gap:8px;padding:6px 7px;border-bottom:1px solid rgba(255,255,255,.05)}
 .ach:last-child{border-bottom:0}
 .ach .m{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;flex:0 0 auto;
@@ -738,6 +774,10 @@ svg{flex:0 0 auto}
       <div id="focusWrap">
         <div id="focusCard"></div>
         <div id="hallList" role="tablist" aria-label="設置台の切替"></div>
+        <button class="btn wide" id="btnSetList" data-setlist style="margin-top:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><use href="#i-gear"/></svg>
+          全台の設定を一覧で変更
+        </button>
       </div>
 
       <!-- 640–710px : Goal / boom / 特日 / warning / strategy -->
@@ -1631,6 +1671,167 @@ function grantAch(id) {
   achToast(a);
   renderAch();
 }
+/* ==========================================================================
+   追加実績(EX) — 既存15件の ACHIEVEMENTS(保護対象)は一切変更していない。
+   判定はすべて presentation 層で行い、保存は state.ex に隔離する。
+   ========================================================================== */
+const ACH_EX = [
+  // ---- 収益 ----
+  { id:"ex-p3m",     name:"日給300万",       desc:"1日の純利益が300万円を超えた", g:"収益" },
+  { id:"ex-p5m",     name:"日給500万",       desc:"1日の純利益が500万円を超えた", g:"収益" },
+  { id:"ex-p10m",    name:"伝説の一日",       desc:"1日の純利益が1,000万円を超えた", g:"収益" },
+  { id:"ex-w5m",     name:"週間500万",       desc:"直近7営業日の純利益合計が500万円を超えた", g:"収益" },
+  { id:"ex-w20m",    name:"荒稼ぎの一週間",   desc:"直近7営業日の純利益合計が2,000万円を超えた", g:"収益" },
+  { id:"ex-cash50m", name:"金庫が重い",       desc:"手元資金が5,000万円を超えた", g:"収益" },
+  { id:"ex-a50m",    name:"純資産5,000万",   desc:"純資産5,000万円を達成", g:"収益" },
+  { id:"ex-a80m",    name:"大台前夜",         desc:"純資産8,000万円を達成", g:"収益" },
+  // ---- 継続 ----
+  { id:"ex-s5",      name:"5日連続黒字",     desc:"5営業日続けて黒字を出した", g:"継続" },
+  { id:"ex-s10",     name:"10日連続黒字",    desc:"10営業日続けて黒字を出した", g:"継続" },
+  { id:"ex-s20",     name:"無敗の20日",      desc:"20営業日続けて黒字を出した", g:"継続" },
+  { id:"ex-comeback",name:"逆襲",             desc:"赤字の翌日に100万円超の黒字を出した", g:"継続" },
+  { id:"ex-d60",     name:"2ヶ月経営",       desc:"60営業日を走り切った", g:"継続" },
+  { id:"ex-d100",    name:"百日商い",         desc:"100営業日を走り切った", g:"継続" },
+  // ---- 集客 ----
+  { id:"ex-c200",    name:"満員御礼",         desc:"1日の来店客数が200人を超えた", g:"集客" },
+  { id:"ex-c300",    name:"入場規制",         desc:"1日の来店客数が300人を超えた", g:"集客" },
+  { id:"ex-r100",    name:"常連100人",       desc:"常連客が100人を超えた", g:"集客" },
+  { id:"ex-r200",    name:"街の社交場",       desc:"常連客が200人を超えた", g:"集客" },
+  { id:"ex-rep100",  name:"満点の店",         desc:"評判が100に到達した", g:"集客" },
+  { id:"ex-revive",  name:"信頼回復",         desc:"評判25以下から70以上まで立て直した", g:"集客" },
+  { id:"ex-pro20",   name:"プロの巣窟",       desc:"1日にプロが20人来店した", g:"集客" },
+  // ---- ホール ----
+  { id:"ex-m40",     name:"大型店",           desc:"設置台数40台に到達", g:"ホール" },
+  { id:"ex-isl5",    name:"シマを作る",       desc:"同一機種を5台並べた", g:"ホール" },
+  { id:"ex-isl10",   name:"名物コーナー",     desc:"同一機種を10台並べた", g:"ホール" },
+  { id:"ex-allkind", name:"全機種制覇",       desc:"10機種すべてを同時に設置した", g:"ホール" },
+  { id:"ex-hi5",     name:"大盤振る舞い",     desc:"設定6を5台以上同時に入れた", g:"ホール" },
+  { id:"ex-lo-all",  name:"全台回収",         desc:"全台を設定1にして営業した", g:"ホール" },
+  { id:"ex-hi-all",  name:"全台解放",         desc:"全台を設定6にして営業した", g:"ホール" },
+  // ---- 経営判断 ----
+  { id:"ex-fair3",   name:"祭りの常連",       desc:"新装開店フェアを3回開催した", g:"経営" },
+  { id:"ex-adall",   name:"宣伝マン",         desc:"3種類の広告をすべて使った", g:"経営" },
+  { id:"ex-low10",   name:"低換金の店",       desc:"低換金のまま10営業日を営業した", g:"経営" },
+  { id:"ex-exp5",    name:"増床につぐ増床",   desc:"店舗拡張を5回行った", g:"経営" },
+  { id:"ex-staff10", name:"大所帯",           desc:"スタッフを10人まで増やした", g:"経営" },
+  { id:"ex-emg",     name:"綱渡り",           desc:"緊急融資を受けて生き延びた", g:"経営" },
+  { id:"ex-heat",    name:"ほとぼり",         desc:"警戒度が最大付近まで上がった後、平常まで戻した", g:"経営" },
+  // ---- 遊技 ----
+  { id:"ex-t100g",   name:"打ち込み100G",    desc:"試打で通算100ゲーム回した", g:"遊技" },
+  { id:"ex-t500g",   name:"打ち込み500G",    desc:"試打で通算500ゲーム回した", g:"遊技" },
+  { id:"ex-t20ren",  name:"RUSH20連",        desc:"試打で20連チャンを達成した", g:"遊技" },
+  // ---- 到達 ----
+  { id:"ex-clear-s", name:"Sランク制覇",     desc:"Sランク(65日以内)でクリアした", g:"到達" },
+  { id:"ex-clear-60",name:"電光石火",         desc:"60日以内に純資産1億円を達成した", g:"到達" },
+  { id:"ex-clear-h", name:"修羅を越える",     desc:"難易度「修羅」でクリアした", g:"到達" },
+];
+const ALL_ACH_COUNT = () => ACHIEVEMENTS.length + ACH_EX.length;
+
+/* state.ex に隔離(既存の保存フィールドは変更しない)。sanitizeState は未知キーを消さない。 */
+function exState() {
+  if (!state.ex || typeof state.ex !== "object" || Array.isArray(state.ex)) state.ex = {};
+  if (!Array.isArray(state.ex.ach)) state.ex.ach = [];
+  state.ex.ach = state.ex.ach.filter(id => ACH_EX.some(a => a.id === id));
+  if (!state.ex.c || typeof state.ex.c !== "object") state.ex.c = {};
+  const c = state.ex.c;
+  const num = (v, d) => Number.isFinite(Number(v)) ? Math.max(0, Math.floor(Number(v))) : d;
+  c.fair = num(c.fair, 0); c.low = num(c.low, 0); c.exp = num(c.exp, 0);
+  c.tg = num(c.tg, 0); c.ren = num(c.ren, 0);
+  c.repLow = num(c.repLow, 0); c.heat = num(c.heat, 0);
+  if (!Array.isArray(c.ads)) c.ads = [];
+  c.ads = c.ads.filter(id => ADS.some(a => a.id === id && a.id !== "none"));
+  return state.ex;
+}
+const hasAchEx = id => exState().ach.includes(id);
+function grantAchEx(id) {
+  if (hasAchEx(id)) return;
+  const a = ACH_EX.find(x => x.id === id);
+  if (!a) return;
+  exState().ach.push(id);
+  save(true);
+  achToast(a);
+  renderAch();
+}
+/* 連続黒字の最長記録(履歴から算出) */
+function bestStreak() {
+  const h = state.history.slice().reverse();
+  let best = 0, cur = 0;
+  for (const r of h) { if (r.net >= 0) { cur++; best = Math.max(best, cur); } else cur = 0; }
+  return best;
+}
+/* 実績判定。ゲーム計算には一切影響しない */
+function checkAchEx(ctx) {
+  if (!state) return;
+  const ex = exState(), c = ex.c, h = state.history, last = h[0];
+  const assets = totalAssets(), n = state.machines.length;
+  const G = grantAchEx;
+
+  if (last) {
+    if (last.net > 3000000) G("ex-p3m");
+    if (last.net > 5000000) G("ex-p5m");
+    if (last.net > 10000000) G("ex-p10m");
+    if (last.cust > 200) G("ex-c200");
+    if (last.cust > 300) G("ex-c300");
+    if ((last.pro ?? 0) >= 20) G("ex-pro20");
+    if (h.length >= 2 && h[1].net < 0 && last.net > 1000000) G("ex-comeback");
+  }
+  if (h.length >= 7) {
+    const w = h.slice(0, 7).reduce((a, r) => a + r.net, 0);
+    if (w > 5000000) G("ex-w5m");
+    if (w > 20000000) G("ex-w20m");
+  }
+  const bs = bestStreak();
+  if (bs >= 5) G("ex-s5");
+  if (bs >= 10) G("ex-s10");
+  if (bs >= 20) G("ex-s20");
+  if (state.day > 60) G("ex-d60");
+  if (state.day > 100) G("ex-d100");
+
+  if (state.money > 50000000) G("ex-cash50m");
+  if (assets >= 50000000) G("ex-a50m");
+  if (assets >= 80000000) G("ex-a80m");
+
+  if (state.regulars >= 100) G("ex-r100");
+  if (state.regulars >= 200) G("ex-r200");
+  if (state.rep >= 100) G("ex-rep100");
+  if (state.rep <= 25) c.repLow = 1;
+  if (c.repLow && state.rep >= 70) G("ex-revive");
+
+  if (n >= 40) G("ex-m40");
+  const cnt = {};
+  for (const m of state.machines) cnt[m.cid] = (cnt[m.cid] || 0) + 1;
+  const mx = Math.max(0, ...Object.values(cnt));
+  if (mx >= 5) G("ex-isl5");
+  if (mx >= 10) G("ex-isl10");
+  if (Object.keys(cnt).length >= CATALOG.length) G("ex-allkind");
+  if (state.machines.filter(m => m.setting === 6).length >= 5) G("ex-hi5");
+  if (state.staff >= 10) G("ex-staff10");
+
+  if (state.heat >= 10) c.heat = 1;
+  if (c.heat && state.heat <= 2) G("ex-heat");
+  if (c.fair >= 3) G("ex-fair3");
+  if (c.ads.length >= 3) G("ex-adall");
+  if (c.low >= 10) G("ex-low10");
+  if (c.exp >= 5) G("ex-exp5");
+  if (c.tg >= 100) G("ex-t100g");
+  if (c.tg >= 500) G("ex-t500g");
+  if (c.ren >= 20) G("ex-t20ren");
+
+  if (ctx && ctx.dayEnd && n) {
+    const sets = state.machines.map(m => m.setting);
+    if (sets.every(v => v === 1)) G("ex-lo-all");
+    if (sets.every(v => v === 6)) G("ex-hi-all");
+    if (state.rate === "low") { c.low++; }
+    if (ctx.notes && ctx.notes.some(t => String(t).includes("緊急融資"))) G("ex-emg");
+  }
+  if (state.cleared && state.clearDay) {
+    if (clearRank(state.clearDay) === "S") G("ex-clear-s");
+    if (state.clearDay <= 60) G("ex-clear-60");
+    if (state.diff === "hard") G("ex-clear-h");
+  }
+  save(true);
+}
+
 /* 表示専用の配分サマリ(ゲーム計算には一切影響しない) */
 function stratSummary() {
   const n = state.machines.length;
@@ -1953,21 +2154,32 @@ function renderMgmt() {
   $("btnReset").disabled = false;
 }
 
-/* ---------- 実績 ---------- */
+/* ---------- 実績(既存15 + 追加41) ---------- */
 function renderAch() {
   const w = $("achList"); if (!w) return;
-  $("achCount").textContent = `${state.ach.length} / ${ACHIEVEMENTS.length}`;
-  if ($("achCount2")) $("achCount2").textContent = `${state.ach.length} / ${ACHIEVEMENTS.length}`;
-  w.innerHTML = ACHIEVEMENTS.map(a => {
-    const got = hasAch(a.id);
-    return `<div class="ach ${got ? "got" : ""}">
-      <span class="m">${ic(got ? "medal" : "lock")}</span>
+  const exAch = exState().ach;
+  const got = ACHIEVEMENTS.filter(a => hasAch(a.id)).length + exAch.length;
+  const total = ACHIEVEMENTS.length + ACH_EX.length;
+  if ($("achCount")) $("achCount").textContent = `${got} / ${total}`;
+  if ($("achCount2")) $("achCount2").textContent = `${got} / ${total}`;
+
+  const row = (a, ok) => `<div class="ach ${ok ? "got" : ""}">
+      <span class="m">${ic(ok ? "medal" : "lock")}</span>
       <span style="min-width:0"><span class="n">${esc(a.name)}</span><span class="d">${esc(a.desc)}</span></span>
-      ${got ? `<span style="margin-left:auto;color:var(--gold)">${ic("check")}</span>` : ""}
+      ${ok ? `<span style="margin-left:auto;color:var(--gold)">${ic("check")}</span>` : ""}
     </div>`;
+  const groups = [["基本", ACHIEVEMENTS.map(a => [a, hasAch(a.id)])]];
+  const order = ["収益", "継続", "集客", "ホール", "経営", "遊技", "到達"];
+  for (const g of order) {
+    const items = ACH_EX.filter(a => a.g === g).map(a => [a, exAch.includes(a.id)]);
+    if (items.length) groups.push([g, items]);
+  }
+  w.innerHTML = groups.map(([g, items]) => {
+    const n = items.filter(([, ok]) => ok).length;
+    return `<div class="ach-g"><b>${g}</b><span>${n} / ${items.length}</span></div>` +
+      items.map(([a, ok]) => row(a, ok)).join("");
   }).join("");
 }
-
 /* ---------- 帳簿 ---------- */
 function renderLedger() {
   const h = state.history;
@@ -2148,6 +2360,7 @@ function runDay() {
   const finish = () => {
     let result;
     try { result = simulateDay(); } finally { busy = false; }
+    try { checkAchEx({ dayEnd: true, notes: result.notes }); } catch (e) {}
     renderAll();
     showDayResult(result);
   };
@@ -2223,6 +2436,69 @@ function showDayResult(result) {
     </div>`);
   const amt = $("resAmt");
   if (amt && !reduced()) requestAnimationFrame(() => amt.classList.add("slam"));
+}
+
+
+/* ==========================================================================
+   設定変更(全台一覧) — 一覧のまま各台の設定1〜6を直接変更できる
+   ========================================================================== */
+let setListSort = "order";
+function openSetList() {
+  if (isDead()) { showBankruptModal(); return; }
+  if (!state.machines.length) {
+    showModal(`${mh("alert", "台がありません", true)}
+      <div class="mb"><p class="note" style="font-size:12px;color:var(--tx-2)">台が1台もありません。「新台購入」から台を導入してください。</p>
+      <div class="rowbtns"><button class="btn gold" data-tile="shopjump">${ic("shop")}新台購入へ</button></div></div>`);
+    return;
+  }
+  renderSetList();
+}
+function setListRows() {
+  const dead = isDead();
+  const idx = state.machines.map((m, i) => i);
+  if (setListSort === "name") idx.sort((a, b) => catalogOf(state.machines[a]).name.localeCompare(catalogOf(state.machines[b]).name, "ja") || a - b);
+  else if (setListSort === "net") idx.sort((a, b) => (state.machines[b].lastNet ?? -Infinity) - (state.machines[a].lastNet ?? -Infinity));
+  else if (setListSort === "set") idx.sort((a, b) => state.machines[b].setting - state.machines[a].setting || a - b);
+  return idx.map(i => {
+    const m = state.machines[i], c = catalogOf(m), col = colOf(c.id);
+    const net = m.lastNet === null ? "―" : sign(m.lastNet);
+    const cls = m.lastNet === null ? "" : (m.lastNet >= 0 ? "pos" : "neg");
+    const segCls = m.setting <= 2 ? "lo" : m.setting >= 5 ? "hi" : "";
+    const isl = islandBonus(c.id), boom = trendMult(c.id) > 1;
+    return `<div class="sl-row" style="--mc:${col}">
+      <div class="sl-head">
+        <img class="sl-thumb" src="${artOf(c.id)}" alt="" decoding="async" loading="lazy">
+        <div class="sl-id">
+          <div class="sl-nm">${esc(c.name)}<span class="sl-no">#${i + 1}</span></div>
+          <div class="sl-meta">前日 <b class="${cls}">${net}</b> ・ 客 <b>${m.lastCust === null ? "―" : m.lastCust}</b>
+            ${boom ? '<span class="tag boom">ブーム</span>' : ""}${isl > 1 ? `<span class="tag isl">シマ+${Math.round((isl - 1) * 100)}%</span>` : ""}
+            ${m.setting >= 5 ? '<span class="tag pro">プロ警戒</span>' : ""}</div>
+        </div>
+        <button class="sl-play" data-trial="${i}" aria-label="試打">${ic("play")}</button>
+      </div>
+      <div class="seg ${segCls}" role="group" aria-label="${esc(c.name)} の出玉設定">
+        ${[1,2,3,4,5,6].map(v => `<button type="button" data-set="${i}:${v}" aria-pressed="${m.setting === v}" ${dead ? "disabled" : ""}>${v}</button>`).join("")}
+      </div>
+    </div>`;
+  }).join("");
+}
+function renderSetList() {
+  const s = stratSummary();
+  const sorts = [["order", "設置順"], ["set", "設定順"], ["net", "収支順"], ["name", "機種順"]];
+  showModal(`${mh("gear", "設定変更", true)}
+    <div class="mb">
+      <div class="sl-sum gp">
+        <div><div class="k">平均設定</div><div class="v num">${s ? s.avg.toFixed(1) : "—"}</div></div>
+        <div><div class="k">高設定(5-6)</div><div class="v num">${s ? s.hi : 0}<small>台</small></div></div>
+        <div><div class="k">低設定(1-2)</div><div class="v num">${s ? s.lo : 0}<small>台</small></div></div>
+        <div><div class="k">方針</div><div class="v" style="color:${s ? s.mode.c : "var(--tx-3)"};font-size:13px">${s ? esc(s.mode.t) : "—"}</div></div>
+      </div>
+      <div class="sl-sort">${sorts.map(([k, l]) =>
+        `<button class="${setListSort === k ? "on" : ""}" data-slsort="${k}">${l}</button>`).join("")}</div>
+      <div class="sl-list" id="slList">${setListRows()}</div>
+      <p class="note">数字をタップするとその場で設定が変わります。<b>設定1〜2</b>は利益重視で評判が下がり、<b>設定5〜6</b>は常連が育つがプロに狙われます。</p>
+      <div class="rowbtns"><button class="btn gold" onclick="closeModal()">${ic("check")}変更を終える</button></div>
+    </div>`);
 }
 
 /* ==========================================================================
@@ -2336,6 +2612,7 @@ function openSlotTrial(c, initSetting) {
   function lever() {
     if (t.spinning || t.credits < 3) { if (t.credits < 3) banner.textContent = "メダル切れ — 補充してください"; return; }
     t.credits -= 3; t.diff -= 3; t.games++;
+    try { exState().c.tg++; if (exState().c.tg % 25 === 0) checkAchEx(); } catch (e) {}
     t.flag = rollFlag();
     t.final = finalSymbols(t.flag);
     t.spinning = true; t.stopped = [false, false, false];
@@ -2506,6 +2783,7 @@ function openPachiTrial(c, initSetting) {
           banner.textContent = `RUSH ${ren}連!! +${c.spec.rushBalls}玉`;
           reach.textContent = "継続!";
           if (ren >= 10) grantAch("trial-10");
+          try { const c2 = exState().c; if (ren > c2.ren) { c2.ren = ren; checkAchEx(); } } catch (e) {}
           updateStats();
           rushStep();
         } else {
@@ -2594,10 +2872,12 @@ function showTutorial() {
    操作の結線
    ========================================================================== */
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus]");
+  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist]");
   if (!el) return;
   const d = el.dataset;
 
+  if (d.setlist !== undefined) { openSetList(); return; }
+  if (d.slsort) { setListSort = d.slsort; renderSetList(); return; }
   if (d.area) { setArea(d.area); return; }
   if (d.focus !== undefined) {
     const i = Number(d.focus);
@@ -2606,7 +2886,8 @@ document.addEventListener("click", e => {
   }
   if (d.tile) {
     if (d.tile === "shopjump") { closeModal(); setArea("shop"); return; }
-    if (d.tile === "set") { setArea("hall"); const t = $("hallList"); if (t) t.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); return; }
+    if (d.tile === "set") { openSetList(); return; }
+    if (d.tile === "__legacy_set") { setArea("hall"); const t = $("hallList"); if (t) t.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); return; }
     if (d.tile === "owner") { setArea("mgmt"); return; }
     if (d.tile === "ad") { setArea("mgmt"); const t = $("adButtons"); if (t) t.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "center" }); return; }
     if (d.tile === "staff") { setArea("mgmt"); const t = $("staffCount"); if (t) t.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "center" }); return; }
@@ -2618,7 +2899,19 @@ document.addEventListener("click", e => {
     const m = state.machines[i];
     if (!m || !(v >= 1 && v <= 6)) return;
     m.setting = v;
-    save(true); renderHall(); renderIslands(); renderSide();
+    save(true);
+    if ($("slList")) {
+      $("slList").innerHTML = setListRows();
+      const sm = stratSummary(), box = document.querySelector(".sl-sum");
+      if (sm && box) {
+        const vs = box.querySelectorAll(".v");
+        vs[0].textContent = sm.avg.toFixed(1);
+        vs[1].innerHTML = sm.hi + "<small>台</small>";
+        vs[2].innerHTML = sm.lo + "<small>台</small>";
+        vs[3].textContent = sm.mode.t; vs[3].style.color = sm.mode.c;
+      }
+    }
+    renderHall(); renderIslands(); renderSide(); checkAchEx();
     return;
   }
   if (d.trial) { const m = state.machines[Number(d.trial)]; if (m) openTrial(catalogOf(m), m.setting); return; }
@@ -2634,7 +2927,7 @@ document.addEventListener("click", e => {
     state.money += machineValue(m);
     state.machines.splice(idx, 1);
     if (focusIdx >= state.machines.length) focusIdx = Math.max(0, state.machines.length - 1);
-    save(); renderAll();
+    save(); checkAchEx(); renderAll();
     toast(`${c.name} を売却しました`);
     return;
   }
@@ -2649,40 +2942,44 @@ document.addEventListener("click", e => {
     m.boughtDay = state.day;
     state.machines.push(m);
     focusIdx = state.machines.length - 1;
-    save(); renderAll();
+    save(); checkAchEx(); renderAll();
     toast(`${c.name} を導入しました`);
     return;
   }
   if (d.ad) {
     if (isDead()) return;
     if (!ADS.some(a => a.id === d.ad)) return;
-    state.ad = d.ad; save(); renderMgmt();
+    state.ad = d.ad;
+    if (d.ad !== "none" && !exState().c.ads.includes(d.ad)) exState().c.ads.push(d.ad);
+    save(); checkAchEx(); renderMgmt();
     return;
   }
   if (d.rate) {
     if (isDead()) return;
     state.rate = d.rate === "low" ? "low" : "normal";
-    save(); renderMgmt();
+    save(); checkAchEx(); renderMgmt();
     return;
   }
 });
 
 $("btnOpen").addEventListener("click", runDay);
-$("btnHire").addEventListener("click", () => { if (isDead()) return; state.staff++; save(); renderMgmt(); renderNav(); renderStatus(); });
+$("btnHire").addEventListener("click", () => { if (isDead()) return; state.staff++; save(); checkAchEx(); renderMgmt(); renderNav(); renderStatus(); });
 $("btnFire").addEventListener("click", () => { if (isDead()) return; if (state.staff > 1) { state.staff--; save(); renderMgmt(); renderNav(); renderStatus(); } });
 $("btnExpand").addEventListener("click", () => {
   if (isDead()) return;
   const cost = expandCost();
   if (state.money < cost || state.cap >= MAX_CAP) return;
   state.money -= cost; state.cap += 5;
-  save(); renderAll(); toast(`店舗を拡張(最大${state.cap}台)`);
+  exState().c.exp++;
+  save(); checkAchEx(); renderAll(); toast(`店舗を拡張(最大${state.cap}台)`);
 });
 $("btnGrand").addEventListener("click", () => {
   if (isDead()) return;
   const recentBuy = state.machines.some(m => m.boughtDay !== null && state.day - m.boughtDay <= 1);
   if (state.grandOpen || !recentBuy || state.day - state.lastGrand < 7 || state.money < 300000) return;
   state.money -= 300000; state.grandOpen = true; state.lastGrand = state.day;
-  save(); renderAll(); toast("新装開店フェアを予約!次の営業日に開催");
+  exState().c.fair++;
+  save(); checkAchEx(); renderAll(); toast("新装開店フェアを予約!次の営業日に開催");
 });
 $("btnBorrow").addEventListener("click", () => {
   if (isDead()) return;

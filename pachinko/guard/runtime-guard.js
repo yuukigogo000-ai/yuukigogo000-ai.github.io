@@ -130,7 +130,13 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     ok('FN 損益推移グラフ', await p.evaluate(() => !!document.querySelector('#chartWrap svg')));
     ok('FN 営業成績一覧', await p.evaluate(() => document.querySelectorAll('#ledgerBody .led').length > 0));
     await p.evaluate(() => setArea('ach')); await p.waitForTimeout(200);
-    ok('FN 実績一覧', await p.evaluate(() => document.querySelectorAll('#achList .ach').length === 15));
+    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張41件は別グループ)
+    ok('FN 実績一覧', await p.evaluate(() => {
+      const rows = [...document.querySelectorAll('#achList .ach')];
+      const names = rows.map(e => e.querySelector('.n').textContent);
+      const BASE = ['開店初日','日給100万','地域の優良店','常連の店','中堅ホール','巨艦店','1ヶ月経営','特日の神','お上の世話','信用第一','軌道に乗る','パチスロ帝国','初当たり体験','事故連発生','ドル箱タワー'];
+      return rows.length === 56 && BASE.every(n => names.includes(n));
+    }));
     ok('FN 常時ステータス', await p.evaluate(() => ['stDay','stMoney','stRep','stRegs','stDebt','stMachines','stAssets'].every(i => document.getElementById(i).textContent.length > 0)));
     // 週次レポート
     await p.evaluate(() => { state.day = 14; state.history = Array.from({length:8},(_,i)=>({day:13-i,cust:100,cas:60,reg:30,pro:5,sales:4e6,payout:3e6,exp:9e5,net:1e5,interest:0,note:""})); });
@@ -204,7 +210,12 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     const after = norm(await p.evaluate(() => JSON.stringify(state)));
     ok('リロードで状態が復元される(uid正規化を除き完全一致)', before === after);
     ok('保存キーが pachi-teikoku-save-v1', await p.evaluate(() => !!localStorage.getItem('pachi-teikoku-save-v1')));
-    ok('保存スキーマが22キー', await p.evaluate(() => Object.keys(JSON.parse(localStorage.getItem('pachi-teikoku-save-v1'))).length === 22));
+    // 保護スキーマ22キーは不変。`ex`(拡張実績)のみ追加を許可する。
+    ok('保存スキーマが保護22キー + 拡張ex', await p.evaluate(() => {
+      const BASE = ['day','diff','money','rep','regulars','heat','debt','maxDebt','rate','trend','grandOpen','lastGrand','cap','staff','ad','machines','history','ach','evCd','cleared','clearDay','uid'];
+      const k = Object.keys(JSON.parse(localStorage.getItem('pachi-teikoku-save-v1')));
+      return BASE.every(x => k.includes(x)) && k.filter(x => !BASE.includes(x)).every(x => x === 'ex') && k.length <= 23;
+    }));
     const reg = await p.evaluate(async () => { const r = await navigator.serviceWorker.ready.catch(()=>null); return !!r; });
     ok('Service Worker 登録', reg);
     await p.waitForTimeout(1200);
