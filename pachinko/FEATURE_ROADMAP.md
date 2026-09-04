@@ -1,66 +1,58 @@
-# FEATURE ROADMAP — パチスロ帝国
+# FEATURE ROADMAP — パチスロ帝国(V5)
 
-APPROVED_MASTER_REFERENCE に基づく UI 全面再構築時点の実装範囲と、今後の扱いを記録する。
+`FEATURE_SCOPE_v1.0.md` に対する実装結果。
 
-## IMPLEMENTED NOW(今回実装)
+## A. EXISTING — 維持(39機能)
 
-| ID | 内容 | 実装場所 |
+4領域切替 / 設定1〜6 / 設置台試打 / 売却 / カタログ試打 / 新台購入 / staff雇用・解雇 /
+広告 / 新装フェア / 店舗拡張 / 借入・返済 / 交換率 / save・reset / 1営業日実行 / 当日結果 /
+週次report / clear rank / bankruptcy / 損益推移 / 営業成績 / achievement / 常時status /
+difficulty / slot trial / pachinko trial / autosave・restore / offline / Electron
+
+→ 自動検証で全機能の到達性を確認済み(`review/ACCEPTANCE_REPORT.md`)。
+
+## B. IMPLEMENT NOW — 今回実装(B-01〜B-20)
+
+| ID | 内容 | 状態 |
 |---|---|---|
-| A-01 | ホール概観アート(HALL OVERVIEW)を「見せ場の絵」として上部に配置 | `.stage` / `buildStageArt()` |
-| A-02 | 経営指標7項目のHUD(資金・前日純利益・純資産・評判・常連・借入・目標進捗) | `.hud` / `renderHud()` |
-| A-03 | 台の意思決定UI(設定1〜6を主役の操作に)+ 状態バッジ(NEW/ブーム中/シマ/プロ警戒) | `.cab` / `renderHall()` |
-| A-04 | 店長室(スタッフ・広告・フェア・拡張・融資・交換率・警戒度・実績・データ) | `#p-mgmt` / `renderMgmt()` |
-| A-05 | 営業開始 → 開店演出(760ms)→ 当日結果のフィードバック体験 | `runDay()` / `#curtain` |
-| A-06 | 結果画面の格上げ(純利益を主役+スラム表示、内訳、台別、週次レポート、クリア/倒産バナー) | `openResult()` |
-| A-07 | スロット試打を実機画面として再構築(リールSVGシンボル・ランプ・レバー・STOP) | `openSlotTrial()` |
-| A-08 | パチンコ試打を実機画面として再構築(デジタル・リーチ・RUSH連チャン・オート) | `openPachiTrial()` |
-| A-09 | 実績解除のフィードバック(トースト) | `achToast()` |
-| A-10 | 特日・週末・ブームの可視化(トップバーのタグ、CTAの副題、台バッジ) | `renderTop()` / `renderCTA()` |
-| A-11 | 目標(純資産1億円)への進捗メーター | `.goal` |
-| A-12 | 配分サマリ(還元寄り/バランス/回収寄り)※表示専用・計算に影響しない | `stratSummary()` |
-| A-13 | 帳簿(0基線の棒グラフ+▲▼記号+営業日ログ) | `renderLedger()` |
-| A-14 | 絵文字アイコンをインラインSVGアイコン体系へ置換(スプライト36種) | `<svg class="sr">` / `ic()` |
-| A-15 | 360 / 390 / 430 対応(390基準)+ デスクトップ(1080)は横2カラム | `@media (min-width:900px)` |
-| A-16 | セーフエリア対応(`env(safe-area-inset-*)`) | `:root` トークン |
-| A-17 | タッチターゲット 44px / 主要CTA 56px | `--tap` / `--cta` |
-| A-18 | `prefers-reduced-motion: reduce` 対応(演出短縮・カーテン非表示) | `@media (prefers-reduced-motion)` / `reduced()` |
-| A-19 | アプリアイコン(192/512)とテーマ色をデザインに合わせて更新 | `icon-*.png` / `manifest.webmanifest` |
-| A-20 | 追加アセットはすべて自己完結(外部リクエスト0件)。SWのキャッシュ世代を更新 | `sw.js` |
+| B-01 | Approved Target のArt DirectionへPresentation全面刷新 | 実装(アートワークのみBLOCKER) |
+| B-02 | ホール俯瞰アートによる apparent density | 暫定実装(手続き生成) |
+| B-03 | 設定1〜6を主Interactionへ / 機種・スペック・人気・前日収支・客数・状態の可視化 | 実装 |
+| B-04 | 店長室(staff/広告/fair/拡張/finance/交換率/警戒度/実績/save)の統合 | 実装 |
+| B-05 | 1営業日実行の遷移(開店演出 800ms) | 実装 |
+| B-06 | 当日結果の演出(純利益をヒーロー表示 + スラム) | 実装 |
+| B-07 | スロット試打の実機化(ランプ/リール/レバー/STOP/5指標) | 実装 |
+| B-08 | パチンコ試打の実機化(デジタル/リーチ/RUSH/オート/5指標) | 実装 |
+| B-09 | ショップの「看板機種を選ぶ」体験 | 実装 |
+| B-10 | 帳簿のGame Record化(0基線グラフ+▲▼+営業日ログ) | 実装 |
+| B-11 | 実績のReward Feedback(トースト)と独立一覧 | 実装 |
+| B-12 | ブーム/特日/週末/フェア/警戒度のUI利用 | 実装 |
+| B-13 | 純資産1億円へのGoal Progress | 実装 |
+| B-14 | 表示専用の作戦サマリ(方針/平均設定/高低設定) | 実装(ロジック非干渉) |
+| B-15 | Primary 390×844 / 360・430 検証 | 実装 |
+| B-16 | safe-area | 実装 |
+| B-17 | touch ≥44px / Primary CTA ≥52px(実装は56px) | 実装 |
+| B-18 | prefers-reduced-motion | 実装 |
+| B-19 | インラインSVGアイコン体系(外部library禁止・主要UIの絵文字終了) | 実装(34種) |
+| B-20 | ローカルArtwork資産をSW PRECACHEへ | 実装(`art/hall.jpg`) |
 
-補足: ホール概観アートは**手続き生成のプレースホルダ**であり、最終ラスター素材は
-`CHATGPT_ARTWORK_REQUEST.md` で発注中(ARTWORK_ASSET_BLOCKER)。差し替え口は
-`buildStageArt()` と `#stageArt` の1箇所に閉じている。
+## C. NEXT PHASE — 今回は実装しない
 
-## NEXT PHASE(B: 今回は入れないが妥当な次の一手)
+C-01 疑似シマ表示(同一機種のGroup化を強化) / C-02 作戦プリセット(複数台一括設定) /
+C-03 EVENT CENTER / C-04 LEGACY・RECORD / C-05 REPORT CENTER / C-06 SOUND DESIGN
 
-| ID | 内容 | 見送りの理由 |
-|---|---|---|
-| B-01 | 台の並べ替え・絞り込み(収支順/設定順/機種別) | 60台運用時に効くが、今回の再構築範囲外。既存の機能定義(F-001〜F-045)にない |
-| B-02 | 複数台への設定の一括適用 | 同上。ゲームバランス(手間と判断の重み)に影響するため要検証 |
-| B-03 | ホール概観アートの状態反映(客入り・特日・ブームで絵が変わる) | 最終アート確定後に段階導入するのが妥当 |
-| B-04 | 結果画面の推移比較(前日比・7日移動平均) | 情報量が増えるため、帳簿との役割整理が必要 |
-| B-05 | 試打の履歴(直近の当り履歴・設定判別の目安表示) | 遊技体験の強化。収支に影響しない範囲でのみ検討 |
-| B-06 | 実績の進捗表示(達成率・あと何で解除か) | 既存実績定義の意味を変えずに追加可能だが今回範囲外 |
+※ C-01 の一部(同一機種グループの集計表示)は、既存データのみで成立する
+「島オーバーレイ」としてホール上に実装している。設定の一括変更(C-02)は未実装。
 
-## DEFERRED — 実装しない(C)
+## D. DEFERRED — 実装禁止(今回も未実装)
 
-Master Reference の画に見えていても、本製品には存在しない機能。
-**視覚要素としてもダミーのボタン・ラベルを置かない。**
+D-01 物理floor map / machine coordinate ・ D-02 customer entity simulation ・
+D-03 customer movement ・ D-04 realtime operating simulation ・ D-05 live floor heatmap ・
+D-06 multi-store ・ D-07 regional map ・ D-08 store acquisition ・ D-09 online ranking ・
+D-10 login/account ・ D-11 cloud save ・ D-12 multiplayer ・ D-13 push notification ・
+D-14 monetization ・ D-15 mission/daily login bonus
 
-| ID | 内容 |
-|---|---|
-| C-01 | フロアマップ / 台の座標配置 |
-| C-02 | 客エンティティ(個々の客の移動・行動) |
-| C-03 | リアルタイム進行 |
-| C-04 | ランキング / リーダーボード |
-| C-05 | ミッション / デイリークエスト |
-| C-06 | ログインボーナス |
-| C-07 | お知らせ / ニュースフィード |
-| C-08 | クラウドセーブ |
-| C-09 | マルチプレイ / フレンド |
-| C-10 | プッシュ通知 |
-| C-11 | アプリ内課金 / 課金通貨 |
-| C-12 | アカウント / ログイン |
-| C-13 | ガチャ |
-| C-14 | 広告視聴によるブースト |
-| C-15 | サーバー連携全般 |
+Target画像に描かれているランキング・お知らせ・ミッション・稼働率ヒートマップ等は、
+**機能としてもダミーのボタン・ラベルとしても配置していない。**
+Targetのそれらの Visual Mass は、実在するデータ(実績 / clear rank / 純資産Goal /
+週次助言 / 帳簿 / 当日結果 / 同一機種グループの集計)へ置き換えている。

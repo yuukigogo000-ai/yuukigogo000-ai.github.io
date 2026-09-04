@@ -1,6 +1,6 @@
 // パチスロ帝国 Service Worker: ネットワーク優先+オフラインフォールバック
-const CACHE = "pachi-teikoku-v2";
-const PRECACHE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
+const CACHE = "pachi-teikoku-v3";
+const PRECACHE = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./art/hall.jpg"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(PRECACHE)));

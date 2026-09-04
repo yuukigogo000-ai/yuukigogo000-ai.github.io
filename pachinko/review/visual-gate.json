@@ -1,0 +1,454 @@
+{
+ "target": {
+  "entropy": 6.488674117922231,
+  "edge_ratio": 0.38061683006535946,
+  "dark_ratio": 0.7533203125,
+  "bright_ratio": 0.005704471982758621,
+  "gold_ratio": 0.10926724137931035,
+  "saturated_ratio": 0.3237809806034483,
+  "luminance_sd": 0.17631648255229948,
+  "blank_tile_ratio": 0.03993055555555555
+ },
+ "rows": [
+  {
+   "file": "M01.png",
+   "passed": 4,
+   "total": 6,
+   "verdict": "FAIL",
+   "checks": [
+    {
+     "k": "entropy",
+     "v": 5.718047402101026,
+     "need": ">= 5.7100",
+     "pass": true
+    },
+    {
+     "k": "edge_ratio",
+     "v": 0.18772648299826258,
+     "need": ">= 0.2740",
+     "pass": false
+    },
+    {
+     "k": "gold_ratio",
+     "v": 0.08371291177797834,
+     "need": ">= 0.0601",
+     "pass": true
+    },
+    {
+     "k": "saturated_ratio",
+     "v": 0.19322716888537905,
+     "need": ">= 0.1781",
+     "pass": true
+    },
+    {
+     "k": "luminance_sd",
+     "v": 0.1667193603430367,
+     "need": ">= 0.1269",
+     "pass": true
+    },
+    {
+     "k": "blank_tile_ratio",
+     "v": 0.36277173913043476,
+     "need": "<= 0.0699",
+     "pass": false
+    }
+   ]
+  },
+  {
+   "file": "M02.png",
+   "passed": 4,
+   "total": 6,
+   "verdict": "FAIL",
+   "checks": [
+    {
+     "k": "entropy",
+     "v": 6.362921641332981,
+     "need": ">= 5.7100",
+     "pass": true
+    },
+    {
+     "k": "edge_ratio",
+     "v": 0.21119739034854448,
+     "need": ">= 0.2740",
+     "pass": false
+    },
+    {
+     "k": "gold_ratio",
+     "v": 0.08706742159296028,
+     "need": ">= 0.0601",
+     "pass": true
+    },
+    {
+     "k": "saturated_ratio",
+     "v": 0.1908104411101083,
+     "need": ">= 0.1781",
+     "pass": true
+    },
+    {
+     "k": "luminance_sd",
+     "v": 0.16307680559431234,
+     "need": ">= 0.1269",
+     "pass": true
+    },
+    {
+     "k": "blank_tile_ratio",
+     "v": 0.20244565217391305,
+     "need": "<= 0.0699",
+     "pass": false
+    }
+   ]
+  },
+  {
+   "file": "M03.png",
+   "passed": 2,
+   "total": 6,
+   "verdict": "FAIL",
+   "checks": [
+    {
+     "k": "entropy",
+     "v": 6.510382518044551,
+     "need": ">= 5.7100",
+     "pass": true
+    },
+    {
+     "k": "edge_ratio",
+     "v": 0.23392369606070276,
+     "need": ">= 0.2740",
+     "pass": false
+    },
+    {
+     "k": "gold_ratio",
+     "v": 0,
+     "need": ">= 0.0601",
+     "pass": false
+    },
+    {
+     "k": "saturated_ratio",
+     "v": 0.000012339237364620938,
+     "need": ">= 0.1781",
+     "pass": false
+    },
+    {
+     "k": "luminance_sd",
+     "v": 0.18070873283348854,
+     "need": ">= 0.1269",
+     "pass": true
+    },
+    {
+     "k": "blank_tile_ratio",
+     "v": 0.1947463768115942,
+     "need": "<= 0.0699",
+     "pass": false
+    }
+   ]
+  },
+  {
+   "file": "M04.png",
+   "passed": 3,
+   "total": 6,
+   "verdict": "FAIL",
+   "checks": [
+    {
+     "k": "entropy",
+     "v": 6.5118575449078335,
+     "need": ">= 5.7100",
+     "pass": true
+    },
+    {
+     "k": "edge_ratio",
+     "v": 0.2339697904478247,
+     "need": ">= 0.2740",
+     "pass": false
+    },
+    {
+     "k": "gold_ratio",
+     "v": 0.08554616990072202,
+     "need": ">= 0.0601",
+     "pass": true
+    },
+    {
+     "k": "saturated_ratio",
+     "v": 0.155566053700361,
+     "need": ">= 0.1781",
+     "pass": false
+    },
+    {
+     "k": "luminance_sd",
+     "v": 0.18071914410412576,
+     "need": ">= 0.1269",
+     "pass": true
+    },
+    {
+     "k": "blank_tile_ratio",
+     "v": 0.1947463768115942,
+     "need": "<= 0.0699",
+     "pass": false
+    }
+   ]
+  },
+  {
+   "file": "M05.png",
+   "passed": 3,
+   "total": 6,
+   "verdict": "FAIL",
+   "checks": [
+    {
+     "k": "entropy",
+     "v": 6.254892063027973,
+     "need": ">= 5.7100",
+     "pass": true
+    },
+    {
+     "k": "edge_ratio",
+     "v": 0.10249796120980037,
+     "need": ">= 0.2740",
+     "pass": false
+    },
+    {
+     "k": "gold_ratio",
+     "v": 0.14470928756768953,
+     "need": ">= 0.0601",
+     "pass": true
+    },
+    {
+     "k": "saturated_ratio",
+     "v": 0.21566871615523467,
+     "need": ">= 0.1781",
+     "pass": true
+    },
+    {
+     "k": "luminance_sd",
+     "v": 0.11796080708455522,
+     "need": ">= 0.1269",
+     "pass": false
+    },
+    {
+     "k": "blank_tile_ratio",
+     "v": 0.3161231884057971,
+     "need": "<= 0.0699",
+     "pass": false
+    }
+   ]
+  },
+  {
+   "file": "M06.png",
+   "passed": 4,
+   "total": 6,
+   "verdict": "FAIL",
+   "checks": [
+    {
+     "k": "entropy",
+     "v": 6.1635831362957125,
+     "need": ">= 5.7100",
+     "pass": true
+    },
+    {
+     "k": "edge_ratio",
+     "v": 0.19884409459986527,
+     "need": ">= 0.2740",
+     "pass": false
+    },
+    {
+     "k": "gold_ratio",
+     "v": 0.10613506881768953,
+     "need": ">= 0.0601",
+     "pass": true
+    },
+    {
+     "k": "saturated_ratio",
+     "v": 0.24003165895758122,
+     "need": ">= 0.1781",
+     "pass": true
+    },
+    {
+     "k": "luminance_sd",
+     "v": 0.17099315564644252,
+     "need": ">= 0.1269",
+     "pass": true
+    },
+    {
+     "k": "blank_tile_ratio",
+     "v": 0.3138586956521739,
+     "need": "<= 0.0699",
+     "pass": false
+    }
+   ]
+  },
+  {
+   "file": "M07.png",
+   "passed": 4,
+   "total": 6,
+   "verdict": "FAIL",
+   "checks": [
+    {
+     "k": "entropy",
+     "v": 6.389628710656776,
+     "need": ">= 5.7100",
+     "pass": true
+    },
+    {
+     "k": "edge_ratio",
+     "v": 0.22563734354501294,
+     "need": ">= 0.2740",
+     "pass": false
+    },
+    {
+     "k": "gold_ratio",
+     "v": 0.10019989564530686,
+     "need": ">= 0.0601",
+     "pass": true
+    },
+    {
+     "k": "saturated_ratio",
+     "v": 0.1827247151398917,
+     "need": ">= 0.1781",
+     "pass": true
+    },
+    {
+     "k": "luminance_sd",
+     "v": 0.1695338033527489,
+     "need": ">= 0.1269",
+     "pass": true
+    },
+    {
+     "k": "blank_tile_ratio",
+     "v": 0.20878623188405798,
+     "need": "<= 0.0699",
+     "pass": false
+    }
+   ]
+  },
+  {
+   "file": "M08.png",
+   "passed": 4,
+   "total": 6,
+   "verdict": "FAIL",
+   "checks": [
+    {
+     "k": "entropy",
+     "v": 6.33469566936242,
+     "need": ">= 5.7100",
+     "pass": true
+    },
+    {
+     "k": "edge_ratio",
+     "v": 0.18504768996206078,
+     "need": ">= 0.2740",
+     "pass": false
+    },
+    {
+     "k": "gold_ratio",
+     "v": 0.15425633179151624,
+     "need": ">= 0.0601",
+     "pass": true
+    },
+    {
+     "k": "saturated_ratio",
+     "v": 0.24666840591155234,
+     "need": ">= 0.1781",
+     "pass": true
+    },
+    {
+     "k": "luminance_sd",
+     "v": 0.1382683673982677,
+     "need": ">= 0.1269",
+     "pass": true
+    },
+    {
+     "k": "blank_tile_ratio",
+     "v": 0.2427536231884058,
+     "need": "<= 0.0699",
+     "pass": false
+    }
+   ]
+  },
+  {
+   "file": "M09.png",
+   "passed": 3,
+   "total": 6,
+   "verdict": "FAIL",
+   "checks": [
+    {
+     "k": "entropy",
+     "v": 5.334913458398136,
+     "need": ">= 5.7100",
+     "pass": false
+    },
+    {
+     "k": "edge_ratio",
+     "v": 0.17540332588731694,
+     "need": ">= 0.2740",
+     "pass": false
+    },
+    {
+     "k": "gold_ratio",
+     "v": 0.09961466324458483,
+     "need": ">= 0.0601",
+     "pass": true
+    },
+    {
+     "k": "saturated_ratio",
+     "v": 0.2148596147337545,
+     "need": ">= 0.1781",
+     "pass": true
+    },
+    {
+     "k": "luminance_sd",
+     "v": 0.16784696088227796,
+     "need": ">= 0.1269",
+     "pass": true
+    },
+    {
+     "k": "blank_tile_ratio",
+     "v": 0.41893115942028986,
+     "need": "<= 0.0699",
+     "pass": false
+    }
+   ]
+  },
+  {
+   "file": "M10.png",
+   "passed": 0,
+   "total": 6,
+   "verdict": "FAIL",
+   "checks": [
+    {
+     "k": "entropy",
+     "v": 1.0502008874009379,
+     "need": ">= 5.7100",
+     "pass": false
+    },
+    {
+     "k": "edge_ratio",
+     "v": 0.010020210615891926,
+     "need": ">= 0.2740",
+     "pass": false
+    },
+    {
+     "k": "gold_ratio",
+     "v": 0,
+     "need": ">= 0.0601",
+     "pass": false
+    },
+    {
+     "k": "saturated_ratio",
+     "v": 0,
+     "need": ">= 0.1781",
+     "pass": false
+    },
+    {
+     "k": "luminance_sd",
+     "v": 0.02721316546741677,
+     "need": ">= 0.1269",
+     "pass": false
+    },
+    {
+     "k": "blank_tile_ratio",
+     "v": 0.8623188405797102,
+     "need": "<= 0.0699",
+     "pass": false
+    }
+   ]
+  }
+ ]
+}

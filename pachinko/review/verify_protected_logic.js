@@ -1,16 +1,8 @@
 #!/usr/bin/env node
-/**
- * 保護ロジックの同一性検証。
- * 再構築前後の index.html を突き合わせ、Function Freeze 対象の関数と定数が
- * 空白の差を除いて完全一致することを確認する。
- *
- *   git show <再構築前のcommit>:pachinko/index.html > /tmp/before.html
- *   node verify_protected_logic.js /tmp/before.html [../index.html]
- *
- * 期待結果: 39 PASS / 1 FAIL
- *   FAIL は grantAch のみ。状態変更(state.ach.push と save)は同一で、
- *   通知の出し方だけが新UIのトーストに変わっているため意図的な差分。
- */
+/* 保護ロジックの同一性検証
+   git show 40c2eaa:pachinko/index.html > /tmp/before.html
+   node verify_protected_logic.js /tmp/before.html ../index.html
+   期待: 39 PASS / 1 FAIL(grantAch は通知方法のみの意図的差分) */
 const fs=require("fs");
 const OLD=fs.readFileSync(process.argv[2],"utf8");
 const NEW=fs.readFileSync(process.argv[3]||__dirname+"/../index.html","utf8");
