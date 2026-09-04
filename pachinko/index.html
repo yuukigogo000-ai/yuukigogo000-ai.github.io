@@ -30,7 +30,7 @@
 
   --f-disp:"Yu Gothic","YuGothic","Hiragino Kaku Gothic ProN","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
   --f-num:"DIN Alternate","Bahnschrift","Yu Gothic","Hiragino Sans",system-ui,sans-serif;
-  --rail:58px; --tap:44px; --cta:56px;
+  --tap:44px; --cta:60px;
   --sat:env(safe-area-inset-top,0px); --sab:env(safe-area-inset-bottom,0px);
   --sal:env(safe-area-inset-left,0px); --sar:env(safe-area-inset-right,0px);
   --ease:cubic-bezier(.16,1,.3,1);
@@ -74,8 +74,8 @@ svg{flex:0 0 auto}
 
 /* ---------- アプリ枠 ---------- */
 #app{position:relative;min-height:100dvh;max-width:560px;margin:0 auto;
-  padding-left:calc(var(--rail) + var(--sal));
-  padding-bottom:calc(120px + var(--sab));
+  padding-left:var(--sal);padding-right:var(--sar);
+  padding-bottom:calc(134px + var(--sab));
   background:
     radial-gradient(120% 46% at 50% 0%,rgba(255,170,40,.08),transparent 60%),
     repeating-linear-gradient(115deg,rgba(255,212,59,.045) 0 1px,transparent 1px 5px),
@@ -85,41 +85,6 @@ svg{flex:0 0 auto}
   box-shadow:inset 0 0 90px rgba(0,0,0,.75);
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
   background-size:120px 120px;opacity:.16;mix-blend-mode:overlay}
-
-/* ---------- 左ナビレール ---------- */
-#rail{position:fixed;left:0;top:0;bottom:0;width:calc(var(--rail) + var(--sal));z-index:40;
-  background-image:
-    repeating-linear-gradient(180deg,rgba(255,212,59,.055) 0 1px,transparent 1px 6px),
-    repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 1px,transparent 1px 5px);
-  padding:calc(var(--sat) + 6px) 0 calc(var(--sab) + 6px) var(--sal);
-  display:flex;flex-direction:column;gap:5px;align-items:center;
-  background:linear-gradient(180deg,#0c0d13,#07080c 60%,#0c0d13);
-  border-right:1px solid var(--line-w);
-  box-shadow:6px 0 22px rgba(0,0,0,.6)}
-#rail .rb{width:48px;min-height:52px;border-radius:3px;display:flex;flex-direction:column;
-  align-items:center;justify-content:center;gap:3px;position:relative;overflow:hidden;
-  border:1px solid rgba(255,212,59,.14);
-  background:linear-gradient(180deg,rgba(255,232,170,.07),transparent 40%),linear-gradient(180deg,#171a24,#0a0b10);
-  box-shadow:inset 0 1px 0 rgba(255,238,180,.14),0 2px 6px rgba(0,0,0,.5);
-  color:var(--tx-3);transition:color .18s,border-color .18s,background .25s}
-#rail .rb svg{width:19px;height:19px}
-#rail .rb i{font-style:normal;font-size:8.5px;letter-spacing:.02em;font-weight:700}
-#rail .rb[aria-current="page"]{color:#22160a;border-color:var(--gold);
-  background:linear-gradient(180deg,#ffe9a8,#e8b02a 55%,#a9741a);
-  box-shadow:0 0 16px rgba(255,196,60,.45),inset 0 1px 0 rgba(255,255,255,.55)}
-#rail .rb .dot{position:absolute;right:4px;top:4px;width:6px;height:6px;border-radius:50%;
-  background:var(--red);box-shadow:0 0 8px var(--red)}
-#rail .sp{flex:1;width:100%;position:relative;overflow:hidden}
-#rail .sp::before{content:"PACHISLOT EMPIRE";position:absolute;left:8px;top:16px;
-  writing-mode:vertical-rl;text-orientation:mixed;
-  font-size:8.5px;letter-spacing:.40em;color:rgba(255,212,59,.30);white-space:nowrap;font-weight:800}
-#rail .sp::after{content:"";position:absolute;right:12px;top:0;bottom:10px;width:1px;
-  background:repeating-linear-gradient(180deg,rgba(255,212,59,.30) 0 6px,transparent 6px 12px)}
-#rail .rmark{width:34px;height:34px;margin:0 auto 4px;border-radius:50%;flex:0 0 auto;
-  border:1px solid rgba(255,212,59,.35);display:grid;place-items:center;
-  background:radial-gradient(circle at 36% 30%,rgba(255,232,170,.22),rgba(6,7,11,.9));
-  box-shadow:inset 0 0 10px rgba(255,196,60,.25)}
-#rail .rmark svg{width:17px;height:17px;color:var(--gold)}
 
 /* ---------- トップバー ---------- */
 #top{position:relative;z-index:20;padding:calc(var(--sat) + 6px) calc(8px + var(--sar)) 4px 8px;
@@ -146,7 +111,7 @@ svg{flex:0 0 auto}
 .pos{color:var(--pos)} .neg{color:var(--neg)} .warnc{color:var(--warn)}
 
 /* ---------- ステージ(ホール) ---------- */
-#stage{position:relative;margin:4px 8px 0;border-radius:3px;overflow:hidden;
+#stage{position:relative;margin:0;border-radius:0;overflow:hidden;
   border:1px solid var(--line-s);
   box-shadow:0 10px 30px rgba(0,0,0,.78),inset 0 0 0 1px rgba(255,212,59,.10),inset 0 0 40px rgba(0,0,0,.6)}
 #stage::before{content:"";position:absolute;inset:3px;z-index:2;pointer-events:none;
@@ -156,8 +121,9 @@ svg{flex:0 0 auto}
 #stage .cn.b{right:2px;top:2px;border-right:2px solid var(--gold);border-top:2px solid var(--gold)}
 #stage .cn.c{left:2px;bottom:2px;border-left:2px solid var(--gold);border-bottom:2px solid var(--gold)}
 #stage .cn.d{right:2px;bottom:2px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold)}
-#hallArt{position:relative;width:100%;aspect-ratio:332/384;background:#05060a center/cover no-repeat;display:block}
-#hallArt img{width:100%;height:100%;object-fit:cover;object-position:50% 24%;display:block;filter:saturate(1.06) contrast(1.04)}
+#hallArt{position:relative;width:100%;height:314px;background:#05060a center/cover no-repeat;display:block}
+#hallArt img{width:100%;height:100%;object-fit:cover;object-position:50% 50%;display:block;
+  filter:saturate(1.08) contrast(1.08) brightness(1.02)}
 #stage .vig{position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(5,6,10,.72) 0%,rgba(5,6,10,.10) 26%,rgba(5,6,10,.16) 58%,rgba(5,6,10,.86) 100%)}
 #stage .scan{position:absolute;inset:0;pointer-events:none;opacity:.16;
@@ -173,7 +139,7 @@ svg{flex:0 0 auto}
 .badge.warn{color:var(--warn)}
 
 /* 島オーバーレイ(既存データ: 同一機種グループ) */
-.isl{position:absolute;z-index:4;min-width:80px;padding:3px 5px;border-radius:2px;
+.isl{position:absolute;z-index:4;min-width:74px;padding:3px 5px;border-radius:2px;
   border:1px solid currentColor;background:linear-gradient(180deg,rgba(6,8,12,.88),rgba(3,4,7,.92));
   box-shadow:0 0 14px rgba(0,0,0,.7),0 0 12px currentColor;backdrop-filter:blur(1px)}
 .isl .nm{font-size:9px;font-weight:800;letter-spacing:0;color:currentColor;
@@ -236,6 +202,76 @@ svg{flex:0 0 auto}
 #stratStrip .v{font-size:14px;font-weight:900;line-height:1.2;white-space:nowrap;color:var(--gold-hi);
   text-shadow:0 1px 0 #000}
 
+/* ---------- 400–640px : 台フォーカス + ストリップ ---------- */
+#focusWrap{padding:6px 8px 0}
+#focusCard{position:relative;border:1px solid var(--line);border-radius:3px;overflow:hidden;
+  background:linear-gradient(180deg,rgba(24,27,36,.96),rgba(7,8,12,.97));
+  box-shadow:inset 0 1px 0 rgba(255,238,180,.20),0 6px 18px rgba(0,0,0,.6)}
+#focusCard::before,#focusCard::after{content:"";position:absolute;width:9px;height:9px;pointer-events:none}
+#focusCard::before{left:-1px;top:-1px;border-left:2px solid var(--gold);border-top:2px solid var(--gold)}
+#focusCard::after{right:-1px;bottom:-1px;border-right:2px solid var(--gold);border-bottom:2px solid var(--gold)}
+.fc-top{display:flex;gap:8px;padding:7px 8px 5px}
+.fc-photo{width:60px;height:78px;flex:0 0 auto;border-radius:2px;overflow:hidden;position:relative;
+  border:1px solid rgba(255,212,59,.35);background:#08090d}
+.fc-photo img{width:100%;height:100%;object-fit:cover;display:block}
+.fc-photo i{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--mc);box-shadow:0 0 8px var(--mc)}
+.fc-id{min-width:0;flex:1}
+.fc-nm{font-size:13.5px;font-weight:900;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-sp{font-size:9.5px;color:var(--gold);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fc-tags{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px}
+.fc-net{flex:0 0 auto;text-align:right}
+.fc-net .k{font-size:8px;color:var(--tx-3);letter-spacing:.06em}
+.fc-net .v{font-family:var(--f-num);font-size:17px;font-weight:900;line-height:1.1;white-space:nowrap}
+.fc-net .s{font-size:9px;color:var(--tx-3);white-space:nowrap}
+.fc-set{display:flex;align-items:center;gap:5px;padding:4px 8px;border-top:1px solid var(--line-w);
+  background:linear-gradient(180deg,rgba(255,196,60,.06),transparent)}
+.fc-set .lb{font-size:8.5px;color:var(--tx-3);letter-spacing:.08em;flex:0 0 auto}
+.fc-acts{display:flex;gap:5px;padding:5px 8px 6px}
+#hallList{display:flex;gap:5px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 8px 2px;
+  scrollbar-width:none}
+#hallList::-webkit-scrollbar{display:none}
+.ms{flex:0 0 auto;width:52px;border-radius:2px;overflow:hidden;position:relative;
+  border:1px solid rgba(255,212,59,.20);background:#0a0c11;padding:0}
+.ms img{width:100%;height:44px;object-fit:cover;display:block;opacity:.62}
+.ms .n{display:block;font-family:var(--f-num);font-size:11px;font-weight:900;line-height:16px;
+  color:var(--tx-2);background:#0a0c11}
+.ms[aria-selected="true"]{border-color:var(--gold);box-shadow:0 0 12px rgba(255,212,59,.45)}
+.ms[aria-selected="true"] img{opacity:1}
+.ms[aria-selected="true"] .n{color:#221605;background:linear-gradient(180deg,#ffe9a8,#d9a52a)}
+.ms .dot{position:absolute;left:3px;top:3px;width:6px;height:6px;border-radius:50%;background:var(--mc);
+  box-shadow:0 0 6px var(--mc)}
+
+/* ---------- 640–710px : status band ---------- */
+#statusBand{display:grid;grid-template-columns:1.15fr 1fr 1fr;gap:4px;padding:6px 8px 0}
+#statusBand .sb{padding:4px 6px}
+#statusBand .k{font-size:7.5px;letter-spacing:.06em;color:var(--tx-3);white-space:nowrap}
+#statusBand .v{font-family:var(--f-num);font-size:14px;font-weight:900;line-height:1.2;white-space:nowrap;
+  color:var(--gold-hi);text-shadow:0 1px 0 #000}
+#statusBand .k2{font-size:8px;color:var(--tx-3);margin-top:2px;white-space:nowrap}
+#statusBand .k2 b{font-family:var(--f-num);color:var(--tx-2);font-size:9.5px}
+#statusBand .meter{margin-top:3px}
+
+/* ---------- 780–844px : bottom navigation ---------- */
+#nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px}
+#nav button{min-height:50px;border-radius:3px;position:relative;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  border:1px solid rgba(255,212,59,.20);color:var(--tx-3);
+  background:linear-gradient(180deg,rgba(255,232,170,.05),transparent 45%),linear-gradient(180deg,#161922,#0a0b10)}
+#nav button svg{width:18px;height:18px}
+#nav button i{font-style:normal;font-size:9px;font-weight:800;letter-spacing:.02em}
+#nav button[aria-current="page"]{color:#221605;border-color:var(--gold);
+  background:linear-gradient(180deg,#ffe9a8,#e8b02a 55%,#a9741a);
+  box-shadow:0 0 14px rgba(255,196,60,.4),inset 0 1px 0 rgba(255,255,255,.5)}
+#nav button .dot{position:absolute;right:5px;top:5px;width:6px;height:6px;border-radius:50%;
+  background:var(--red);box-shadow:0 0 8px var(--red)}
+
+/* ---------- 画面背景アート ---------- */
+.panel-bg{position:absolute;inset:0;z-index:-1;overflow:hidden;pointer-events:none}
+.panel-bg img{width:100%;height:100%;object-fit:cover;opacity:.30;filter:saturate(.9) brightness(.7)}
+.panel-bg::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(5,6,10,.72),rgba(5,6,10,.94) 55%,#05060a)}
+.panel{position:relative}
+
 /* ---------- セクション ---------- */
 .sec{margin:8px 8px 0}
 .sec-h{display:flex;align-items:center;gap:6px;margin:0 0 5px}
@@ -262,7 +298,7 @@ svg{flex:0 0 auto}
 .mc .nm{font-size:11.5px;font-weight:800;letter-spacing:.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mc .sp{font-size:9px;color:var(--gold);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mc .tags{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px}
-.mc .tag{font-size:8px;font-weight:800;padding:1px 4px;border:1px solid currentColor;border-radius:2px}
+.fc-tags .tag,.mc .tag{font-size:8px;font-weight:800;padding:1px 4px;border:1px solid currentColor;border-radius:2px}
 .mc .tag.new{color:var(--gold)} .mc .tag.boom{color:var(--neon-g)}
 .mc .tag.isl{color:var(--neon-b)} .mc .tag.pro{color:var(--red)}
 .mc .inl{display:flex;gap:7px;align-items:baseline;margin-top:2px;font-size:9px;color:var(--tx-3);
@@ -310,21 +346,25 @@ svg{flex:0 0 auto}
 .btn-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 
 /* ---------- 下部アクション + CTA ---------- */
-#dock{position:fixed;left:calc(var(--rail) + var(--sal));right:0;bottom:0;z-index:35;
-  max-width:502px;margin:0 auto;
+#dock{position:fixed;left:0;right:0;bottom:0;z-index:35;
+  max-width:560px;margin:0 auto;
   padding:6px 8px calc(6px + var(--sab));
   background:
     repeating-linear-gradient(115deg,rgba(255,212,59,.022) 0 1px,transparent 1px 7px),
     linear-gradient(180deg,rgba(5,6,10,0),rgba(5,6,10,.96) 16%,#05060a 42%)}
-#acts{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:6px}
-#acts button{min-height:48px;border-radius:2px;display:flex;flex-direction:column;align-items:center;
-  justify-content:center;gap:3px;position:relative;overflow:hidden;
-  border:1px solid rgba(255,212,59,.26);color:var(--tx-2);
-  background:linear-gradient(180deg,#151821,#0a0b10)}
-#acts button svg{width:17px;height:17px;color:var(--gold)}
-#acts button i{font-style:normal;font-size:8.5px;font-weight:800;letter-spacing:.02em}
-#acts button .dot{position:absolute;right:4px;top:4px;width:6px;height:6px;border-radius:50%;
-  background:var(--red);box-shadow:0 0 8px var(--red)}
+#acts{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px}
+#acts button{position:relative;min-height:76px;border-radius:3px;overflow:hidden;
+  border:1px solid rgba(255,212,59,.28);background:#0a0c11}
+#acts button img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.62;
+  filter:saturate(.95) contrast(1.05)}
+#acts button .lb{position:absolute;left:0;right:0;bottom:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:2px;padding:4px 2px 5px;
+  background:linear-gradient(180deg,rgba(5,6,10,0),rgba(5,6,10,.92) 55%)}
+#acts button .lb svg{width:15px;height:15px;color:var(--gold)}
+#acts button .lb i{font-style:normal;font-size:9px;font-weight:800;color:var(--tx)}
+#acts button .dot{position:absolute;right:5px;top:5px;width:7px;height:7px;border-radius:50%;
+  background:var(--red);box-shadow:0 0 8px var(--red);z-index:2}
+#acts button:active{transform:translateY(1px)}
 #btnOpen{position:relative;width:100%;min-height:var(--cta);border-radius:3px;overflow:hidden;
   border:2px solid #ff6a58;color:#fff;
   background:
@@ -419,6 +459,8 @@ svg{flex:0 0 auto}
 .banner{margin-top:9px;padding:10px;text-align:center;border:1px solid}
 .banner.clear{border-color:var(--gold);background:linear-gradient(180deg,rgba(255,190,60,.2),rgba(60,40,6,.3))}
 .banner.dead{border-color:#ff5a4d;background:linear-gradient(180deg,rgba(120,24,18,.4),rgba(30,8,6,.5))}
+.banner .rankimg{width:96px;height:96px;object-fit:cover;border-radius:4px;margin:4px auto;display:block;
+  border:1px solid var(--gold);box-shadow:0 0 20px rgba(255,212,59,.4)}
 .banner .rank{font-family:var(--f-num);font-size:40px;font-weight:900;color:var(--gold-hi);line-height:1;
   text-shadow:0 0 26px rgba(255,212,59,.6)}
 .week{margin-top:9px;border-top:1px dashed var(--line-w);padding-top:8px}
@@ -444,7 +486,7 @@ svg{flex:0 0 auto}
 @keyframes ctx{0%{opacity:0;letter-spacing:.2em}30%{opacity:1;letter-spacing:.5em}78%{opacity:1}100%{opacity:0}}
 
 /* ---------- トースト ---------- */
-#toasts{position:fixed;left:calc(var(--rail) + var(--sal));right:0;bottom:calc(var(--sab) + 128px);
+#toasts{position:fixed;left:0;right:0;bottom:calc(var(--sab) + 140px);
   z-index:85;display:flex;flex-direction:column;align-items:center;gap:5px;pointer-events:none;padding:0 10px}
 .toast{max-width:400px;width:100%;display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:2px;
   border:1px solid var(--gold);background:linear-gradient(180deg,rgba(60,42,10,.97),rgba(18,13,4,.97));
@@ -617,7 +659,7 @@ svg{flex:0 0 auto}
 <g id="i-fire"><path d="M12 3s5 4.2 5 8.5a5 5 0 0 1-10 0C7 9 9 7 9 7s.5 2 1.5 2.5C11 8 12 6 12 3z"/></g>
 </defs></svg>
 
-<nav id="rail" aria-label="機能領域"></nav>
+
 
 <div id="app">
   <header id="top">
@@ -638,23 +680,23 @@ svg{flex:0 0 auto}
   </header>
 
   <main id="main">
-    <!-- ===================== HALL ===================== -->
+    <!-- ===================== HALL (MOBILE_MAPPING 準拠) ===================== -->
     <section class="panel on" id="panel-hall" aria-label="ホール">
+
+      <!-- 86–400px : full-bleed Hall Artwork -->
       <div id="stage">
-        <div id="hallArt"><img src="./art/hall.jpg" alt="" decoding="async" fetchpriority="high"></div>
+        <div id="hallArt"><img id="hallImg" src="./art/hall_crowd.jpg" alt="" decoding="async" fetchpriority="high"></div>
         <div class="vig"></div>
-        <div class="scan"></div>
         <span class="cn a"></span><span class="cn b"></span><span class="cn c"></span><span class="cn d"></span>
         <div class="stage-tag"><span class="lb">HALL</span><span id="stageFlags"></span></div>
-        <div id="islandOv"></div>
 
+        <!-- 115–340px : 実データのオーバーレイ(2〜4個) -->
+        <div id="islandOv"></div>
         <div id="crest" aria-hidden="true">
           <svg viewBox="0 0 120 120">
-            <defs>
-              <linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" stop-color="#fff3c4"/><stop offset="55%" stop-color="#ffd43b"/><stop offset="100%" stop-color="#8a6412"/>
-              </linearGradient>
-            </defs>
+            <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="#fff3c4"/><stop offset="55%" stop-color="#ffd43b"/><stop offset="100%" stop-color="#8a6412"/>
+            </linearGradient></defs>
             <circle cx="60" cy="58" r="34" fill="rgba(6,7,11,.86)" stroke="url(#cg)" stroke-width="2.4"/>
             <circle cx="60" cy="58" r="28" fill="none" stroke="rgba(255,212,59,.35)" stroke-width="1"/>
             <path d="M30 92c-12-9-17-24-15-38 7 3 12 9 15 16 2 6 2 14 0 22z" fill="url(#cg)" opacity=".85"/>
@@ -663,38 +705,44 @@ svg{flex:0 0 auto}
           </svg>
           <div class="cv"><span class="n num" id="crestVal">50</span><span class="l">店舗評価</span></div>
         </div>
-
         <div id="kpi">
-          <div class="cell gp"><div class="k">店舗評価</div><div class="v num" id="stRep">50<small>/100</small></div>
-            <div class="meter gg"><i id="repBar" style="width:50%"></i></div></div>
           <div class="cell gp"><div class="k">固定客数</div><div class="v num" id="stRegs">0<small>人</small></div>
             <svg class="spark" id="regSpark" viewBox="0 0 100 22" preserveAspectRatio="none"></svg></div>
           <div class="cell gp"><div class="k">設置台数</div><div class="v num" id="stMachines">0<small>台</small></div>
             <div class="k" style="margin-top:1px">借入 <b class="num" id="stDebt">なし</b></div></div>
           <div class="cell gp"><div class="k">行政警戒度</div><div class="v num" id="heatPct">0<small>%</small></div>
             <div class="meter rk"><i id="heatFill" style="width:0%"></i></div></div>
+          <div class="cell gp" style="display:none"><div class="k">評価</div><div class="v num" id="stRep">50<small>/100</small></div>
+            <div class="meter gg"><i id="repBar" style="width:50%"></i></div></div>
         </div>
       </div>
 
-      <div id="goalStrip" class="gp">
-        <span class="k">純資産</span>
-        <span class="v num" id="stAssets">¥0</span>
-        <span class="meter"><i id="goalBar" style="width:0%"></i></span>
-        <span class="p num" id="goalPct">0%</span>
+      <!-- 400–640px : 設置台・設定判断 -->
+      <div id="focusWrap">
+        <div id="focusCard"></div>
+        <div id="hallList" role="tablist" aria-label="設置台の切替"></div>
       </div>
 
-      <div id="stratStrip">
-        <div class="gp"><div class="k">本日の方針</div><div class="v" id="stratMode">—</div></div>
-        <div class="gp"><div class="k">平均設定</div><div class="v num" id="stratAvg">—</div></div>
-        <div class="gp"><div class="k">高設定 / 低設定</div><div class="v num" id="stratHiLo">—</div></div>
-        <div class="gp"><div class="k">前日客数</div><div class="v num" id="stratCust">—</div></div>
+      <!-- 640–710px : Goal / boom / 特日 / warning / strategy -->
+      <div id="statusBand">
+        <div class="sb gp">
+          <div class="k">純資産</div>
+          <div class="v num" id="stAssets">¥0</div>
+          <div class="meter"><i id="goalBar" style="width:0%"></i></div>
+          <div class="k2"><span id="goalPct" class="num">0%</span> / 1億円</div>
+        </div>
+        <div class="sb gp">
+          <div class="k">本日の方針</div>
+          <div class="v" id="stratMode">—</div>
+          <div class="k2">平均 <b class="num" id="stratAvg">—</b> ・ 高<b class="num" id="stratHi">0</b>/低<b class="num" id="stratLo">0</b></div>
+        </div>
+        <div class="sb gp">
+          <div class="k">前日</div>
+          <div class="v num" id="stratCust">—</div>
+          <div class="k2">客数 ・ 収支 <b class="num" id="stNet2">—</b></div>
+        </div>
       </div>
-
-      <div class="sec">
-        <div class="sec-h"><i class="bar"></i><h2>設定変更</h2><span class="sub" id="hallCount"></span></div>
-        <div id="hallList"></div>
-        <p class="note" id="hallNote"></p>
-      </div>
+      <p class="note" id="hallNote"></p>
     </section>
 
     <!-- ===================== SHOP ===================== -->
@@ -710,6 +758,7 @@ svg{flex:0 0 auto}
     <section class="panel" id="panel-mgmt" aria-label="経営">
       <div class="sec">
         <div class="sec-h"><i class="bar"></i><h2>店長室</h2><span class="sub">OWNER ROOM</span></div>
+        <div id="acts"></div>
 
         <div class="gp" style="margin-bottom:6px">
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-staff"/></svg><b>スタッフ管理</b></div>
@@ -819,8 +868,8 @@ svg{flex:0 0 auto}
   <aside id="side"><div id="sideIn"></div></aside>
 
   <div id="dock">
-    <div id="acts"></div>
     <button id="btnOpen"><span class="lab"></span></button>
+    <nav id="nav" aria-label="機能領域"></nav>
   </div>
 </div>
 
@@ -1536,6 +1585,13 @@ const MCOL = {
   s1:"#00e676", s2:"#ff8a2b", s3:"#2d9cff", s4:"#ffd43b", s5:"#c06bff",
 };
 const colOf = cid => MCOL[cid] || "#ffd43b";
+/* 供給Artworkの割当(ASSET_COVERAGE_MATRIX: MACHINE_SETTING / SHOP) */
+const MART = {
+  p1:"m_p_a", p2:"m_p_c", p3:"m_p_d", p4:"m_p_b", p5:"m_go",
+  s1:"m_juggler", s2:"m_at", s3:"m_neon", s4:"m_normal", s5:"m_okislot",
+};
+const artOf = cid => "./art/" + (MART[cid] || "m_normal") + ".jpg";
+let focusIdx = 0;
 let busy = false;
 
 /* ---------- 保護ロジックの薄いラッパ(条件は 04_FUNCTION_FREEZE のまま) ---------- */
@@ -1600,23 +1656,23 @@ function toast(msg) {
 /* ---------- ナビゲーション ---------- */
 const AREAS = [
   ["hall", "ホール", "hall"],
-  ["shop", "新台", "shop"],
+  ["shop", "新台購入", "shop"],
   ["mgmt", "経営", "owner"],
   ["ledger", "帳簿", "ledger"],
-  ["ach", "実績", "trophy"],
 ];
+const ALL_PANELS = ["hall", "shop", "mgmt", "ledger", "ach"];
 let area = "hall";
-function renderRail() {
+function renderNav() {
   const short = state.staff < staffNeeded();
-  $("rail").innerHTML = `<div class="rmark">${ic("crown")}</div>` + AREAS.map(([id, label, icon]) =>
-    `<button class="rb" data-area="${id}" ${area === id ? 'aria-current="page"' : ""}>
+  $("nav").innerHTML = AREAS.map(([id, label, icon]) =>
+    `<button data-area="${id}" ${area === id || (area === "ach" && id === "mgmt") ? 'aria-current="page"' : ""}>
       ${ic(icon)}<i>${label}</i>${id === "mgmt" && short ? '<span class="dot"></span>' : ""}
-    </button>`).join("") + '<div class="sp"></div>';
+    </button>`).join("");
 }
 function setArea(id) {
   area = id;
-  AREAS.forEach(([a]) => { const el = $("panel-" + a); if (el) el.classList.toggle("on", a === id); });
-  renderRail();
+  ALL_PANELS.forEach(a => { const el = $("panel-" + a); if (el) el.classList.toggle("on", a === id); });
+  renderNav();
   window.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" });
 }
 
@@ -1666,8 +1722,9 @@ function renderStatus() {
     $("stratMode").textContent = s2 ? s2.mode.t : "—";
     $("stratMode").style.color = s2 ? s2.mode.c : "var(--tx-3)";
     $("stratAvg").textContent = s2 ? s2.avg.toFixed(1) : "—";
-    $("stratHiLo").textContent = s2 ? `${s2.hi} / ${s2.lo}` : "—";
+    if ($("stratHi")) { $("stratHi").textContent = s2 ? s2.hi : "0"; $("stratLo").textContent = s2 ? s2.lo : "0"; }
     $("stratCust").textContent = last ? last.cust + "人" : "—";
+    if ($("stNet2")) { $("stNet2").textContent = last ? sign(last.net) : "—"; $("stNet2").className = "num " + (last ? (last.net >= 0 ? "pos" : "neg") : ""); }
   }
   renderSpark();
 }
@@ -1687,7 +1744,7 @@ function renderSpark() {
 
 /* ---------- 島オーバーレイ(既存データ: 同一機種グループ) ---------- */
 const ISL_POS = [
-  { l: "6%",  t: "12%" }, { l: "52%", t: "24%" }, { l: "14%", t: "40%" },
+  { l: "5%", t: "10%" }, { l: "53%", t: "30%" },
 ];
 function renderIslands() {
   const wrap = $("islandOv");
@@ -1713,57 +1770,65 @@ function renderIslands() {
   }).join("");
 }
 
-/* ---------- ホール(設定変更) ---------- */
+/* ---------- ホール: 1台フォーカス + 台ストリップ(MOBILE_MAPPING 400–640px) ---------- */
 function renderHall() {
-  const wrap = $("hallList"), dead = isDead();
-  $("hallCount").textContent = `${state.machines.length} / ${state.cap} 台`;
+  const dead = isDead(), list = state.machines;
   $("hallNote").innerHTML =
     "<b>設定1〜2</b>は当日の利益が増えるが評判が下がり、続けると<b>行政指導</b>のリスク。" +
-    "<b>設定5〜6</b>は常連が育つが<b>プロ</b>に狙われる。全台一律より「出す台・回収する台」の作り分けが勝負。" +
-    "同一機種を並べると<b>シマ効果</b>、週替わりの<b>ブーム</b>機種は集客1.4倍。";
-  if (!state.machines.length) {
-    wrap.innerHTML = `<div class="gp"><div class="empty">${ic("slot")}<br>台がありません<br>「新台」から台を導入しよう。</div></div>`;
+    "<b>設定5〜6</b>は常連が育つが<b>プロ</b>に狙われる。同一機種を並べると<b>シマ効果</b>。";
+  if (!list.length) {
+    focusIdx = 0;
+    $("focusCard").innerHTML = `<div class="empty">${ic("slot")}<br>台がありません<br>「新台購入」から台を導入しよう。</div>`;
+    $("hallList").innerHTML = "";
     return;
   }
-  wrap.innerHTML = state.machines.map((m, idx) => {
-    const c = catalogOf(m), col = colOf(c.id);
-    const isNew = state.day - (m.boughtDay ?? -99) < 5;
-    const isl = islandBonus(c.id), boom = trendMult(c.id) > 1;
-    const tags = [
-      isNew ? '<span class="tag new">NEW</span>' : "",
-      boom ? '<span class="tag boom">ブーム中</span>' : "",
-      isl > 1 ? `<span class="tag isl">シマ+${Math.round((isl - 1) * 100)}%</span>` : "",
-      m.setting >= 5 ? '<span class="tag pro">プロ警戒</span>' : "",
-    ].filter(Boolean).join("");
-    const netTxt = m.lastNet === null ? "―" : sign(m.lastNet);
-    const netCls = m.lastNet === null ? "" : (m.lastNet >= 0 ? "pos" : "neg");
-    const segCls = m.setting <= 2 ? "lo" : m.setting >= 5 ? "hi" : "";
-    return `<article class="mc gp" style="--mc:${col}">
-      <div class="top">
-        <div class="thumb"><i></i><u></u><s></s></div>
-        <div class="id">
-          <div class="nm">${esc(c.name)}</div>
-          <div class="sp">${esc(c.spec.label)}</div>
-          <div class="inl">
-            <span>前日 <b class="${netCls}">${netTxt}</b></span>
-            <span>客 <b>${m.lastCust === null ? "―" : m.lastCust}</b></span>
-            <span>売却 <b>${yenShort(machineValue(m))}</b></span>
-          </div>
-          ${tags ? `<div class="tags">${tags}</div>` : ""}
-        </div>
-        <button class="iconbtn" data-trial="${idx}" aria-label="実機を試打">${ic("play")}</button>
-        <button class="iconbtn red" data-sell="${idx}" aria-label="売却" ${dead ? "disabled" : ""}>${ic("tag")}</button>
+  if (focusIdx >= list.length) focusIdx = 0;
+  const m = list[focusIdx], c = catalogOf(m), col = colOf(c.id);
+  const isNew = state.day - (m.boughtDay ?? -99) < 5;
+  const isl = islandBonus(c.id), boom = trendMult(c.id) > 1;
+  const tags = [
+    isNew ? '<span class="tag new">NEW</span>' : "",
+    boom ? '<span class="tag boom">ブーム中</span>' : "",
+    isl > 1 ? `<span class="tag isl">シマ+${Math.round((isl - 1) * 100)}%</span>` : "",
+    m.setting >= 5 ? '<span class="tag pro">プロ警戒</span>' : "",
+  ].filter(Boolean).join("");
+  const netTxt = m.lastNet === null ? "―" : sign(m.lastNet);
+  const netCls = m.lastNet === null ? "" : (m.lastNet >= 0 ? "pos" : "neg");
+  const segCls = m.setting <= 2 ? "lo" : m.setting >= 5 ? "hi" : "";
+
+  $("focusCard").innerHTML = `
+    <div class="fc-top" style="--mc:${col}">
+      <div class="fc-photo"><img src="${artOf(c.id)}" alt="" decoding="async"><i></i></div>
+      <div class="fc-id">
+        <div class="fc-nm">${esc(c.name)}</div>
+        <div class="fc-sp">${esc(c.spec.label)}</div>
+        ${tags ? `<div class="fc-tags">${tags}</div>` : ""}
       </div>
-      <div class="setrow">
-        <span class="lb">設定</span>
-        <div class="seg ${segCls}" role="group" aria-label="出玉設定">
-          ${[1,2,3,4,5,6].map(v => `<button type="button" data-set="${idx}:${v}" aria-pressed="${m.setting === v}" ${dead ? "disabled" : ""}>${v}</button>`).join("")}
-        </div>
+      <div class="fc-net">
+        <div class="k">前日収支</div>
+        <div class="v ${netCls}">${netTxt}</div>
+        <div class="s">客 ${m.lastCust === null ? "―" : m.lastCust} ・ 売却 ${yenShort(machineValue(m))}</div>
       </div>
-    </article>`;
+    </div>
+    <div class="fc-set">
+      <span class="lb">設定</span>
+      <div class="seg ${segCls}" role="group" aria-label="出玉設定">
+        ${[1,2,3,4,5,6].map(v => `<button type="button" data-set="${focusIdx}:${v}" aria-pressed="${m.setting === v}" ${dead ? "disabled" : ""}>${v}</button>`).join("")}
+      </div>
+    </div>
+    <div class="fc-acts">
+      <button class="btn sm" data-trial="${focusIdx}" style="flex:1">${ic("play")}実機を試打</button>
+      <button class="btn sm red" data-sell="${focusIdx}" ${dead ? "disabled" : ""}>${ic("tag")}売却</button>
+    </div>`;
+
+  $("hallList").innerHTML = list.map((mm, i) => {
+    const cc = catalogOf(mm);
+    return `<button class="ms" role="tab" data-focus="${i}" aria-selected="${i === focusIdx}"
+      style="--mc:${colOf(cc.id)}" title="${esc(cc.name)}">
+      <span class="dot"></span><img src="${artOf(cc.id)}" alt="${esc(cc.name)}" decoding="async">
+      <span class="n">${mm.setting}</span></button>`;
   }).join("");
 }
-
 /* ---------- ショップ ---------- */
 function renderShop() {
   $("shopSlots").textContent = `空き枠 ${Math.max(0, state.cap - state.machines.length)}`;
@@ -1939,17 +2004,22 @@ function renderLedger() {
   svg.addEventListener("touchend", () => tip.style.display = "none");
 }
 
-/* ---------- 下部アクション + CTA ---------- */
+/* ---------- 経営画面のショートカット(供給キャラクターArtworkを使用) ---------- */
 const ACT_TILES = [
-  { id: "set", icon: "gear", label: "設定変更" },
-  { id: "owner", icon: "owner", label: "経営策" },
-  { id: "ad", icon: "ad", label: "広告宣伝" },
-  { id: "staff", icon: "staff", label: "スタッフ" },
+  { id: "staff",  icon: "staff",  label: "スタッフ", art: "c_staff_m",  target: "staffCount" },
+  { id: "ad",     icon: "ad",     label: "広告宣伝", art: "c_staff_f",  target: "adButtons" },
+  { id: "fair",   icon: "fair",   label: "新装フェア", art: "c_player_f", target: "btnGrand" },
+  { id: "bank",   icon: "bank",   label: "銀行融資", art: "c_player_m", target: "btnBorrow" },
 ];
 function renderActs() {
+  const el = $("acts"); if (!el) return;
   const short = state.staff < staffNeeded();
-  $("acts").innerHTML = ACT_TILES.map(t =>
-    `<button data-tile="${t.id}">${ic(t.icon)}<i>${t.label}</i>${t.id === "staff" && short ? '<span class="dot"></span>' : ""}</button>`).join("");
+  el.innerHTML = ACT_TILES.map(t =>
+    `<button data-tile="${t.id}" title="${t.label}">
+      <img src="./art/${t.art}.jpg" alt="" decoding="async">
+      <span class="lb">${ic(t.icon)}<i>${t.label}</i></span>
+      ${t.id === "staff" && short ? '<span class="dot"></span>' : ""}
+    </button>`).join("");
 }
 function renderCTA() {
   const b = $("btnOpen"), tk = isTokubi(state.day), dead = isDead();
@@ -1979,8 +2049,20 @@ function renderSide() {
     </div>`;
 }
 
+const PANEL_BG = { shop: "bg_shop", mgmt: "bg_strategy", ledger: "bg_data", ach: "bg_home" };
+function mountPanelArt() {
+  for (const [id, art] of Object.entries(PANEL_BG)) {
+    const el = $("panel-" + id);
+    if (!el || el.querySelector(".panel-bg")) continue;
+    const d = document.createElement("div");
+    d.className = "panel-bg";
+    d.innerHTML = `<img src="./art/${art}.jpg" alt="" decoding="async">`;
+    el.insertBefore(d, el.firstChild);
+  }
+}
 function renderAll() {
-  renderRail(); renderStatus(); renderIslands(); renderHall(); renderShop();
+  mountPanelArt();
+  renderNav(); renderStatus(); renderIslands(); renderHall(); renderShop();
   renderMgmt(); renderLedger(); renderAch(); renderActs(); renderCTA(); renderSide();
 }
 
@@ -2080,7 +2162,7 @@ function showDayResult(result) {
   } else if (state.cleared && state.clearDay === rec.day) {
     endHtml = `<div class="banner clear">
       <div style="font-size:9px;letter-spacing:.28em;color:var(--gold)">CLEAR RANK</div>
-      <div class="rank">${clearRank(rec.day)}</div>
+      <img class="rankimg" src="./art/rank_${clearRank(rec.day).toLowerCase()}.jpg" alt="${clearRank(rec.day)}ランク" decoding="async">
       <div style="font-size:13px;font-weight:900;color:var(--gold-hi);letter-spacing:.06em">祝・純資産1億円達成!!</div>
       <p class="note" style="margin-top:6px">${rec.day}日目にしてあなたの店は地域No.1ホールとなった!<br>
       S:65日以内 / A:85日 / B:120日 ・ このまま帝国を広げ続けてもOK!</p></div>`;
@@ -2483,11 +2565,16 @@ function showTutorial() {
    操作の結線
    ========================================================================== */
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile]");
+  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus]");
   if (!el) return;
   const d = el.dataset;
 
   if (d.area) { setArea(d.area); return; }
+  if (d.focus !== undefined) {
+    const i = Number(d.focus);
+    if (state.machines[i]) { focusIdx = i; renderHall(); }
+    return;
+  }
   if (d.tile) {
     if (d.tile === "shopjump") { closeModal(); setArea("shop"); return; }
     if (d.tile === "set") { setArea("hall"); const t = $("hallList"); if (t) t.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); return; }
@@ -2517,6 +2604,7 @@ document.addEventListener("click", e => {
     if (idx < 0) return;
     state.money += machineValue(m);
     state.machines.splice(idx, 1);
+    if (focusIdx >= state.machines.length) focusIdx = Math.max(0, state.machines.length - 1);
     save(); renderAll();
     toast(`${c.name} を売却しました`);
     return;
@@ -2531,6 +2619,7 @@ document.addEventListener("click", e => {
     m.uid = ++state.uid;
     m.boughtDay = state.day;
     state.machines.push(m);
+    focusIdx = state.machines.length - 1;
     save(); renderAll();
     toast(`${c.name} を導入しました`);
     return;
@@ -2550,8 +2639,8 @@ document.addEventListener("click", e => {
 });
 
 $("btnOpen").addEventListener("click", runDay);
-$("btnHire").addEventListener("click", () => { if (isDead()) return; state.staff++; save(); renderMgmt(); renderRail(); renderActs(); renderStatus(); });
-$("btnFire").addEventListener("click", () => { if (isDead()) return; if (state.staff > 1) { state.staff--; save(); renderMgmt(); renderRail(); renderActs(); renderStatus(); } });
+$("btnHire").addEventListener("click", () => { if (isDead()) return; state.staff++; save(); renderMgmt(); renderNav(); renderStatus(); });
+$("btnFire").addEventListener("click", () => { if (isDead()) return; if (state.staff > 1) { state.staff--; save(); renderMgmt(); renderNav(); renderStatus(); } });
 $("btnExpand").addEventListener("click", () => {
   if (isDead()) return;
   const cost = expandCost();
