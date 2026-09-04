@@ -286,7 +286,9 @@ svg{flex:0 0 auto}
 /* ---------- 台カード(設定1〜6) ---------- */
 .mc{margin-bottom:6px;padding:0;overflow:hidden}
 .mc .top{display:flex;gap:6px;padding:5px 6px 4px;align-items:center}
-.mc .thumb{width:34px;height:44px;flex:0 0 auto;border-radius:2px;position:relative;overflow:hidden;
+.mc .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.mc .thumb .lip{position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--mc);box-shadow:0 0 8px var(--mc)}
+.mc .thumb{width:46px;height:58px;flex:0 0 auto;border-radius:2px;position:relative;overflow:hidden;
   border:1px solid rgba(255,212,59,.30);background:linear-gradient(180deg,#14161d,#08090d)}
 .mc .thumb i{position:absolute;left:3px;right:3px;top:4px;height:9px;border-radius:1px;
   background:var(--mc);box-shadow:0 0 10px var(--mc)}
@@ -431,6 +433,21 @@ svg{flex:0 0 auto}
 .mb{padding:10px 12px 12px}
 .rowbtns{display:flex;gap:6px;margin-top:10px}
 .rowbtns .btn{flex:1}
+
+/* ---------- モーダル背景アート ---------- */
+.modal-art{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none;border-radius:3px}
+.modal-art img{width:100%;height:100%;object-fit:cover;opacity:.22;filter:saturate(.9) brightness(.75)}
+.modal-art::after{content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(8,9,13,.72),rgba(6,7,11,.95) 60%)}
+#modalBox > *:not(.modal-art){position:relative;z-index:1}
+.res-art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;
+  opacity:.34;filter:saturate(1.05) brightness(.8)}
+.res-hero{position:relative;overflow:hidden}
+.res-hero > *:not(.res-art){position:relative;z-index:1}
+.res-hero.win::after{content:"";position:absolute;inset:0;z-index:0;
+  background:radial-gradient(120% 80% at 50% 0%,rgba(255,190,60,.30),transparent 62%)}
+.res-hero.lose::after{content:"";position:absolute;inset:0;z-index:0;
+  background:radial-gradient(120% 80% at 50% 0%,rgba(255,70,50,.20),transparent 62%)}
 
 /* ---------- 当日結果 ---------- */
 .res-hero{position:relative;padding:14px 12px 12px;text-align:center;overflow:hidden;
@@ -828,6 +845,14 @@ svg{flex:0 0 auto}
           </div>
         </div>
 
+        <div class="gp" style="margin-bottom:6px">
+          <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-trophy"/></svg><b>実績</b><span class="r" id="achCount2"></span></div>
+          <div class="gp-b">
+            <button class="btn wide" data-area="ach">実績の一覧を見る</button>
+            <p class="note">営業を続けると解除される。解除時はその場で通知される。</p>
+          </div>
+        </div>
+
         <div class="gp">
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-save"/></svg><b>データ</b></div>
           <div class="gp-b">
@@ -860,6 +885,7 @@ svg{flex:0 0 auto}
     <section class="panel" id="panel-ach" aria-label="実績">
       <div class="sec">
         <div class="sec-h"><i class="bar"></i><h2>実績</h2><span class="sub" id="achCount"></span></div>
+        <button class="btn" data-area="mgmt" style="margin-bottom:6px">店長室へ戻る</button>
         <div class="gp"><div id="achList"></div></div>
       </div>
     </section>
@@ -1844,7 +1870,7 @@ function renderShop() {
     const decay = c.decay <= 0.8 ? "遅い" : c.decay <= 1.4 ? "普通" : "速い";
     return `<article class="mc gp" style="--mc:${colOf(c.id)}">
       <div class="top">
-        <div class="thumb"><i></i><u></u><s></s></div>
+        <div class="thumb"><img src="${artOf(c.id)}" alt="" decoding="async" loading="lazy"><i class="lip"></i></div>
         <div class="id">
           <div class="nm">${esc(c.name)}</div>
           <div class="sp">${esc(c.spec.label)}</div>
@@ -1931,6 +1957,7 @@ function renderMgmt() {
 function renderAch() {
   const w = $("achList"); if (!w) return;
   $("achCount").textContent = `${state.ach.length} / ${ACHIEVEMENTS.length}`;
+  if ($("achCount2")) $("achCount2").textContent = `${state.ach.length} / ${ACHIEVEMENTS.length}`;
   w.innerHTML = ACHIEVEMENTS.map(a => {
     const got = hasAch(a.id);
     return `<div class="ach ${got ? "got" : ""}">
@@ -2091,7 +2118,7 @@ const mh = (icon, title, closable) =>
 
 /* ---------- 倒産 ---------- */
 function showBankruptModal() {
-  showModal(`${mh("skull", "倒産", false)}
+  showModal(`<div class="modal-art"><img src="./art/atm_smoke.jpg" alt="" decoding="async"></div>${mh("skull", "倒産", false)}
     <div class="mb">
       <p class="note" style="font-size:12px;color:var(--tx-2)">資金が尽き、融資枠も限界です。${Math.max(0, state.day - 1)}日間の経営、お疲れさまでした。</p>
       <div class="bd" style="margin-top:8px">
@@ -2169,7 +2196,8 @@ function showDayResult(result) {
   }
 
   showModal(`
-    <div class="res-hero">
+    <div class="res-hero${rec.net >= 0 ? " win" : " lose"}">
+      <img class="res-art" src="./art/${rec.net >= 0 ? (state.cleared && state.clearDay === rec.day ? "fx_win" : "fx_bonus") : "atm_smoke"}.jpg" alt="" decoding="async">
       <div class="d">DAY ${rec.day}${rec.note ? " 〈" + esc(rec.note) + "〉" : ""}</div>
       <div class="k">本日の純利益</div>
       <div class="amt num ${rec.net >= 0 ? "pos" : "neg"}" id="resAmt">${sign(rec.net)}</div>
@@ -2224,7 +2252,7 @@ function openSlotTrial(c, initSetting) {
     spinning: false, stopped: [true, true, true],
     flag: "none", final: [], timers: [],
   };
-  showModal(`${mh("slot", "実機プレイ", true)}
+  showModal(`<div class="modal-art"><img src="./art/${MART[c.id] || "m_normal"}.jpg" alt="" decoding="async"></div>${mh("slot", "実機プレイ", true)}
     <div class="mb">
       <div class="mach">
         <div class="mach-h">
@@ -2367,7 +2395,7 @@ function openPachiTrial(c, initSetting) {
     balls: 1000, startBalls: 1000, spins: 0, hits: 0, maxRen: 0,
     busy: false, auto: false, autoTimer: null, timers: [],
   };
-  showModal(`${mh("target", "実機プレイ", true)}
+  showModal(`<div class="modal-art"><img src="./art/${MART[c.id] || "m_p_a"}.jpg" alt="" decoding="async"></div>${mh("target", "実機プレイ", true)}
     <div class="mb">
       <div class="mach">
         <div class="mach-h">
@@ -2534,6 +2562,7 @@ function showTutorial() {
       <span><b style="display:block;color:var(--gold-hi);font-size:12px;margin-bottom:2px">${title}</b>${body}</span></div>`;
   showModal(`
     <div class="res-hero">
+      <img class="res-art" src="./art/hall_crowd.jpg" alt="" decoding="async">
       <div style="font-size:26px;font-weight:900;letter-spacing:.06em;
         background:linear-gradient(180deg,#fff6d0,#ffd43b 46%,#a8720f);-webkit-background-clip:text;background-clip:text;color:transparent">パチスロ帝国</div>
       <div style="font-size:8px;letter-spacing:.4em;color:var(--gold-lo);margin-top:4px">PACHISLOT EMPIRE</div>

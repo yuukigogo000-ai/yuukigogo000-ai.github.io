@@ -1,0 +1,62 @@
+===== 1. 起動・資産・外部通信 =====
+  PASS  起動してチュートリアルが出る
+  PASS  コンソールエラー 0
+  PASS  外部リクエスト 0
+  PASS  壊れた資産参照 0
+  PASS  ホールアートが読み込まれている
+  PASS  DOM識別子70件が保持されている(P-30)
+  PASS  グローバル公開3件が保持されている(P-29)
+===== 2. 機能到達性(既存39機能) =====
+  PASS  FN 4領域のボトムナビ切替
+  PASS  FN 実績画面への到達(店長室から)
+  PASS  FN 設定1〜6の変更
+  PASS  FN 新台購入
+  PASS  FN カタログ試打(スロット)
+  PASS  FN 設置台の試打
+  PASS  FN 売却(確認あり)
+  PASS  FN スタッフ雇用
+  PASS  FN スタッフ解雇
+  PASS  FN 広告設定
+  PASS  FN 交換率変更
+  PASS  FN 借入
+  PASS  FN 返済
+  PASS  FN 店舗拡張
+  PASS  FN セーブ
+  PASS  FN 1営業日の実行と当日結果
+  PASS  FN 台別収支の提示
+  PASS  FN 損益推移グラフ
+  PASS  FN 営業成績一覧
+  PASS  FN 実績一覧
+  PASS  FN 常時ステータス
+  PASS  FN 週次レポートの生成
+  PASS  長時間操作でエラーなし
+===== 3. レスポンシブ / タップ / セーフエリア =====
+  PASS  360px 横スクロール 0
+  PASS  360px タップ44px未満なし
+  PASS  360px 主要CTA >=52px
+  PASS  360px 過大なアイコンSVGなし
+  PASS  390px 横スクロール 0
+  PASS  390px タップ44px未満なし
+  PASS  390px 主要CTA >=52px
+  PASS  390px 過大なアイコンSVGなし
+  PASS  430px 横スクロール 0
+  PASS  430px タップ44px未満なし
+  PASS  430px 主要CTA >=52px
+  PASS  430px 過大なアイコンSVGなし
+  PASS  巨大化したアイコンSVGがない
+  PASS  safe-area 対応
+  PASS  prefers-reduced-motion 対応
+  PASS  Webフォント参照なし
+===== 4. reduced motion =====
+  PASS  reduce時も1営業日が完了する
+  PASS  reduce時は演出が短い(<600ms)
+  PASS  reduce時にカーテンを出さない
+===== 5. セーブ互換 / オフライン =====
+  PASS  リロードで状態が復元される(uid正規化を除き完全一致)
+  PASS  保存キーが pachi-teikoku-save-v1
+  PASS  保存スキーマが22キー
+  PASS  Service Worker 登録
+  PASS  オフライン起動
+  PASS  オフラインでもホールアートが表示される
+
+===== ACCEPTANCE: 55 PASS / 0 FAIL =====

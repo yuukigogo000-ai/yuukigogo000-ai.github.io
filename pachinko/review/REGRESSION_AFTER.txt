@@ -1,0 +1,53 @@
+=== 1. 保護関数のハッシュ ===
+  PASS  function simulateDay
+  PASS  function weeklyReport
+  PASS  function expandCost
+  PASS  function isDead
+  PASS  function slotDenom
+  PASS  function clearRank
+  PASS  function save
+  PASS  function sanitizeState
+  PASS  function load
+  PASS  function newGame
+  PASS  function makeMachine
+  PASS  function catalogOf
+  PASS  function machineValue
+  PASS  function machineAssets
+  PASS  function totalAssets
+  PASS  function creditLimit
+  PASS  function isTokubi
+  PASS  function isWeekend
+  PASS  function staffNeeded
+  PASS  function islandBonus
+  PASS  function trendMult
+  PASS  function effectivePop
+  PASS  function rollFlag
+  PASS  function finalSymbols
+  PASS  function spinCost
+  PASS  function hasAch
+=== 2. 保護定数(確率・数値・カタログ) ===
+  PASS  const SAVE_KEY
+  PASS  const GOAL_ASSETS
+  PASS  const MAX_CAP
+  PASS  const DIFFS
+  PASS  const CATALOG
+  PASS  const MARGIN
+  PASS  const ADS
+  PASS  const TRENDS
+  PASS  const LUCK_EVENTS
+  PASS  const LUCK_DAILY_P
+  PASS  const COND_EVENTS
+  PASS  const ACHIEVEMENTS
+  PASS  const SLOT_SYMBOLS
+=== 3. 保存キーとスキーマ ===
+  PASS  保存キー pachi-teikoku-save-v1
+=== 4. グローバル公開(インラインハンドラ用) ===
+  PASS  window.closeModal
+  PASS  window.doReset
+  PASS  window.startGame
+=== 5. DOM識別子 ===
+  PASS  DOM識別子 70/70 件が存在
+=== 6. 必須コピー ===
+  PASS  必須コピー 25/25 件が存在
+
+=== REGRESSION GUARD (static): 45 PASS / 0 FAIL ===

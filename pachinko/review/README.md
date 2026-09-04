@@ -1,46 +1,38 @@
-# CHATGPT_FINAL_REVIEW_PACKET — パチスロ帝国 V5
+# CHATGPT_FINAL_REVIEW_PACKET — パチスロ帝国 V6
 
-`USER_APPROVED_VISUAL_TARGET.png` を Visual Acceptance Target とした
-LIVE-VISUAL IMPLEMENTATION の結果一式。
+HANDOFF v6(承認Visual Target + 88点のArtwork)に基づく実装結果一式。
 
-## 読む順番
+| ファイル | 内容 |
+|---|---|
+| `IMPLEMENTATION_REPORT_V6.md` | 実行順序・MOBILE_MAPPING適合・VALIDATION結果 |
+| `ASSET_MAPPING.md` | 使用したArtworkの対応表 / 未使用一覧 / 供給JPEGを直接使わなかった理由 |
+| `REGRESSION_BASELINE.json` / `REGRESSION_AFTER.txt` | UI変更前後の保護領域の比較(before/after) |
+| `RUNTIME_GUARD_AFTER.txt` | 機能・状態到達性 / 外部通信0 / オフライン / レスポンシブの実行結果 |
+| `GIT_DIFF_SUMMARY.md` | 変更ファイルの一覧 |
+| `../CAPABILITY_AUDIT.md` | 着手前の能力監査(実測) |
+| `../FEATURE_ROADMAP.md` | 実装済み / 次段階 / 実装しない |
+| `screens/` | Target・全主要画面(360/390/430)・デスクトップ・Electron・並置シート |
 
-1. `GAME_CORE_GATE_REPORT.md` — 13軸の採点と判定(**FAIL**)、CHEAPER / THUMBNAIL / BLUR テスト
-2. `VISUAL_ITERATION_01.md` → `02` → `03` — 3回のSelf Repairの記録
-3. `VISUAL_METRICS_REPORT.md` — 客観ガードレールと10種の破壊的視覚テスト
-4. `../CHATGPT_ARTWORK_REQUEST.md` — 唯一の支配的Gapに対する発注書
-5. `ACCEPTANCE_REPORT.md` / `PROTECTED_LOGIC_REPORT.md` / `EXTRACTION_DRIFT.md`
-6. `../FEATURE_ROADMAP.md` / `ASSET_MANIFEST.md`
-
-## 画像
+## 主要な画像
 
 ```
-screens/00-USER_APPROVED_VISUAL_TARGET.jpg   Visual Acceptance Target(参照用)
-screens/00-TARGET_GAME_CORE_REGION.jpg       Target の GAME CORE 領域
-screens/compare-target-vs-impl.jpg           同縮尺の並置(最重要)
-screens/thumbnail-test.jpg / blur-test.jpg   25%表示 / 強ブラー比較
-screens/01-home … 14-tutorial (×360/390/430) 主要画面と主要状態
-screens/15-desktop-1180.jpg                  デスクトップ幅
-screens/16-electron-1180.jpg                 Electron 実行時
-mutations/M01…M10.jpg                        意図的劣化(全てVisual Gate FAIL)
+screens/00-USER_APPROVED_VISUAL_TARGET.jpg  承認Visual Target
+screens/compare-target-vs-impl.jpg          Target と 390×844 実装の並置(GATE C 用)
+screens/01-home-390.jpg … 14-tutorial-*.jpg 主要画面と主要状態
+screens/15-desktop-1180.jpg                 デスクトップ幅
+screens/16-electron-1180.jpg                Electron 実行
 ```
 
-## 検証を再実行するには
+## 検証サマリ
 
-```bash
-# 保護ロジックの同一性(期待: 39 PASS / 1 FAIL)
-git show 40c2eaa:pachinko/index.html > /tmp/before.html
-node review/verify_protected_logic.js /tmp/before.html pachinko/index.html
+- 保護領域(静的): 45 PASS / 0 FAIL
+- 実行時(機能到達・レスポンシブ・オフライン・reduced motion・セーブ互換): 55 PASS / 0 FAIL
+- 破壊的検証: 27 PASS / 0 FAIL
+- ゲームバランス回帰: 熟練プレイ中央値 71日(変更前と同水準)
+- 外部リクエスト: 0 / console error: 0 / broken asset: 0
 
-# 客観ガードレール(Target との比率判定)
-node review/visual-gate.js review/screens/01-home-390.jpg
-```
+## 判定
 
-## 結論
-
-- 実装・機能・堅牢性・レスポンシブ・オフライン・デスクトップ: **すべて通過**
-  (自動検証 54 PASS / 破壊的検証 27 PASS / バランス回帰 中央値72日で不変)
-- Visual Gate: **FAIL**。13軸中11軸は 4.0〜4.4 に到達しているが、
-  Material Richness 3.5 / Owner-Empire 3.7 / Production Value 3.9 が未達。
-- 支配的Gapは **ホール俯瞰アートの写実性** ただ1点であり、
-  `ARTWORK_ASSET_BLOCKER` / `GAME_CORE_VISUAL_BLOCKER` として提出する。
+GATE A(UI・操作・レスポンシブ・機能・状態)は PASS。
+GATE B(Artwork)は供給パッケージの素材のみを使用。
+**GATE C は自己採点を行わず、Human Verdict を待つ。**

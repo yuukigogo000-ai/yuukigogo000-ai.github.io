@@ -1,4 +1,4 @@
-# FEATURE ROADMAP — パチスロ帝国(V5)
+# FEATURE ROADMAP — パチスロ帝国(V6)
 
 `FEATURE_SCOPE_v1.0.md` に対する実装結果。
 
@@ -15,8 +15,8 @@ difficulty / slot trial / pachinko trial / autosave・restore / offline / Electr
 
 | ID | 内容 | 状態 |
 |---|---|---|
-| B-01 | Approved Target のArt DirectionへPresentation全面刷新 | 実装(アートワークのみBLOCKER) |
-| B-02 | ホール俯瞰アートによる apparent density | 暫定実装(手続き生成) |
+| B-01 | Approved Target のArt DirectionへPresentation全面刷新 | 実装 |
+| B-02 | ホール俯瞰アートによる apparent density | 実装(供給パッケージの写真アセット `hall_crowd`) |
 | B-03 | 設定1〜6を主Interactionへ / 機種・スペック・人気・前日収支・客数・状態の可視化 | 実装 |
 | B-04 | 店長室(staff/広告/fair/拡張/finance/交換率/警戒度/実績/save)の統合 | 実装 |
 | B-05 | 1営業日実行の遷移(開店演出 800ms) | 実装 |
@@ -34,7 +34,7 @@ difficulty / slot trial / pachinko trial / autosave・restore / offline / Electr
 | B-17 | touch ≥44px / Primary CTA ≥52px(実装は56px) | 実装 |
 | B-18 | prefers-reduced-motion | 実装 |
 | B-19 | インラインSVGアイコン体系(外部library禁止・主要UIの絵文字終了) | 実装(34種) |
-| B-20 | ローカルArtwork資産をSW PRECACHEへ | 実装(`art/hall.jpg`) |
+| B-20 | ローカルArtwork資産をSW PRECACHEへ | 実装(`art/*.jpg` 50点・PRECACHE 55件) |
 
 ## C. NEXT PHASE — 今回は実装しない
 
@@ -56,3 +56,15 @@ Target画像に描かれているランキング・お知らせ・ミッショ�
 **機能としてもダミーのボタン・ラベルとしても配置していない。**
 Targetのそれらの Visual Mass は、実在するデータ(実績 / clear rank / 純資産Goal /
 週次助言 / 帳簿 / 当日結果 / 同一機種グループの集計)へ置き換えている。
+
+
+---
+
+## V6 での変更点(HANDOFF v6 適用)
+
+- 左ナビレールを廃止し、`MOBILE_MAPPING.md` の帯構成(Top HUD / Hall / 台フォーカス /
+  status / CTA / Bottom Nav)へ再構成
+- ホール俯瞰・機種筐体・キャラクター・画面背景・演出・クリア評価バッジを
+  **供給Artworkの実写素材へ置換**(CSS/SVGによる再制作を廃止)
+- 台一覧を「1台フォーカス + 横スクロールのサムネイルストリップ」へ変更
+- 実績は店長室からの到達に変更(ボトムナビは実在4領域のみ)

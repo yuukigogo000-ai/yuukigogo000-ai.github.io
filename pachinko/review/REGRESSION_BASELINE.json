@@ -1,0 +1,269 @@
+{
+ "file": "index.html",
+ "functions": {
+  "simulateDay": {
+   "sha": "954bf458c4bea6023e90590b75eaf067",
+   "len": 8287
+  },
+  "weeklyReport": {
+   "sha": "e9b8788f19bf3770b9176951acdda23e",
+   "len": 1640
+  },
+  "expandCost": {
+   "sha": "fa97b4fbffbcd28e8ea2a6e4703f9b55",
+   "len": 69
+  },
+  "isDead": {
+   "sha": "5ffae59c12c56c8cb51200ba8f4d051b",
+   "len": 54
+  },
+  "slotDenom": {
+   "sha": "15478728fc309fe99d8a112fec2b24e1",
+   "len": 82
+  },
+  "clearRank": {
+   "sha": "5607b661a3349fa23c1c92b399559bb2",
+   "len": 86
+  },
+  "save": {
+   "sha": "deb0dda447158793bb2152bd1aca7513",
+   "len": 130
+  },
+  "sanitizeState": {
+   "sha": "9d97f5b08b5a0864d6aa11bbaba19fab",
+   "len": 2953
+  },
+  "load": {
+   "sha": "6068533bc79778139460aadc466bb4eb",
+   "len": 238
+  },
+  "newGame": {
+   "sha": "07e83b8c28b96ce3ef1ef520db7c0954",
+   "len": 424
+  },
+  "makeMachine": {
+   "sha": "ad9152fd1b7d8d5684094348c48de109",
+   "len": 190
+  },
+  "catalogOf": {
+   "sha": "caf21e893efb83876af8e87c75bc2efe",
+   "len": 67
+  },
+  "machineValue": {
+   "sha": "11fa37b1a679ece4cec7edc75522bd29",
+   "len": 74
+  },
+  "machineAssets": {
+   "sha": "c1541b1827ace54b9c036c1c3e9d9dbb",
+   "len": 92
+  },
+  "totalAssets": {
+   "sha": "18b08c1252af5f34cb32b48e73c04f38",
+   "len": 77
+  },
+  "creditLimit": {
+   "sha": "087767c41532bdbd3e78b5d0a18a7057",
+   "len": 78
+  },
+  "isTokubi": {
+   "sha": "d793be4b4bf866b3307ea41c47d43316",
+   "len": 60
+  },
+  "isWeekend": {
+   "sha": "a48334972f4701ea93f7331bbe8cf120",
+   "len": 73
+  },
+  "staffNeeded": {
+   "sha": "0f8a5b845b45ab4ae3a4346691ae8ef8",
+   "len": 84
+  },
+  "islandBonus": {
+   "sha": "31cf384f4959e71f2f98f9fd1aee1878",
+   "len": 131
+  },
+  "trendMult": {
+   "sha": "2332ac50cd32cf4f34b77b32aa0b1ef5",
+   "len": 90
+  },
+  "effectivePop": {
+   "sha": "585e0a03953cc014812e6e1e837be065",
+   "len": 185
+  },
+  "rollFlag": {
+   "sha": "28ad093b3b21bdb4643e2a0d60f4d546",
+   "len": 435
+  },
+  "finalSymbols": {
+   "sha": "3a4e100acddc03bacce6f2f1c5d35de4",
+   "len": 496
+  },
+  "spinCost": {
+   "sha": "ef07d96e39071862161b4b4c9fd32425",
+   "len": 78
+  },
+  "hasAch": {
+   "sha": "a85b12ff4ffbf0fb98f523028a051da3",
+   "len": 54
+  }
+ },
+ "constants": {
+  "SAVE_KEY": {
+   "sha": "a24b66a244be82c6240b12f3f8cc2ad1",
+   "len": 41
+  },
+  "GOAL_ASSETS": {
+   "sha": "caddb28ef2983122e66b42ef5a5ed51c",
+   "len": 30
+  },
+  "MAX_CAP": {
+   "sha": "ba1bc0c458483955ad0593a1d5633481",
+   "len": 19
+  },
+  "DIFFS": {
+   "sha": "f0d53ee0815ed98633bc80ecb2f9418c",
+   "len": 292
+  },
+  "CATALOG": {
+   "sha": "0c0fa7bf41ec95d3006461cbec5d502f",
+   "len": 1936
+  },
+  "MARGIN": {
+   "sha": "f2f6ea3496057c7265ef5ca9f1ff1a7f",
+   "len": 73
+  },
+  "ADS": {
+   "sha": "b0ca13d77bc5ef269253cbfc7093a6da",
+   "len": 266
+  },
+  "TRENDS": {
+   "sha": "babec882c2e402cbfc349974b71f80a3",
+   "len": 263
+  },
+  "LUCK_EVENTS": {
+   "sha": "2067a3c37540e9c1b2900066ad62b450",
+   "len": 4211
+  },
+  "LUCK_DAILY_P": {
+   "sha": "52c12e0ca0d2b6253c1d581b3b6883bd",
+   "len": 25
+  },
+  "COND_EVENTS": {
+   "sha": "5b4fc89254ebdc4a45d15865806a9659",
+   "len": 5200
+  },
+  "ACHIEVEMENTS": {
+   "sha": "d53decab81b337e11708efd5f3aac789",
+   "len": 1015
+  },
+  "SLOT_SYMBOLS": {
+   "sha": "15d57696f0189116ccf617da809ca34b",
+   "len": 60
+  }
+ },
+ "missing": [],
+ "globals": [
+  "closeModal",
+  "doReset",
+  "startGame"
+ ],
+ "domIds": [
+  "achList",
+  "adButtons",
+  "adCurrent",
+  "btnBorrow",
+  "btnExpand",
+  "btnFire",
+  "btnGrand",
+  "btnHire",
+  "btnOpen",
+  "btnRepay",
+  "btnReset",
+  "btnSave",
+  "capNow",
+  "chartTip",
+  "chartWrap",
+  "creditNow",
+  "dayNote",
+  "debtNow",
+  "dg0",
+  "dg1",
+  "dg2",
+  "hallList",
+  "heatFill",
+  "heatNote",
+  "ledgerBody",
+  "modalBg",
+  "modalBox",
+  "pAuto",
+  "pBalls",
+  "pBanner",
+  "pDiff",
+  "pHits",
+  "pMaxRen",
+  "pReach",
+  "pRefill",
+  "pSpin",
+  "pSpins",
+  "panel-hall",
+  "panel-ledger",
+  "panel-mgmt",
+  "panel-shop",
+  "rateButtons",
+  "rateNote",
+  "reel0",
+  "reel1",
+  "reel2",
+  "shopList",
+  "stAssets",
+  "stDay",
+  "stDebt",
+  "stMachines",
+  "stMoney",
+  "stRegs",
+  "stRep",
+  "staffCount",
+  "staffNeed",
+  "stop0",
+  "stop1",
+  "stop2",
+  "tBB",
+  "tCredits",
+  "tDiff",
+  "tGames",
+  "tRB",
+  "toasts",
+  "trBanner",
+  "trLamp",
+  "trLever",
+  "trRefill",
+  "trSet"
+ ],
+ "copy": [
+  "パチスロ帝国",
+  "営業開始",
+  "新台購入",
+  "店長室",
+  "帳簿",
+  "実績",
+  "設定",
+  "試打",
+  "売却",
+  "導入する",
+  "雇用する",
+  "解雇する",
+  "セーブ",
+  "やり直す",
+  "等価交換",
+  "低換金",
+  "純資産",
+  "評判",
+  "常連",
+  "借入",
+  "警戒度",
+  "週次レポート",
+  "本日の純利益",
+  "倒産",
+  "難易度"
+ ],
+ "saveKey": true
+}
