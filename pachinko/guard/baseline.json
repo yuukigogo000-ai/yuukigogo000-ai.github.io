@@ -124,8 +124,8 @@
    "len": 292
   },
   "CATALOG": {
-   "sha": "3224fc0b38889d9a28c9ffa6360951e1",
-   "len": 1937,
+   "sha": "edea1418278fdb2828b5717e1dffcf1e",
+   "len": 3874,
    "rebaselined": {
     "date": "2026-09-05",
     "reason": "実在機種名を想起させる表示名(name / spec.label)のみ差し替え。price/pop/decay/id/type/desc と spec の全数値は byte 一致で、確率・計算・バランスへの影響はゼロ。",
@@ -136,7 +136,24 @@
      "s2": "S押忍!漢気番長→S怒濤!鬼瓦大将 (spec.label も 番長ボーナス→大将ボーナス)",
      "s3": "S忍烈伝〜朧の章〜→S忍烈伝〜幻影の章〜"
     },
-    "prevSha": "0c0fa7bf41ec95d3006461cbec5d502f"
+    "prevSha": "0c0fa7bf41ec95d3006461cbec5d502f",
+    "added": {
+     "date": "2026-09-05",
+     "reason": "ユーザー要望により機種を10→20に追加。既存10件は byte 一致であることを機械検証済み(id/price/pop/decay/spec すべて不変)。",
+     "new": [
+      "p6 P桜花繚乱 甘デジ",
+      "p7 P深海クルーズ",
+      "p8 P轟雷伝説 剛",
+      "p9 P幻想歌劇団",
+      "p10 P極楽鳥ドリーム",
+      "s6 S快音ベルサイン",
+      "s7 S猛虎烈風",
+      "s8 S天翔ラビリンス",
+      "s9 S鬼哭の門番",
+      "s10 スマスロ 極光戦記"
+     ],
+     "prevSha": "3224fc0b38889d9a28c9ffa6360951e1"
+    }
    }
   },
   "MARGIN": {
@@ -148,8 +165,8 @@
    "len": 266
   },
   "TRENDS": {
-   "sha": "0a25da2df17b6541cc42716ff79fd0f5",
-   "len": 260,
+   "sha": "a52017927efc64659569f74cff3bed86",
+   "len": 312,
    "rebaselined": {
     "date": "2026-09-05",
     "reason": "実在機種シリーズを直接指す表示名(name)のみ差し替え。ids・出現確率・ブーム倍率は byte 一致で、計算への影響はゼロ。",
@@ -157,7 +174,12 @@
      "1": "レトロ海物語ブーム→レトロ甘デジ回帰",
      "4": "ジャグ連フィーバー→告知ランプ回帰"
     },
-    "prevSha": "babec882c2e402cbfc349974b71f80a3"
+    "prevSha": "babec882c2e402cbfc349974b71f80a3",
+    "extended": {
+     "date": "2026-09-05",
+     "reason": "追加機種10件を既存6ブームの対象idに割り振った。ブーム名・件数(7)・倍率1.4・抽選方法はすべて不変。",
+     "prevSha": "0a25da2df17b6541cc42716ff79fd0f5"
+    }
    }
   },
   "LUCK_EVENTS": {
