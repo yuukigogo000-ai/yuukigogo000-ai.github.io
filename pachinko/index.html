@@ -686,8 +686,8 @@ svg{flex:0 0 auto}
   box-shadow:0 0 10px rgba(255,196,60,.55)}
 
 /* 日本列島を模した弧状の配置(南西→北東) */
-.mapgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px}
-.mt{position:relative;display:flex;flex-direction:column;gap:0;min-height:58px;padding:5px 6px;
+.mapgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;margin-top:6px}
+.mt{position:relative;display:flex;flex-direction:column;gap:0;min-width:0;min-height:58px;padding:5px 6px;
   border-radius:3px;text-align:left;border:1px solid rgba(255,212,59,.16);
   background:linear-gradient(180deg,rgba(255,232,170,.045),transparent 46%),linear-gradient(180deg,#14171f,#08090e);
   color:var(--tx-2)}
@@ -726,7 +726,7 @@ svg{flex:0 0 auto}
 .rg-sheet .rg-h{display:flex;align-items:center;gap:5px;margin:10px 0 5px;font-size:10px;
   font-weight:800;letter-spacing:.12em;color:var(--gold-hi)}
 .rg-sheet .rg-h svg{width:13px;height:13px;color:var(--gold)}
-.rg-tr{display:grid;gap:4px}
+.rg-tr{display:grid;grid-template-columns:1fr;gap:4px}
 .rg-tr>div{display:grid;grid-template-columns:88px 1fr auto;align-items:center;gap:6px}
 .rg-tr .k{font-size:9.5px;color:var(--tx-3)}
 .rg-tr b{font-family:var(--f-num);font-size:10.5px;font-weight:800;color:var(--tx-2);
@@ -802,6 +802,48 @@ svg{flex:0 0 auto}
   background:linear-gradient(180deg,rgba(255,212,59,.20),rgba(255,180,40,.05));
   box-shadow:inset 0 0 0 1px rgba(255,212,59,.35),0 0 12px rgba(255,196,60,.28)}
 .mp[aria-pressed="true"] .mp-n{color:var(--gold-hi)}
+
+/* タイル上の得意機種ヒント */
+.mt .mt-hint{display:flex;align-items:center;gap:2px;min-width:0;margin-top:1px;font-size:7.5px;
+  color:var(--pos);opacity:.85}
+.mt .mt-hint svg{width:8px;height:8px;flex:0 0 auto}
+.mt .mt-hint b{min-width:0;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt.lock .mt-hint{opacity:.45}
+
+/* 特性の一行ヒント */
+.rg-tr .hint{display:block;margin:-2px 0 2px;padding-left:2px;
+  font-size:9.5px;line-height:1.5;color:var(--tx-3)}
+
+/* 到達見込みテーブル */
+.rg-proj{display:grid;gap:2px;margin:4px 0 2px}
+.rg-proj>div{display:grid;grid-template-columns:minmax(0,1fr) 46px minmax(0,1.05fr);align-items:center;gap:6px;
+  padding:4px 6px;border-radius:2px;border:1px solid rgba(255,212,59,.12);
+  background:linear-gradient(180deg,rgba(255,232,170,.04),transparent)}
+.rg-proj>div.hd{border:0;background:none;padding:0 6px;font-size:8.5px;color:var(--tx-3);letter-spacing:.06em}
+.rg-proj>div>span{min-width:0}
+.rg-proj>div>span:first-child{font-size:10px;color:var(--tx-2);line-height:1.35}
+.rg-proj b{font-family:var(--f-num);font-size:13px;font-weight:900;color:var(--tx);text-align:right}
+.rg-proj i{font-style:normal;font-size:10px;font-weight:800;text-align:right;min-width:0;line-height:1.35}
+.rg-proj i.pos{color:var(--pos)} .rg-proj i.warn{color:var(--warn)} .rg-proj i.neg{color:var(--neg)}
+
+/* 地方別 得意機種 早見表 */
+.cheat{display:grid;gap:3px}
+.cs{display:grid;grid-template-columns:60px minmax(0,1fr);gap:1px 7px;width:100%;padding:5px 6px;
+  min-height:var(--tap);align-content:center;text-align:left;border-radius:2px;
+  border:1px solid rgba(255,212,59,.12);background:linear-gradient(180deg,#13161d,#0a0b10)}
+.cs.ctrl,.cs.home-top{border-color:rgba(55,224,122,.34)}
+.cs.home{border-color:var(--line-s)}
+.cs.branch{border-color:rgba(45,156,255,.34)}
+.cs.lock{opacity:.5}
+.cs-a{grid-row:1/3;align-self:center;font-size:11px;font-weight:900;color:var(--tx)}
+.cs-t{font-size:8.5px;color:var(--gold);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cs-l{display:flex;flex-wrap:wrap;gap:3px;min-width:0}
+.cs-t,.cs-c{min-width:0}
+.cs-l i{font-style:normal;font-size:8.5px;font-weight:800;padding:0 3px;border-radius:2px;
+  border:1px solid currentColor}
+.cs-l i.up{color:var(--pos)} .cs-l i.dn{color:var(--neg)}
+.cs-c{grid-column:2;font-size:9px;color:var(--tx-3)}
+.cs-c.ok{color:var(--pos)} .cs-c.ng{color:var(--neg)}
 </style>
 </head>
 <body>
@@ -1072,6 +1114,14 @@ svg{flex:0 0 auto}
         <div class="mapbar"><i id="mapBar" style="width:0%"></i></div>
         <p class="note" id="mapLead"></p>
         <div id="mapGrid" class="mapgrid"></div>
+        <div class="gp" style="margin-top:8px">
+          <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-slot"/></svg><b>地方別 得意機種 早見表</b><span class="r">タップで詳細</span></div>
+          <div class="gp-b">
+            <p class="note" style="margin-top:0">主力機種をその地方の<b style="color:var(--pos)">得意</b>に合わせると集客力+12・稼働+12%、<b style="color:var(--neg)">苦手</b>だと−10・稼働−8%。</p>
+            <div id="mapCheat" class="cheat"></div>
+          </div>
+        </div>
+
         <div class="gp" style="margin-top:8px">
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-flag"/></svg><b>支店一覧</b><span class="r">前日損益</span></div>
           <div class="gp-b"><div id="mapList"></div></div>
@@ -2727,18 +2777,47 @@ const FIT_LABEL = { 1:"得意機種", 0:"ふつう", "-1":"苦手機種" };
 const SC_N = 0.45, SC_REP = 1.15, SC_FIT_UP = 12, SC_FIT_DN = 10, SC_MGR = 6,
       SC_FAME = 3, SC_FAME_MAX = 18, SC_HOLD = 12;
 const fitScore = f => f > 0 ? SC_FIT_UP : f < 0 ? -SC_FIT_DN : 0;
+/* 想定集客力の試算。まだ建てていない/方針を変えていない状態でも「届くのか」を先に見せる。
+   rep は方針から決まる到達点(POL_REPTGT)を使う。 */
+function rgProject(a, n, mid, pol, mgr) {
+  const R = regionOf(a); if (!R) return 0;
+  return Math.round((n * SC_N + POL_REPTGT[pol] * SC_REP + fitScore(rgFit(mid, R))
+    + (mgr ? SC_MGR : 0) + rgFame(a) + rgHold(a)) * 10) / 10;
+}
+function rgTopRival(a) {
+  const l = rgState().riv[a] || [];
+  return l.reduce((m, r) => Math.max(m, r.sc), 0);
+}
+/* 「届く / 届かない」を色つきで返す */
+function rgVerdict(sc, top) {
+  const d = sc - top;
+  return d >= 12 ? { c:"pos", t:"余裕で首位を獲れる" }
+       : d >= 0  ? { c:"pos", t:"首位を獲れる(僅差)" }
+       : d >= -12 ? { c:"warn", t:`あと ${Math.ceil(-d)} 足りない` }
+       : { c:"neg", t:`首位まで ${Math.ceil(-d)} 足りない` };
+}
 function rgFame(a) {
   const g = rgState();
   return Math.min(SC_FAME_MAX, SC_FAME * Object.keys(g.ctrl).filter(k => k !== a).length);
 }
 /* 一番店の看板そのものが集客力になる(防衛側の有利)。獲るのは難しく、守るのは少し楽。 */
 const rgHold = a => (rgState().ctrl[a] ? SC_HOLD : 0);
+/* 本店の品揃えが地元の客層にどれだけ合っているか。-1(全部苦手)〜+1(全部得意) */
+function rgHomeFit() {
+  const R = regionOf(RG_HOME), n = state.machines.length;
+  if (!n) return 0;
+  let v = 0;
+  for (const m of state.machines) v += rgFit(m.cid, R);
+  return v / n;
+}
 function rgMyScore(a) {
   const R = regionOf(a); if (!R) return null;
   if (a === RG_HOME) {
     const n = state.machines.length;
     if (!n) return null;
-    return Math.round((n * SC_N + state.rep * SC_REP + Math.min(22, state.regulars / 11) + rgFame(a) + rgHold(a)) * 10) / 10;
+    const f = rgHomeFit();
+    return Math.round((n * SC_N + state.rep * SC_REP + Math.min(22, state.regulars / 11)
+      + (f >= 0 ? f * SC_FIT_UP : f * SC_FIT_DN) + rgFame(a) + rgHold(a)) * 10) / 10;
   }
   const b = rgBranch(a); if (!b) return null;
   const fit = rgFit(b.mid, R);
@@ -2909,17 +2988,32 @@ function renderMap() {
   w.innerHTML = REGIONS.map(R => {
     const st = rgStatusOf(R.id), b = rgBranch(R.id), rank = rgRanking(R.id);
     const myPos = rank.findIndex(x => x.me);
-    const sub = st === "lock" ? "隣接を取れ"
-      : myPos >= 0 ? `${myPos + 1}位 / ${rank.length}店`
+    const sub = myPos >= 0 ? `${myPos + 1}位 / ${rank.length}店`
+      : st === "lock" ? "隣接を取れ"
       : `競合${R.rival}軒`;
+    const hint = R.like.length ? midName(R.like[0]) : "";
     return `<button class="mt ${st}" data-rg="${R.id}" style="grid-column:${R.gc};grid-row:${R.gr}">
       <span class="mt-st">${st === "ctrl" || st === "home-top" ? ic("crown") : st === "home" ? ic("hall") : st === "branch" ? ic("flag") : ""}${RG_ST_LABEL[st]}</span>
       <span class="mt-nm">${esc(R.name)}</span>
       <span class="mt-sub">${esc(sub)}</span>
+      <span class="mt-hint">${ic("check")}<b>${esc(hint)}</b></span>
       ${b && b.since < state.day ? `<span class="mt-net ${b.net >= 0 ? "pos" : "neg"}">${sign(b.net)}</span>` : ""}
     </button>`;
   }).join("");
 
+  const cheat = $("mapCheat");
+  if (cheat) {
+    cheat.innerHTML = REGIONS.map(R => {
+      const st = rgStatusOf(R.id), b = rgBranch(R.id);
+      const cur = R.id === RG_HOME ? null : b ? b.mid : null;
+      return `<button class="cs ${st}" data-rg="${R.id}">
+        <span class="cs-a">${esc(R.name)}</span>
+        <span class="cs-t">${esc(R.spec)}</span>
+        <span class="cs-l">${R.like.map(m => `<i class="up">${esc(midName(m))}</i>`).join("")}${R.hate.map(m => `<i class="dn">${esc(midName(m))}</i>`).join("")}</span>
+        ${cur ? `<span class="cs-c ${rgFit(cur, R) > 0 ? "ok" : rgFit(cur, R) < 0 ? "ng" : ""}">主力: ${esc(midName(cur))}${rgFit(cur, R) > 0 ? " ✓" : rgFit(cur, R) < 0 ? " ✕" : ""}</span>` : ""}
+      </button>`;
+    }).join("");
+  }
   const list = $("mapList");
   if (list) {
     const brs = g.br.slice().sort((a, b) => b.net - a.net);
@@ -2955,7 +3049,13 @@ function openRegion(a) {
     <div><span class="k">地代・家賃</span>${rgBar(R.rent, 1.55, "warn")}<b>${R.rent.toFixed(2)}倍</b></div>
     <div><span class="k">競合の厚み</span>${rgBar(R.rival, 5, "warn")}<b>${R.rival} / 5</b></div>
     <div><span class="k">常連の固さ</span>${rgBar(R.loyal, 1.35)}<b>${R.loyal >= 1.2 ? "とても固い" : R.loyal >= 1.05 ? "固い" : R.loyal >= 0.9 ? "ふつう" : "移り気"}</b></div>
+    <div class="hint">→ 支店の評判が方針に追いつく速さ。${R.loyal >= 1.05
+      ? "上がるのは遅いが、落ちるのはもっと遅い。方針を変えても効いてくるまで時間がかかる。"
+      : R.loyal >= 0.9 ? "標準的な速さ。方針変更は数週間で反映される。"
+      : "上がるのも落ちるのも速い。渋くした翌週にはもう客がいない。"}</div>
     <div><span class="k">行政の厳しさ</span>${rgBar(R.strict, 1.35, "warn")}<b>${R.strict >= 1.2 ? "厳しい" : R.strict >= 1.0 ? "ふつう" : "ゆるい"}</b></div>
+    <div class="hint">→ 回収寄り(方針1〜2)にしたときの評判の落ち込みと、行政指導(罰金)の頻度。${R.strict >= 1.2
+      ? "この地方で渋るのは危険。" : R.strict < 1 ? "多少渋っても見逃されやすい。" : "標準。"}</div>
   </div>
   <div class="rg-taste">
     <div class="tl"><span class="lb up">得意</span>${R.like.map(m => `<b>${esc(midName(m))}</b>`).join("")}</div>
@@ -2975,7 +3075,19 @@ function openRegion(a) {
   let body;
   if (a === RG_HOME) {
     const w = g.win[a] || 0;
-    body = `${traits}<h4 class="rg-h">${ic("target")}一番店争い</h4>${rankHtml}
+    const hf = rgHomeFit();
+    const nLike = state.machines.filter(m => R.like.includes(m.cid)).length;
+    const nHate = state.machines.filter(m => R.hate.includes(m.cid)).length;
+    body = `${traits}
+      <h4 class="rg-h">${ic("slot")}本店の品揃えと地元の相性</h4>
+      <div class="bd">
+        <span class="k">得意機種の台数</span><span class="v pos">${nLike} / ${state.machines.length}台</span>
+        <span class="k">苦手機種の台数</span><span class="v ${nHate ? "neg" : ""}">${nHate} / ${state.machines.length}台</span>
+        <span class="k">集客力への補正</span><span class="v ${hf > 0.02 ? "pos" : hf < -0.02 ? "neg" : ""}">${hf >= 0 ? "+" : ""}${(hf >= 0 ? hf * SC_FIT_UP : hf * SC_FIT_DN).toFixed(1)}</span>
+      </div>
+      <p class="note">本店も東海という土地の上にある。<b>${esc(R.like.map(midName).join(" / "))}</b> を多く置くほど地元での集客力が上がる
+      (全台が得意機種なら+12、全台が苦手なら−10)。ホール収支そのものには影響しない — 効くのは一番店争いだけ。</p>
+      <h4 class="rg-h">${ic("target")}一番店争い</h4>${rankHtml}
       <p class="note">${g.ctrl[a]
         ? "地元を制圧中。看板効果で本店の評判が毎日わずかに上がっている。"
         : rgIsTop(a)
@@ -3007,7 +3119,21 @@ function openRegion(a) {
         <button class="btn" data-rgadd="${a}" ${canAdd ? "" : "disabled"}>${canAdd ? `+20台 増床 ${yenShort(addCost)}` : "60台(上限)"}</button>
       </div>
       <p class="note">敏腕店長: 日給¥100,000。評判の立ち上がりが速くなり、集客力に+6。</p>
+      ${(() => {
+        const top = rgTopRival(a), now = rgMyScore(a);
+        const tgt = rgProject(a, b.n, b.mid, b.pol, b.mgr);
+        const vn = rgVerdict(now, top), vt = rgVerdict(tgt, top);
+        return `<h4 class="rg-h">${ic("target")}一番店に届くか</h4>
+        <div class="rg-proj">
+          <div class="hd"><span></span><span>集客力</span><span>首位 ${top.toFixed(0)} との比較</span></div>
+          <div><span>いまの実力</span><b>${now.toFixed(0)}</b><i class="${vn.c}">${vn.t}</i></div>
+          <div><span>評判が方針(${b.pol})に届いたら</span><b>${tgt.toFixed(0)}</b><i class="${vt.c}">${vt.t}</i></div>
+        </div>`;
+      })()}
       <h4 class="rg-h">${ic("slot")}主力機種の入れ替え</h4>
+      <p class="note">得意機種なら集客力+12・稼働+12%、苦手機種なら−10・稼働−8%。
+      入れ替えには <b style="color:var(--gold)">${yen(rgMidCost(R, b))}</b> かかり、
+      客が慣れるまで <b style="color:var(--neg)">評判−8</b>。</p>
       <div class="midpick">${CATALOG.map(c => {
         const f = rgFit(c.id, R);
         return `<button type="button" class="mp ${f > 0 ? "up" : f < 0 ? "dn" : ""}" data-rgmid="${a}:${c.id}" aria-pressed="${b.mid === c.id}">
@@ -3016,7 +3142,7 @@ function openRegion(a) {
           <span class="mp-f">${f > 0 ? "得意 +12" : f < 0 ? "苦手 −10" : "±0"}</span>
         </button>`;
       }).join("")}</div>
-      <p class="note">入れ替え費用は台数に応じて発生し、支店の評判は少し下がる(客が慣れるまでの空白期間)。</p>
+
       <h4 class="rg-h">${ic("target")}一番店争い</h4>${rankHtml}
       <p class="note">${g.ctrl[a]
         ? `制圧中(${state.day - g.ctrl[a]}日目)。首位を${RG_LOSE_DAYS}日連続で明け渡すと制圧は解ける。`
@@ -3044,6 +3170,22 @@ function openRegion(a) {
       }).join("")}</div>
       <p class="note">この地方が好むのは <b style="color:var(--gold)">${esc(R.spec)}</b>。
       得意機種を主力に据えれば集客力+12・稼働+12%、苦手機種だと−10・稼働−8%。</p>
+      ${(() => {
+        const top = rgTopRival(a);
+        const s3 = rgProject(a, rgDraft.n, rgDraft.mid, 3, false);
+        const s5 = rgProject(a, rgDraft.n, rgDraft.mid, 5, false);
+        const s5m = rgProject(a, rgDraft.n, rgDraft.mid, 5, true);
+        const v3 = rgVerdict(s3, top), v5 = rgVerdict(s5, top), v5m = rgVerdict(s5m, top);
+        return `<h4 class="rg-h">${ic("target")}この構成で一番店を獲れるか</h4>
+        <div class="rg-proj">
+          <div class="hd"><span>方針</span><span>想定集客力</span><span>首位 ${top.toFixed(0)} との比較</span></div>
+          <div><span>標準(3)</span><b>${s3.toFixed(0)}</b><i class="${v3.c}">${v3.t}</i></div>
+          <div><span>全開放(5)</span><b>${s5.toFixed(0)}</b><i class="${v5.c}">${v5.t}</i></div>
+          <div><span>全開放+店長</span><b>${s5m.toFixed(0)}</b><i class="${v5m.c}">${v5m.t}</i></div>
+        </div>
+        <p class="note">評判は開店時40から方針の到達点へ徐々に動くので、上の数字に届くまで数十日かかる。
+        競合も毎日わずかに伸びるので、届かない構成のまま出すと永久に一番店は取れない。</p>`;
+      })()}
       <div class="bd" style="margin-top:6px">
         <span class="k">出店費用</span><span class="v ${afford ? "" : "neg"}">${yen(cost)}</span>
         <span class="k">所持資金</span><span class="v">${yen(state.money)}</span>

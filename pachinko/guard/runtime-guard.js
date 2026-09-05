@@ -157,7 +157,37 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
       return R.like.every(m => t.includes(CATALOG.find(c => c.id === m).name))
           && R.hate.every(m => t.includes(CATALOG.find(c => c.id === m).name));
     }));
-    ok('FN 主力機種ピッカーが全10機種を出す', await p.evaluate(() => document.querySelectorAll('.midpick .mp').length === CATALOG.length));
+    ok('FN 主力機種ピッカーが全機種を出す', await p.evaluate(() => document.querySelectorAll('.midpick .mp').length === CATALOG.length));
+    // ---- プレイヤーに判断材料が提示されているか(ヒントの常設チェック) ----
+    ok('FN 進出前に一番店へ届くか試算が出る', await p.evaluate(() => {
+      const rows = [...document.querySelectorAll('.rg-proj > div:not(.hd)')];
+      return rows.length === 3 && rows.every(r => /\d/.test(r.querySelector('b').textContent) && r.querySelector('i').textContent.length > 0);
+    }));
+    ok('FN 特性バーに効果の説明が付く', await p.evaluate(() => document.querySelectorAll('.rg-tr .hint').length === 2));
+    ok('FN 地方別 得意機種 早見表が全地方ぶん出る', await p.evaluate(() => {
+      closeModal(); setArea('map');
+      const rows = [...document.querySelectorAll('#mapCheat .cs')];
+      return rows.length === REGIONS.length && rows.every(r => r.querySelectorAll('.cs-l i').length > 0);
+    }));
+    ok('FN マップタイルに得意機種のヒントが出る', await p.evaluate(() =>
+      [...document.querySelectorAll('.mt .mt-hint b')].filter(e => e.textContent.trim().length > 0).length === REGIONS.length));
+    ok('FN 本店シートに地元との相性が出る', await p.evaluate(() => {
+      openRegion(RG_HOME);
+      const t = document.getElementById('modalBox').textContent;
+      return /本店の品揃えと地元の相性/.test(t) && /集客力への補正/.test(t);
+    }));
+    ok('FN 本店の品揃えが地元での集客力に効く', await p.evaluate(() => {
+      closeModal();
+      const R = regionOf(RG_HOME);
+      const keep = state.machines.map(m => m.cid);
+      state.machines.forEach(m => { m.cid = R.like[0]; });
+      const good = rgMyScore(RG_HOME);
+      state.machines.forEach(m => { m.cid = R.hate.length ? R.hate[0] : 'p1'; });
+      const bad = rgMyScore(RG_HOME);
+      state.machines.forEach((m, i) => { m.cid = keep[i]; });
+      return good > bad;
+    }));
+    await p.evaluate(() => { document.querySelector('[data-rg="hrk"]').click(); }); await p.waitForTimeout(200);
     const money0 = await p.evaluate(() => state.money);
     await p.evaluate(() => { rgDraft.n = 40; rgDraft.mid = 's2'; document.querySelector('[data-rgopen="hrk"]').click(); });
     await p.waitForTimeout(250);
