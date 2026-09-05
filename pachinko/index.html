@@ -44,6 +44,7 @@ body{
 }
 button,select,input{font-family:inherit;color:inherit;border:0;background:none;padding:0}
 button{cursor:pointer}
+[hidden]{display:none!important}
 :focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -3477,10 +3478,62 @@ function rgShowUnlock() {
    日給は全員 ¥13,000 のままなので simulateDay の wages 計算も無変更。
    ========================================================================== */
 
-const ST_SURNAME = ["佐々木","三ツ矢","黒沢","水無瀬","南雲","伊集院","日下部","綾瀬","小鳥遊","八神",
-                    "御手洗","一ノ瀬","来栖","柊","如月","神楽坂","天羽","四方田","榊原","鷺沼"];
-const ST_GIVEN_M = ["蓮","陽向","颯","悠真","湊","樹","朔","律","要","柊斗"];
-const ST_GIVEN_F = ["結衣","澪","陽菜","美緒","咲良","詩織","楓","栞","茜","千夏"];
+/* スタッフ名鑑。200人ぶんの「姓 名|ランク|特性」。全員が架空の人物で、
+   ランク・特性の構成比は下の重みどおりに作ってある。採用は毎回この中から
+   ランダムに1人(いま在籍していない人)を引く。 */
+const ST_POOL = [
+  "茅野 結衣|B|none", "四方田 碧|B|cold", "三ツ矢 律|B|face", "雲雀 咲良|C|none",
+  "神楽坂 美緒|B|face", "伊集院 静|B|gossip", "逢坂 詩織|A|late", "獅子堂 那由多|A|none",
+  "名護屋 那由多|B|none", "如月 奏太|A|mood", "三ツ矢 日和|A|cold", "鷺沼 樹|B|none",
+  "相馬 澪|C|mood", "篠塚 樹|C|clean", "九条 岳|A|cold", "相馬 日和|C|none",
+  "三ツ矢 美緒|B|late", "常磐 樹|S|late", "神楽坂 湊|C|none", "綾瀬 小春|A|gossip",
+  "日下部 要|C|mech", "狭霧 律|B|late", "伊集院 陽菜|C|cold", "御手洗 静|A|mood",
+  "三ツ矢 詩織|B|late", "綾瀬 岳|B|gossip", "朝比奈 栞|B|mood", "如月 陽向|B|face",
+  "黒沢 舞|C|none", "南雲 紗奈|C|none", "獅子堂 咲良|B|mech", "狭霧 小春|B|none",
+  "逢坂 碧|B|gossip", "一ノ瀬 千夏|S|mech", "鴻上 陽菜|C|late", "三ツ矢 柚葉|A|mech",
+  "榊原 美緒|A|none", "桐生 舞|B|none", "伊集院 柚葉|A|none", "榊原 碧|B|face",
+  "真鍋 司|A|none", "朝比奈 日和|A|mood", "神楽坂 律|C|clean", "日車 詩織|B|face",
+  "御手洗 湊|C|none", "葛西 柊斗|A|none", "小鳥遊 陽向|C|late", "綾瀬 朔|A|mood",
+  "常磐 伊織|A|cold", "小鳥遊 岳|B|clean", "逢坂 楓|B|none", "狭霧 美緒里|B|late",
+  "三ツ矢 碧|A|late", "相馬 司|S|late", "相馬 悠真|B|face", "望月 琴音|B|clean",
+  "鴻上 琴音|B|face", "九条 澪|B|cold", "逢坂 咲良|A|cold", "逢坂 栞|B|cold",
+  "榊原 悠真|C|late", "日車 隼人|C|clean", "葛西 結衣|B|none", "槙島 礼|C|none",
+  "名護屋 隼人|B|mood", "鴻上 司|S|gossip", "南雲 要|C|mood", "白鳥 碧|B|none",
+  "柊 悠真|A|late", "九条 湊|A|none", "一ノ瀬 湊|B|none", "獅子堂 隼人|B|none",
+  "天羽 日和|C|face", "九条 礼|C|none", "伊集院 舞|B|mech", "四方田 颯|C|none",
+  "黒沢 茜|S|gossip", "狭霧 詩織|C|clean", "佐々木 舞|B|mood", "望月 静|C|mood",
+  "八神 日和|C|clean", "小鳥遊 樹|A|mech", "狭霧 樹|B|face", "槙島 陽菜|A|none",
+  "篠塚 那由多|S|gossip", "雲雀 要|A|mech", "葛西 悠真|B|none", "小鳥遊 柊斗|C|none",
+  "四方田 雛|B|mech", "四方田 礼|A|mood", "四方田 静|C|none", "名護屋 紗奈|B|late",
+  "鷺沼 美緒里|B|clean", "小鳥遊 静|B|clean", "逢坂 慶|B|none", "榊原 理沙|B|mood",
+  "三ツ矢 陽向|S|cold", "榊原 静|B|late", "常磐 陽菜|B|none", "小鳥遊 美緒里|C|late",
+  "来栖 澪|B|mech", "蒼井 理沙|C|none", "榊原 紗奈|B|late", "四方田 真人|B|cold",
+  "蒼井 栞|B|none", "佐々木 結衣|C|none", "一ノ瀬 隼人|C|none", "茅野 慶|C|gossip",
+  "来栖 咲良|C|gossip", "黒沢 礼|C|mech", "三ツ矢 琴音|A|cold", "神楽坂 隼人|B|none",
+  "四方田 美緒|B|none", "日車 理沙|C|none", "常磐 碧|B|none", "南雲 司|A|late",
+  "蒼井 舞|B|mood", "一ノ瀬 悠真|C|none", "獅子堂 結衣|C|cold", "鷺沼 悠真|C|gossip",
+  "黒沢 柚葉|C|face", "三ツ矢 朔|C|cold", "日車 颯|S|none", "柊 結衣|B|none",
+  "一ノ瀬 澪|A|late", "常磐 静|B|none", "天羽 澪|A|none", "白鳥 千夏|B|late",
+  "柊 律|C|face", "神楽坂 澪|B|mech", "雲雀 司|B|none", "来栖 栞|B|cold",
+  "八神 柚葉|B|cold", "黒沢 悠真|B|mech", "鴻上 舞|A|mood", "天羽 雛|B|none",
+  "桐生 柊斗|B|cold", "如月 礼|A|face", "一ノ瀬 茜|A|gossip", "柊 要|A|mech",
+  "鴻上 千夏|B|mood", "水無瀬 碧|C|none", "茅野 琴音|A|none", "日車 栞|A|face",
+  "常磐 理沙|C|gossip", "常磐 朔|B|face", "朝比奈 颯|B|cold", "槙島 岳|C|mood",
+  "桐生 詩織|A|mech", "桐生 咲良|A|none", "一ノ瀬 雛|B|late", "南雲 澪|B|none",
+  "狭霧 雛|B|gossip", "茅野 雛|B|cold", "黒沢 颯|A|mood", "柊 詩織|B|none",
+  "九条 慶|B|none", "南雲 千夏|A|late", "狭霧 結衣|B|late", "天羽 樹|C|mood",
+  "真鍋 奏太|C|gossip", "常磐 雛|C|late", "逢坂 那由多|B|none", "綾瀬 琴音|C|none",
+  "日下部 理沙|B|gossip", "雲雀 詩織|A|gossip", "朝比奈 舞|A|none", "獅子堂 碧|B|mood",
+  "来栖 小春|B|clean", "綾瀬 柚葉|A|none", "一ノ瀬 奏太|A|mech", "望月 司|B|cold",
+  "望月 奏太|C|none", "白鳥 静|B|cold", "日車 陽菜|B|cold", "神楽坂 静|S|none",
+  "御手洗 紗奈|C|late", "天羽 奏太|C|none", "桐生 朔|A|cold", "柊 岳|B|none",
+  "狭霧 陽向|B|clean", "榊原 湊|B|mood", "小鳥遊 真人|B|mech", "伊集院 理沙|B|mood",
+  "常磐 那由多|C|late", "来栖 静|S|face", "鷺沼 理沙|B|mood", "四方田 朔|B|gossip",
+  "鷺沼 蓮|B|none", "蒼井 奏太|S|late", "鴻上 陽向|B|none", "榊原 那由多|B|none",
+  "獅子堂 茜|C|late", "望月 千夏|C|face", "榊原 律|C|late", "如月 岳|B|face",
+  "名護屋 咲良|B|gossip", "雲雀 美緒里|B|late", "来栖 湊|B|face", "水無瀬 紗奈|A|mech",
+];
+const ST_POOL_N = ST_POOL.length;
 
 /* ランク: 接客力(評判への日次寄与)と出現率 */
 /* serve = 評判への日次寄与 / draw = 常連への日次寄与。
@@ -3502,7 +3555,7 @@ const ST_TRAIT = {
   clean:  { w: 8,  good: true,  name: "掃除が行き届く", desc: "店内が清潔に保たれる (評判 +0.20 / 常連 +0.4 /日)" },
   late:   { w: 12, good: false, name: "遅刻魔",         desc: "たまに開店に間に合わない (25%で評判 −1.6)" },
   cold:   { w: 12, good: false, name: "無愛想",         desc: "接客に難がある (評判 −0.40/日)" },
-  sloppy: { w: 11, good: false, name: "どんぶり勘定",   desc: "レジが毎日わずかに合わない (−¥9,000/日)" },
+  gossip: { w: 11, good: false, name: "口が軽い",       desc: "店の内情を客に喋ってしまう (評判 −0.30/日)" },
 };
 const ST_REVEAL_DAYS = 3;   // 何営業日で評価が出るか
 const ST_LOYAL_DAYS = 7;    // これ未満で解雇すると評判ペナルティ
@@ -3510,27 +3563,24 @@ const ST_FIRE_REP = 4;      // 早期解雇の評判ペナルティ
 const ST_REP_GAIN = 1.25;    // 平均接客力 → 日次の評判
 const ST_DRAW_GAIN = 0.15;  // 平均集客力 → 日次の常連
 
-const wpick = (obj, rnd) => {
-  const keys = Object.keys(obj);
-  const tot = keys.reduce((a, k) => a + obj[k].w, 0);
-  let r = (rnd ? rnd() : Math.random()) * tot;
-  for (const k of keys) { r -= obj[k].w; if (r < 0) return k; }
-  return keys[keys.length - 1];
-};
 
-function stMakeName() {
-  const f = Math.random() < 0.5;
-  const g = f ? ST_GIVEN_F : ST_GIVEN_M;
-  return ST_SURNAME[Math.floor(Math.random() * ST_SURNAME.length)] + " " + g[Math.floor(Math.random() * g.length)];
+const stEntry = i => {
+  const p = String(ST_POOL[i] || ST_POOL[0]).split("|");
+  return { nm: p[0], r: ST_RANK[p[1]] ? p[1] : "B", t: ST_TRAIT[p[2]] ? p[2] : "none" };
+};
+/* 名鑑からランダムに1人。いま在籍している人とは重複させない。 */
+function stDraw() {
+  const taken = new Set((state.ex && state.ex.st && Array.isArray(state.ex.st.list) ? state.ex.st.list : []).map(m => m.nm));
+  for (let tries = 0; tries < 60; tries++) {
+    const e = stEntry(Math.floor(Math.random() * ST_POOL_N));
+    if (!taken.has(e.nm)) return e;
+  }
+  return stEntry(Math.floor(Math.random() * ST_POOL_N));
 }
+function stMakeName() { return stEntry(Math.floor(Math.random() * ST_POOL_N)).nm; }
 function stMake(known) {
-  return {
-    nm: stMakeName(),
-    r: wpick(ST_RANK),
-    t: wpick(ST_TRAIT),
-    d: 0,                    // 勤続営業日数
-    k: known === true,       // 評価が判明しているか
-  };
+  const e = stDraw();
+  return { nm: e.nm, r: e.r, t: e.t, d: 0, k: known === true };
 }
 
 /* ---------- 状態 ---------- */
@@ -3626,7 +3676,7 @@ function stDay() {
       case "mech":   pop += 0.20; break;
       case "clean":  sv += 0.20; dr += 0.50; break;
       case "cold":   sv -= 0.40; break;
-      case "sloppy": money -= 9000; break;
+      case "gossip": sv -= 0.30; break;
       case "late":
         if (Math.random() < 0.25) { sv -= 1.60; notes.push(`⏰ ${m.nm}が寝坊。開店に穴が空いた…`); }
         break;

@@ -131,6 +131,31 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
       for (let i = 0; i < 400; i++) { const m = stMake(false); seen.add(m.r + '/' + m.t); }
       return seen.size >= 12;
     }));
+    ok('FN スタッフ名鑑が200人ぶんあり、全員名前が重複しない', await p.evaluate(() =>
+      ST_POOL.length === 200 && new Set(ST_POOL.map(x => x.split('|')[0])).size === 200));
+    ok('FN 名鑑の名前・ランク・特性がすべて有効', await p.evaluate(() => ST_POOL.every(x => {
+      const p = x.split('|');
+      return p.length === 3 && p[0].length > 0 && !/[A-Za-z\u0400-\u04FF]/.test(p[0])
+        && ST_RANK[p[1]] && ST_TRAIT[p[2]];
+    })));
+    ok('FN 採用は名鑑の中から引かれ、在籍者と重複しない', await p.evaluate(() => {
+      const names = new Set(ST_POOL.map(x => x.split('|')[0]));
+      const taken = stState().list.map(m => m.nm);
+      for (let i = 0; i < 200; i++) { const m = stMake(false); if (!names.has(m.nm) || taken.includes(m.nm)) return false; }
+      return true;
+    }));
+    ok('FN スタッフの能力に金銭ペナルティがない(給与は完全一律)', await p.evaluate(() => {
+      // ランクは接客力と集客力しか持たず、特性にも資金を減らすものがない
+      const rankClean = Object.values(ST_RANK).every(r => Object.keys(r).sort().join() === 'draw,label,serve,w');
+      const before = state.money;
+      const s = stState(); const keep = s.list.slice();
+      s.list = Object.keys(ST_TRAIT).map(t => ({ nm: '検査 ' + t, r: 'B', t, d: 99, k: true }));
+      state.staff = s.list.length;
+      stDay();
+      const moved = state.money - before;
+      s.list = keep; state.staff = keep.length; save(true);
+      return rankClean && moved === 0;
+    }));
     ok('FN 早期解雇で評判が下がり、7日以上なら下がらない', await p.evaluate(() => {
       window.confirm = () => true;
       const s = stState();
