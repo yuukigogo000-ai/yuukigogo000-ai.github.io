@@ -686,17 +686,17 @@ svg{flex:0 0 auto}
   box-shadow:0 0 10px rgba(255,196,60,.55)}
 
 /* 日本列島を模した弧状の配置(南西→北東) */
-.mapgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px}
-.mt{position:relative;display:flex;flex-direction:column;gap:1px;min-height:62px;padding:6px 7px;
+.mapgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px}
+.mt{position:relative;display:flex;flex-direction:column;gap:0;min-height:58px;padding:5px 6px;
   border-radius:3px;text-align:left;border:1px solid rgba(255,212,59,.16);
   background:linear-gradient(180deg,rgba(255,232,170,.045),transparent 46%),linear-gradient(180deg,#14171f,#08090e);
   color:var(--tx-2)}
-.mt .mt-st{display:flex;align-items:center;gap:3px;font-size:8px;font-weight:800;
-  letter-spacing:.08em;color:var(--tx-3)}
+.mt .mt-st{display:flex;align-items:center;gap:2px;font-size:7.5px;font-weight:800;
+  letter-spacing:.02em;color:var(--tx-3);white-space:nowrap;overflow:hidden}
 .mt .mt-st svg{width:10px;height:10px}
-.mt .mt-nm{font-size:12.5px;font-weight:900;letter-spacing:.02em;color:var(--tx)}
-.mt .mt-sub{font-size:8.5px;color:var(--tx-3);letter-spacing:.02em}
-.mt .mt-net{margin-top:auto;font-family:var(--f-num);font-size:10px;font-weight:800}
+.mt .mt-nm{font-size:11.5px;font-weight:900;letter-spacing:-.02em;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt .mt-sub{font-size:8px;color:var(--tx-3);letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt .mt-net{margin-top:auto;font-family:var(--f-num);font-size:9px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .mt .mt-net.pos{color:var(--pos)} .mt .mt-net.neg{color:var(--neg)}
 .mt.home{border-color:var(--line-s);box-shadow:inset 0 0 16px rgba(255,180,40,.10)}
 .mt.home .mt-st{color:var(--gold)}
@@ -772,6 +772,36 @@ svg{flex:0 0 auto}
   letter-spacing:.12em;color:var(--gold-hi)}
 .rgres h4 svg{width:13px;height:13px;color:var(--gold)}
 .ev.rgev svg{color:var(--neon-b)}
+
+/* 地方の得意機種 / 苦手機種 */
+.rg-taste{display:grid;gap:3px;margin:6px 0 4px;padding:6px 7px;border-radius:3px;
+  border:1px solid var(--line-w);background:linear-gradient(180deg,rgba(255,232,170,.045),transparent)}
+.rg-taste .tl{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.rg-taste .lb{flex:0 0 auto;font-size:8px;font-weight:800;letter-spacing:.10em;color:var(--tx-3);
+  border:1px solid currentColor;border-radius:2px;padding:1px 4px}
+.rg-taste .lb.up{color:var(--pos)} .rg-taste .lb.dn{color:var(--neg)}
+.rg-taste b{font-size:10.5px;font-weight:800;color:var(--tx)}
+.rg-taste b + b::before{content:"/";color:var(--tx-3);font-weight:400;margin-right:4px}
+.rg-taste i{font-style:normal;font-size:10px;color:var(--gold)}
+
+/* 主力機種ピッカー */
+.midcur{font-size:11.5px;font-weight:800;color:var(--gold-hi)}
+.midpick{display:grid;gap:3px;max-height:246px;overflow-y:auto;padding:2px;
+  border:1px solid var(--line-w);border-radius:3px;-webkit-overflow-scrolling:touch}
+.mp{display:grid;grid-template-columns:34px 1fr auto;grid-template-rows:auto auto;gap:0 7px;
+  align-items:center;min-height:var(--tap);padding:4px 6px;text-align:left;border-radius:2px;
+  border:1px solid rgba(255,212,59,.14);background:linear-gradient(180deg,#14171f,#0a0b10)}
+.mp img{grid-row:1/3;width:34px;height:34px;object-fit:cover;border-radius:2px;
+  border:1px solid rgba(255,212,59,.18)}
+.mp .mp-n{font-size:11px;font-weight:800;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp .mp-s{grid-column:2;font-size:8.5px;color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mp .mp-f{grid-column:3;grid-row:1/3;font-size:8.5px;font-weight:800;color:var(--tx-3);white-space:nowrap}
+.mp.up{border-color:rgba(55,224,122,.40)} .mp.up .mp-f{color:var(--pos)}
+.mp.dn{border-color:rgba(255,90,77,.34)}  .mp.dn .mp-f{color:var(--neg)}
+.mp[aria-pressed="true"]{border-color:var(--gold-hi);
+  background:linear-gradient(180deg,rgba(255,212,59,.20),rgba(255,180,40,.05));
+  box-shadow:inset 0 0 0 1px rgba(255,212,59,.35),0 0 12px rgba(255,196,60,.28)}
+.mp[aria-pressed="true"] .mp-n{color:var(--gold-hi)}
 </style>
 </head>
 <body>
@@ -1089,21 +1119,21 @@ const DIFFS = {
 
 // ---- 台カタログ(架空機種) ----
 const CATALOG = [
-  { id:"p1", type:"P", name:"P海のメルヘン 甘デジ",   price: 400000, pop: 50, decay: 0.8, desc:"癒し系の定番。年配客に強い",
+  { id:"p1", type:"P", name:"P碧海マーメイド 甘デジ",   price: 400000, pop: 50, decay: 0.8, desc:"癒し系の定番。年配客に強い",
     spec:{ denom:99,  rushPct:0.50, firstBalls:300, rushBalls:600,  label:"甘デジ 1/99・RUSH継続50%" } },
   { id:"p2", type:"P", name:"CR大江戸花火絵巻",       price: 520000, pop: 60, decay: 1.0, desc:"爆音花火演出が人気",
     spec:{ denom:199, rushPct:0.55, firstBalls:450, rushBalls:900,  label:"ライトミドル 1/199・RUSH55%" } },
   { id:"p3", type:"P", name:"P戦国プリンセス廻",      price: 700000, pop: 75, decay: 1.3, desc:"若年層に刺さるキャラ機",
     spec:{ denom:199, rushPct:0.60, firstBalls:450, rushBalls:900,  label:"ライトミドル 1/199・RUSH60%" } },
-  { id:"p4", type:"P", name:"P新世紀インパクト",      price: 950000, pop: 92, decay: 1.5, desc:"版権最強クラスの集客力",
+  { id:"p4", type:"P", name:"P閃光インパクト",              price: 950000, pop: 92, decay: 1.5, desc:"版権最強クラスの集客力",
     spec:{ denom:319, rushPct:0.70, firstBalls:450, rushBalls:1500, label:"ミドル 1/319・RUSH70%" } },
   { id:"p5", type:"P", name:"P究極神威ゴッドラッシュ", price:1250000, pop:108, decay: 1.8, desc:"超高継続RUSH搭載の話題作",
     spec:{ denom:319, rushPct:0.80, firstBalls:450, rushBalls:1500, label:"ミドル 1/319・RUSH80%" } },
-  { id:"s1", type:"S", name:"Sラッキーピエロ",        price: 450000, pop: 62, decay: 0.4, desc:"安定人気の完全告知機。枯れない",
+  { id:"s1", type:"S", name:"S七福クローバー",        price: 450000, pop: 62, decay: 0.4, desc:"安定人気の完全告知機。枯れない",
     spec:{ big1:273, big6:134, reg1:439, reg6:163, bigPay:252, regPay:96,  label:"Aタイプ・完全告知ランプ" } },
-  { id:"s2", type:"S", name:"S押忍!漢気番長",         price: 620000, pop: 72, decay: 1.1, desc:"出玉トリガーの伝統芸",
-    spec:{ big1:299, big6:155, reg1:500, reg6:200, bigPay:300, regPay:100, label:"AT機・番長ボーナス搭載" } },
-  { id:"s3", type:"S", name:"S忍烈伝〜朧の章〜",      price: 820000, pop: 86, decay: 1.4, desc:"継続率モノの金字塔",
+  { id:"s2", type:"S", name:"S怒濤!鬼瓦大将",         price: 620000, pop: 72, decay: 1.1, desc:"出玉トリガーの伝統芸",
+    spec:{ big1:299, big6:155, reg1:500, reg6:200, bigPay:300, regPay:100, label:"AT機・大将ボーナス搭載" } },
+  { id:"s3", type:"S", name:"S忍烈伝〜幻影の章〜",      price: 820000, pop: 86, decay: 1.4, desc:"継続率モノの金字塔",
     spec:{ big1:399, big6:199, reg1:600, reg6:300, bigPay:350, regPay:120, label:"AT機・継続率タイプ" } },
   { id:"s4", type:"S", name:"S黄金神話クロニクル",    price:1100000, pop:100, decay: 1.6, desc:"一撃万枚の夢がある",
     spec:{ big1:450, big6:220, reg1:650, reg6:320, bigPay:400, regPay:130, label:"AT機・一撃性能特化" } },
@@ -1124,10 +1154,10 @@ const ADS = [
 
 // 週替わりトレンド
 const TRENDS = [
-  { name:"レトロ海物語ブーム", ids:["p1","p2"] },
+  { name:"レトロ甘デジ回帰",   ids:["p1","p2"] },
   { name:"キャラ機ブーム",     ids:["p3"] },
   { name:"アニメ版権ブーム",   ids:["p4","p5"] },
-  { name:"ジャグ連フィーバー", ids:["s1"] },
+  { name:"告知ランプ回帰",     ids:["s1"] },
   { name:"6号機AT再評価",     ids:["s2","s3"] },
   { name:"スマスロブーム",     ids:["s4","s5"] },
   { name:"ブームなし",         ids:[] },
@@ -1855,13 +1885,16 @@ const ACH_EX = [
   // ---- 全国 ----
   { id:"ex-rg-1st",  name:"県外進出",         desc:"初めて他の地方に支店を出した", g:"全国" },
   { id:"ex-rg-top",  name:"地域一番店",       desc:"初めて地方を制圧した", g:"全国" },
-  { id:"ex-rg-home", name:"地元の覇者",       desc:"本店のある中部を制圧した", g:"全国" },
+  { id:"ex-rg-home", name:"地元の覇者",       desc:"本店のある東海を制圧した", g:"全国" },
   { id:"ex-rg-3",    name:"三国志",           desc:"3地方を同時に制圧した", g:"全国" },
-  { id:"ex-rg-kan",  name:"激戦区を獲る",     desc:"最大の激戦区・関東を制圧した", g:"全国" },
+  { id:"ex-rg-8",    name:"半分は俺のもの",   desc:"8地方を同時に制圧した", g:"全国" },
+  { id:"ex-rg-kan",  name:"激戦区を獲る",     desc:"最大の激戦区・東京を制圧した", g:"全国" },
+  { id:"ex-rg-ew",   name:"東西二強",         desc:"東京と近畿を同時に制圧した", g:"全国" },
+  { id:"ex-rg-ns",   name:"日本縦断",         desc:"北海道と沖縄を同時に制圧した", g:"全国" },
   { id:"ex-rg-chain",name:"全国チェーン",     desc:"支店を5店舗まで増やした", g:"全国" },
   { id:"ex-rg-mega", name:"大型店",           desc:"60台の支店を作った", g:"全国" },
   { id:"ex-rg-fit",  name:"土地を読む",       desc:"客層と一致した構成の支店で一番店を獲った", g:"全国" },
-  { id:"ex-rg-nation",name:"全国制覇",        desc:"8地方すべてを同時に制圧した", g:"全国" },
+  { id:"ex-rg-nation",name:"全国制覇",        desc:"15地方すべてを同時に制圧した", g:"全国" },
 ];
 const ALL_ACH_COUNT = () => ACHIEVEMENTS.length + ACH_EX.length;
 
@@ -1975,8 +2008,11 @@ function checkAchEx(ctx) {
     if (g2.br.some(b => b.n >= 60)) G("ex-rg-mega");
     if (ctrl.length >= 1) G("ex-rg-top");
     if (ctrl.length >= 3) G("ex-rg-3");
+    if (ctrl.length >= 8) G("ex-rg-8");
     if (g2.ctrl[RG_HOME]) G("ex-rg-home");
-    if (g2.ctrl.kan) G("ex-rg-kan");
+    if (g2.ctrl.tky) G("ex-rg-kan");
+    if (g2.ctrl.tky && g2.ctrl.kin) G("ex-rg-ew");
+    if (g2.ctrl.hok && g2.ctrl.oki) G("ex-rg-ns");
     if (g2.br.some(b => g2.ctrl[b.a] && rgFit(b.tp, regionOf(b.a)) === 1)) G("ex-rg-fit");
     if (g2.done) G("ex-rg-nation");
   }
@@ -2498,38 +2534,70 @@ function renderAll() {
    すべての状態は state.ex.rg 配下に隔離し、本店の日次計算は素通しする。
    ========================================================================== */
 
-/* 8地方。pop=人口規模, rent=地代係数, taste=好まれる機種構成, rival=競合の強さ(1-5) */
+/* 15地方。それぞれに 人口 / 地代 / 競合 / 得意機種 / 苦手機種 /
+   常連の固さ / 行政の厳しさ を持たせてある。like・hate は CATALOG の機種ID。
+   店名・機種名はすべて架空。実在のホール名・機種名は使用していない。 */
 const REGIONS = [
-  { id:"hok", name:"北海道",    gc:3, gr:1, pop:0.75, rent:0.75, taste:"S",   rival:2, adj:["toh"],
-    tag:"雪と一発台",   note:"人口は少ないが客の熱量は高い。冬場は客足が読みづらく、当たれば一気に伸びる。" },
-  { id:"toh", name:"東北",      gc:2, gr:2, pop:0.85, rent:0.80, taste:"P",   rival:2, adj:["hok","kan","chu"],
-    tag:"常連が固い",   note:"派手さはないが、一度掴んだ客は簡単には離れない。海物語系の甘デジが根強い。" },
-  { id:"kan", name:"関東",      gc:3, gr:3, pop:1.35, rent:1.50, taste:"S",   rival:5, adj:["toh","chu"],
-    tag:"最大にして激戦", note:"人口最大にして競合最強。地代も家賃も跳ね上がる。ここを獲れば全国が見える。" },
-  { id:"chu", name:"中部",      gc:2, gr:3, pop:1.05, rent:1.00, taste:"bal", rival:3, adj:["toh","kan","kin"],
-    tag:"堅実",         note:"極端を嫌う土地柄。P・Sをバランスよく置いた店が長く生き残る。あなたの地元。" },
-  { id:"kin", name:"近畿",      gc:2, gr:4, pop:1.20, rent:1.25, taste:"S",   rival:4, adj:["chu","cgk"],
-    tag:"目が肥えている", note:"客の見る目が厳しい。渋い営業は初日でバレて、翌日から誰も来なくなる。" },
-  { id:"cgk", name:"中国・四国", gc:1, gr:4, pop:0.85, rent:0.80, taste:"P",   rival:2, adj:["kin","kyu"],
-    tag:"のんびり",     note:"回転は遅いが地代が安い。全国展開の足がかりにちょうどいい。" },
-  { id:"kyu", name:"九州",      gc:1, gr:5, pop:1.00, rent:0.90, taste:"S",   rival:3, adj:["cgk","oki"],
-    tag:"博打気質",     note:"荒れる台ほど支持される土地。丸く収めようとすると逆に客が離れる。" },
-  { id:"oki", name:"沖縄",      gc:1, gr:6, pop:0.70, rent:0.70, taste:"P",   rival:1, adj:["kyu"],
-    tag:"独自の島文化", note:"沖スロ文化が根づく。規模は小さく競合も弱い。最初の一歩に向く。" },
+  { id:"hok", name:"北海道",   gc:4, gr:1, pop:0.70, rent:0.72, rival:2, loyal:1.15, strict:0.90,
+    like:["s4","p5"], hate:["p1"], spec:"一撃性能とミドルの夢", adj:["kta"],
+    tag:"一発の夢", note:"冬は客足が読めないが、当たったときの熱量は全国一。一撃で夢を見せる台に金が集まる。甘デジは物足りないと敬遠される。" },
+  { id:"kta", name:"北東北",   gc:3, gr:2, pop:0.62, rent:0.68, rival:1, loyal:1.30, strict:0.85,
+    like:["s1","p1"], hate:["s5"], spec:"ノーマルAタイプと甘デジ", adj:["hok","mta"],
+    tag:"告知ランプの聖地", note:"派手なAT機より、毎日光るのを待つ完全告知のAタイプが根づいている。一度掴んだ客は何年も通う。" },
+  { id:"mta", name:"南東北",   gc:3, gr:3, pop:0.85, rent:0.80, rival:2, loyal:1.10, strict:0.95,
+    like:["s2","p2"], hate:[], spec:"出玉トリガー系とライトミドル", adj:["kta","kkt","kss"],
+    tag:"手堅い", note:"極端に走らない土地柄。ボーナストリガー型のスロットと、当たりの軽いパチンコが安定して回る。" },
+  { id:"kkt", name:"北関東",   gc:3, gr:4, pop:1.00, rent:0.95, rival:3, loyal:0.95, strict:1.00,
+    like:["p4","s3"], hate:["p1"], spec:"版権ミドルと継続率AT", adj:["mta","kss","tky"],
+    tag:"車社会の大型店", note:"駐車場の広い郊外型が主戦場。遠征前提なので、わざわざ来る価値のある看板機種が要る。" },
+  { id:"kss", name:"甲信越",   gc:2, gr:4, pop:0.72, rent:0.75, rival:2, loyal:1.20, strict:0.90,
+    like:["s1","p2"], hate:["s5"], spec:"低投資で長く遊べる台", adj:["mta","kkt","hrk","tka"],
+    tag:"農閑期に賑わう", note:"季節で客足が大きく動く。長時間まったり遊べる台が好まれ、高レート高純増は敬遠されがち。" },
+  { id:"tky", name:"東京",     gc:3, gr:5, pop:1.45, rent:1.75, rival:5, loyal:0.70, strict:1.30,
+    like:["s5","p5"], hate:["p1","s1"], spec:"最新スマスロと高継続ミドル", adj:["kkt","skt","tka"],
+    tag:"日本最大の激戦区", note:"人口も競合も家賃も全国最高。客は移り気で、少しでも渋ければ翌日には隣の店に流れる。ここを獲れば全国が見える。" },
+  { id:"skt", name:"南関東",   gc:4, gr:5, pop:1.30, rent:1.45, rival:4, loyal:0.85, strict:1.15,
+    like:["s3","p3"], hate:[], spec:"キャラ機と継続率AT", adj:["tky","tka"],
+    tag:"ベッドタウン", note:"帰宅前に寄る客が主力。夜の短時間で勝負がつく台が回る。人口は多いが東京に客を吸われやすい。" },
+  { id:"hrk", name:"北陸",     gc:2, gr:5, pop:0.70, rent:0.74, rival:2, loyal:1.25, strict:0.88,
+    like:["s2","s1"], hate:["p5"], spec:"我慢して打つスロット", adj:["kss","kin","tka"],
+    tag:"粘り強い", note:"雪の季節はホールが生活の一部になる。腰を据えて打つ客が多く、荒い台より積み上げ型が支持される。" },
+  { id:"tka", name:"東海",     gc:3, gr:6, pop:1.05, rent:1.00, rival:3, loyal:1.00, strict:1.00,
+    like:["p2","s2"], hate:[], spec:"P・Sをバランスよく", adj:["kss","tky","skt","hrk","kin"],
+    tag:"あなたの地元", note:"極端を嫌う土地柄。パチンコとスロットをバランスよく置いた店が長く生き残る。全国進出の起点。" },
+  { id:"kin", name:"近畿",     gc:2, gr:6, pop:1.25, rent:1.30, rival:4, loyal:0.80, strict:1.20,
+    like:["s5","s4"], hate:["p1"], spec:"高純増ATと一撃機", adj:["hrk","tka","sny","sik"],
+    tag:"目が肥えている", note:"客の見る目が厳しく、渋い営業は初日でバレる。数字で殴られるので、出すときは徹底的に出さないと通用しない。" },
+  { id:"sny", name:"山陰・山陽", gc:1, gr:6, pop:0.80, rent:0.78, rival:2, loyal:1.15, strict:0.92,
+    like:["p1","p2"], hate:["s5"], spec:"甘デジとライトミドル", adj:["kin","sik","kyn"],
+    tag:"のんびり", note:"回転は遅いが地代が安く、腰を据えた経営がしやすい。当たりの軽いパチンコが主役の土地。" },
+  { id:"sik", name:"四国",     gc:2, gr:7, pop:0.62, rent:0.70, rival:1, loyal:1.20, strict:0.88,
+    like:["p1","s1"], hate:["p5"], spec:"甘デジとAタイプ", adj:["kin","sny","kyn"],
+    tag:"小さくても濃い", note:"店の数は少なく、地元客との距離が近い。手堅い台を大事に回す店が愛される。最初の一歩に向く。" },
+  { id:"kyn", name:"九州北部", gc:1, gr:7, pop:1.05, rent:0.92, rival:3, loyal:0.85, strict:1.05,
+    like:["p5","s4"], hate:["p1"], spec:"荒波の高継続機", adj:["sny","sik","kys","oki"],
+    tag:"博打気質", note:"荒れる台ほど支持される。丸く収めようとすると逆に客が離れていく、勝負に厳しい土地。" },
+  { id:"kys", name:"南九州",   gc:2, gr:8, pop:0.72, rent:0.76, rival:2, loyal:1.05, strict:0.95,
+    like:["s4","s2"], hate:["p2"], spec:"一撃と出玉トリガー", adj:["kyn","oki"],
+    tag:"熱いが小規模", note:"規模は大きくないが客の熱は九州北部ゆずり。出玉で語る店だけが残る。" },
+  { id:"oki", name:"沖縄",     gc:1, gr:8, pop:0.60, rent:0.66, rival:1, loyal:1.30, strict:0.82,
+    like:["s1"], hate:["s5","p4"], spec:"完全告知のAタイプ一色", adj:["kyn","kys"],
+    tag:"独自の島文化", note:"完全告知のAタイプが文化として根づいており、最新スマスロや版権ミドルはほとんど支持されない。規模は小さいが競合も弱い。" },
 ];
-const RG_HOME = "chu";
+const RG_HOME = "tka";
 const regionOf = id => REGIONS.find(r => r.id === id) || null;
 
-/* ライバル店の名前素材(地方ごとの都市名 × チェーン名) */
+/* ライバルホール名。すべて架空の造語 + 都市名。実在チェーン名は使用していない。 */
 const RIV_CITY = {
-  hok:["札幌","旭川","函館"], toh:["仙台","郡山","盛岡"], kan:["池袋","横浜","大宮"],
-  chu:["名古屋","静岡","金沢"], kin:["難波","京都","神戸"], cgk:["広島","岡山","高松"],
-  kyu:["博多","熊本","鹿児島"], oki:["那覇","北谷","名護"],
+  hok:["札幌","旭川","函館"], kta:["青森","盛岡","秋田"], mta:["仙台","郡山","山形"],
+  kkt:["宇都宮","高崎","水戸"], kss:["長野","新潟","甲府"], tky:["城東","城西","多摩"],
+  skt:["川崎","船橋","大宮"], hrk:["金沢","富山","福井"], tka:["名古屋","静岡","岐阜"],
+  kin:["難波","京都","神戸"], sny:["広島","岡山","松江"], sik:["高松","松山","徳島"],
+  kyn:["博多","北九州","熊本"], kys:["鹿児島","宮崎","都城"], oki:["那覇","名護","石垣"],
 };
-const RIV_CHAIN = ["エンペラー","ベガス","ダイヤモンド","グランデ","タイタン","クラウン","ミラージュ","オーシャン"];
+const RIV_CHAIN = ["金獅子会館","蒼龍座","紅鳳堂","黒鯨苑","銀狼閣","白麒麟亭","雷虎館","玄武堂",
+                   "朱雀苑","飛鷹座","大鵬堂","双牙閣","碧海亭","昇竜苑","天狼館"];
 
-const TASTE_LABEL = { P:"パチンコ好き", S:"スロッター気質", bal:"バランス型" };
-const TP_LABEL = { P:"パチンコ主体", S:"スロット主体", bal:"バランス構成" };
 const POL_LABEL = { 1:"全回収", 2:"回収寄り", 3:"標準", 4:"放出寄り", 5:"全開放" };
 const POL_MARGIN = { 1:0.26, 2:0.23, 3:0.20, 4:0.165, 5:0.13 };
 const POL_REPTGT = { 1:18, 2:35, 3:55, 4:75, 5:90 };
@@ -2567,7 +2635,8 @@ function rgState() {
     .map(b => ({
       a: b.a,
       n: Math.floor(num(b.n, 20, 20, 60) / 20) * 20,
-      tp: (b.tp === "P" || b.tp === "S") ? b.tp : "bal",
+      mid: CATALOG.some(c => c.id === b.mid) ? b.mid
+         : (b.tp === "P" ? "p2" : b.tp === "S" ? "s2" : "p2"),   // 旧セーブ(機種構成P/S/bal)からの移行
       pol: Math.floor(num(b.pol, 3, 1, 5)),
       mgr: b.mgr === true,
       rep: num(b.rep, 40, 0, 100),
@@ -2621,26 +2690,34 @@ function rgUnlocked() { return state.day >= 15 || totalAssets() >= 20000000; }
 
 /* ---------- スコア(集客力) ---------- */
 function rgBranch(a) { return rgState().br.find(b => b.a === a) || null; }
-function rgFit(tp, R) { return tp === R.taste ? 1 : (R.taste === "bal" || tp === "bal") ? 0 : -1; }
+/* 主力機種とその地方の相性。+1 = 得意機種 / -1 = 苦手機種 / 0 = ふつう */
+function rgFit(mid, R) { return R.like.includes(mid) ? 1 : R.hate.includes(mid) ? -1 : 0; }
+const midName = mid => { const c = CATALOG.find(x => x.id === mid); return c ? c.name : "―"; };
+const midSpec = mid => { const c = CATALOG.find(x => x.id === mid); return c ? c.spec.label : ""; };
+const FIT_LABEL = { 1:"得意機種", 0:"ふつう", "-1":"苦手機種" };
 
 /* あなたのそのエリアでの集客力。支店がなければ null */
 /* 集客力の配点。評判に最大の重みを置いてあるので、渋い営業では territory は守れない。
    台数は効くが単体では足りず、関東のような激戦区は「周りを固めてから」でないと届かない。 */
-const SC_N = 0.45, SC_REP = 1.15, SC_FIT = 9, SC_MGR = 6, SC_FAME = 3, SC_FAME_MAX = 18;
+const SC_N = 0.45, SC_REP = 1.15, SC_FIT_UP = 12, SC_FIT_DN = 10, SC_MGR = 6,
+      SC_FAME = 3, SC_FAME_MAX = 18, SC_HOLD = 12;
+const fitScore = f => f > 0 ? SC_FIT_UP : f < 0 ? -SC_FIT_DN : 0;
 function rgFame(a) {
   const g = rgState();
   return Math.min(SC_FAME_MAX, SC_FAME * Object.keys(g.ctrl).filter(k => k !== a).length);
 }
+/* 一番店の看板そのものが集客力になる(防衛側の有利)。獲るのは難しく、守るのは少し楽。 */
+const rgHold = a => (rgState().ctrl[a] ? SC_HOLD : 0);
 function rgMyScore(a) {
   const R = regionOf(a); if (!R) return null;
   if (a === RG_HOME) {
     const n = state.machines.length;
     if (!n) return null;
-    return Math.round((n * SC_N + state.rep * SC_REP + Math.min(22, state.regulars / 11) + rgFame(a)) * 10) / 10;
+    return Math.round((n * SC_N + state.rep * SC_REP + Math.min(22, state.regulars / 11) + rgFame(a) + rgHold(a)) * 10) / 10;
   }
   const b = rgBranch(a); if (!b) return null;
-  const fit = rgFit(b.tp, R);
-  return Math.round((b.n * SC_N + b.rep * SC_REP + fit * SC_FIT + (b.mgr ? SC_MGR : 0) + rgFame(a)) * 10) / 10;
+  const fit = rgFit(b.mid, R);
+  return Math.round((b.n * SC_N + b.rep * SC_REP + fitScore(fit) + (b.mgr ? SC_MGR : 0) + rgFame(a) + rgHold(a)) * 10) / 10;
 }
 
 /* 順位表: [{nm, sc, me}] を降順で */
@@ -2669,8 +2746,8 @@ const rgSellBack = (R, b) => Math.round(rgOpenCost(R, b.n) * 0.4);
 /* ---------- 支店の日次損益 ---------- */
 function rgBranchNet(b) {
   const R = regionOf(b.a); if (!R) return 0;
-  const fit = rgFit(b.tp, R);
-  const occ = (0.30 + (b.rep / 100) * 0.62) * R.pop * (1 + fit * 0.11);
+  const fit = rgFit(b.mid, R);
+  const occ = (0.30 + (b.rep / 100) * 0.62) * R.pop * (fit > 0 ? 1.12 : fit < 0 ? 0.92 : 1);
   const sales = b.n * 140000 * occ;
   const gross = sales * POL_MARGIN[b.pol];
   const cost = b.n * 4200 * R.rent + 120000 * R.rent + (b.mgr ? 100000 : 0);
@@ -2688,11 +2765,22 @@ function rgDay(rec) {
   const notes = [];
   let total = 0;
 
-  // 1. 支店の評判が方針に寄っていく
+  // 1. 支店の評判が方針に寄っていく。常連が固い地方はゆっくり上がり、もっとゆっくり下がる。
+  //    行政が厳しい地方では、渋い営業の評判下限がさらに沈む。
   for (const b of g.br) {
-    const tgt = POL_REPTGT[b.pol];
-    b.rep += (tgt - b.rep) * (b.mgr ? 0.10 : 0.07);
+    const R = regionOf(b.a); if (!R) continue;
+    let tgt = POL_REPTGT[b.pol];
+    if (b.pol <= 2) tgt = Math.max(0, tgt - (R.strict - 1) * 30);
+    const up = tgt > b.rep;
+    const spd = (b.mgr ? 0.10 : 0.07) / (R.loyal * (up ? 1 : 1.4));
+    b.rep += (tgt - b.rep) * Math.min(0.5, spd);
     b.rep = Math.max(0, Math.min(100, b.rep));
+    // 渋い営業を続けると行政指導が飛んでくる(厳しい地方ほど頻繁)
+    if (b.pol <= 2 && Math.random() < 0.018 * R.strict * (b.pol === 1 ? 1.6 : 1)) {
+      const fine = b.n * 15000;
+      state.money -= fine; b.cash -= fine; b.rep = Math.max(0, b.rep - 6);
+      notes.push(`🚨 ${R.name}支店に行政指導。罰金${yen(fine)}、評判も下がった…`);
+    }
   }
   // 2. 支店の損益
   for (const b of g.br) {
@@ -2757,7 +2845,7 @@ function rgDay(rec) {
   // 6. 全国制覇
   if (!g.done && rgCtrlCount() >= REGIONS.length) {
     g.done = true; g.doneDay = state.day;
-    notes.push("👑 全国制覇!!北海道から沖縄まで、すべての地方であなたの店が一番店になった。");
+    notes.push("👑 全国制覇!!北海道から沖縄まで、15地方すべてであなたの店が一番店になった。");
   }
 
   g.hist.unshift({ day: rec.day, net: total });
@@ -2788,7 +2876,7 @@ function renderMap() {
   if ($("mapBar")) $("mapBar").style.width = Math.round((n / REGIONS.length) * 100) + "%";
   if ($("mapLead")) {
     $("mapLead").textContent = g.done
-      ? "全国制覇達成。すべての地方があなたの看板を掲げている。"
+      ? "全国制覇達成。北海道から沖縄まで、すべての地方があなたの看板を掲げている。"
       : n === 0
         ? "地元と隣り合う地方から支店を出し、5日連続で一番店を守れば制圧できる。"
         : `${n}地方を制圧中。制圧エリアが増えるほどチェーン相乗効果で全支店の利益が伸びる(現在 +${n * 3}%)。`;
@@ -2796,7 +2884,7 @@ function renderMap() {
   w.innerHTML = REGIONS.map(R => {
     const st = rgStatusOf(R.id), b = rgBranch(R.id), rank = rgRanking(R.id);
     const myPos = rank.findIndex(x => x.me);
-    const sub = st === "lock" ? "隣接エリアを取れ"
+    const sub = st === "lock" ? "隣接を取れ"
       : myPos >= 0 ? `${myPos + 1}位 / ${rank.length}店`
       : `競合${R.rival}軒`;
     return `<button class="mt ${st}" data-rg="${R.id}" style="grid-column:${R.gc};grid-row:${R.gr}">
@@ -2816,7 +2904,7 @@ function renderMap() {
         const R = regionOf(b.a);
         return `<button class="brw" data-rg="${b.a}">
           <span class="brw-a">${g.ctrl[b.a] ? ic("crown") : ic("flag")}${esc(R.name)}</span>
-          <span class="brw-m">${b.n}台 ・ ${esc(POL_LABEL[b.pol])} ・ 評判${Math.round(b.rep)}</span>
+          <span class="brw-m">${b.n}台 ・ ${esc(midName(b.mid))} ・ ${esc(POL_LABEL[b.pol])} ・ 評判${Math.round(b.rep)}</span>
           <span class="brw-n ${b.net >= 0 ? "pos" : "neg"}">${sign(b.net)}</span>
         </button>`;
       }).join("");
@@ -2824,7 +2912,7 @@ function renderMap() {
 }
 
 /* ---------- エリア詳細シート ---------- */
-let rgDraft = { n: 20, tp: "bal" };
+let rgDraft = { n: 20, mid: "p2" };
 
 function rgBar(v, max, cls) {
   const p = Math.max(0, Math.min(100, (v / max) * 100));
@@ -2838,10 +2926,16 @@ function openRegion(a) {
   const mx = Math.max(60, ...rank.map(r => r.sc));
 
   const traits = `<div class="rg-tr">
-    <div><span class="k">人口 (関東=100)</span>${rgBar(R.pop, 1.4)}<b>${(R.pop * 100 / 1.35).toFixed(0)}</b></div>
+    <div><span class="k">人口 (東京=100)</span>${rgBar(R.pop, 1.5)}<b>${(R.pop * 100 / 1.45).toFixed(0)}</b></div>
     <div><span class="k">地代・家賃</span>${rgBar(R.rent, 1.55, "warn")}<b>${R.rent.toFixed(2)}倍</b></div>
     <div><span class="k">競合の厚み</span>${rgBar(R.rival, 5, "warn")}<b>${R.rival} / 5</b></div>
-    <div><span class="k">客層</span><b class="tastev">${esc(TASTE_LABEL[R.taste])}</b></div>
+    <div><span class="k">常連の固さ</span>${rgBar(R.loyal, 1.35)}<b>${R.loyal >= 1.2 ? "とても固い" : R.loyal >= 1.05 ? "固い" : R.loyal >= 0.9 ? "ふつう" : "移り気"}</b></div>
+    <div><span class="k">行政の厳しさ</span>${rgBar(R.strict, 1.35, "warn")}<b>${R.strict >= 1.2 ? "厳しい" : R.strict >= 1.0 ? "ふつう" : "ゆるい"}</b></div>
+  </div>
+  <div class="rg-taste">
+    <div class="tl"><span class="lb up">得意</span>${R.like.map(m => `<b>${esc(midName(m))}</b>`).join("")}</div>
+    ${R.hate.length ? `<div class="tl"><span class="lb dn">苦手</span>${R.hate.map(m => `<b>${esc(midName(m))}</b>`).join("")}</div>` : ""}
+    <div class="tl"><span class="lb">傾向</span><i>${esc(R.spec)}</i></div>
   </div>
   <p class="note">${esc(R.note)}</p>`;
 
@@ -2869,7 +2963,9 @@ function openRegion(a) {
     body = `${traits}
       <h4 class="rg-h">${ic("flag")}支店の状況</h4>
       <div class="bd">
-        <span class="k">規模</span><span class="v">${b.n}台 (${esc(TP_LABEL[b.tp])})</span>
+        <span class="k">規模</span><span class="v">${b.n}台</span>
+        <span class="k">主力機種</span><span class="v">${esc(midName(b.mid))}</span>
+        <span class="k s">機種の相性</span><span class="v s ${rgFit(b.mid, R) > 0 ? "pos" : rgFit(b.mid, R) < 0 ? "neg" : ""}">${FIT_LABEL[rgFit(b.mid, R)]} (集客力 ${fitScore(rgFit(b.mid, R)) >= 0 ? "+" : ""}${fitScore(rgFit(b.mid, R))})</span>
         <span class="k">支店の評判</span><span class="v">${Math.round(b.rep)} / 100</span>
         <span class="k">前日損益</span>${b.since >= state.day ? '<span class="v">— (明日から営業)</span>' : `<span class="v ${net >= 0 ? "pos" : "neg"}">${sign(net)}</span>`}
         <span class="k">累計損益</span><span class="v ${b.cash >= 0 ? "pos" : "neg"}">${sign(b.cash)}</span>
@@ -2886,12 +2982,22 @@ function openRegion(a) {
         <button class="btn" data-rgadd="${a}" ${canAdd ? "" : "disabled"}>${canAdd ? `+20台 増床 ${yenShort(addCost)}` : "60台(上限)"}</button>
       </div>
       <p class="note">敏腕店長: 日給¥100,000。評判の立ち上がりが速くなり、集客力に+6。</p>
+      <h4 class="rg-h">${ic("slot")}主力機種の入れ替え</h4>
+      <div class="midpick">${CATALOG.map(c => {
+        const f = rgFit(c.id, R);
+        return `<button type="button" class="mp ${f > 0 ? "up" : f < 0 ? "dn" : ""}" data-rgmid="${a}:${c.id}" aria-pressed="${b.mid === c.id}">
+          <img src="${artOf(c.id)}" alt="" decoding="async" loading="lazy">
+          <span class="mp-n">${esc(c.name)}</span><span class="mp-s">${esc(c.spec.label)}</span>
+          <span class="mp-f">${f > 0 ? "得意 +12" : f < 0 ? "苦手 −10" : "±0"}</span>
+        </button>`;
+      }).join("")}</div>
+      <p class="note">入れ替え費用は台数に応じて発生し、支店の評判は少し下がる(客が慣れるまでの空白期間)。</p>
       <h4 class="rg-h">${ic("target")}一番店争い</h4>${rankHtml}
       <p class="note">${g.ctrl[a]
         ? `制圧中(${state.day - g.ctrl[a]}日目)。首位を${RG_LOSE_DAYS}日連続で明け渡すと制圧は解ける。`
         : rgIsTop(a)
           ? `現在1位。あと${RG_WIN_DAYS - (g.win[a] || 0)}日守れば制圧。`
-          : "1位を5日連続で守ると制圧。集客力は<b>評判が最重要</b>で、台数・客層の相性・店長・他エリアの制圧数が積み上がる。"}</p>
+          : "1位を5日連続で守ると制圧。集客力は<b>評判が最重要</b>で、台数・機種の相性・店長・他エリアの制圧数が積み上がる。制圧すると一番店の看板そのものが集客力+12になり、守るのは少し楽になる。"}</p>
       <button class="btn red wide" style="margin-top:8px" data-rgclose="${a}">この支店を撤退する (${yenShort(rgSellBack(R2, b))} 回収)</button>`;
   } else if (st === "open") {
     const cost = rgOpenCost(R, rgDraft.n);
@@ -2902,11 +3008,17 @@ function openRegion(a) {
       <div class="rg-opt"><span class="k">規模</span>
         <div class="seg">${[20,40,60].map(v => `<button type="button" data-rgn="${v}" aria-pressed="${rgDraft.n === v}">${v}台</button>`).join("")}</div>
       </div>
-      <div class="rg-opt"><span class="k">機種構成</span>
-        <div class="seg">${["P","bal","S"].map(v => `<button type="button" data-rgtp="${v}" aria-pressed="${rgDraft.tp === v}">${v === "bal" ? "バランス" : v === "P" ? "パチンコ" : "スロット"}</button>`).join("")}</div>
-      </div>
-      <p class="note">この地方の客層は <b style="color:var(--gold)">${esc(TASTE_LABEL[R.taste])}</b>。
-      ${R.taste === "bal" ? "どの構成でも大きな有利不利はない。" : `<b>${esc(TP_LABEL[R.taste])}</b>で出せば集客力+9、真逆の構成だと−9。`}</p>
+      <div class="rg-opt"><span class="k">主力機種</span><b class="midcur">${esc(midName(rgDraft.mid))}</b></div>
+      <div class="midpick">${CATALOG.map(c => {
+        const f = rgFit(c.id, R);
+        return `<button type="button" class="mp ${f > 0 ? "up" : f < 0 ? "dn" : ""}" data-rgmid="${a}:${c.id}" aria-pressed="${rgDraft.mid === c.id}">
+          <img src="${artOf(c.id)}" alt="" decoding="async" loading="lazy">
+          <span class="mp-n">${esc(c.name)}</span><span class="mp-s">${esc(c.spec.label)}</span>
+          <span class="mp-f">${f > 0 ? "得意 +12" : f < 0 ? "苦手 −10" : "±0"}</span>
+        </button>`;
+      }).join("")}</div>
+      <p class="note">この地方が好むのは <b style="color:var(--gold)">${esc(R.spec)}</b>。
+      得意機種を主力に据えれば集客力+12・稼働+12%、苦手機種だと−10・稼働−8%。</p>
       <div class="bd" style="margin-top:6px">
         <span class="k">出店費用</span><span class="v ${afford ? "" : "neg"}">${yen(cost)}</span>
         <span class="k">所持資金</span><span class="v">${yen(state.money)}</span>
@@ -2929,7 +3041,7 @@ function rgOpen(a) {
   const cost = rgOpenCost(R, rgDraft.n);
   if (state.money < cost) return;
   state.money -= cost;
-  rgState().br.push({ a, n: rgDraft.n, tp: rgDraft.tp, pol: 3, mgr: false, rep: 40, since: state.day, net: 0, cash: -cost });
+  rgState().br.push({ a, n: rgDraft.n, mid: rgDraft.mid, pol: 3, mgr: false, rep: 40, since: state.day, net: 0, cash: -cost });
   save(); checkAchEx(); renderAll();
   toast(`${R.name}に${rgDraft.n}台の支店を出した`);
   openRegion(a);
@@ -2959,6 +3071,21 @@ function rgMgr(a) {
   b.mgr = true; save(); renderAll(); openRegion(a);
   toast("敏腕店長を配属した");
 }
+const rgMidCost = (R, b) => Math.round(b.n * 90000 * R.rent);
+function rgMid(a, mid) {
+  if (isDead()) return;
+  const R = regionOf(a); if (!R || !CATALOG.some(c => c.id === mid)) return;
+  const b = rgBranch(a);
+  if (!b) { rgDraft.mid = mid; openRegion(a); return; }   // 進出前は下書きを変えるだけ
+  if (b.mid === mid) return;
+  const cost = rgMidCost(R, b);
+  if (!confirm(`${R.name}支店の主力機種を「${midName(mid)}」に入れ替えますか?\n入れ替え費用 ${yen(cost)}・評判 −8`)) return;
+  if (state.money < cost) { toast("資金が足りません"); return; }
+  state.money -= cost; b.cash -= cost; b.mid = mid;
+  b.rep = Math.max(0, b.rep - 8);
+  save(); checkAchEx(); renderAll(); openRegion(a);
+  toast(`${R.name}支店の主力を入れ替えた`);
+}
 function rgPol(a, v) {
   if (isDead()) return;
   const b = rgBranch(a); if (!b || !(v >= 1 && v <= 5)) return;
@@ -2969,11 +3096,11 @@ function rgPol(a, v) {
 function rgShowUnlock() {
   showModal(`${mh("map", "全国進出 解禁", true)}
     <div class="mb">
-      <p class="note" style="font-size:12px;color:var(--tx-2)">地元・中部で店が回り始めた。銀行も他県への出店に首を縦に振るようになった。</p>
+      <p class="note" style="font-size:12px;color:var(--tx-2)">地元・東海で店が回り始めた。銀行も他県への出店に首を縦に振るようになった。</p>
       <div class="rg-unlock">
         <div><b>支店を出す</b><span>隣り合う地方に支店を出せる。台数と機種構成を選び、出玉方針で利益と評判の綱引きをする。</span></div>
         <div><b>一番店を獲る</b><span>集客力でその地方の競合を上回り、5日連続で首位を守れば制圧。</span></div>
-        <div><b>全国制覇</b><span>8地方すべてを同時に制圧すれば全国制覇。制圧数が増えるほど全支店の利益が伸びる。</span></div>
+        <div><b>全国制覇</b><span>15地方すべてを同時に制圧すれば全国制覇。制圧数が増えるほど全支店の利益が伸びる。</span></div>
       </div>
       <div class="rowbtns"><button class="btn gold" data-area="map">全国マップを開く</button></div>
     </div>`);
@@ -3569,7 +3696,7 @@ function showTutorial() {
    操作の結線
    ========================================================================== */
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr]");
+  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid]");
   if (!el) return;
   const d = el.dataset;
 
@@ -3585,6 +3712,7 @@ document.addEventListener("click", e => {
   if (d.rgadd) { rgAdd(d.rgadd); return; }
   if (d.rgmgr) { rgMgr(d.rgmgr); return; }
   if (d.rgpol) { const [a, v] = d.rgpol.split(":"); rgPol(a, Number(v)); return; }
+  if (d.rgmid) { const [a, m] = d.rgmid.split(":"); rgMid(a, m); return; }
 
   if (d.setlist !== undefined) { openSetList(); return; }
   if (d.slsort) { setListSort = d.slsort; renderSetList(); return; }

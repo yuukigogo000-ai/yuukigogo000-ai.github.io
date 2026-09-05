@@ -133,35 +133,51 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     ok('FN 損益推移グラフ', await p.evaluate(() => !!document.querySelector('#chartWrap svg')));
     ok('FN 営業成績一覧', await p.evaluate(() => document.querySelectorAll('#ledgerBody .led').length > 0));
     await p.evaluate(() => setArea('ach')); await p.waitForTimeout(200);
-    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張50件は別グループ)
+    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張53件は別グループ)
     ok('FN 実績一覧', await p.evaluate(() => {
       const rows = [...document.querySelectorAll('#achList .ach')];
       const names = rows.map(e => e.querySelector('.n').textContent);
       const BASE = ['開店初日','日給100万','地域の優良店','常連の店','中堅ホール','巨艦店','1ヶ月経営','特日の神','お上の世話','信用第一','軌道に乗る','パチスロ帝国','初当たり体験','事故連発生','ドル箱タワー'];
-      return rows.length === 65 && BASE.every(n => names.includes(n));
+      return rows.length === 68 && BASE.every(n => names.includes(n));
     }));
     // ---- 全国 / 地方進出 / 国取り ----
     await p.evaluate(() => setArea('map')); await p.waitForTimeout(200);
     ok('FN 全国マップへの到達', await p.evaluate(() => document.getElementById('panel-map').classList.contains('on')));
     ok('FN 5番目のナビ「全国」(解禁後)', await p.evaluate(() => !!document.querySelector('#nav [data-area="map"]')));
-    ok('FN 8地方のタイルが描画される', await p.evaluate(() => document.querySelectorAll('#mapGrid .mt').length === 8));
-    ok('FN 本店エリアが中部として表示される', await p.evaluate(() => {
-      const t = document.querySelector('[data-rg="chu"]');
-      return !!t && /home/.test(t.className) && t.querySelector('.mt-nm').textContent === '中部';
+    ok('FN 15地方のタイルが描画される', await p.evaluate(() => document.querySelectorAll('#mapGrid .mt').length === 15));
+    ok('FN 本店エリアが東海として表示される', await p.evaluate(() => {
+      const t = document.querySelector('[data-rg="tka"]');
+      return !!t && /home/.test(t.className) && t.querySelector('.mt-nm').textContent === '東海';
     }));
-    await p.evaluate(() => document.querySelector('[data-rg="toh"]').click()); await p.waitForTimeout(200);
-    ok('FN エリア詳細シート(進出プラン)', await p.evaluate(() => !!document.querySelector('[data-rgopen="toh"]') && document.querySelectorAll('.rg-rank > div').length === 3));
+    await p.evaluate(() => document.querySelector('[data-rg="hrk"]').click()); await p.waitForTimeout(200);
+    ok('FN エリア詳細シート(進出プラン)', await p.evaluate(() => !!document.querySelector('[data-rgopen="hrk"]') && document.querySelectorAll('.rg-rank > div').length === 3));
+    ok('FN 得意機種・苦手機種が提示される', await p.evaluate(() => {
+      const R = regionOf('hrk');
+      const t = document.querySelector('.rg-taste').textContent;
+      return R.like.every(m => t.includes(CATALOG.find(c => c.id === m).name))
+          && R.hate.every(m => t.includes(CATALOG.find(c => c.id === m).name));
+    }));
+    ok('FN 主力機種ピッカーが全10機種を出す', await p.evaluate(() => document.querySelectorAll('.midpick .mp').length === CATALOG.length));
     const money0 = await p.evaluate(() => state.money);
-    await p.evaluate(() => { rgDraft.n = 40; rgDraft.tp = 'P'; document.querySelector('[data-rgopen="toh"]').click(); });
+    await p.evaluate(() => { rgDraft.n = 40; rgDraft.mid = 's2'; document.querySelector('[data-rgopen="hrk"]').click(); });
     await p.waitForTimeout(250);
-    ok('FN 地方への進出(支店の開設)', await p.evaluate(() => rgState().br.length === 1 && rgState().br[0].a === 'toh' && rgState().br[0].n === 40));
-    ok('FN 出店費用が資金から引かれる', await p.evaluate(m => state.money === m - 10400000, money0));
-    await p.evaluate(() => document.querySelector('[data-rgpol="toh:5"]').click()); await p.waitForTimeout(200);
+    ok('FN 地方への進出(支店の開設)', await p.evaluate(() => rgState().br.length === 1 && rgState().br[0].a === 'hrk' && rgState().br[0].n === 40 && rgState().br[0].mid === 's2'));
+    ok('FN 出店費用が資金から引かれる', await p.evaluate(m => state.money === m - 9620000, money0));
+    ok('FN 得意機種で集客力が上がる', await p.evaluate(() => {
+      const before = rgMyScore('hrk');
+      rgState().br[0].mid = 'p5';           // 北陸の苦手機種
+      const after = rgMyScore('hrk');
+      rgState().br[0].mid = 's2';
+      return before - after === 22;         // +12 → −10
+    }));
+    await p.evaluate(() => document.querySelector('[data-rgpol="hrk:5"]').click()); await p.waitForTimeout(200);
     ok('FN 支店の出玉方針の変更', await p.evaluate(() => rgState().br[0].pol === 5));
-    await p.evaluate(() => document.querySelector('[data-rgmgr="toh"]').click()); await p.waitForTimeout(200);
+    await p.evaluate(() => document.querySelector('[data-rgmgr="hrk"]').click()); await p.waitForTimeout(200);
     ok('FN 敏腕店長の配属', await p.evaluate(() => rgState().br[0].mgr === true));
-    await p.evaluate(() => document.querySelector('[data-rgadd="toh"]').click()); await p.waitForTimeout(200);
+    await p.evaluate(() => document.querySelector('[data-rgadd="hrk"]').click()); await p.waitForTimeout(200);
     ok('FN 支店の増床', await p.evaluate(() => rgState().br[0].n === 60));
+    await p.evaluate(() => { const b = rgState().br[0]; state.money += 1e9; window.confirm = () => true; document.querySelector('[data-rgmid="hrk:s1"]').click(); }); await p.waitForTimeout(200);
+    ok('FN 主力機種の入れ替え', await p.evaluate(() => rgState().br[0].mid === 's1'));
     await p.evaluate(() => closeModal()); await p.waitForTimeout(150);
     await p.click('#nav [data-area="hall"]'); await p.waitForTimeout(150);
     const rgDay0 = await p.evaluate(() => state.money);
@@ -171,13 +187,25 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
       const h = rgState().hist[0];
       return !!h && h.net === rgState().br[0].net;
     }));
+    // 実在のホールチェーン名・実在機種名を一切含まないこと(ライバル店/機種/ブーム/UI文言すべて)
+    ok('FN 実在チェーン名・実在機種名を使っていない', await p.evaluate(() => {
+      const BANNED = ['マルハン','ダイナム','ガイア','エスパス','ベガスベガス','エンペラー','パラッツォ','キコーナ','楽園',
+        'ジャグラー','ジャグ連','ハナハナ','海物語','大海','北斗','エヴァ','新世紀','まどか','バジリスク','朧','沖ドキ',
+        '押忍','番長','転生','リゼロ','ゴジラ','ゴッドイーター','ラッキーピエロ','鉄拳','聖闘士','ミリオンゴッド'];
+      const names = REGIONS.flatMap(R => rgState().riv[R.id].map(r => r.nm))
+        .concat(CATALOG.map(c => c.name), CATALOG.map(c => c.spec.label), TRENDS.map(t => t.name), REGIONS.map(R => R.name));
+      const hitName = names.filter(n => BANNED.some(b => n.includes(b)));
+      const hitCopy = BANNED.filter(b => document.body.innerHTML.includes(b));
+      if (hitName.length || hitCopy.length) console.error('BANNED: ' + hitName.concat(hitCopy).join(','));
+      return hitName.length === 0 && hitCopy.length === 0;
+    }));
     await p.evaluate(() => closeModal()); await p.waitForTimeout(200);
     ok('FN 帳簿に支店損益が出る', await p.evaluate(() => {
       setArea('ledger');
       return document.getElementById('ledRegion').textContent.includes('支店損益');
     }));
     await p.evaluate(() => { const g = rgState(); for (const R of REGIONS) g.ctrl[R.id] = 1; renderAll(); }); await p.waitForTimeout(150);
-    ok('FN 全国制覇の進捗表示', await p.evaluate(() => { setArea('map'); return document.getElementById('mapCount').textContent.trim() === '8 / 8'; }));
+    ok('FN 全国制覇の進捗表示', await p.evaluate(() => { setArea('map'); return document.getElementById('mapCount').textContent.trim() === '15 / 15'; }));
     await p.evaluate(() => { const g = rgState(); for (const R of REGIONS) delete g.ctrl[R.id]; g.br = []; save(true); renderAll(); });
     await p.evaluate(() => setArea('mgmt')); await p.waitForTimeout(150);
     ok('FN 常時ステータス', await p.evaluate(() => ['stDay','stMoney','stRep','stRegs','stDebt','stMachines','stAssets'].every(i => document.getElementById(i).textContent.length > 0)));
