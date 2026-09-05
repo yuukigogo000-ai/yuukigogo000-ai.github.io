@@ -151,12 +151,17 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     }));
     await p.evaluate(() => document.querySelector('[data-rg="hrk"]').click()); await p.waitForTimeout(200);
     ok('FN エリア詳細シート(進出プラン)', await p.evaluate(() => !!document.querySelector('[data-rgopen="hrk"]') && document.querySelectorAll('.rg-rank > div').length === 3));
-    ok('FN 得意機種・苦手機種が提示される', await p.evaluate(() => {
+    // 未把握の地方では、刺さる機種の「名前」を出してはいけない(客層の傾向だけ出す)
+    ok('FN 未把握の地方は機種名を伏せる', await p.evaluate(() => {
       const R = regionOf('hrk');
+      if (rgKnown('hrk')) return false;
       const t = document.querySelector('.rg-taste').textContent;
-      return R.like.every(m => t.includes(CATALOG.find(c => c.id === m).name))
-          && R.hate.every(m => t.includes(CATALOG.find(c => c.id === m).name));
+      const leaked = R.like.concat(R.hate).some(m => t.includes(CATALOG.find(c => c.id === m).name));
+      return !leaked && t.includes(R.spec);
     }));
+    ok('FN 未把握なら主力機種ピッカーも相性を伏せる', await p.evaluate(() =>
+      [...document.querySelectorAll('.midpick .mp .mp-f')].every(e => e.textContent.trim() === '?')));
+    ok('FN 地元(東海)の客層は最初から既知', await p.evaluate(() => rgKnown(RG_HOME) && !rgKnown('hrk')));
     ok('FN 主力機種ピッカーが全機種を出す', await p.evaluate(() => document.querySelectorAll('.midpick .mp').length === CATALOG.length));
     // ---- プレイヤーに判断材料が提示されているか(ヒントの常設チェック) ----
     ok('FN 進出前に一番店へ届くか試算が出る', await p.evaluate(() => {
@@ -164,13 +169,38 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
       return rows.length === 3 && rows.every(r => /\d/.test(r.querySelector('b').textContent) && r.querySelector('i').textContent.length > 0);
     }));
     ok('FN 特性バーに効果の説明が付く', await p.evaluate(() => document.querySelectorAll('.rg-tr .hint').length === 2));
-    ok('FN 地方別 得意機種 早見表が全地方ぶん出る', await p.evaluate(() => {
+    ok('FN 地方メモが全地方ぶん出て、未把握は伏せられている', await p.evaluate(() => {
       closeModal(); setArea('map');
       const rows = [...document.querySelectorAll('#mapCheat .cs')];
-      return rows.length === REGIONS.length && rows.every(r => r.querySelectorAll('.cs-l i').length > 0);
+      if (rows.length !== REGIONS.length) return false;
+      return REGIONS.every((R, i) => {
+        const t = rows[i].textContent;
+        const named = R.like.concat(R.hate).some(m => t.includes(CATALOG.find(c => c.id === m).name));
+        return t.includes(R.spec) && (rgKnown(R.id) ? named : !named);
+      });
     }));
-    ok('FN マップタイルに得意機種のヒントが出る', await p.evaluate(() =>
-      [...document.querySelectorAll('.mt .mt-hint b')].filter(e => e.textContent.trim().length > 0).length === REGIONS.length));
+    ok('FN マップタイルに把握状況が出る', await p.evaluate(() =>
+      [...document.querySelectorAll('.mt .mt-hint b')].filter(e => /把握/.test(e.textContent)).length === REGIONS.length));
+    ok('FN 進出前の試算は機種相性を含めない基礎値', await p.evaluate(() => {
+      // 主力機種を得意→苦手に振っても試算値が動かない = 答えが漏れていない
+      const a = 'hrk', R = regionOf(a);
+      rgDraft.mid = R.like[0]; openRegion(a);
+      const good = [...document.querySelectorAll('.rg-proj > div:not(.hd) b')].map(e => e.textContent).join(',');
+      rgDraft.mid = R.hate[0]; openRegion(a);
+      const bad = [...document.querySelectorAll('.rg-proj > div:not(.hd) b')].map(e => e.textContent).join(',');
+      closeModal(); setArea('map');
+      return good === bad && good.length > 0;
+    }));
+    ok('FN 現地で20日営業すると客層が判明する', await p.evaluate(() => {
+      const g = rgState();
+      const b = { a:'sny', n:20, mid:'p1', pol:3, mgr:false, rep:40, since: state.day - 20, net:0, cash:0 };
+      g.br.push(b);
+      const before = rgKnown('sny');
+      rgDay({ day: state.day });
+      const after = rgKnown('sny');
+      g.br = g.br.filter(x => x !== b); delete g.known.sny; save(true);
+      return before === false && after === true;
+    }));
     ok('FN 本店シートに地元との相性が出る', await p.evaluate(() => {
       openRegion(RG_HOME);
       const t = document.getElementById('modalBox').textContent;

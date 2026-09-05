@@ -844,6 +844,15 @@ svg{flex:0 0 auto}
 .cs-l i.up{color:var(--pos)} .cs-l i.dn{color:var(--neg)}
 .cs-c{grid-column:2;font-size:9px;color:var(--tx-3)}
 .cs-c.ok{color:var(--pos)} .cs-c.ng{color:var(--neg)}
+
+/* 未把握エリアの伏せ表示 */
+.rg-taste .tl.unk .lb{color:var(--tx-3)}
+.rg-taste .tl.unk i{color:var(--tx-3)}
+.cs.unk .cs-l i.q{color:var(--tx-3);border-color:rgba(255,255,255,.14);font-weight:400}
+.mp.unk{border-color:rgba(255,212,59,.14)}
+.mp.unk .mp-f{color:var(--tx-3)}
+.mt .mt-hint{color:var(--tx-3)}
+.mt .mt-hint.kn{color:var(--pos)}
 </style>
 </head>
 <body>
@@ -1115,9 +1124,10 @@ svg{flex:0 0 auto}
         <p class="note" id="mapLead"></p>
         <div id="mapGrid" class="mapgrid"></div>
         <div class="gp" style="margin-top:8px">
-          <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-slot"/></svg><b>地方別 得意機種 早見表</b><span class="r">タップで詳細</span></div>
+          <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-slot"/></svg><b>地方メモ</b><span class="r" id="mapKnown"></span></div>
           <div class="gp-b">
-            <p class="note" style="margin-top:0">主力機種をその地方の<b style="color:var(--pos)">得意</b>に合わせると集客力+12・稼働+12%、<b style="color:var(--neg)">苦手</b>だと−10・稼働−8%。</p>
+            <p class="note" style="margin-top:0">客層に合う機種を主力に据えると集客力+12・稼働+12%、外すと−10・稼働−8%。
+            どの機種が刺さるかは<b>現地で営業して初めて分かる</b>。それまでは客層の説明と機種のスペックから読む。</p>
             <div id="mapCheat" class="cheat"></div>
           </div>
         </div>
@@ -2739,6 +2749,8 @@ function rgState() {
   g.hist = (Array.isArray(g.hist) ? g.hist : []).slice(0, 60)
     .filter(r => r && Number.isFinite(Number(r.day)))
     .map(r => ({ day: Math.floor(Number(r.day)), net: Math.round(num(r.net, 0, -1e11, 1e11)) }));
+  if (!g.known || typeof g.known !== "object" || Array.isArray(g.known)) g.known = {};
+  for (const k of Object.keys(g.known)) { if (!regionOf(k)) delete g.known[k]; else g.known[k] = true; }
   g.done = g.done === true;
   g.doneDay = Number.isFinite(Number(g.doneDay)) && g.doneDay !== null ? Math.floor(Number(g.doneDay)) : null;
   g.seen = g.seen === true;
@@ -2759,6 +2771,10 @@ function rgMakeRivals(R) {
     };
   });
 }
+
+/* その地方の客層を把握しているか。地元は最初から。他所は現地で営業して初めて分かる。 */
+const RG_LEARN_DAYS = 20;
+const rgKnown = a => a === RG_HOME || rgState().known[a] === true;
 
 /* ---------- 解禁 ---------- */
 function rgUnlocked() { return state.day >= 15 || totalAssets() >= 20000000; }
@@ -2783,6 +2799,9 @@ function rgProject(a, n, mid, pol, mgr) {
   const R = regionOf(a); if (!R) return 0;
   return Math.round((n * SC_N + POL_REPTGT[pol] * SC_REP + fitScore(rgFit(mid, R))
     + (mgr ? SC_MGR : 0) + rgFame(a) + rgHold(a)) * 10) / 10;
+}
+function rgProjectBase(a, n, pol, mgr) {
+  return Math.round((n * SC_N + POL_REPTGT[pol] * SC_REP + (mgr ? SC_MGR : 0) + rgFame(a) + rgHold(a)) * 10) / 10;
 }
 function rgTopRival(a) {
   const l = rgState().riv[a] || [];
@@ -2901,6 +2920,15 @@ function rgDay(rec) {
     return { net: total, notes, unlock: false, ctrl: 0 };
   }
 
+  // 2.5 現地で営業を続けると客層が読めるようになる
+  for (const b of g.br) {
+    if (!g.known[b.a] && state.day - b.since >= RG_LEARN_DAYS) {
+      g.known[b.a] = true;
+      const R = regionOf(b.a);
+      notes.push(`📋 ${R.name}の客層を把握した。この地方で強い機種・嫌われる機種が分かるようになった。`);
+    }
+  }
+
   // 3. ライバルの成長と反攻
   for (const R of REGIONS) {
     const list = g.riv[R.id]; if (!list) continue;
@@ -2991,26 +3019,31 @@ function renderMap() {
     const sub = myPos >= 0 ? `${myPos + 1}位 / ${rank.length}店`
       : st === "lock" ? "隣接を取れ"
       : `競合${R.rival}軒`;
-    const hint = R.like.length ? midName(R.like[0]) : "";
+    const kn = rgKnown(R.id);
     return `<button class="mt ${st}" data-rg="${R.id}" style="grid-column:${R.gc};grid-row:${R.gr}">
       <span class="mt-st">${st === "ctrl" || st === "home-top" ? ic("crown") : st === "home" ? ic("hall") : st === "branch" ? ic("flag") : ""}${RG_ST_LABEL[st]}</span>
       <span class="mt-nm">${esc(R.name)}</span>
       <span class="mt-sub">${esc(sub)}</span>
-      <span class="mt-hint">${ic("check")}<b>${esc(hint)}</b></span>
+      <span class="mt-hint${kn ? " kn" : ""}">${kn ? ic("check") : ic("lock")}<b>${kn ? "客層 把握済み" : "客層 未把握"}</b></span>
       ${b && b.since < state.day ? `<span class="mt-net ${b.net >= 0 ? "pos" : "neg"}">${sign(b.net)}</span>` : ""}
     </button>`;
   }).join("");
 
+  const kEl = $("mapKnown");
+  if (kEl) kEl.textContent = `把握 ${REGIONS.filter(R => rgKnown(R.id)).length} / ${REGIONS.length}`;
   const cheat = $("mapCheat");
   if (cheat) {
     cheat.innerHTML = REGIONS.map(R => {
       const st = rgStatusOf(R.id), b = rgBranch(R.id);
       const cur = R.id === RG_HOME ? null : b ? b.mid : null;
-      return `<button class="cs ${st}" data-rg="${R.id}">
+      const kn = rgKnown(R.id);
+      return `<button class="cs ${st}${kn ? "" : " unk"}" data-rg="${R.id}">
         <span class="cs-a">${esc(R.name)}</span>
         <span class="cs-t">${esc(R.spec)}</span>
-        <span class="cs-l">${R.like.map(m => `<i class="up">${esc(midName(m))}</i>`).join("")}${R.hate.map(m => `<i class="dn">${esc(midName(m))}</i>`).join("")}</span>
-        ${cur ? `<span class="cs-c ${rgFit(cur, R) > 0 ? "ok" : rgFit(cur, R) < 0 ? "ng" : ""}">主力: ${esc(midName(cur))}${rgFit(cur, R) > 0 ? " ✓" : rgFit(cur, R) < 0 ? " ✕" : ""}</span>` : ""}
+        <span class="cs-l">${kn
+          ? R.like.map(m => `<i class="up">${esc(midName(m))}</i>`).join("") + R.hate.map(m => `<i class="dn">${esc(midName(m))}</i>`).join("")
+          : `<i class="q">未把握 — 現地で${RG_LEARN_DAYS}日営業すると分かる</i>`}</span>
+        ${cur ? `<span class="cs-c ${rgFit(cur, R) > 0 ? "ok" : rgFit(cur, R) < 0 ? "ng" : ""}">主力: ${esc(midName(cur))}${rgFit(cur, R) > 0 ? " ✓好評" : rgFit(cur, R) < 0 ? " ✕不評" : ""}</span>` : ""}
       </button>`;
     }).join("");
   }
@@ -3058,9 +3091,11 @@ function openRegion(a) {
       ? "この地方で渋るのは危険。" : R.strict < 1 ? "多少渋っても見逃されやすい。" : "標準。"}</div>
   </div>
   <div class="rg-taste">
-    <div class="tl"><span class="lb up">得意</span>${R.like.map(m => `<b>${esc(midName(m))}</b>`).join("")}</div>
-    ${R.hate.length ? `<div class="tl"><span class="lb dn">苦手</span>${R.hate.map(m => `<b>${esc(midName(m))}</b>`).join("")}</div>` : ""}
-    <div class="tl"><span class="lb">傾向</span><i>${esc(R.spec)}</i></div>
+    <div class="tl"><span class="lb">客層</span><i>${esc(R.spec)}</i></div>
+    ${rgKnown(a) ? `
+      <div class="tl"><span class="lb up">強い</span>${R.like.map(m => `<b>${esc(midName(m))}</b>`).join("")}</div>
+      ${R.hate.length ? `<div class="tl"><span class="lb dn">嫌われる</span>${R.hate.map(m => `<b>${esc(midName(m))}</b>`).join("")}</div>` : ""}`
+    : `<div class="tl unk"><span class="lb">?</span><i>現地で${RG_LEARN_DAYS}日営業すると、どの機種が刺さるか分かる</i></div>`}
   </div>
   <p class="note">${esc(R.note)}</p>`;
 
@@ -3085,8 +3120,9 @@ function openRegion(a) {
         <span class="k">苦手機種の台数</span><span class="v ${nHate ? "neg" : ""}">${nHate} / ${state.machines.length}台</span>
         <span class="k">集客力への補正</span><span class="v ${hf > 0.02 ? "pos" : hf < -0.02 ? "neg" : ""}">${hf >= 0 ? "+" : ""}${(hf >= 0 ? hf * SC_FIT_UP : hf * SC_FIT_DN).toFixed(1)}</span>
       </div>
-      <p class="note">本店も東海という土地の上にある。<b>${esc(R.like.map(midName).join(" / "))}</b> を多く置くほど地元での集客力が上がる
-      (全台が得意機種なら+12、全台が苦手なら−10)。ホール収支そのものには影響しない — 効くのは一番店争いだけ。</p>
+      <p class="note">本店も東海という土地の上にある。地元で長くやっている店なので客層は分かっている:
+      <b>${esc(R.like.map(midName).join(" / "))}</b> を多く置くほど地元での集客力が上がる
+      (全台が強い機種なら+12、全台が嫌われる機種なら−10)。ホール収支そのものには影響しない — 効くのは一番店争いだけ。</p>
       <h4 class="rg-h">${ic("target")}一番店争い</h4>${rankHtml}
       <p class="note">${g.ctrl[a]
         ? "地元を制圧中。看板効果で本店の評判が毎日わずかに上がっている。"
@@ -3102,7 +3138,8 @@ function openRegion(a) {
       <div class="bd">
         <span class="k">規模</span><span class="v">${b.n}台</span>
         <span class="k">主力機種</span><span class="v">${esc(midName(b.mid))}</span>
-        <span class="k s">機種の相性</span><span class="v s ${rgFit(b.mid, R) > 0 ? "pos" : rgFit(b.mid, R) < 0 ? "neg" : ""}">${FIT_LABEL[rgFit(b.mid, R)]} (集客力 ${fitScore(rgFit(b.mid, R)) >= 0 ? "+" : ""}${fitScore(rgFit(b.mid, R))})</span>
+        <span class="k s">客の反応</span><span class="v s ${rgFit(b.mid, R) > 0 ? "pos" : rgFit(b.mid, R) < 0 ? "neg" : ""}">${
+          rgFit(b.mid, R) > 0 ? "好評 (集客力 +12)" : rgFit(b.mid, R) < 0 ? "不評 (集客力 −10)" : "可もなく不可もなく (±0)"}</span>
         <span class="k">支店の評判</span><span class="v">${Math.round(b.rep)} / 100</span>
         <span class="k">前日損益</span>${b.since >= state.day ? '<span class="v">— (明日から営業)</span>' : `<span class="v ${net >= 0 ? "pos" : "neg"}">${sign(net)}</span>`}
         <span class="k">累計損益</span><span class="v ${b.cash >= 0 ? "pos" : "neg"}">${sign(b.cash)}</span>
@@ -3131,15 +3168,16 @@ function openRegion(a) {
         </div>`;
       })()}
       <h4 class="rg-h">${ic("slot")}主力機種の入れ替え</h4>
-      <p class="note">得意機種なら集客力+12・稼働+12%、苦手機種なら−10・稼働−8%。
+      <p class="note">${rgKnown(a) ? "この地方の客層は把握済み。印のついた機種が刺さる。" : `この地方の客層はまだ読み切れていない(あと${Math.max(0, RG_LEARN_DAYS - (state.day - b.since))}日の営業で分かる)。`}
+      当たれば集客力+12・稼働+12%、外せば−10・稼働−8%。
       入れ替えには <b style="color:var(--gold)">${yen(rgMidCost(R, b))}</b> かかり、
       客が慣れるまで <b style="color:var(--neg)">評判−8</b>。</p>
       <div class="midpick">${CATALOG.map(c => {
-        const f = rgFit(c.id, R);
-        return `<button type="button" class="mp ${f > 0 ? "up" : f < 0 ? "dn" : ""}" data-rgmid="${a}:${c.id}" aria-pressed="${b.mid === c.id}">
+        const f = rgFit(c.id, R), known = rgKnown(a);
+        return `<button type="button" class="mp ${known ? (f > 0 ? "up" : f < 0 ? "dn" : "") : "unk"}" data-rgmid="${a}:${c.id}" aria-pressed="${b.mid === c.id}">
           <img src="${artOf(c.id)}" alt="" decoding="async" loading="lazy">
           <span class="mp-n">${esc(c.name)}</span><span class="mp-s">${esc(c.spec.label)}</span>
-          <span class="mp-f">${f > 0 ? "得意 +12" : f < 0 ? "苦手 −10" : "±0"}</span>
+          <span class="mp-f">${known ? (f > 0 ? "強い +12" : f < 0 ? "嫌われる −10" : "±0") : "?"}</span>
         </button>`;
       }).join("")}</div>
 
@@ -3161,20 +3199,22 @@ function openRegion(a) {
       </div>
       <div class="rg-opt"><span class="k">主力機種</span><b class="midcur">${esc(midName(rgDraft.mid))}</b></div>
       <div class="midpick">${CATALOG.map(c => {
-        const f = rgFit(c.id, R);
-        return `<button type="button" class="mp ${f > 0 ? "up" : f < 0 ? "dn" : ""}" data-rgmid="${a}:${c.id}" aria-pressed="${rgDraft.mid === c.id}">
+        const f = rgFit(c.id, R), known = rgKnown(a);
+        return `<button type="button" class="mp ${known ? (f > 0 ? "up" : f < 0 ? "dn" : "") : "unk"}" data-rgmid="${a}:${c.id}" aria-pressed="${rgDraft.mid === c.id}">
           <img src="${artOf(c.id)}" alt="" decoding="async" loading="lazy">
           <span class="mp-n">${esc(c.name)}</span><span class="mp-s">${esc(c.spec.label)}</span>
-          <span class="mp-f">${f > 0 ? "得意 +12" : f < 0 ? "苦手 −10" : "±0"}</span>
+          <span class="mp-f">${known ? (f > 0 ? "強い +12" : f < 0 ? "嫌われる −10" : "±0") : "?"}</span>
         </button>`;
       }).join("")}</div>
-      <p class="note">この地方が好むのは <b style="color:var(--gold)">${esc(R.spec)}</b>。
-      得意機種を主力に据えれば集客力+12・稼働+12%、苦手機種だと−10・稼働−8%。</p>
+      <p class="note">この地方の客層は <b style="color:var(--gold)">${esc(R.spec)}</b>。
+      ${rgKnown(a) ? "刺さる機種は把握済み(上の一覧に印がある)。" : `どの機種が刺さるかは<b>まだ分からない</b> — 客層の説明と各機種のスペックから読むしかない。現地で${RG_LEARN_DAYS}日営業すれば確定する。`}
+      当たれば集客力+12・稼働+12%、外せば−10・稼働−8%。</p>
       ${(() => {
         const top = rgTopRival(a);
-        const s3 = rgProject(a, rgDraft.n, rgDraft.mid, 3, false);
-        const s5 = rgProject(a, rgDraft.n, rgDraft.mid, 5, false);
-        const s5m = rgProject(a, rgDraft.n, rgDraft.mid, 5, true);
+        // 機種相性は含めない基礎値。答えを先に見せてしまわないため。
+        const s3 = rgProjectBase(a, rgDraft.n, 3, false);
+        const s5 = rgProjectBase(a, rgDraft.n, 5, false);
+        const s5m = rgProjectBase(a, rgDraft.n, 5, true);
         const v3 = rgVerdict(s3, top), v5 = rgVerdict(s5, top), v5m = rgVerdict(s5m, top);
         return `<h4 class="rg-h">${ic("target")}この構成で一番店を獲れるか</h4>
         <div class="rg-proj">
@@ -3183,8 +3223,9 @@ function openRegion(a) {
           <div><span>全開放(5)</span><b>${s5.toFixed(0)}</b><i class="${v5.c}">${v5.t}</i></div>
           <div><span>全開放+店長</span><b>${s5m.toFixed(0)}</b><i class="${v5m.c}">${v5m.t}</i></div>
         </div>
-        <p class="note">評判は開店時40から方針の到達点へ徐々に動くので、上の数字に届くまで数十日かかる。
-        競合も毎日わずかに伸びるので、届かない構成のまま出すと永久に一番店は取れない。</p>`;
+        <p class="note">上は<b>機種の相性を含まない基礎値</b>。客層に合う機種を主力に据えれば <b style="color:var(--pos)">+12</b>、
+        外せば <b style="color:var(--neg)">−10</b> が乗る。評判は開店時40から方針の到達点へ徐々に動くので、
+        この数字に届くまで数十日かかる。競合も毎日わずかに伸びるので、基礎値が大きく足りない構成で出すと一番店は取れない。</p>`;
       })()}
       <div class="bd" style="margin-top:6px">
         <span class="k">出店費用</span><span class="v ${afford ? "" : "neg"}">${yen(cost)}</span>
