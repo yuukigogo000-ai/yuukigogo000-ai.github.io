@@ -3482,56 +3482,73 @@ function rgShowUnlock() {
    ランク・特性の構成比は下の重みどおりに作ってある。採用は毎回この中から
    ランダムに1人(いま在籍していない人)を引く。 */
 const ST_POOL = [
-  "茅野 結衣|B|none", "四方田 碧|B|cold", "三ツ矢 律|B|face", "雲雀 咲良|C|none",
-  "神楽坂 美緒|B|face", "伊集院 静|B|gossip", "逢坂 詩織|A|late", "獅子堂 那由多|A|none",
-  "名護屋 那由多|B|none", "如月 奏太|A|mood", "三ツ矢 日和|A|cold", "鷺沼 樹|B|none",
-  "相馬 澪|C|mood", "篠塚 樹|C|clean", "九条 岳|A|cold", "相馬 日和|C|none",
-  "三ツ矢 美緒|B|late", "常磐 樹|S|late", "神楽坂 湊|C|none", "綾瀬 小春|A|gossip",
-  "日下部 要|C|mech", "狭霧 律|B|late", "伊集院 陽菜|C|cold", "御手洗 静|A|mood",
-  "三ツ矢 詩織|B|late", "綾瀬 岳|B|gossip", "朝比奈 栞|B|mood", "如月 陽向|B|face",
-  "黒沢 舞|C|none", "南雲 紗奈|C|none", "獅子堂 咲良|B|mech", "狭霧 小春|B|none",
-  "逢坂 碧|B|gossip", "一ノ瀬 千夏|S|mech", "鴻上 陽菜|C|late", "三ツ矢 柚葉|A|mech",
-  "榊原 美緒|A|none", "桐生 舞|B|none", "伊集院 柚葉|A|none", "榊原 碧|B|face",
-  "真鍋 司|A|none", "朝比奈 日和|A|mood", "神楽坂 律|C|clean", "日車 詩織|B|face",
-  "御手洗 湊|C|none", "葛西 柊斗|A|none", "小鳥遊 陽向|C|late", "綾瀬 朔|A|mood",
-  "常磐 伊織|A|cold", "小鳥遊 岳|B|clean", "逢坂 楓|B|none", "狭霧 美緒里|B|late",
-  "三ツ矢 碧|A|late", "相馬 司|S|late", "相馬 悠真|B|face", "望月 琴音|B|clean",
-  "鴻上 琴音|B|face", "九条 澪|B|cold", "逢坂 咲良|A|cold", "逢坂 栞|B|cold",
-  "榊原 悠真|C|late", "日車 隼人|C|clean", "葛西 結衣|B|none", "槙島 礼|C|none",
-  "名護屋 隼人|B|mood", "鴻上 司|S|gossip", "南雲 要|C|mood", "白鳥 碧|B|none",
-  "柊 悠真|A|late", "九条 湊|A|none", "一ノ瀬 湊|B|none", "獅子堂 隼人|B|none",
-  "天羽 日和|C|face", "九条 礼|C|none", "伊集院 舞|B|mech", "四方田 颯|C|none",
-  "黒沢 茜|S|gossip", "狭霧 詩織|C|clean", "佐々木 舞|B|mood", "望月 静|C|mood",
-  "八神 日和|C|clean", "小鳥遊 樹|A|mech", "狭霧 樹|B|face", "槙島 陽菜|A|none",
-  "篠塚 那由多|S|gossip", "雲雀 要|A|mech", "葛西 悠真|B|none", "小鳥遊 柊斗|C|none",
-  "四方田 雛|B|mech", "四方田 礼|A|mood", "四方田 静|C|none", "名護屋 紗奈|B|late",
-  "鷺沼 美緒里|B|clean", "小鳥遊 静|B|clean", "逢坂 慶|B|none", "榊原 理沙|B|mood",
-  "三ツ矢 陽向|S|cold", "榊原 静|B|late", "常磐 陽菜|B|none", "小鳥遊 美緒里|C|late",
-  "来栖 澪|B|mech", "蒼井 理沙|C|none", "榊原 紗奈|B|late", "四方田 真人|B|cold",
-  "蒼井 栞|B|none", "佐々木 結衣|C|none", "一ノ瀬 隼人|C|none", "茅野 慶|C|gossip",
-  "来栖 咲良|C|gossip", "黒沢 礼|C|mech", "三ツ矢 琴音|A|cold", "神楽坂 隼人|B|none",
-  "四方田 美緒|B|none", "日車 理沙|C|none", "常磐 碧|B|none", "南雲 司|A|late",
-  "蒼井 舞|B|mood", "一ノ瀬 悠真|C|none", "獅子堂 結衣|C|cold", "鷺沼 悠真|C|gossip",
-  "黒沢 柚葉|C|face", "三ツ矢 朔|C|cold", "日車 颯|S|none", "柊 結衣|B|none",
-  "一ノ瀬 澪|A|late", "常磐 静|B|none", "天羽 澪|A|none", "白鳥 千夏|B|late",
-  "柊 律|C|face", "神楽坂 澪|B|mech", "雲雀 司|B|none", "来栖 栞|B|cold",
-  "八神 柚葉|B|cold", "黒沢 悠真|B|mech", "鴻上 舞|A|mood", "天羽 雛|B|none",
-  "桐生 柊斗|B|cold", "如月 礼|A|face", "一ノ瀬 茜|A|gossip", "柊 要|A|mech",
-  "鴻上 千夏|B|mood", "水無瀬 碧|C|none", "茅野 琴音|A|none", "日車 栞|A|face",
-  "常磐 理沙|C|gossip", "常磐 朔|B|face", "朝比奈 颯|B|cold", "槙島 岳|C|mood",
-  "桐生 詩織|A|mech", "桐生 咲良|A|none", "一ノ瀬 雛|B|late", "南雲 澪|B|none",
-  "狭霧 雛|B|gossip", "茅野 雛|B|cold", "黒沢 颯|A|mood", "柊 詩織|B|none",
-  "九条 慶|B|none", "南雲 千夏|A|late", "狭霧 結衣|B|late", "天羽 樹|C|mood",
-  "真鍋 奏太|C|gossip", "常磐 雛|C|late", "逢坂 那由多|B|none", "綾瀬 琴音|C|none",
-  "日下部 理沙|B|gossip", "雲雀 詩織|A|gossip", "朝比奈 舞|A|none", "獅子堂 碧|B|mood",
-  "来栖 小春|B|clean", "綾瀬 柚葉|A|none", "一ノ瀬 奏太|A|mech", "望月 司|B|cold",
-  "望月 奏太|C|none", "白鳥 静|B|cold", "日車 陽菜|B|cold", "神楽坂 静|S|none",
-  "御手洗 紗奈|C|late", "天羽 奏太|C|none", "桐生 朔|A|cold", "柊 岳|B|none",
-  "狭霧 陽向|B|clean", "榊原 湊|B|mood", "小鳥遊 真人|B|mech", "伊集院 理沙|B|mood",
-  "常磐 那由多|C|late", "来栖 静|S|face", "鷺沼 理沙|B|mood", "四方田 朔|B|gossip",
-  "鷺沼 蓮|B|none", "蒼井 奏太|S|late", "鴻上 陽向|B|none", "榊原 那由多|B|none",
-  "獅子堂 茜|C|late", "望月 千夏|C|face", "榊原 律|C|late", "如月 岳|B|face",
-  "名護屋 咲良|B|gossip", "雲雀 美緒里|B|late", "来栖 湊|B|face", "水無瀬 紗奈|A|mech",
+  "一ノ瀬 バジル|B|gossip", "オーウェン・ブラックウッド|A|late", "サム・ストーンウェル|B|mood",
+  "小鳥遊 マリオ|C|mood", "八神 ルル|A|none", "篠塚 イワン|C|cold",
+  "八神 マリオ|C|none", "デイヴ・カミンスキー|C|late", "デイヴ・フェルナンデス|C|gossip",
+  "日下部 ニケ|B|cold", "ドクター鷺沼|C|cold", "黒沢 ベティ|B|cold",
+  "神速の陣内|B|late", "一撃の虎丸|B|late", "小鳥遊 ソフィア|B|gossip",
+  "ケイト・マッケンジー|A|cold", "ウルトラ小鳥遊|C|mech", "流浪の伊織|A|mood",
+  "ネオ小鳥遊|B|cold", "茅野 マリオ|C|none", "望月 ニケ|B|clean",
+  "リサ・カミンスキー|B|none", "日下部 ミゲル|C|gossip", "槙島 ピエール|B|mech",
+  "ワイルド小鳥遊|B|late", "柊 エレナ|C|late", "クロエ・フェルナンデス|B|mood",
+  "デンジャラス榊原|A|none", "デンジャラス狭霧|A|none", "キャプテン九条|B|none",
+  "天羽 ジーナ|A|none", "天才肌の雅|B|clean", "ニック・ストーンウェル|B|mood",
+  "ラッキー獅子堂|B|late", "メガトン榊原|B|clean", "孤高の虎丸|S|none",
+  "ワイルド如月|A|gossip", "来栖 ソフィア|B|gossip", "スマイル槙島|C|face",
+  "無敵の竜胆|S|none", "綾瀬 イワン|B|late", "スーパー雲雀|S|mech",
+  "鉄壁の竜胆|B|gossip", "如月 ジョニー|A|none", "ビッグ狭霧|B|mood",
+  "ミア・ホーソーン|B|late", "田中 ミゲル|B|face", "レオ・フェルナンデス|B|late",
+  "流浪の虎丸|B|face", "相馬 ヴィクター|A|clean", "孤高の勘助|B|none",
+  "レオ・ストーンウェル|C|none", "ジャック・ラファージュ|A|face", "ワイルド獅子堂|C|cold",
+  "鷺沼 ルル|A|late", "鉄壁の狛江|B|cold", "ミラクル綾瀬|B|none",
+  "柊 ローザ|B|mood", "レジェンド篠塚|B|face", "無敵の百合|A|cold",
+  "鉄壁の菊之助|S|cold", "ジャンボ榊原|C|none", "孤高の真砂|B|mood",
+  "ウルトラ雲雀|B|cold", "長谷川 ルル|B|none", "来栖 バジル|C|gossip",
+  "たたき上げの狛江|C|face", "ボブ・ロッシ|B|clean", "茅野 テオ|C|mech",
+  "鉄壁の虎丸|A|face", "孤高の百合|C|face", "マッハ八神|C|mood",
+  "南雲 マリオ|B|late", "天才肌の小夜|C|clean", "ジャック・オコンネル|A|gossip",
+  "ゴールデン望月|B|cold", "ニック・ペレイラ|C|late", "柊 ハンス|C|mood",
+  "ハイパー雲雀|B|mech", "レジェンド鷺沼|B|cold", "伝説の狛江|B|late",
+  "デンジャラス獅子堂|B|gossip", "ドクター槙島|B|none", "望月 カルロス|C|none",
+  "一撃の銀次|B|gossip", "アンナ・オコンネル|B|cold", "オーウェン・ホーソーン|B|late",
+  "ウルトラ鷺沼|B|cold", "来栖 ローザ|A|none", "綾瀬 ヴィクター|C|face",
+  "雲雀 オスカー|B|none", "九条 ミゲル|A|none", "メガトン朝比奈|A|face",
+  "如月 ヴィクター|C|mech", "御手洗 ヴィクター|C|none", "伝説の菊之助|B|cold",
+  "望月 テオ|S|cold", "ゴールデン神楽坂|C|mood", "ハイパー九条|B|mood",
+  "伝説の雅|B|none", "オーウェン・ラファージュ|A|clean", "ハイパー柊|S|mood",
+  "来栖 エレナ|B|mood", "無敵の勘助|A|none", "篠塚 オスカー|B|cold",
+  "メイ・マッケンジー|B|cold", "田中 バジル|B|late", "槙島 ルル|B|clean",
+  "ドクター一ノ瀬|A|late", "メガトン小鳥遊|B|gossip", "ボブ・フェルナンデス|B|none",
+  "南雲 バジル|B|face", "スーパー綾瀬|B|cold", "天羽 ソフィア|S|mood",
+  "鉄壁の蘭|C|face", "オーウェン・フェルナンデス|B|none", "トム・オルコット|C|face",
+  "孤高の竜胆|B|none", "スマイル南雲|B|none", "メガトン一ノ瀬|A|face",
+  "ワイルド桐生|A|none", "獅子堂 ベティ|B|none", "デンジャラス鷺沼|B|gossip",
+  "メイ・ヴァレンタイン|A|none", "レオ・ラファージュ|C|clean", "一ノ瀬 ローザ|B|none",
+  "ハイパー獅子堂|B|cold", "獅子堂 オスカー|A|late", "鉄壁の鉄平|C|cold",
+  "鷺沼 ローザ|C|mood", "トム・ホーソーン|C|clean", "望月 ローザ|A|late",
+  "流浪の鉄平|B|late", "キャプテン相馬|B|late", "スーパー獅子堂|C|mood",
+  "ウルトラ榊原|A|none", "伝説の銀次|B|none", "伝説の千代|B|face",
+  "クレイジー綾瀬|B|cold", "ハリー・オコンネル|C|none", "ケイト・ドルチェ|B|none",
+  "綾瀬 ニケ|C|late", "常磐 エレナ|B|gossip", "神速の巴|C|mood",
+  "ラッキー茅野|S|none", "如月 ニケ|S|mech", "ニック・ヴァレンタイン|B|late",
+  "キング如月|B|late", "スマイル黒沢|B|none", "獅子堂 ナターシャ|C|clean",
+  "柊 ミゲル|A|face", "桐生 ピエール|B|late", "たたき上げの千代|B|late",
+  "マスター相馬|C|cold", "トム・ドルチェ|C|clean", "日下部 ハンス|A|none",
+  "神速の八重|B|none", "キング黒沢|B|none", "如月 ベティ|B|late",
+  "相馬 イワン|B|mech", "ドクター神楽坂|C|face", "ミア・ペレイラ|A|cold",
+  "ジャンボ小鳥遊|B|mech", "田中 ハンス|A|none", "キャプテン南雲|B|cold",
+  "レジェンド長谷川|B|none", "ハリー・ロッシ|B|none", "トム・カミンスキー|S|face",
+  "ビッグ雲雀|B|cold", "ケイト・ペレイラ|A|none", "クロエ・オコンネル|C|none",
+  "キャプテン茅野|A|mood", "スマイル篠塚|A|cold", "メイ・ドルチェ|A|none",
+  "マスター望月|C|clean", "伝説の宗次郎|B|gossip", "レジェンド来栖|B|face",
+  "篠塚 ローザ|A|gossip", "マッハ槙島|B|none", "ネオ長谷川|C|face",
+  "キング小鳥遊|B|mood", "ノア・ストーンウェル|A|gossip", "スマイル来栖|C|mood",
+  "孤高の銀次|B|none", "流浪の陣内|B|gossip", "天才肌の狛江|A|face",
+  "狭霧 ルル|B|mood", "神速の夕凪|B|clean", "御手洗 バジル|A|clean",
+  "マッハ鷺沼|B|none", "キャプテン田中|B|mech", "ノア・フェルナンデス|C|cold",
+  "伝説の鉄平|A|clean", "孤高の蘭|A|cold", "ニック・オコンネル|B|mech",
+  "八神 バジル|C|none", "九条 ジョニー|A|late", "ミラクル黒沢|B|face",
+  "ミア・カミンスキー|A|none", "リサ・ラファージュ|B|clean",
 ];
 const ST_POOL_N = ST_POOL.length;
 
@@ -3541,27 +3558,27 @@ const ST_POOL_N = ST_POOL.length;
    雇うだけで強くなる仕組みにはしない)。常連は simulateDay 側で
    収容の半分に頭打ちされるので、良い人材を揃えても青天井にはならない。 */
 const ST_RANK = {
-  S: { w: 6,  serve: 0.55, draw: 1.6,  label: "S" },
-  A: { w: 19, serve: 0.25, draw: 0.8,  label: "A" },
-  B: { w: 50, serve: 0.05, draw: 0.15, label: "B" },
-  C: { w: 25, serve: -0.28, draw: -0.6, label: "C" },
+  S: { w: 6,  serve: 1.10, draw: 2.4,  label: "S" },
+  A: { w: 19, serve: 0.50, draw: 1.0,  label: "A" },
+  B: { w: 50, serve: 0.05, draw: 0.1,  label: "B" },
+  C: { w: 25, serve: -0.55, draw: -1.9, label: "C" },
 };
 /* 特性は1人ひとつ、または無し */
 const ST_TRAIT = {
   none:   { w: 30, good: null, name: "―",             desc: "特筆すべき癖はない" },
-  mood:   { w: 10, good: true,  name: "ムードメーカー", desc: "店の空気が明るくなる (評判 +0.30/日)" },
-  face:   { w: 9,  good: true,  name: "看板スタッフ",   desc: "この人目当ての客がいる (常連 +1.0/日)" },
-  mech:   { w: 8,  good: true,  name: "元整備士",       desc: "台のコンディションを保つ (全台の人気 +0.20/日)" },
-  clean:  { w: 8,  good: true,  name: "掃除が行き届く", desc: "店内が清潔に保たれる (評判 +0.20 / 常連 +0.4 /日)" },
-  late:   { w: 12, good: false, name: "遅刻魔",         desc: "たまに開店に間に合わない (25%で評判 −1.6)" },
-  cold:   { w: 12, good: false, name: "無愛想",         desc: "接客に難がある (評判 −0.40/日)" },
-  gossip: { w: 11, good: false, name: "口が軽い",       desc: "店の内情を客に喋ってしまう (評判 −0.30/日)" },
+  mood:   { w: 10, good: true,  name: "ムードメーカー", desc: "店の空気が明るくなる (評判 +0.50/日)" },
+  face:   { w: 9,  good: true,  name: "看板スタッフ",   desc: "この人目当ての客がいる (常連 +2.2/日)" },
+  mech:   { w: 8,  good: true,  name: "元整備士",       desc: "台のコンディションを保つ (全台の人気 +0.35/日)" },
+  clean:  { w: 8,  good: true,  name: "掃除が行き届く", desc: "店内が清潔に保たれる (評判 +0.35 / 常連 +0.9 /日)" },
+  late:   { w: 12, good: false, name: "遅刻魔",         desc: "たまに開店に間に合わない (25%で評判 −2.0)" },
+  cold:   { w: 12, good: false, name: "無愛想",         desc: "接客に難がある (評判 −0.60/日)" },
+  gossip: { w: 11, good: false, name: "口が軽い",       desc: "店の内情を客に喋ってしまう (評判 −0.45/日)" },
 };
 const ST_REVEAL_DAYS = 3;   // 何営業日で評価が出るか
 const ST_LOYAL_DAYS = 7;    // これ未満で解雇すると評判ペナルティ
 const ST_FIRE_REP = 4;      // 早期解雇の評判ペナルティ
-const ST_REP_GAIN = 1.25;    // 平均接客力 → 日次の評判
-const ST_DRAW_GAIN = 0.15;  // 平均集客力 → 日次の常連
+const ST_REP_GAIN = 2.4;    // 平均接客力 → 日次の評判
+const ST_DRAW_GAIN = 0.45;  // 平均集客力 → 日次の常連
 
 
 const stEntry = i => {
@@ -3671,14 +3688,14 @@ function stDay() {
     let sv = ST_RANK[m.r].serve, dr = ST_RANK[m.r].draw;
     const t = stTrait(m);
     switch (m.t) {
-      case "mood":   sv += 0.30; break;
-      case "face":   dr += 1.20; break;
-      case "mech":   pop += 0.20; break;
-      case "clean":  sv += 0.20; dr += 0.50; break;
-      case "cold":   sv -= 0.40; break;
-      case "gossip": sv -= 0.30; break;
+      case "mood":   sv += 0.50; break;
+      case "face":   dr += 2.20; break;
+      case "mech":   pop += 0.35; break;
+      case "clean":  sv += 0.35; dr += 0.90; break;
+      case "cold":   sv -= 0.60; break;
+      case "gossip": sv -= 0.45; break;
       case "late":
-        if (Math.random() < 0.25) { sv -= 1.60; notes.push(`⏰ ${m.nm}が寝坊。開店に穴が空いた…`); }
+        if (Math.random() < 0.25) { sv -= 2.00; notes.push(`⏰ ${m.nm}が寝坊。開店に穴が空いた…`); }
         break;
     }
     sumServe += sv; sumDraw += dr;
@@ -3698,8 +3715,11 @@ function stDay() {
   rep = (sumServe / n) * ST_REP_GAIN;
   regs = (sumDraw / n) * Math.min(n, 6) * ST_DRAW_GAIN;
 
-  rep = Math.max(-1.0, Math.min(1.0, rep));
-  if (rep) state.rep = Math.max(1, Math.min(100, state.rep + rep));
+  rep = Math.max(-2.4, Math.min(2.4, rep));
+  // プラスはそのまま積む。マイナスは現在の評判に比例させて効かせるので、
+  // 陣容が悪いと評判は低いところで均衡する(底なしに沈んで詰むことはない)。
+  if (rep > 0) state.rep = Math.min(100, state.rep + rep);
+  else if (rep < 0) state.rep = Math.max(1, state.rep + rep * (state.rep / 100));
   if (regs) state.regulars = Math.max(0, state.regulars + regs);
   if (money) state.money += Math.round(money);
   if (pop) for (const mc of state.machines) mc.pop = Math.min(300, mc.pop + pop);
@@ -3714,7 +3734,7 @@ function renderStaff() {
   const s = stState(), dead = isDead();
   const known = s.list.filter(m => m.k);
   const avg = known.length ? known.reduce((a, m) => a + stServe(m), 0) : 0;
-  const draw = known.length ? known.reduce((a, m) => a + ST_RANK[m.r].draw + (m.t === "face" ? 1.0 : m.t === "clean" ? 0.4 : 0), 0) : 0;
+  const draw = known.length ? known.reduce((a, m) => a + ST_RANK[m.r].draw + (m.t === "face" ? 2.2 : m.t === "clean" ? 0.9 : 0), 0) : 0;
   const sum = $("staffSum");
   if (sum) {
     sum.innerHTML = `
