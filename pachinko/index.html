@@ -853,6 +853,10 @@ svg{flex:0 0 auto}
 .mp.unk .mp-f{color:var(--tx-3)}
 .mt .mt-hint{color:var(--tx-3)}
 .mt .mt-hint.kn{color:var(--pos)}
+
+/* 地方の特色モード切替 */
+.seg.rgmode{grid-template-columns:repeat(2,1fr);margin-bottom:4px}
+.seg.rgmode button{font-family:var(--f-disp);font-size:11.5px;font-weight:800}
 </style>
 </head>
 <body>
@@ -1123,6 +1127,11 @@ svg{flex:0 0 auto}
         <div class="mapbar"><i id="mapBar" style="width:0%"></i></div>
         <p class="note" id="mapLead"></p>
         <div id="mapGrid" class="mapgrid"></div>
+        <div class="gp" style="margin-top:8px">
+          <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-gear"/></svg><b>地方の特色</b><span class="r">設定</span></div>
+          <div class="gp-b" id="mapMode"></div>
+        </div>
+
         <div class="gp" style="margin-top:8px">
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-slot"/></svg><b>地方メモ</b><span class="r" id="mapKnown"></span></div>
           <div class="gp-b">
@@ -2622,7 +2631,7 @@ function renderAll() {
 /* 15地方。それぞれに 人口 / 地代 / 競合 / 得意機種 / 苦手機種 /
    常連の固さ / 行政の厳しさ を持たせてある。like・hate は CATALOG の機種ID。
    店名・機種名はすべて架空。実在のホール名・機種名は使用していない。 */
-const REGIONS = [
+const RG_BASE = [
   { id:"hok", name:"北海道",   gc:4, gr:1, pop:0.70, rent:0.72, rival:2, loyal:1.15, strict:0.90,
     like:["s4","p5","s9"], hate:["p1","p6"], spec:"一撃性能とミドルの夢", adj:["kta"],
     tag:"一発の夢", note:"冬は客足が読めないが、当たったときの熱量は全国一。一撃で夢を見せる台に金が集まる。甘デジは物足りないと敬遠される。" },
@@ -2669,7 +2678,74 @@ const REGIONS = [
     like:["s1","s6"], hate:["s5","s10","p4"], spec:"完全告知のAタイプ一色", adj:["kyn","kys"],
     tag:"独自の島文化", note:"完全告知のAタイプが文化として根づいており、最新スマスロや版権ミドルはほとんど支持されない。規模は小さいが競合も弱い。" },
 ];
+/* REGIONS は「いま適用中の特色」を持つ作業配列。ランダムモードでは
+   like / hate / spec / loyal / strict だけが差し替わる。
+   人口・地代・競合・隣接は地図の難易度設計そのものなので固定。 */
+const REGIONS = RG_BASE.map(R => ({ ...R, like: R.like.slice(), hate: R.hate.slice() }));
 const RG_HOME = "tka";
+
+/* 機種のアーキタイプ。ランダム時の「傾向」文をここから組み立てるので、
+   表示されるヒントは必ず中身と一致する(推理が成立する)。 */
+const MTYPE = {
+  p6:"超甘デジ", p1:"甘デジ", p2:"ライトミドル", p7:"ライトミドル", p3:"ライトミドル",
+  p8:"ミドル", p4:"ミドル", p9:"ミドル", p5:"高継続ミドル", p10:"一種二種混合",
+  s6:"ノーマルAタイプ", s1:"ノーマルAタイプ", s2:"出玉トリガー系AT", s7:"低純増AT",
+  s3:"継続率AT", s8:"天井付きAT", s4:"一撃特化AT", s9:"高純増AT", s10:"スマスロ", s5:"スマスロ",
+};
+const mType = id => MTYPE[id] || "";
+
+/* 決定論的な乱数(シードから毎回同じ地図が再現される) */
+function rgRand(seed) {
+  let t = seed >>> 0;
+  return () => {
+    t = (t + 0x6D2B79F5) >>> 0;
+    let x = Math.imul(t ^ (t >>> 15), 1 | t);
+    x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x;
+    return ((x ^ (x >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+let rgAppliedSeed = null;
+/* seed=0 なら作り込みの特色、それ以外はシードから生成した特色を REGIONS に適用する */
+function rgApplyTraits(seed) {
+  if (rgAppliedSeed === seed) return;
+  rgAppliedSeed = seed;
+  const ids = CATALOG.map(c => c.id);
+  REGIONS.forEach((R, i) => {
+    const B = RG_BASE[i];
+    if (!seed) {
+      R.like = B.like.slice(); R.hate = B.hate.slice();
+      R.spec = B.spec; R.loyal = B.loyal; R.strict = B.strict;
+      R.note = B.note; R.tag = B.tag;
+      return;
+    }
+    const rnd = rgRand(seed + i * 7919);
+    const pool = ids.slice();
+    for (let k = pool.length - 1; k > 0; k--) {
+      const j = Math.floor(rnd() * (k + 1));
+      [pool[k], pool[j]] = [pool[j], pool[k]];
+    }
+    const nLike = 2 + (rnd() < 0.5 ? 1 : 0);
+    const nHate = 1 + (rnd() < 0.55 ? 1 : 0) + (rnd() < 0.25 ? 1 : 0);
+    R.like = pool.slice(0, nLike);
+    R.hate = pool.slice(nLike, nLike + nHate);
+    // 傾向文は得意機種のアーキタイプから作るので、必ず中身と一致する
+    const tags = [...new Set(R.like.map(mType).filter(Boolean))];
+    R.spec = tags.length > 1 ? tags.slice(0, 2).join("と") : (tags[0] || "特になし");
+    R.loyal = Math.round((0.70 + rnd() * 0.60) * 100) / 100;
+    R.strict = Math.round((0.82 + rnd() * 0.50) * 100) / 100;
+    // 作り込みの note / tag は固定の土地柄を語るので、ランダム時に残すと中身と矛盾する。
+    // 実際の数値だけから、嘘にならない紹介文を組み立て直す。
+    const popW = R.pop >= 1.2 ? "人口の多い" : R.pop >= 0.9 ? "中規模の" : "人口の少ない";
+    const rentW = R.rent >= 1.25 ? "地代の高い" : R.rent >= 0.9 ? "地代は並の" : "地代の安い";
+    const rivW = R.rival >= 4 ? "競合がひしめく激戦区" : R.rival >= 3 ? "競合もそれなりに厚い" : "競合は薄い";
+    const loyW = R.loyal >= 1.15 ? "客は一度つくと長く通う" : R.loyal >= 0.95 ? "客のつき方は標準的" : "客は移り気で、すぐ隣の店に流れる";
+    const strW = R.strict >= 1.2 ? "行政の目も厳しい" : R.strict <= 0.92 ? "行政の目は比較的ゆるい" : "行政の目は並";
+    R.note = `${popW}${rentW}土地で、${rivW}。${loyW}。${strW}。`;
+    R.tag = R.rival >= 4 ? "激戦区" : R.loyal >= 1.15 ? "客が根づく土地" : R.loyal <= 0.85 ? "移り気な土地"
+          : R.strict >= 1.2 ? "行政が厳しい土地" : R.rent <= 0.8 ? "地代の安い土地" : "手堅い土地";
+  });
+}
 const regionOf = id => REGIONS.find(r => r.id === id) || null;
 
 /* ライバルホール名。すべて架空の造語 + 都市名。実在チェーン名は使用していない。 */
@@ -2696,7 +2772,7 @@ function rgState() {
   const ex = exState();
   if (!ex.rg || typeof ex.rg !== "object" || Array.isArray(ex.rg)) ex.rg = {};
   const g = ex.rg;
-  if (g.__ok) return g;
+  if (g.__ok) { rgApplyTraits(g.rnd); return g; }
   const num = (v, d, lo, hi) => {
     v = Number(v);
     if (!Number.isFinite(v)) v = d;
@@ -2749,12 +2825,14 @@ function rgState() {
   g.hist = (Array.isArray(g.hist) ? g.hist : []).slice(0, 60)
     .filter(r => r && Number.isFinite(Number(r.day)))
     .map(r => ({ day: Math.floor(Number(r.day)), net: Math.round(num(r.net, 0, -1e11, 1e11)) }));
+  g.rnd = Number.isFinite(Number(g.rnd)) ? Math.floor(Math.abs(Number(g.rnd))) % 1e9 : 0;
   if (!g.known || typeof g.known !== "object" || Array.isArray(g.known)) g.known = {};
   for (const k of Object.keys(g.known)) { if (!regionOf(k)) delete g.known[k]; else g.known[k] = true; }
   g.done = g.done === true;
   g.doneDay = Number.isFinite(Number(g.doneDay)) && g.doneDay !== null ? Math.floor(Number(g.doneDay)) : null;
   g.seen = g.seen === true;
   Object.defineProperty(g, "__ok", { value: true, enumerable: false, configurable: true });
+  rgApplyTraits(g.rnd);
   return g;
 }
 
@@ -3029,6 +3107,20 @@ function renderMap() {
     </button>`;
   }).join("");
 
+  const mEl = $("mapMode");
+  if (mEl) {
+    const rnd = rgState().rnd;
+    mEl.innerHTML = `
+      <div class="seg rgmode" role="group" aria-label="地方の特色">
+        <button type="button" data-rgmode="fixed"  aria-pressed="${!rnd}">作り込み</button>
+        <button type="button" data-rgmode="random" aria-pressed="${!!rnd}">ランダム</button>
+      </div>
+      <p class="note">${rnd
+        ? `いまはランダム編成 <b class="num">SEED ${rnd}</b>。各地方で強い機種・嫌われる機種・常連の固さ・行政の厳しさが自動生成されている。「ランダム」をもう一度押すと引き直せる。`
+        : "いまは作り込みの標準編成。北東北はAタイプ、東京は最新スマスロ…と土地柄どおりに固定されている。"}
+      人口・地代・競合の厚み・隣接関係は<b>どちらのモードでも変わらない</b>(地図の難易度設計そのものなので)。
+      切り替えると把握済みの客層はリセットされ、また現地で調べ直しになる。</p>`;
+  }
   const kEl = $("mapKnown");
   if (kEl) kEl.textContent = `把握 ${REGIONS.filter(R => rgKnown(R.id)).length} / ${REGIONS.length}`;
   const cheat = $("mapCheat");
@@ -3298,6 +3390,23 @@ function rgPol(a, v) {
   if (isDead()) return;
   const b = rgBranch(a); if (!b || !(v >= 1 && v <= 5)) return;
   b.pol = v; save(); checkAchEx(); renderAll(); openRegion(a);
+}
+
+/* ---------- 設定: 地方の特色 ---------- */
+function rgSetMode(mode) {
+  if (isDead()) return;
+  const g = rgState();
+  const isRnd = mode === "random";
+  if (!isRnd && g.rnd === 0) return;
+  const msg = isRnd
+    ? "地方の特色をランダムに引き直しますか?\n\n・各地方で強い機種/嫌われる機種、常連の固さ、行政の厳しさが変わります\n・人口・地代・競合の厚み・隣接関係は変わりません\n・把握済みの客層はリセットされ、また現地で調べ直しになります"
+    : "地方の特色を作り込みの標準に戻しますか?\n\n把握済みの客層はリセットされます。";
+  if (!confirm(msg)) return;
+  g.rnd = isRnd ? (Math.floor(Math.random() * 999999998) + 1) : 0;
+  g.known = {};
+  rgApplyTraits(g.rnd);
+  save(); renderAll();
+  toast(isRnd ? `地方の特色を引き直した (シード ${g.rnd})` : "地方の特色を標準に戻した");
 }
 
 /* ---------- 解禁演出 ---------- */
@@ -3904,7 +4013,7 @@ function showTutorial() {
    操作の結線
    ========================================================================== */
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid]");
+  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode]");
   if (!el) return;
   const d = el.dataset;
 
@@ -3921,6 +4030,7 @@ document.addEventListener("click", e => {
   if (d.rgmgr) { rgMgr(d.rgmgr); return; }
   if (d.rgpol) { const [a, v] = d.rgpol.split(":"); rgPol(a, Number(v)); return; }
   if (d.rgmid) { const [a, m] = d.rgmid.split(":"); rgMid(a, m); return; }
+  if (d.rgmode) { rgSetMode(d.rgmode); return; }
 
   if (d.setlist !== undefined) { openSetList(); return; }
   if (d.slsort) { setListSort = d.slsort; renderSetList(); return; }

@@ -268,6 +268,40 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     }));
     await p.evaluate(() => { const g = rgState(); for (const R of REGIONS) g.ctrl[R.id] = 1; renderAll(); }); await p.waitForTimeout(150);
     ok('FN 全国制覇の進捗表示', await p.evaluate(() => { setArea('map'); return document.getElementById('mapCount').textContent.trim() === '15 / 15'; }));
+    // ---- 設定: 地方の特色ランダムモード ----
+    const rndInfo = await p.evaluate(() => {
+      window.confirm = () => true;
+      setArea('map');
+      const snap = () => REGIONS.map(R => ({ id:R.id, spec:R.spec, like:R.like.join(), hate:R.hate.join(),
+        pop:R.pop, rent:R.rent, rival:R.rival, adj:R.adj.join(), note:R.note, tag:R.tag }));
+      const fixed = snap();
+      document.querySelector('[data-rgmode="random"]').click();
+      const seed = rgState().rnd;
+      const rnd = snap();
+      const truthful = REGIONS.every(R => [...new Set(R.like.map(mType))].some(t => R.spec.includes(t)));
+      const noOverlap = REGIONS.every(R => R.like.length > 0 && !R.like.some(m => R.hate.includes(m)));
+      const backboneSame = fixed.every((f, i) => f.pop === rnd[i].pop && f.rent === rnd[i].rent
+        && f.rival === rnd[i].rival && f.adj === rnd[i].adj);
+      const changed = fixed.some((f, i) => f.like !== rnd[i].like || f.hate !== rnd[i].hate);
+      const noLeak = REGIONS.every(R => !CATALOG.some(c => R.note.includes(c.name) || R.tag.includes(c.name)));
+      const knownCleared = Object.keys(rgState().known).length === 0;
+      // 同じシードから同じ地図が再現されるか
+      rgApplyTraits(0); rgApplyTraits(seed);
+      const again = snap();
+      const stable = JSON.stringify(rnd) === JSON.stringify(again);
+      document.querySelector('[data-rgmode="fixed"]').click();
+      const restored = JSON.stringify(snap()) === JSON.stringify(fixed);
+      return { seed, truthful, noOverlap, backboneSame, changed, noLeak, knownCleared, stable, restored };
+    });
+    await p.waitForTimeout(150);
+    ok('FN 地方の特色をランダムに引き直せる', rndInfo.seed > 0 && rndInfo.changed);
+    ok('FN ランダムでも傾向文が中身と一致する(推理が成立)', rndInfo.truthful);
+    ok('FN ランダムでも得意と苦手が重複しない', rndInfo.noOverlap);
+    ok('FN ランダムでも人口・地代・競合・隣接は変わらない', rndInfo.backboneSame);
+    ok('FN 紹介文と見出しに機種名が漏れない', rndInfo.noLeak);
+    ok('FN モード切替で把握済みがリセットされる', rndInfo.knownCleared);
+    ok('FN 同じシードから同じ特色が再現される', rndInfo.stable);
+    ok('FN 作り込みの標準編成に戻せる', rndInfo.restored);
     await p.evaluate(() => { const g = rgState(); for (const R of REGIONS) delete g.ctrl[R.id]; g.br = []; save(true); renderAll(); });
     await p.evaluate(() => setArea('mgmt')); await p.waitForTimeout(150);
     ok('FN 常時ステータス', await p.evaluate(() => ['stDay','stMoney','stRep','stRegs','stDebt','stMachines','stAssets'].every(i => document.getElementById(i).textContent.length > 0)));
