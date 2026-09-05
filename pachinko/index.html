@@ -867,6 +867,12 @@ svg{flex:0 0 auto}
 .stw-r{grid-row:1/3;align-self:center;font-family:var(--f-num);font-size:15px;font-weight:900;
   text-align:center;color:var(--tx-3)}
 .stw.s .stw-r{color:var(--gold);text-shadow:0 0 8px rgba(255,212,59,.6)}
+.stw.ss{border-color:var(--gold-hi);
+  background:linear-gradient(180deg,rgba(255,212,59,.16),rgba(20,14,2,.92));
+  box-shadow:inset 0 0 18px rgba(255,196,60,.18),0 0 14px rgba(255,196,60,.30)}
+.stw.ss .stw-r{font-size:12px;letter-spacing:-.05em;color:var(--gold-hi);
+  text-shadow:0 0 10px rgba(255,212,59,.95)}
+.stw.ss .stw-n{color:var(--gold-hi)}
 .stw.a .stw-r{color:var(--pos)}
 .stw.c .stw-r{color:var(--neg)}
 .stw.unk{border-style:dashed}
@@ -2025,6 +2031,8 @@ const ACH_EX = [
   { id:"ex-st-vet",  name:"古参",             desc:"勤続60営業日のスタッフがいる", g:"人事" },
   { id:"ex-st-fire", name:"回転ドア",         desc:"早期解雇を5回してしまった", g:"人事" },
   { id:"ex-st-full", name:"看板だらけ",       desc:"良い特性を持つスタッフを同時に4人抱えた", g:"人事" },
+  { id:"ex-st-ss",   name:"引きが強すぎる",   desc:"壊れ人材(SSランク)を採用した", g:"人事" },
+  { id:"ex-st-ss2",  name:"ドリームチーム",   desc:"壊れ人材を同時に2人抱えた", g:"人事" },
 ];
 const ALL_ACH_COUNT = () => ACHIEVEMENTS.length + ACH_EX.length;
 
@@ -2154,6 +2162,9 @@ function checkAchEx(ctx) {
     if (list.some(m => m.d >= 60)) G("ex-st-vet");
     if (stState().fired >= 5) G("ex-st-fire");
     if (list.filter(m => m.k && ST_TRAIT[m.t].good === true).length >= 4) G("ex-st-full");
+    const ss = list.filter(m => m.r === "SS").length;
+    if (ss >= 1) G("ex-st-ss");
+    if (ss >= 2) G("ex-st-ss2");
   }
   save(true);
 }
@@ -3552,12 +3563,24 @@ const ST_POOL = [
 ];
 const ST_POOL_N = ST_POOL.length;
 
+/* 壊れ人材。5人だけ実在し、採用のたびに ST_LEGEND_P の確率でしか出てこない。
+   通常の200人とは別枠なので、名鑑の構成比には影響しない。 */
+const ST_LEGEND = [
+  "ルナ・ブラックムーン|SS|lgd_draw",
+  "ドン・カルロッサ|SS|lgd_rep",
+  "寡黙の甚八|SS|lgd_pop",
+  "ダブル鷹司|SS|lgd_all",
+  "大番頭ジョーカー|SS|lgd_buff",
+];
+const ST_LEGEND_P = 0.03;
+
 /* ランク: 接客力(評判への日次寄与)と出現率 */
 /* serve = 評判への日次寄与 / draw = 常連への日次寄与。
    出現率で重み付けした期待値はほぼ0になるようにしてある(引きの良し悪しが本体で、
    雇うだけで強くなる仕組みにはしない)。常連は simulateDay 側で
    収容の半分に頭打ちされるので、良い人材を揃えても青天井にはならない。 */
 const ST_RANK = {
+  SS:{ w: 0,  serve: 1.80, draw: 3.5,  label: "SS" },   // 壊れ枠。通常抽選には出ない
   S: { w: 6,  serve: 1.10, draw: 2.4,  label: "S" },
   A: { w: 19, serve: 0.50, draw: 1.0,  label: "A" },
   B: { w: 50, serve: 0.05, draw: 0.1,  label: "B" },
@@ -3573,6 +3596,12 @@ const ST_TRAIT = {
   late:   { w: 12, good: false, name: "遅刻魔",         desc: "たまに開店に間に合わない (25%で評判 −2.0)" },
   cold:   { w: 12, good: false, name: "無愛想",         desc: "接客に難がある (評判 −0.60/日)" },
   gossip: { w: 11, good: false, name: "口が軽い",       desc: "店の内情を客に喋ってしまう (評判 −0.45/日)" },
+  // ---- 壊れ人材の固有特性(通常抽選には出ない) ----
+  lgd_draw: { w: 0, good: true, name: "万枚の女神",   desc: "この人がいるだけで客が集まる (常連 +6.0/日)" },
+  lgd_rep:  { w: 0, good: true, name: "呼び込みの帝王", desc: "声ひとつで店の格が変わる (評判 +2.5/日)" },
+  lgd_pop:  { w: 0, good: true, name: "台と話す男",   desc: "どの台も枯れない (全台の人気 +1.20/日)" },
+  lgd_all:  { w: 0, good: true, name: "二刀流",       desc: "接客も集客も一級品 (評判 +1.2 / 常連 +3.0 /日)" },
+  lgd_buff: { w: 0, good: true, name: "伝説の店長",   desc: "店全体の力を引き出す (スタッフ全員の効果 1.5倍)" },
 };
 const ST_REVEAL_DAYS = 3;   // 何営業日で評価が出るか
 const ST_LOYAL_DAYS = 7;    // これ未満で解雇すると評判ペナルティ
@@ -3585,9 +3614,18 @@ const stEntry = i => {
   const p = String(ST_POOL[i] || ST_POOL[0]).split("|");
   return { nm: p[0], r: ST_RANK[p[1]] ? p[1] : "B", t: ST_TRAIT[p[2]] ? p[2] : "none" };
 };
-/* 名鑑からランダムに1人。いま在籍している人とは重複させない。 */
+const stLegendEntry = i => {
+  const p = String(ST_LEGEND[i]).split("|");
+  return { nm: p[0], r: p[1], t: p[2] };
+};
+/* 名鑑からランダムに1人。いま在籍している人とは重複させない。
+   ST_LEGEND_P の確率でだけ壊れ人材の枠を引く。 */
 function stDraw() {
   const taken = new Set((state.ex && state.ex.st && Array.isArray(state.ex.st.list) ? state.ex.st.list : []).map(m => m.nm));
+  if (Math.random() < ST_LEGEND_P) {
+    const free = ST_LEGEND.map((_, i) => i).filter(i => !taken.has(stLegendEntry(i).nm));
+    if (free.length) return stLegendEntry(free[Math.floor(Math.random() * free.length)]);
+  }
   for (let tries = 0; tries < 60; tries++) {
     const e = stEntry(Math.floor(Math.random() * ST_POOL_N));
     if (!taken.has(e.nm)) return e;
@@ -3668,7 +3706,7 @@ const ST_HINT_GOOD = ["常連客と自然に話し込んでいた", "開店前�
 const ST_HINT_BAD  = ["レジ前で手が止まっていた", "客に呼ばれても気づいていない場面があった", "指示を二度聞き返していた", "閉店後の片付けが残っていた"];
 const ST_HINT_MID  = ["可もなく不可もなく動いていた", "まだ店の空気に慣れていない様子だ", "先輩の後ろについて回っていた"];
 function stHint(m) {
-  const good = m.r === "S" || m.r === "A";
+  const good = m.r === "SS" || m.r === "S" || m.r === "A";
   const bad = m.r === "C";
   let pool = ST_HINT_MID;
   if ((good || bad) && Math.random() < 0.6) pool = good ? ST_HINT_GOOD : ST_HINT_BAD;
@@ -3682,7 +3720,7 @@ function stDay() {
   const notes = [];
   let rep = 0, regs = 0, money = 0, pop = 0;
 
-  let sumServe = 0, sumDraw = 0;
+  let sumServe = 0, sumDraw = 0, buff = 1;
   for (const m of s.list) {
     m.d++;
     let sv = ST_RANK[m.r].serve, dr = ST_RANK[m.r].draw;
@@ -3694,6 +3732,11 @@ function stDay() {
       case "clean":  sv += 0.35; dr += 0.90; break;
       case "cold":   sv -= 0.60; break;
       case "gossip": sv -= 0.45; break;
+      case "lgd_draw": dr += 6.0; break;
+      case "lgd_rep":  sv += 2.5; break;
+      case "lgd_pop":  pop += 1.20; break;
+      case "lgd_all":  sv += 1.2; dr += 3.0; break;
+      case "lgd_buff": buff = 1.5; break;
       case "late":
         if (Math.random() < 0.25) { sv -= 2.00; notes.push(`⏰ ${m.nm}が寝坊。開店に穴が空いた…`); }
         break;
@@ -3702,8 +3745,8 @@ function stDay() {
     if (!m.k) {
       if (m.d >= ST_REVEAL_DAYS) {
         m.k = true;
-        const good = m.r === "S" || m.r === "A";
-        notes.push(`${good ? "🌟" : m.r === "C" ? "😑" : "📋"} ${m.nm}の勤務評価が出た — <b>${m.r}ランク</b>${t.name === "―" ? "" : " / " + t.name}`);
+        const good = m.r === "SS" || m.r === "S" || m.r === "A";
+        notes.push(`${m.r === "SS" ? "👑" : good ? "🌟" : m.r === "C" ? "😑" : "📋"} ${m.nm}の勤務評価が出た — <b>${m.r}ランク</b>${t.name === "―" ? "" : " / " + t.name}`);
       } else {
         notes.push(stHint(m));
       }
@@ -3712,8 +3755,8 @@ function stDay() {
   // 人数ではなく「平均品質」で効かせる。頭数を増やすだけでは強くならず、
   // 良い人を揃えたときだけ伸びる。
   const n = s.list.length || 1;
-  rep = (sumServe / n) * ST_REP_GAIN;
-  regs = (sumDraw / n) * Math.min(n, 6) * ST_DRAW_GAIN;
+  rep = (sumServe / n) * ST_REP_GAIN * buff;
+  regs = (sumDraw / n) * Math.min(n, 6) * ST_DRAW_GAIN * buff;
 
   rep = Math.max(-2.4, Math.min(2.4, rep));
   // プラスはそのまま積む。マイナスは現在の評判に比例させて効かせるので、
@@ -3742,7 +3785,7 @@ function renderStaff() {
   }
   w.innerHTML = s.list.map((m, i) => {
     const t = stTrait(m);
-    const cls = !m.k ? "unk" : m.r === "S" ? "s" : m.r === "A" ? "a" : m.r === "C" ? "c" : "b";
+    const cls = !m.k ? "unk" : m.r === "SS" ? "ss" : m.r === "S" ? "s" : m.r === "A" ? "a" : m.r === "C" ? "c" : "b";
     return `<div class="stw ${cls}">
       <span class="stw-r">${m.k ? m.r : "?"}</span>
       <span class="stw-n">${esc(m.nm)}</span>

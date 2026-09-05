@@ -138,11 +138,32 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
       return p.length === 3 && p[0].length > 0 && !/[A-Za-z\u0400-\u04FF]/.test(p[0])
         && ST_RANK[p[1]] && ST_TRAIT[p[2]];
     })));
-    ok('FN 採用は名鑑の中から引かれ、在籍者と重複しない', await p.evaluate(() => {
-      const names = new Set(ST_POOL.map(x => x.split('|')[0]));
+    ok('FN 採用は名鑑か壊れ枠から引かれ、在籍者と重複しない', await p.evaluate(() => {
+      const names = new Set(ST_POOL.concat(ST_LEGEND).map(x => x.split('|')[0]));
       const taken = stState().list.map(m => m.nm);
-      for (let i = 0; i < 200; i++) { const m = stMake(false); if (!names.has(m.nm) || taken.includes(m.nm)) return false; }
+      for (let i = 0; i < 400; i++) { const m = stMake(false); if (!names.has(m.nm) || taken.includes(m.nm)) return false; }
       return true;
+    }));
+    // ---- 壊れ人材 ----
+    ok('FN 壊れ人材が5人いて、名鑑200人と名前が重複しない', await p.evaluate(() => {
+      const pool = new Set(ST_POOL.map(x => x.split('|')[0]));
+      const lg = ST_LEGEND.map(x => x.split('|')[0]);
+      return ST_LEGEND.length === 5 && new Set(lg).size === 5 && !lg.some(n => pool.has(n));
+    }));
+    ok('FN 壊れ人材はSSランクで固有特性を持つ', await p.evaluate(() => ST_LEGEND.every(x => {
+      const p = x.split('|');
+      return p[1] === 'SS' && ST_TRAIT[p[2]] && ST_TRAIT[p[2]].w === 0 && ST_RANK.SS.serve > ST_RANK.S.serve;
+    })));
+    ok('FN 壊れ人材は通常抽選に混ざらず、指定の確率でだけ出る', await p.evaluate(() => {
+      // 名鑑200人にSSはいない
+      if (ST_POOL.some(x => x.split('|')[1] === 'SS')) return false;
+      // 固有特性は通常の重み抽選に出ない(w=0)
+      const normal = Object.keys(ST_TRAIT).filter(k => ST_TRAIT[k].w > 0);
+      if (normal.some(k => /^lgd_/.test(k))) return false;
+      let ss = 0;
+      for (let i = 0; i < 20000; i++) if (stMake(false).r === 'SS') ss++;
+      const rate = ss / 20000;
+      return Math.abs(rate - ST_LEGEND_P) < 0.012;
     }));
     ok('FN スタッフの能力に金銭ペナルティがない(給与は完全一律)', await p.evaluate(() => {
       // ランクは接客力と集客力しか持たず、特性にも資金を減らすものがない
@@ -199,12 +220,12 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     ok('FN 損益推移グラフ', await p.evaluate(() => !!document.querySelector('#chartWrap svg')));
     ok('FN 営業成績一覧', await p.evaluate(() => document.querySelectorAll('#ledgerBody .led').length > 0));
     await p.evaluate(() => setArea('ach')); await p.waitForTimeout(200);
-    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張58件は別グループ)
+    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張60件は別グループ)
     ok('FN 実績一覧', await p.evaluate(() => {
       const rows = [...document.querySelectorAll('#achList .ach')];
       const names = rows.map(e => e.querySelector('.n').textContent);
       const BASE = ['開店初日','日給100万','地域の優良店','常連の店','中堅ホール','巨艦店','1ヶ月経営','特日の神','お上の世話','信用第一','軌道に乗る','パチスロ帝国','初当たり体験','事故連発生','ドル箱タワー'];
-      return rows.length === 73 && BASE.every(n => names.includes(n));
+      return rows.length === 75 && BASE.every(n => names.includes(n));
     }));
     // ---- 全国 / 地方進出 / 国取り ----
     await p.evaluate(() => setArea('map')); await p.waitForTimeout(200);
