@@ -1029,7 +1029,7 @@ svg{flex:0 0 auto}
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-fair"/></svg><b>新装開店フェア</b></div>
           <div class="gp-b">
             <button class="btn wide" id="btnGrand">フェアを開催する</button>
-            <p class="note">新台導入から2日以内に開催可能(費用¥300,000・7日に1回まで)。翌営業日の客数1.5倍+評判UP。新台入替とセットで使うのが定石。</p>
+            <p class="note">新台導入から2日以内に開催可能(費用¥200,000・5日に1回まで)。翌営業日の客数1.5倍+評判UP。新台入替とセットで使うのが定石。</p>
           </div>
         </div>
 
@@ -1038,7 +1038,7 @@ svg{flex:0 0 auto}
           <div class="gp-b">
             <div class="row"><span class="k">現在の最大設置数</span><span class="v" id="capNow">10台</span></div>
             <button class="btn wide" id="btnExpand" style="margin-top:6px">+5台 拡張する</button>
-            <p class="note">拡張すると家賃・光熱費も増える。台数を活かせる資金力があるうちに。</p>
+            <p class="note">拡張すると家賃・光熱費も増える。台数を活かせる資金力があるうちに。序盤ほど安く、広げるほど1回あたりの費用は上がる。</p>
           </div>
         </div>
 
@@ -1181,9 +1181,9 @@ const MAX_CAP = 60;            // 店舗拡張の上限台数
 
 // ---- 難易度 ----
 const DIFFS = {
-  easy:   { label:"のんびり", money:13000000, rentMul:0.75, proMul:0.5, heatMul:0.7, fillMul:1.05 },
-  normal: { label:"標準",     money:10000000, rentMul:1.0,  proMul:1.0, heatMul:1.0, fillMul:1.0 },
-  hard:   { label:"修羅",     money:6500000,  rentMul:1.35, proMul:1.6, heatMul:1.5, fillMul:0.97 },
+  easy:   { label:"のんびり", money:13500000, rentMul:0.72, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.25, expandMul:0.80 },
+  normal: { label:"標準",     money:11000000, rentMul:1.00, proMul:1.00, heatMul:1.00, fillMul:1.00, creditMul:1.00, expandMul:1.00 },
+  hard:   { label:"修羅",     money:5000000,  rentMul:1.60, proMul:2.00, heatMul:1.80, fillMul:0.90, creditMul:0.55, expandMul:1.30 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -1231,14 +1231,14 @@ const CATALOG = [
 ];
 
 // 設定ごとの店側粗利率(売上に対する取り分の期待値)
-const MARGIN = { 1: 0.25, 2: 0.21, 3: 0.16, 4: 0.11, 5: 0.05, 6: -0.02 };
+const MARGIN = { 1: 0.25, 2: 0.21, 3: 0.16, 4: 0.105, 5: 0.035, 6: -0.055 };
 
 // 広告プラン (flat=固定集客, pct=規模比例の集客率ブースト)
 const ADS = [
   { id:"none",  name:"広告なし",       cost: 0,      flat: 0,  pct: 0    },
-  { id:"flyer", name:"チラシ配布",     cost: 30000,  flat: 12, pct: 0.04 },
-  { id:"sns",   name:"SNSキャンペーン", cost: 80000,  flat: 30, pct: 0.08 },
-  { id:"tv",    name:"ローカルTV CM",  cost: 250000, flat: 75, pct: 0.15 },
+  { id:"flyer", name:"チラシ配布",     cost: 30000,  flat: 20, pct: 0.05 },
+  { id:"sns",   name:"SNSキャンペーン", cost: 80000,  flat: 48, pct: 0.10 },
+  { id:"tv",    name:"ローカルTV CM",  cost: 250000, flat:115, pct: 0.18 },
 ];
 
 // 週替わりトレンド
@@ -1486,7 +1486,10 @@ function catalogOf(m) { return CATALOG.find(c => c.id === m.cid); }
 function machineValue(m) { return Math.round(catalogOf(m).price * 0.45); }
 function machineAssets() { return state.machines.reduce((s, m) => s + machineValue(m), 0); }
 function totalAssets() { return state.money + machineAssets() - state.debt; }
-function creditLimit() { return Math.round(machineAssets() * 0.7) + 2000000; }
+function creditLimit() {
+  const D = DIFFS[state.diff] || DIFFS.normal;
+  return Math.round((machineAssets() * 0.45 + 1200000) * (D.creditMul || 1));
+}
 function isTokubi(day) { return String(day).includes("7"); }
 function isWeekend(day) { const w = day % 7; return w === 6 || w === 0; }
 function staffNeeded() { return Math.max(1, Math.ceil(state.machines.length / 8)); }
@@ -1773,7 +1776,10 @@ function weeklyReport(rec) {
 // ============================================================
 //  UI (経営画面)
 
-function expandCost() { return 2000000 + (state.cap - 10) * 300000; }
+function expandCost() {
+  const D = DIFFS[state.diff] || DIFFS.normal;
+  return Math.round((1200000 + (state.cap - 10) * 320000) * (D.expandMul || 1));
+}
 
 function isDead() { return state && state.money < 0; }
 
@@ -1909,6 +1915,9 @@ const MART = {
   s6:"m_s_a", s7:"m_s_b", s8:"m_s_c", s9:"m_s_d", s10:"m_s_e",
 };
 const artOf = cid => "./art/" + (MART[cid] || "m_normal") + ".jpg";
+/* 売却価格。machineValue(定価45%)は帳簿上の資産評価で、実際の下取りはもう少し良い。
+   古い台を入れ替える動きに意味を持たせるための差。保護ロジックには触れない。 */
+const machineSale = m => Math.round(catalogOf(m).price * 0.55);
 let focusIdx = 0;
 let busy = false;
 
@@ -2321,7 +2330,7 @@ function renderHall() {
       <div class="fc-net">
         <div class="k">前日収支</div>
         <div class="v ${netCls}">${netTxt}</div>
-        <div class="s">客 ${m.lastCust === null ? "―" : m.lastCust} ・ 売却 ${yenShort(machineValue(m))}</div>
+        <div class="s">客 ${m.lastCust === null ? "―" : m.lastCust} ・ 売却 ${yenShort(machineSale(m))}</div>
       </div>
     </div>
     <div class="fc-set">
@@ -2348,7 +2357,9 @@ function renderShop() {
   $("shopSlots").textContent = `空き枠 ${Math.max(0, state.cap - state.machines.length)}`;
   $("shopNote").innerHTML =
     "新台は導入から5日間「新台効果」で人気1.4倍。同一機種を複数並べると<b>シマ効果</b>(+6%/台・最大+30%)。" +
-    "売却額は購入価格の45%。導入直後は<b>新装開店フェア</b>(店長室)で告知すると効果大。";
+    "売却額は購入価格の<b>55%</b>(帳簿上の資産評価は45%)。差額の分だけ売った方が現金は増えるが、" +
+    "買い直すと45%を失うので<b>入れ替え目的だと基本は損</b>。売却は資金繰りと設置枠の確保のための手段。" +
+    "導入直後は<b>新装開店フェア</b>(店長室)で告知すると効果大。";
   const dead = isDead();
   $("shopList").innerHTML = CATALOG.map(c => {
     const owned = state.machines.filter(m => m.cid === c.id).length;
@@ -2404,13 +2415,13 @@ function renderMgmt() {
     : `本日の広告: <b>${esc(cur.name)}</b> → 客数 +${cur.flat}人 + 集客率${Math.round(cur.pct * 100)}%ブースト`;
 
   const recentBuy = state.machines.some(m => m.boughtDay !== null && state.day - m.boughtDay <= 1);
-  const cdLeft = 7 - (state.day - state.lastGrand);
-  const grandReady = recentBuy && cdLeft <= 0 && state.money >= 300000 && !state.grandOpen;
+  const cdLeft = 5 - (state.day - state.lastGrand);
+  const grandReady = recentBuy && cdLeft <= 0 && state.money >= 200000 && !state.grandOpen;
   const gb = $("btnGrand");
   gb.textContent = state.grandOpen ? "開催予約済み(次の営業日)"
     : !recentBuy ? "新台導入直後のみ開催可"
     : cdLeft > 0 ? `あと${cdLeft}日で開催可能`
-    : state.money < 300000 ? "資金不足 (¥300,000)" : "フェアを開催する (¥300,000)";
+    : state.money < 200000 ? "資金不足 (¥200,000)" : "フェアを開催する (¥200,000)";
   gb.disabled = dead || !grandReady;
   gb.className = "btn wide" + (grandReady && !dead ? " gold" : "");
 
@@ -4077,10 +4088,10 @@ document.addEventListener("click", e => {
     const m = state.machines[Number(d.sell)];
     if (!m) return;
     const c = catalogOf(m);
-    if (!confirm(`${c.name} を ${yen(machineValue(m))} で売却しますか?`)) return;
+    if (!confirm(`${c.name} を ${yen(machineSale(m))} で売却しますか?\n\n買値の55%しか戻りません。買い直すと差し引きで損になるので、資金繰りか設置枠の確保が目的のときに。`)) return;
     const idx = state.machines.indexOf(m);
     if (idx < 0) return;
-    state.money += machineValue(m);
+    state.money += machineSale(m);
     state.machines.splice(idx, 1);
     if (focusIdx >= state.machines.length) focusIdx = Math.max(0, state.machines.length - 1);
     save(); checkAchEx(); renderAll();
@@ -4132,8 +4143,8 @@ $("btnExpand").addEventListener("click", () => {
 $("btnGrand").addEventListener("click", () => {
   if (isDead()) return;
   const recentBuy = state.machines.some(m => m.boughtDay !== null && state.day - m.boughtDay <= 1);
-  if (state.grandOpen || !recentBuy || state.day - state.lastGrand < 7 || state.money < 300000) return;
-  state.money -= 300000; state.grandOpen = true; state.lastGrand = state.day;
+  if (state.grandOpen || !recentBuy || state.day - state.lastGrand < 5 || state.money < 200000) return;
+  state.money -= 200000; state.grandOpen = true; state.lastGrand = state.day;
   exState().c.fair++;
   save(); checkAchEx(); renderAll(); toast("新装開店フェアを予約!次の営業日に開催");
 });

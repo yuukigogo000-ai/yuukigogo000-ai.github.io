@@ -10,8 +10,14 @@
    "len": 1640
   },
   "expandCost": {
-   "sha": "fa97b4fbffbcd28e8ea2a6e4703f9b55",
-   "len": 69
+   "sha": "143e578f8cfd19cacad7d41495cbc9b1",
+   "len": 149,
+   "prevSha": "fa97b4fbffbcd28e8ea2a6e4703f9b55",
+   "rebaselined": {
+    "date": "2026-09-05",
+    "reason": "難易度調整(ユーザー指示)。数値のみの意図的変更で、simulateDay / sanitizeState / save / load は byte 一致のまま。",
+    "change": "2,000,000+(cap-10)×300,000 → (1,200,000+(cap-10)×320,000)×難易度係数。序盤の拡張を軽くし、終盤の費用は据え置き。"
+   }
   },
   "isDead": {
    "sha": "5ffae59c12c56c8cb51200ba8f4d051b",
@@ -62,8 +68,14 @@
    "len": 77
   },
   "creditLimit": {
-   "sha": "087767c41532bdbd3e78b5d0a18a7057",
-   "len": 78
+   "sha": "c0091e86cec34231680840d750f85b80",
+   "len": 147,
+   "prevSha": "087767c41532bdbd3e78b5d0a18a7057",
+   "rebaselined": {
+    "date": "2026-09-05",
+    "reason": "難易度調整(ユーザー指示)。数値のみの意図的変更で、simulateDay / sanitizeState / save / load は byte 一致のまま。",
+    "change": "資産×0.7+2,000,000 → (資産×0.45+1,200,000)×難易度係数。融資枠を絞って資金ショートを本当の死因にした。"
+   }
   },
   "isTokubi": {
    "sha": "d793be4b4bf866b3307ea41c47d43316",
@@ -120,8 +132,16 @@
    "len": 19
   },
   "DIFFS": {
-   "sha": "f0d53ee0815ed98633bc80ecb2f9418c",
-   "len": 292
+   "sha": "fcd001777dd310fa725fad40befcdef2",
+   "len": 396,
+   "prevSha": "f0d53ee0815ed98633bc80ecb2f9418c",
+   "rebaselined": {
+    "balance2026_09_05": {
+     "date": "2026-09-05",
+     "reason": "難易度調整(ユーザー指示)。数値のみの意図的変更で、simulateDay / sanitizeState / save / load は byte 一致のまま。",
+     "change": "難易度の幅を拡大し、creditMul / expandMul を追加。easy 13.5M/0.72/0.45/0.65/1.06、normal 11M/1.0、hard 5M/1.6/2.0/1.8/0.90。"
+    }
+   }
   },
   "CATALOG": {
    "sha": "edea1418278fdb2828b5717e1dffcf1e",
@@ -157,12 +177,28 @@
    }
   },
   "MARGIN": {
-   "sha": "f2f6ea3496057c7265ef5ca9f1ff1a7f",
-   "len": 73
+   "sha": "0da87b5510e16580707b64232fe0f2a6",
+   "len": 76,
+   "prevSha": "f2f6ea3496057c7265ef5ca9f1ff1a7f",
+   "rebaselined": {
+    "balance2026_09_05": {
+     "date": "2026-09-05",
+     "reason": "難易度調整(ユーザー指示)。数値のみの意図的変更で、simulateDay / sanitizeState / save / load は byte 一致のまま。",
+     "change": "設定4を0.11→0.105、設定5を0.05→0.035、設定6を-0.02→-0.055。高設定を出し続けると標準難易度でも潰れるようにした(設定1〜3は不変)。"
+    }
+   }
   },
   "ADS": {
-   "sha": "b0ca13d77bc5ef269253cbfc7093a6da",
-   "len": 266
+   "sha": "8f8af8f472249ef7b9f5a8176a2892eb",
+   "len": 266,
+   "prevSha": "b0ca13d77bc5ef269253cbfc7093a6da",
+   "rebaselined": {
+    "balance2026_09_05": {
+     "date": "2026-09-05",
+     "reason": "難易度調整(ユーザー指示)。数値のみの意図的変更で、simulateDay / sanitizeState / save / load は byte 一致のまま。",
+     "change": "チラシ 12人/4% → 20人/5%、SNS 30人/8% → 48人/10%、TV 75人/15% → 115人/18%。費用は据え置き。広告が使うと損な状態を解消。"
+    }
+   }
   },
   "TRENDS": {
    "sha": "a52017927efc64659569f74cff3bed86",
