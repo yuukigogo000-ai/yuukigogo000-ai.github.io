@@ -1212,9 +1212,9 @@ const MAX_CAP = 60;            // 店舗拡張の上限台数
 
 // ---- 難易度 ----
 const DIFFS = {
-  easy:   { label:"のんびり", money:12000000, rentMul:0.80, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.20, expandMul:0.85, upkeepMul:0.30 },
-  normal: { label:"標準",     money:9000000,  rentMul:1.20, proMul:1.00, heatMul:1.10, fillMul:0.97, creditMul:0.65, expandMul:1.10, upkeepMul:1.00 },
-  hard:   { label:"修羅",     money:6500000,  rentMul:1.60, proMul:1.80, heatMul:1.80, fillMul:0.90, creditMul:0.40, expandMul:1.35, upkeepMul:1.60 },
+  easy:   { label:"のんびり", money:12000000, rentMul:0.80, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.20, expandMul:0.85, upkeepMul:0.30, rivalMul:0.85 },
+  normal: { label:"標準",     money:9000000,  rentMul:1.20, proMul:1.00, heatMul:1.10, fillMul:0.97, creditMul:0.65, expandMul:1.10, upkeepMul:1.50, rivalMul:1.30 },
+  hard:   { label:"修羅",     money:6500000,  rentMul:1.60, proMul:1.80, heatMul:1.80, fillMul:0.90, creditMul:0.40, expandMul:1.35, upkeepMul:1.70, rivalMul:1.75 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -1777,9 +1777,9 @@ function simulateDay() {
    単一の閾値だと のんびり=常にS / 修羅=常にC になって機能しない。
    各値は最適プレイと熟練プレイの実測分布から決めてある。 */
 const RANK_DAYS = {
-  easy:   { s:  55, a:  68, b:  88 },
-  normal: { s:  81, a:  99, b: 125 },
-  hard:   { s: 120, a: 156, b: 195 },
+  easy:   { s:  55, a:  67, b:  86 },
+  normal: { s:  91, a: 112, b: 140 },
+  hard:   { s: 123, a: 158, b: 200 },
 };
 function clearRank(d) {
   const t = RANK_DAYS[state && state.diff] || RANK_DAYS.normal;
@@ -2935,6 +2935,7 @@ function rgState() {
   g.rnd = Number.isFinite(Number(g.rnd)) ? Math.floor(Math.abs(Number(g.rnd))) % 1e9 : 0;
   if (!g.known || typeof g.known !== "object" || Array.isArray(g.known)) g.known = {};
   for (const k of Object.keys(g.known)) { if (!regionOf(k)) delete g.known[k]; else g.known[k] = true; }
+  g.homePos = Math.max(0, Math.floor(Number(g.homePos) || 0));
   g.done = g.done === true;
   g.doneDay = Number.isFinite(Number(g.doneDay)) && g.doneDay !== null ? Math.floor(Number(g.doneDay)) : null;
   g.seen = g.seen === true;
@@ -2990,7 +2991,7 @@ function rgProjectBase(a, n, pol, mgr) {
 }
 function rgTopRival(a) {
   const l = rgState().riv[a] || [];
-  return l.reduce((m, r) => Math.max(m, r.sc), 0);
+  return Math.round(l.reduce((m, r) => Math.max(m, r.sc), 0) * rivalMul() * 10) / 10;
 }
 /* 「届く / 届かない」を色つきで返す */
 function rgVerdict(sc, top) {
@@ -3029,9 +3030,11 @@ function rgMyScore(a) {
 }
 
 /* 順位表: [{nm, sc, me}] を降順で */
+/* 競合の強さは難易度で変わる。旧セーブにも効くよう、生成値ではなく参照時に掛ける。 */
+const rivalMul = () => (DIFFS[state.diff] || DIFFS.normal).rivalMul ?? 1;
 function rgRanking(a) {
   const g = rgState();
-  const rows = (g.riv[a] || []).map(r => ({ nm: r.nm, sc: r.sc, me: false }));
+  const rows = (g.riv[a] || []).map(r => ({ nm: r.nm, sc: Math.round(r.sc * rivalMul() * 10) / 10, me: false }));
   const my = rgMyScore(a);
   if (my !== null) rows.push({ nm: a === RG_HOME ? "自店(本店)" : "自店(支店)", sc: my, me: true });
   rows.sort((x, y) => y.sc - x.sc);
@@ -3156,8 +3159,25 @@ function rgDay(rec) {
     }
   }
 
-  // 5. 地元を押さえている間は本店の評判がじわりと上がる
-  if (g.ctrl[RG_HOME]) state.rep = Math.max(1, Math.min(100, state.rep + 0.3));
+  // 5. 地元での順位が本店の営業そのものに効く。
+  //    競合は毎日わずかに伸びるので、店を伸ばさずにいると順位が落ち、
+  //    客を持っていかれて赤字に転がり落ちる。投資すれば取り返せる。
+  {
+    const rank = rgRanking(RG_HOME);
+    const pos = rank.findIndex(r => r.me);
+    if (pos >= 0) {
+      const P = pos === 0 ? { rep: 0.30, reg: 0.004, msg: null }
+              : pos === 1 ? { rep: 0, reg: 0, msg: null }
+              : pos === 2 ? { rep: -0.40, reg: -0.012, msg: `📉 地元で3番手に落ちた。常連が少しずつ ${esc(rank[0].nm)} に流れている…` }
+              : { rep: -0.80, reg: -0.024, msg: `📉 地元で${pos + 1}番手。${esc(rank[0].nm)}に客を吸われ、常連が目に見えて減っている…` };
+      if (P.rep > 0) state.rep = Math.min(100, state.rep + P.rep);
+      // マイナスは現在の評判に比例(底なしに沈まず、低いところで均衡する)
+      else if (P.rep < 0) state.rep = Math.max(1, state.rep + P.rep * (state.rep / 100));
+      if (P.reg) state.regulars = Math.max(0, state.regulars * (1 + P.reg));
+      if (P.msg && state.day % 5 === 0) notes.push(P.msg);
+      g.homePos = pos + 1;
+    }
+  }
 
   // 6. 全国制覇
   if (!g.done && rgCtrlCount() >= REGIONS.length) {

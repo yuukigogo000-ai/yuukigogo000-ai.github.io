@@ -139,9 +139,9 @@
    "len": 19
   },
   "DIFFS": {
-   "sha": "62f7cec23981d7652e6b4b3f889eb50d",
-   "len": 443,
-   "prevSha": "9d2badd373caab46c37ee3e5778c71ff",
+   "sha": "a5076ea38e9b7075fd4082f998eb6434",
+   "len": 488,
+   "prevSha": "d9dd736bbbc82a5e3e3723c09acbfa83",
    "rebaselined": {
     "balance2026_09_05": {
      "date": "2026-09-05",
@@ -165,6 +165,12 @@
      "reason": "初期資金を死因にしない方針への変更(ユーザー指示)。運転資金を戻し、代わりに規模維持費(upkeepMul)を新設して中盤以降の圧にした。",
      "change": "easy money 13,500,000→12,000,000 / normal 4,600,000→9,000,000 / hard 4,200,000→6,500,000。rentMul は easy0.72→0.80 normal2.55→1.20 hard2.80→1.60 に戻し、upkeepMul(easy0.30 / normal1.00 / hard1.60)を追加。creditMul easy1.25→1.20 normal0.40→0.65 hard0.26→0.40。",
      "prevSha": "9d2badd373caab46c37ee3e5778c71ff"
+    },
+    "redink2026_09_05": {
+     "date": "2026-09-05",
+     "reason": "「営業がうまくいかず赤字になる状態」を作るための調整(ユーザー指示)。rivalMul を追加し、upkeepMul を引き上げた。",
+     "change": "rivalMul 新設(easy0.85 / normal1.30 / hard1.75)。upkeepMul normal 1.00→1.50、hard 1.60→1.70(難易度順に単調になるよう調整)。",
+     "prevSha": "62f7cec23981d7652e6b4b3f889eb50d"
     }
    }
   },
@@ -264,14 +270,14 @@
    "len": 60
   },
   "RANK_DAYS": {
-   "sha": "80e8acdd1ed7c0665954826905d2b1d5",
-   "len": 121,
+   "sha": "44d29bd02ad668b62fff045c5a4f0cfe",
+   "len": 122,
    "added": {
     "date": "2026-09-05",
     "reason": "難易度別クリアランク閾値。clearRank の分離に伴い新設。",
-    "tuned": "実測分布に合わせて確定: easy 55/68/88、normal 81/99/125、hard 120/156/195。最適プレイでSが約半数、熟練プレイでA、それ以下でB/Cになる。"
+    "tuned": "難易度調整のたびに実測分布から取り直している。最終: easy 55/67/86、normal 91/112/140、hard 123/158/200。最適プレイでSが約6割、熟練プレイでA、それ以下でB/C。"
    },
-   "prevSha": "1dbff77b21906c1539d1d01702028f47"
+   "prevSha": "80e8acdd1ed7c0665954826905d2b1d5"
   }
  },
  "missing": [],
