@@ -103,8 +103,49 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     const s0 = await p.evaluate(() => state.staff);
     await clickC('#btnHire'); await p.waitForTimeout(120);
     ok('FN スタッフ雇用', await p.evaluate(n => state.staff === n + 1, s0));
-    await clickC('#btnFire'); await p.waitForTimeout(120);
+    // 解雇は名簿から個別に行う(旧#btnFireはP-30のためDOMには残すが非表示)
+    await p.evaluate(() => { window.confirm = () => true; stFire(stState().list.length - 1); });
+    await p.waitForTimeout(150);
     ok('FN スタッフ解雇', await p.evaluate(n => state.staff === n, s0));
+    // ---- 採用ガチャ / 試用期間 ----
+    ok('FN 名簿の人数が state.staff と一致する', await p.evaluate(() => stState().list.length === state.staff));
+    ok('FN 採用直後はランクと特性が伏せられている', await p.evaluate(() => {
+      const before = state.staff;
+      stHire();
+      const m = stState().list[stState().list.length - 1];
+      return state.staff === before + 1 && m.k === false && m.d === 0 && typeof m.nm === 'string' && m.nm.length > 0;
+    }));
+    ok('FN 名簿の表示でも見習いは「?」', await p.evaluate(() => {
+      setArea('mgmt');
+      const rows = [...document.querySelectorAll('#staffList .stw')];
+      const last = rows[rows.length - 1];
+      return rows.length === state.staff && last.querySelector('.stw-r').textContent === '?' && /見習い/.test(last.textContent);
+    }));
+    ok(`FN ${'${ST_REVEAL_DAYS}'}営業日でランクと特性が判明する`, await p.evaluate(() => {
+      const m = stState().list[stState().list.length - 1];
+      for (let i = 0; i < ST_REVEAL_DAYS; i++) stDay();
+      return m.k === true && m.d >= ST_REVEAL_DAYS;
+    }));
+    ok('FN 採用は完全ランダム(引きが毎回同じにならない)', await p.evaluate(() => {
+      const seen = new Set();
+      for (let i = 0; i < 400; i++) { const m = stMake(false); seen.add(m.r + '/' + m.t); }
+      return seen.size >= 12;
+    }));
+    ok('FN 早期解雇で評判が下がり、7日以上なら下がらない', await p.evaluate(() => {
+      window.confirm = () => true;
+      const s = stState();
+      s.list.push({ nm: '試験 太郎', r: 'B', t: 'none', d: 1, k: true }); state.staff++;
+      const r0 = state.rep; stFire(s.list.length - 1); const early = r0 - state.rep;
+      s.list.push({ nm: '試験 次郎', r: 'B', t: 'none', d: 30, k: true }); state.staff++;
+      const r1 = state.rep; stFire(s.list.length - 1); const late = r1 - state.rep;
+      return Math.abs(early - ST_FIRE_REP) < 0.01 && Math.abs(late) < 0.01;
+    }));
+    ok('FN スタッフの日給は全員一律で simulateDay の計算と一致する', await p.evaluate(() => {
+      const before = state.money;
+      const r = simulateDay();
+      // 経費に含まれる人件費が 人数×13,000 のままであること
+      return r.rec.exp >= state.staff * 13000;
+    }));
     await clickC('[data-ad="flyer"]'); await p.waitForTimeout(120);
     ok('FN 広告設定', await p.evaluate(() => state.ad === 'flyer'));
     await clickC('[data-rate="low"]'); await p.waitForTimeout(120);
@@ -133,12 +174,12 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     ok('FN 損益推移グラフ', await p.evaluate(() => !!document.querySelector('#chartWrap svg')));
     ok('FN 営業成績一覧', await p.evaluate(() => document.querySelectorAll('#ledgerBody .led').length > 0));
     await p.evaluate(() => setArea('ach')); await p.waitForTimeout(200);
-    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張53件は別グループ)
+    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張58件は別グループ)
     ok('FN 実績一覧', await p.evaluate(() => {
       const rows = [...document.querySelectorAll('#achList .ach')];
       const names = rows.map(e => e.querySelector('.n').textContent);
       const BASE = ['開店初日','日給100万','地域の優良店','常連の店','中堅ホール','巨艦店','1ヶ月経営','特日の神','お上の世話','信用第一','軌道に乗る','パチスロ帝国','初当たり体験','事故連発生','ドル箱タワー'];
-      return rows.length === 68 && BASE.every(n => names.includes(n));
+      return rows.length === 73 && BASE.every(n => names.includes(n));
     }));
     // ---- 全国 / 地方進出 / 国取り ----
     await p.evaluate(() => setArea('map')); await p.waitForTimeout(200);

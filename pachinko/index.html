@@ -857,6 +857,22 @@ svg{flex:0 0 auto}
 /* 地方の特色モード切替 */
 .seg.rgmode{grid-template-columns:repeat(2,1fr);margin-bottom:4px}
 .seg.rgmode button{font-family:var(--f-disp);font-size:11.5px;font-weight:800}
+
+/* スタッフ名簿 */
+.stlist{display:grid;gap:3px;margin-top:5px}
+.stw{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:1px 7px;align-items:center;
+  padding:5px 6px;border-radius:2px;border:1px solid rgba(255,212,59,.14);
+  background:linear-gradient(180deg,#14171f,#0a0b10)}
+.stw-r{grid-row:1/3;align-self:center;font-family:var(--f-num);font-size:15px;font-weight:900;
+  text-align:center;color:var(--tx-3)}
+.stw.s .stw-r{color:var(--gold);text-shadow:0 0 8px rgba(255,212,59,.6)}
+.stw.a .stw-r{color:var(--pos)}
+.stw.c .stw-r{color:var(--neg)}
+.stw.unk{border-style:dashed}
+.stw-n{font-size:11.5px;font-weight:800;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stw-m{grid-column:2;font-size:8.5px;color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stw-m b{font-weight:800} .stw-m b.g{color:var(--pos)} .stw-m b.b{color:var(--neg)}
+.stw-x{grid-column:3;grid-row:1/3;align-self:center;min-width:52px;font-size:10px}
 </style>
 </head>
 <body>
@@ -1009,11 +1025,15 @@ svg{flex:0 0 auto}
           <div class="gp-b">
             <div class="row"><span class="k">現在のスタッフ</span><span class="v" id="staffCount">2人</span></div>
             <div class="row"><span class="k">必要人数</span><span class="v" id="staffNeed">1人</span></div>
+            <div id="staffSum"></div>
+            <div id="staffList" class="stlist"></div>
             <div class="btn-grid" style="margin-top:6px">
               <button class="btn" id="btnHire">雇用する</button>
-              <button class="btn red" id="btnFire">解雇する</button>
+              <button class="btn" id="btnFire" hidden>解雇する</button>
             </div>
-            <p class="note">台8台につきスタッフ1人が必要。不足すると接客が回らず評判が下がり、常連も育たない。日給 ¥13,000/人。</p>
+            <p class="note">台8台につきスタッフ1人が必要。不足すると接客が回らず評判が下がり、常連も育たない。日給 ¥13,000/人。<br>
+            <b>誰が来るかは完全にランダム。</b>採用した時点では名前しか分からず、<b>3営業日</b>働かせて初めてランクと特性が判明する。
+            勤続7日未満で解雇すると「すぐ人を切る店」と噂が立ち<b>評判−4</b>。</p>
           </div>
         </div>
 
@@ -1998,6 +2018,12 @@ const ACH_EX = [
   { id:"ex-rg-mega", name:"大型店",           desc:"60台の支店を作った", g:"全国" },
   { id:"ex-rg-fit",  name:"土地を読む",       desc:"客層と一致した構成の支店で一番店を獲った", g:"全国" },
   { id:"ex-rg-nation",name:"全国制覇",        desc:"15地方すべてを同時に制圧した", g:"全国" },
+  // ---- 人事 ----
+  { id:"ex-st-s",    name:"当たりを引いた",   desc:"Sランクのスタッフを採用した", g:"人事" },
+  { id:"ex-st-3a",   name:"精鋭",             desc:"A以上のスタッフを同時に3人抱えた", g:"人事" },
+  { id:"ex-st-vet",  name:"古参",             desc:"勤続60営業日のスタッフがいる", g:"人事" },
+  { id:"ex-st-fire", name:"回転ドア",         desc:"早期解雇を5回してしまった", g:"人事" },
+  { id:"ex-st-full", name:"看板だらけ",       desc:"良い特性を持つスタッフを同時に4人抱えた", g:"人事" },
 ];
 const ALL_ACH_COUNT = () => ACHIEVEMENTS.length + ACH_EX.length;
 
@@ -2118,6 +2144,15 @@ function checkAchEx(ctx) {
     if (g2.ctrl.hok && g2.ctrl.oki) G("ex-rg-ns");
     if (g2.br.some(b => g2.ctrl[b.a] && rgFit(b.tp, regionOf(b.a)) === 1)) G("ex-rg-fit");
     if (g2.done) G("ex-rg-nation");
+  }
+  // ---- 人事 ----
+  if (state.ex && state.ex.st) {
+    const list = stState().list;
+    if (list.some(m => m.k && m.r === "S")) G("ex-st-s");
+    if (list.filter(m => m.k && (m.r === "S" || m.r === "A")).length >= 3) G("ex-st-3a");
+    if (list.some(m => m.d >= 60)) G("ex-st-vet");
+    if (stState().fired >= 5) G("ex-st-fire");
+    if (list.filter(m => m.k && ST_TRAIT[m.t].good === true).length >= 4) G("ex-st-full");
   }
   save(true);
 }
@@ -2400,6 +2435,7 @@ function renderShop() {
 function renderMgmt() {
   const dead = isDead(), need = staffNeeded();
   $("staffCount").textContent = `${state.staff}人 (日給計 ${yen(state.staff * 13000)})`;
+  renderStaff();
   const sn = $("staffNeed");
   sn.textContent = `${need}人 ${state.staff < need ? "不足中!" : "充足"}`;
   sn.className = "v " + (state.staff < need ? "neg" : "pos");
@@ -2485,7 +2521,7 @@ function renderAch() {
       ${ok ? `<span style="margin-left:auto;color:var(--gold)">${ic("check")}</span>` : ""}
     </div>`;
   const groups = [["基本", ACHIEVEMENTS.map(a => [a, hasAch(a.id)])]];
-  const order = ["収益", "継続", "集客", "ホール", "経営", "遊技", "到達", "全国"];
+  const order = ["収益", "継続", "集客", "ホール", "経営", "遊技", "到達", "全国", "人事"];
   for (const g of order) {
     const items = ACH_EX.filter(a => a.g === g).map(a => [a, exAch.includes(a.id)]);
     if (items.length) groups.push([g, items]);
@@ -3435,6 +3471,220 @@ function rgShowUnlock() {
 }
 
 /* ==========================================================================
+   STAFF LAYER — 完全ランダム採用 / 試用期間 / 特性
+   保護ロジックには触れない。名簿は state.ex.st に隔離し、
+   state.staff(保護スキーマの人数)とは常に長さを一致させる。
+   日給は全員 ¥13,000 のままなので simulateDay の wages 計算も無変更。
+   ========================================================================== */
+
+const ST_SURNAME = ["佐々木","三ツ矢","黒沢","水無瀬","南雲","伊集院","日下部","綾瀬","小鳥遊","八神",
+                    "御手洗","一ノ瀬","来栖","柊","如月","神楽坂","天羽","四方田","榊原","鷺沼"];
+const ST_GIVEN_M = ["蓮","陽向","颯","悠真","湊","樹","朔","律","要","柊斗"];
+const ST_GIVEN_F = ["結衣","澪","陽菜","美緒","咲良","詩織","楓","栞","茜","千夏"];
+
+/* ランク: 接客力(評判への日次寄与)と出現率 */
+/* serve = 評判への日次寄与 / draw = 常連への日次寄与。
+   出現率で重み付けした期待値はほぼ0になるようにしてある(引きの良し悪しが本体で、
+   雇うだけで強くなる仕組みにはしない)。常連は simulateDay 側で
+   収容の半分に頭打ちされるので、良い人材を揃えても青天井にはならない。 */
+const ST_RANK = {
+  S: { w: 6,  serve: 0.55, draw: 1.6,  label: "S" },
+  A: { w: 19, serve: 0.25, draw: 0.8,  label: "A" },
+  B: { w: 50, serve: 0.05, draw: 0.15, label: "B" },
+  C: { w: 25, serve: -0.28, draw: -0.6, label: "C" },
+};
+/* 特性は1人ひとつ、または無し */
+const ST_TRAIT = {
+  none:   { w: 30, good: null, name: "―",             desc: "特筆すべき癖はない" },
+  mood:   { w: 10, good: true,  name: "ムードメーカー", desc: "店の空気が明るくなる (評判 +0.30/日)" },
+  face:   { w: 9,  good: true,  name: "看板スタッフ",   desc: "この人目当ての客がいる (常連 +1.0/日)" },
+  mech:   { w: 8,  good: true,  name: "元整備士",       desc: "台のコンディションを保つ (全台の人気 +0.20/日)" },
+  clean:  { w: 8,  good: true,  name: "掃除が行き届く", desc: "店内が清潔に保たれる (評判 +0.20 / 常連 +0.4 /日)" },
+  late:   { w: 12, good: false, name: "遅刻魔",         desc: "たまに開店に間に合わない (25%で評判 −1.6)" },
+  cold:   { w: 12, good: false, name: "無愛想",         desc: "接客に難がある (評判 −0.40/日)" },
+  sloppy: { w: 11, good: false, name: "どんぶり勘定",   desc: "レジが毎日わずかに合わない (−¥9,000/日)" },
+};
+const ST_REVEAL_DAYS = 3;   // 何営業日で評価が出るか
+const ST_LOYAL_DAYS = 7;    // これ未満で解雇すると評判ペナルティ
+const ST_FIRE_REP = 4;      // 早期解雇の評判ペナルティ
+const ST_REP_GAIN = 1.25;    // 平均接客力 → 日次の評判
+const ST_DRAW_GAIN = 0.15;  // 平均集客力 → 日次の常連
+
+const wpick = (obj, rnd) => {
+  const keys = Object.keys(obj);
+  const tot = keys.reduce((a, k) => a + obj[k].w, 0);
+  let r = (rnd ? rnd() : Math.random()) * tot;
+  for (const k of keys) { r -= obj[k].w; if (r < 0) return k; }
+  return keys[keys.length - 1];
+};
+
+function stMakeName() {
+  const f = Math.random() < 0.5;
+  const g = f ? ST_GIVEN_F : ST_GIVEN_M;
+  return ST_SURNAME[Math.floor(Math.random() * ST_SURNAME.length)] + " " + g[Math.floor(Math.random() * g.length)];
+}
+function stMake(known) {
+  return {
+    nm: stMakeName(),
+    r: wpick(ST_RANK),
+    t: wpick(ST_TRAIT),
+    d: 0,                    // 勤続営業日数
+    k: known === true,       // 評価が判明しているか
+  };
+}
+
+/* ---------- 状態 ---------- */
+/* 正規化は読み込み直後の1回だけ。毎回オブジェクトを作り直すと、
+   呼び出し側が保持している名簿への書き込みが捨てられてしまう
+   (__ok は非列挙なのでセーブには残らない)。人数との同期だけは毎回行う。 */
+function stState() {
+  const ex = exState();
+  if (!ex.st || typeof ex.st !== "object" || Array.isArray(ex.st)) ex.st = {};
+  const s = ex.st;
+  if (s.__ok) return stSync(s);
+  s.list = (Array.isArray(s.list) ? s.list : [])
+    .filter(m => m && typeof m === "object")
+    .slice(0, 200)
+    .map(m => ({
+      nm: typeof m.nm === "string" ? m.nm.slice(0, 24) : stMakeName(),
+      r: ST_RANK[m.r] ? m.r : "B",
+      t: ST_TRAIT[m.t] ? m.t : "none",
+      d: Math.max(0, Math.floor(Number(m.d) || 0)),
+      k: m.k === true,
+    }));
+  s.fired = Math.max(0, Math.floor(Number(s.fired) || 0));
+  Object.defineProperty(s, "__ok", { value: true, enumerable: false, configurable: true });
+  return stSync(s);
+}
+/* 人数(保護スキーマ)と名簿の長さを必ず一致させる。
+   旧セーブや外部からの人数変更で足りない分は「以前からいるスタッフ」として補う。 */
+function stSync(s) {
+  while (s.list.length < state.staff) s.list.push({ nm: stMakeName(), r: "B", t: "none", d: ST_REVEAL_DAYS, k: true });
+  if (s.list.length > state.staff) s.list.length = state.staff;
+  return s;
+}
+const stServe = m => ST_RANK[m.r].serve;
+const stTrait = m => ST_TRAIT[m.t];
+
+/* ---------- 採用・解雇 ---------- */
+function stHire() {
+  if (isDead()) return;
+  const m = stMake(false);
+  stState().list.push(m);
+  state.staff++;
+  save(); checkAchEx(); renderAll();
+  toast(`${m.nm} を採用した(評価は${ST_REVEAL_DAYS}営業日後)`);
+}
+function stFire(i) {
+  if (isDead()) return;
+  const s = stState(), m = s.list[i];
+  if (!m || state.staff <= 1) return;
+  const early = m.d < ST_LOYAL_DAYS;
+  const msg = early
+    ? `${m.nm} を解雇しますか?\n\n勤続${m.d}営業日での解雇です。すぐ人を切る店だと噂が立ち、評判が ${ST_FIRE_REP} 下がります。`
+    : `${m.nm} を解雇しますか?`;
+  if (!confirm(msg)) return;
+  s.list.splice(i, 1);
+  state.staff--;
+  if (early) {
+    state.rep = Math.max(1, state.rep - ST_FIRE_REP);
+    s.fired++;
+    toast(`${m.nm} を解雇。早期解雇で評判 −${ST_FIRE_REP}`);
+  } else {
+    toast(`${m.nm} を解雇した`);
+  }
+  save(); checkAchEx(); renderAll();
+}
+
+/* ---------- 試用期間中の一言(当たらないこともある) ---------- */
+const ST_HINT_GOOD = ["常連客と自然に話し込んでいた", "開店前には準備を終えていた", "困っている客に自分から声をかけていた", "島回りが早い"];
+const ST_HINT_BAD  = ["レジ前で手が止まっていた", "客に呼ばれても気づいていない場面があった", "指示を二度聞き返していた", "閉店後の片付けが残っていた"];
+const ST_HINT_MID  = ["可もなく不可もなく動いていた", "まだ店の空気に慣れていない様子だ", "先輩の後ろについて回っていた"];
+function stHint(m) {
+  const good = m.r === "S" || m.r === "A";
+  const bad = m.r === "C";
+  let pool = ST_HINT_MID;
+  if ((good || bad) && Math.random() < 0.6) pool = good ? ST_HINT_GOOD : ST_HINT_BAD;
+  return `👀 見習いの${m.nm}、${pool[Math.floor(Math.random() * pool.length)]}。`;
+}
+
+/* ---------- 1日の処理。runDay から simulateDay の後に呼ばれる ---------- */
+function stDay() {
+  if (!state.ex) exState();
+  const s = stState();
+  const notes = [];
+  let rep = 0, regs = 0, money = 0, pop = 0;
+
+  let sumServe = 0, sumDraw = 0;
+  for (const m of s.list) {
+    m.d++;
+    let sv = ST_RANK[m.r].serve, dr = ST_RANK[m.r].draw;
+    const t = stTrait(m);
+    switch (m.t) {
+      case "mood":   sv += 0.30; break;
+      case "face":   dr += 1.20; break;
+      case "mech":   pop += 0.20; break;
+      case "clean":  sv += 0.20; dr += 0.50; break;
+      case "cold":   sv -= 0.40; break;
+      case "sloppy": money -= 9000; break;
+      case "late":
+        if (Math.random() < 0.25) { sv -= 1.60; notes.push(`⏰ ${m.nm}が寝坊。開店に穴が空いた…`); }
+        break;
+    }
+    sumServe += sv; sumDraw += dr;
+    if (!m.k) {
+      if (m.d >= ST_REVEAL_DAYS) {
+        m.k = true;
+        const good = m.r === "S" || m.r === "A";
+        notes.push(`${good ? "🌟" : m.r === "C" ? "😑" : "📋"} ${m.nm}の勤務評価が出た — <b>${m.r}ランク</b>${t.name === "―" ? "" : " / " + t.name}`);
+      } else {
+        notes.push(stHint(m));
+      }
+    }
+  }
+  // 人数ではなく「平均品質」で効かせる。頭数を増やすだけでは強くならず、
+  // 良い人を揃えたときだけ伸びる。
+  const n = s.list.length || 1;
+  rep = (sumServe / n) * ST_REP_GAIN;
+  regs = (sumDraw / n) * Math.min(n, 6) * ST_DRAW_GAIN;
+
+  rep = Math.max(-1.0, Math.min(1.0, rep));
+  if (rep) state.rep = Math.max(1, Math.min(100, state.rep + rep));
+  if (regs) state.regulars = Math.max(0, state.regulars + regs);
+  if (money) state.money += Math.round(money);
+  if (pop) for (const mc of state.machines) mc.pop = Math.min(300, mc.pop + pop);
+
+  save(true);
+  return { notes, rep, regs, money };
+}
+
+/* ---------- 名簿UI ---------- */
+function renderStaff() {
+  const w = $("staffList"); if (!w) return;
+  const s = stState(), dead = isDead();
+  const known = s.list.filter(m => m.k);
+  const avg = known.length ? known.reduce((a, m) => a + stServe(m), 0) : 0;
+  const draw = known.length ? known.reduce((a, m) => a + ST_RANK[m.r].draw + (m.t === "face" ? 1.0 : m.t === "clean" ? 0.4 : 0), 0) : 0;
+  const sum = $("staffSum");
+  if (sum) {
+    sum.innerHTML = `
+      <div class="row"><span class="k">この陣容の1日効果</span><span class="v ${avg > 0.2 ? "pos" : avg < -0.1 ? "neg" : ""}">評判 ${avg >= 0 ? "+" : ""}${avg.toFixed(2)} ・ 常連 ${draw >= 0 ? "+" : ""}${draw.toFixed(1)}${known.length < state.staff ? ` <small style="color:var(--tx-3)">(見習い${state.staff - known.length}人を除く)</small>` : ""}</span></div>`;
+  }
+  w.innerHTML = s.list.map((m, i) => {
+    const t = stTrait(m);
+    const cls = !m.k ? "unk" : m.r === "S" ? "s" : m.r === "A" ? "a" : m.r === "C" ? "c" : "b";
+    return `<div class="stw ${cls}">
+      <span class="stw-r">${m.k ? m.r : "?"}</span>
+      <span class="stw-n">${esc(m.nm)}</span>
+      <span class="stw-m">${m.k
+        ? `評判 ${stServe(m) >= 0 ? "+" : ""}${stServe(m).toFixed(2)} ・ 常連 ${ST_RANK[m.r].draw >= 0 ? "+" : ""}${ST_RANK[m.r].draw.toFixed(1)}${t.name === "―" ? "" : ` ・ <b class="${t.good === true ? "g" : t.good === false ? "b" : ""}">${esc(t.name)}</b>`}`
+        : `見習い — あと${Math.max(0, ST_REVEAL_DAYS - m.d)}営業日で評価が出る`} ・ 勤続${m.d}日</span>
+      <button class="btn sm red stw-x" data-fire="${i}" ${dead || state.staff <= 1 ? "disabled" : ""}>解雇</button>
+    </div>`;
+  }).join("");
+}
+
+/* ==========================================================================
    モーダル / 1営業日 / 当日結果 / 試打 / 起動
    ========================================================================== */
 let trialCleanup = null;
@@ -3491,6 +3741,7 @@ function runDay() {
   const finish = () => {
     let result;
     try { result = simulateDay(); } finally { busy = false; }
+    try { result.st = stDay(); if (result.st.notes.length) result.notes = result.notes.concat(result.st.notes); } catch (e) { result.st = null; }
     try { result.rg = rgDay(result.rec); } catch (e) { result.rg = null; }
     try { checkAchEx({ dayEnd: true, notes: result.notes }); } catch (e) {}
     renderAll();
@@ -4024,7 +4275,7 @@ function showTutorial() {
    操作の結線
    ========================================================================== */
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode]");
+  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode],[data-fire]");
   if (!el) return;
   const d = el.dataset;
 
@@ -4042,6 +4293,7 @@ document.addEventListener("click", e => {
   if (d.rgpol) { const [a, v] = d.rgpol.split(":"); rgPol(a, Number(v)); return; }
   if (d.rgmid) { const [a, m] = d.rgmid.split(":"); rgMid(a, m); return; }
   if (d.rgmode) { rgSetMode(d.rgmode); return; }
+  if (d.fire !== undefined) { stFire(Number(d.fire)); return; }
 
   if (d.setlist !== undefined) { openSetList(); return; }
   if (d.slsort) { setListSort = d.slsort; renderSetList(); return; }
@@ -4130,8 +4382,9 @@ document.addEventListener("click", e => {
 });
 
 $("btnOpen").addEventListener("click", runDay);
-$("btnHire").addEventListener("click", () => { if (isDead()) return; state.staff++; save(); checkAchEx(); renderMgmt(); renderNav(); renderStatus(); });
-$("btnFire").addEventListener("click", () => { if (isDead()) return; if (state.staff > 1) { state.staff--; save(); renderMgmt(); renderNav(); renderStatus(); } });
+$("btnHire").addEventListener("click", stHire);
+// 旧「解雇する」ボタンは名簿の個別解雇に置き換わった(IDはP-30のため残置)
+$("btnFire").addEventListener("click", () => { if (isDead()) return; if (state.staff > 1) stFire(stState().list.length - 1); });
 $("btnExpand").addEventListener("click", () => {
   if (isDead()) return;
   const cost = expandCost();
