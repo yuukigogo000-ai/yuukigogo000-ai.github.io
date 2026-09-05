@@ -1,27 +1,31 @@
-# あなたの手順(2 つだけ)
+# あなたの手順(3 つ、全部コピペ)
 
-J-Quants の有料プランは契約済みとのことなので、お金の判断は不要。
-プランが足りるかどうかは Opus の `doctor` が自動で判定する(足りなければ VERDICT_0 で正常終了し、必要条件を報告する)。
+J-Quants は契約済み。株ソフトが使っている契約と同じものを使うだけなので、追加料金は出ない(月額制)。
+株ソフトからキーを掘り出す必要はない。**J-Quants はログインのメールとパスワードで動く。**
 
-## ① キーを Opus の環境に入れる
-「別ソフト」に入れたキーは、そのソフトの中にあるだけで Opus からは見えない。次の場所にコピーする。
+## ① AppTweak のキーを 1 つ取る(新しく要るのはこれだけ)
+1. https://www.apptweak.com/ で無料トライアルに登録
+2. ログイン後、Account / API の画面で API キーをコピー
 
-**どこに**: claude.ai/code → Environments → 使う環境 → Environment variables
+## ② キーを入れる
+### PC の Git Bash で動かす場合(推奨)
+Opus を起動する**同じ Git Bash** に、3 行貼る:
+```
+export APPTWEAK_API_KEY=①でコピーしたキー
+export JQUANTS_MAIL_ADDRESS=J-Quantsのログインメール
+export JQUANTS_PASSWORD=J-Quantsのログインパスワード
+```
+(PowerShell なら `$env:APPTWEAK_API_KEY="..."` の形)
 
-**何を**:
-| 変数名 | 値 | どこで見つかるか |
-|---|---|---|
-| `APPTWEAK_API_KEY` | AppTweak の API キー | AppTweak にログイン → Account / API settings。無ければ無料トライアルに登録 |
-| `JQUANTS_MAIL_ADDRESS` | J-Quants のログインメール | 自分のログイン情報。トークンを探す必要なし |
-| `JQUANTS_PASSWORD` | J-Quants のログインパスワード | 同上 |
+### クラウド(claude.ai/code)で動かす場合
+Environments → 使う環境 → Environment variables に同じ 3 つを入れる。
 
-(リフレッシュトークンが手元にあるなら、メール+パスワードの代わりに `JQUANTS_REFRESH_TOKEN` 1 つでもよい)
+チャットにはキーを貼らない。
 
-チャットには貼らない。ここに入れるだけ。
-
-## ② Opus 5 に貼る
-`KICKOFF_PROMPT.md` の「初回」の文をコピーして貼る。以後は放置。
-翌日に止まっていたら「再開」の文を貼る(データ取得が 1 日 5,000 credits 上限のため 2〜3 日かかる)。
+## ③ Opus 5 を起動して貼る
+1. Git Bash でこのリポジトリのフォルダに入り、`claude` を起動(モデルは Opus 5)
+2. `KICKOFF_PROMPT.md` の「初回」の文をコピーして貼る
+3. 放置。翌日に止まっていたら「再開」の文を貼る(データ取得が 1 日 5,000 credits 上限のため 2〜3 日かかる)
 
 ## 終わったら
 Opus から PR と 6 行の報告が来る。結論は `APP_RANK_ALPHA/results/FINAL_VERDICT.md` に VERDICT_0〜5 で書かれる。
