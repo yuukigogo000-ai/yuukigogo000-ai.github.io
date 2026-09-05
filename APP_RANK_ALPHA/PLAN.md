@@ -22,7 +22,7 @@
 |---|---|---|---|
 | D-01 | 置き場所 | このリポジトリの `APP_RANK_ALPHA/` 直下 | 発注者の指定ブランチがこのリポジトリのため。`_config.yml` の `exclude` に `APP_RANK_ALPHA/` を追加済みで、GitHub Pages からは配信されない |
 | D-02 | 公開リポジトリ対策 | **プロバイダ由来の生データ・加工データ・トレード台帳は一切コミットしない**(`APP_RANK_ALPHA/.gitignore` で `data/`・`results/**/ledger_*`・`results/_synthetic/` を除外)。コミットしてよいのは コード・テスト・設定・登録簿(registry)・監査CSV・集計レポート(md/json/html/集計csv)のみ | このリポジトリは public。AppTweak / J-Quants の利用規約上、取得データの再配布は不可。仕様 §82「API利用条件に抵触」= STOP 条件なので、これを守らないと研究自体が無効になる |
-| D-03 | API キーの受け渡し | 環境変数のみ。`APPTWEAK_API_KEY`、`JQUANTS_REFRESH_TOKEN`(任意で `EDINET_API_KEY`)。コードは `os.environ` から読む。実装者は値を読まない・表示しない・ログに残さない。`doctor` は「設定されているか(bool)」だけを報告する | 発注者の指示(秘密情報を勝手に読まない)と仕様 §72/§80 |
+| D-03 | API キーの受け渡し | 環境変数のみ。`APPTWEAK_API_KEY`、J-Quants は `JQUANTS_REFRESH_TOKEN` **または** `JQUANTS_MAIL_ADDRESS` + `JQUANTS_PASSWORD`(コードがリフレッシュトークンを取得する。どちらも無ければ未設定扱い)、任意で `EDINET_API_KEY`。コードは `os.environ` から読む。実装者は値を読まない・表示しない・ログに残さない。`doctor` は「設定されているか(bool)」だけを報告する | 発注者の指示(秘密情報を勝手に読まない)と仕様 §72/§80 |
 | D-04 | 課金の範囲 | AppTweak は**無料トライアルの 18,000 credits の範囲内**(仕様 §6 の上限どおり。上限は `config/api_budget.yaml`)。J-Quants は発注者が契約済みのプランをそのまま使う。**実装者は新たな契約・プラン変更・追加購入を一切行わない** | 発注者の「追加料金が発生する操作は確認必須」ルール。上限内の API 呼び出しは、この計画書で事前承認する |
 | D-05 | 履歴不足時の扱い | J-Quants のプランで 2018-01-01 以前の日足が取れない、または AppTweak の共通履歴が 2018-01-01 に届かない場合は **INSUFFICIENT_HISTORY → VERDICT_0(DATA_NOT_FEASIBLE)で正常終了**し、必要な履歴と概算コストを `results/API_COST_REPORT.md` に書く。発注者に「契約してよいか」と聞かない | 聞くと止まる。止まらずに「何が足りないか」を残す方が発注者の手間が少ない |
 | D-06 | Git 運用 | 作業ブランチ `claude/app-rank-alpha-v01-impl`。ステージ完了ごとにコミットし push。**main へはマージしない**(発注者が行う)。最後に PR を1本作る(マージはしない) | CLAUDE.md「main へ push = 公開」 |
@@ -90,9 +90,9 @@
 
 1. 環境(Claude Code の environment / ローカルのシェル)に環境変数を設定する
    - `APPTWEAK_API_KEY` — AppTweak の無料トライアルキー
-   - `JQUANTS_REFRESH_TOKEN` — J-Quants のリフレッシュトークン
+   - `JQUANTS_REFRESH_TOKEN` — J-Quants のリフレッシュトークン。**代わりに `JQUANTS_MAIL_ADDRESS` と `JQUANTS_PASSWORD`(ログイン情報)でもよい**
    - (任意)`EDINET_API_KEY` — EDINET API v2 の無料キー。無くても公式 IR ページから取る
-2. J-Quants のプランを決める(**ここだけ課金判断が要る**)
+2. J-Quants のプランを決める(**ここだけ課金判断が要る**。契約済みなら何もしない。プランが足りるかは `doctor` が自動判定する)
    - 研究に必要な履歴: **2018-01-01 以前 〜 2026-08-31** の日足・財務・上場銘柄一覧・取引カレンダー・TOPIX(仕様 §8/§9: TRAIN 48ヶ月 + VALIDATION 36ヶ月 + HOLDOUT 20ヶ月)
    - Free プランは履歴が短く(概ね直近2年・12週遅延)、**INSUFFICIENT_HISTORY → VERDICT_0 で終わる**。10年以上の履歴を含むプラン(公式サイトで現行の名称と料金を確認)が必要
    - 決めなくても Opus は止まらない。足りなければ VERDICT_0 と必要条件を残して終わる

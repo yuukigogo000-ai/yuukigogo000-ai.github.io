@@ -16,7 +16,7 @@ APP_RANK_ALPHA v0.1 の実装と研究を、最終判定(VERDICT_0〜5)まで承
 ルール:
 - 私に質問しない。迷ったら PLAN.md §2.3 の順で自分で決める。仕様の STOP 条件に当たったら VERDICT_0 で正常終了する。
 - API は config/api_budget.yaml の上限内だけ。新しい契約・課金は一切しない。
-- API キーは環境変数 APPTWEAK_API_KEY / JQUANTS_REFRESH_TOKEN から読むだけ。値を読まない・表示しない・コミットしない。環境変数が無ければ Stage 0 まで進めて results/RESUME_INSTRUCTIONS.md を残して終える。
+- API キーは環境変数 APPTWEAK_API_KEY と、JQUANTS_REFRESH_TOKEN または JQUANTS_MAIL_ADDRESS + JQUANTS_PASSWORD(後者ならコードでリフレッシュトークンを取得)から読むだけ。値を読まない・表示しない・コミットしない。環境変数が無ければ Stage 0 まで進めて results/RESUME_INSTRUCTIONS.md を残して終える。
 - data/ 配下と生データは絶対にコミットしない(public リポジトリ)。
 - Stage 0(合成データで全工程完成)から始め、PLAN.md §4 の順に Stage 10 まで進める。各ステージ完了時にコミットと push。
 - 日次 credit 上限で中断したら、自己起床の手段があれば 24 時間 15 分後に再開を予約し、無ければ results/RESUME_INSTRUCTIONS.md を書いて終了する。

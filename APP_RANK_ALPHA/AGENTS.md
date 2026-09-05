@@ -37,5 +37,5 @@
 ## 5. 環境
 
 - Python 3.12+、`uv`(無ければ `python -m venv .venv && pip install -e .[dev]`)。
-- 環境変数: `APPTWEAK_API_KEY`, `JQUANTS_REFRESH_TOKEN`, 任意 `EDINET_API_KEY`, `APP_ALPHA_DATA_ROOT`。
+- 環境変数: `APPTWEAK_API_KEY`, `JQUANTS_REFRESH_TOKEN`(または `JQUANTS_MAIL_ADDRESS` + `JQUANTS_PASSWORD`), 任意 `EDINET_API_KEY`, `APP_ALPHA_DATA_ROOT`。
 - 外部アクセスはプロキシ経由。TLS 検証を無効化しない。
