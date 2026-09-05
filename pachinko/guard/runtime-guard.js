@@ -197,8 +197,10 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     await clickC('[data-rate="low"]'); await p.waitForTimeout(120);
     ok('FN 交換率変更', await p.evaluate(() => state.rate === 'low'));
     const d0 = await p.evaluate(() => state.debt);
+    const want = await p.evaluate(() => Math.min(1000000, creditLimit() - state.debt));
     await clickC('#btnBorrow'); await p.waitForTimeout(120);
-    ok('FN 借入', await p.evaluate(n => state.debt === n + 1000000, d0));
+    // 枠が100万未満のときは残り枠のぶんだけ借りられる
+    ok('FN 借入(枠の残りぶん)', await p.evaluate(([n, w]) => state.debt === n + w && w > 0, [d0, want]));
     await clickC('#btnRepay'); await p.waitForTimeout(120);
     ok('FN 返済', await p.evaluate(n => state.debt === n, d0));
     await p.evaluate(() => { state.money = 99000000; renderMgmt(); });

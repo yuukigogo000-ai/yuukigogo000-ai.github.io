@@ -1209,8 +1209,8 @@ const MAX_CAP = 60;            // 店舗拡張の上限台数
 // ---- 難易度 ----
 const DIFFS = {
   easy:   { label:"のんびり", money:13500000, rentMul:0.72, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.25, expandMul:0.80 },
-  normal: { label:"標準",     money:11000000, rentMul:1.00, proMul:1.00, heatMul:1.00, fillMul:1.00, creditMul:1.00, expandMul:1.00 },
-  hard:   { label:"修羅",     money:4500000,  rentMul:2.60, proMul:2.60, heatMul:2.20, fillMul:0.85, creditMul:0.30, expandMul:1.55 },
+  normal: { label:"標準",     money:4600000,  rentMul:2.55, proMul:2.00, heatMul:1.70, fillMul:0.90, creditMul:0.40, expandMul:1.35 },
+  hard:   { label:"修羅",     money:4200000,  rentMul:2.80, proMul:2.70, heatMul:2.30, fillMul:0.84, creditMul:0.26, expandMul:1.60 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -2482,7 +2482,10 @@ function renderMgmt() {
   $("debtNow").textContent = yen(state.debt);
   $("debtNow").className = "v num" + (state.debt ? " neg" : "");
   $("creditNow").textContent = yen(creditLimit());
-  $("btnBorrow").disabled = dead || state.debt + 1000000 > creditLimit();
+  const canBorrow = Math.min(1000000, creditLimit() - state.debt);
+  $("btnBorrow").disabled = dead || canBorrow <= 0;
+  $("btnBorrow").textContent = canBorrow >= 1000000 || canBorrow <= 0
+    ? "借りる 100万" : `借りる ${yenShort(canBorrow)}`;
   $("btnRepay").disabled = dead || state.debt <= 0 || state.money < Math.min(1000000, state.debt);
 
   $("rateButtons").innerHTML =
@@ -4372,13 +4375,13 @@ function showTutorial() {
       <p class="note" style="margin-top:10px;color:var(--gold-hi);font-weight:800">難易度を選んで開店:</p>
       <div style="display:grid;gap:5px;margin-top:6px">
         <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('easy')">
-          <span><b style="font-size:14px;color:var(--pos)">のんびり</b> <small style="color:var(--tx-3)">余裕のある滑り出し</small></span>
+          <span><b style="font-size:14px;color:var(--pos)">のんびり</b> <small style="color:var(--tx-3)">じっくり学べる・まず潰れない</small></span>
           <span class="num" style="font-size:14px;font-weight:900;color:var(--gold-hi)">${yen(DIFFS.easy.money)}</span></button>
         <button class="btn wide gold" style="min-height:52px;justify-content:space-between" onclick="startGame('normal')">
-          <span><b style="font-size:14px">標準</b> <small>推奨バランス</small></span>
+          <span><b style="font-size:14px">標準</b> <small>油断すると潰れる</small></span>
           <span class="num" style="font-size:14px;font-weight:900">${yen(DIFFS.normal.money)}</span></button>
         <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('hard')">
-          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">家賃2.6倍・融資枠ほぼ無し・プロ殺到</small></span>
+          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">家賃2.8倍・融資枠ほぼ無し・大半が潰れる</small></span>
           <span class="num" style="font-size:14px;font-weight:900;color:var(--gold-hi)">${yen(DIFFS.hard.money)}</span></button>
       </div>
     </div>`);
@@ -4516,10 +4519,12 @@ $("btnGrand").addEventListener("click", () => {
 });
 $("btnBorrow").addEventListener("click", () => {
   if (isDead()) return;
-  if (state.debt + 1000000 > creditLimit()) return;
-  state.debt += 1000000;
+  // 枠が100万に満たなくても、残り枠のぶんだけは借りられる
+  const amount = Math.min(1000000, creditLimit() - state.debt);
+  if (amount <= 0) return;
+  state.debt += amount;
   state.maxDebt = Math.max(state.maxDebt, state.debt);
-  state.money += 1000000;
+  state.money += amount;
   save(); renderAll();
 });
 $("btnRepay").addEventListener("click", () => {

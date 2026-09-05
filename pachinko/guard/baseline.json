@@ -132,9 +132,9 @@
    "len": 19
   },
   "DIFFS": {
-   "sha": "fea666b9f55cc5c64a451a0cf2a0d255",
-   "len": 396,
-   "prevSha": "fcd001777dd310fa725fad40befcdef2",
+   "sha": "9d2badd373caab46c37ee3e5778c71ff",
+   "len": 395,
+   "prevSha": "fea666b9f55cc5c64a451a0cf2a0d255",
    "rebaselined": {
     "balance2026_09_05": {
      "date": "2026-09-05",
@@ -146,6 +146,12 @@
      "reason": "修羅を本当に厳しくする調整(ユーザー指示)。easy/normal は不変で、hard の数値のみ変更。",
      "change": "money 5,000,000→4,500,000 / rentMul 1.60→2.60 / proMul 2.00→2.60 / heatMul 1.80→2.20 / fillMul 0.90→0.85 / creditMul 0.55→0.30 / expandMul 1.30→1.55",
      "prevSha": "fcd001777dd310fa725fad40befcdef2"
+    },
+    "survival2026_09_05": {
+     "date": "2026-09-05",
+     "reason": "熟練プレイの生存率を指定の帯に合わせる調整(ユーザー指示: 標準は10〜13/15、修羅は半分以下)。easy は不変。",
+     "change": "normal money 11,000,000→4,600,000 / rentMul 1.00→2.55 / proMul 1.00→2.00 / heatMul 1.00→1.70 / fillMul 1.00→0.90 / creditMul 1.00→0.40 / expandMul 1.00→1.35。hard money 4,500,000→4,200,000 / rentMul 2.60→2.80 / proMul 2.60→2.70 / heatMul 2.20→2.30 / fillMul 0.85→0.84 / creditMul 0.30→0.26 / expandMul 1.55→1.60",
+     "prevSha": "fea666b9f55cc5c64a451a0cf2a0d255"
     }
    }
   },
