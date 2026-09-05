@@ -68,7 +68,8 @@
   "LUCK_DAILY_P",
   "COND_EVENTS",
   "ACHIEVEMENTS",
-  "SLOT_SYMBOLS"
+  "SLOT_SYMBOLS",
+  "RANK_DAYS"
  ],
  "globals": [
   "closeModal",

@@ -1773,7 +1773,18 @@ function simulateDay() {
   return { rec, notes };
 }
 
-function clearRank(d) { return d <= 65 ? "S" : d <= 85 ? "A" : d <= 120 ? "B" : "C"; }
+/* クリアランクの閾値は難易度ごと。難易度で必要日数が大きく違うため、
+   単一の閾値だと のんびり=常にS / 修羅=常にC になって機能しない。
+   各値は最適プレイと熟練プレイの実測分布から決めてある。 */
+const RANK_DAYS = {
+  easy:   { s:  55, a:  68, b:  88 },
+  normal: { s:  81, a:  99, b: 125 },
+  hard:   { s: 120, a: 156, b: 195 },
+};
+function clearRank(d) {
+  const t = RANK_DAYS[state && state.diff] || RANK_DAYS.normal;
+  return d <= t.s ? "S" : d <= t.a ? "A" : d <= t.b ? "B" : "C";
+}
 
 function weeklyReport(rec) {
   if (rec.day % 7 !== 0 || state.history.length < 7) return "";
@@ -3961,7 +3972,8 @@ function showDayResult(result) {
       <img class="rankimg" src="./art/rank_${clearRank(rec.day).toLowerCase()}.jpg" alt="${clearRank(rec.day)}ランク" decoding="async">
       <div style="font-size:13px;font-weight:900;color:var(--gold-hi);letter-spacing:.06em">祝・純資産1億円達成!!</div>
       <p class="note" style="margin-top:6px">${rec.day}日目にしてあなたの店は地域No.1ホールとなった!<br>
-      S:65日以内 / A:85日 / B:120日 ・ このまま帝国を広げ続けてもOK!</p></div>`;
+      ${(() => { const t = RANK_DAYS[state.diff] || RANK_DAYS.normal; const L = (DIFFS[state.diff]||DIFFS.normal).label;
+        return `${esc(L)}のランク: S:${t.s}日以内 / A:${t.a}日 / B:${t.b}日`; })()} ・ このまま帝国を広げ続けてもOK!</p></div>`;
   }
 
   showModal(`

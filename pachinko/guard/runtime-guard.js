@@ -206,6 +206,34 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     await p.evaluate(() => { state.money = 99000000; renderMgmt(); });
     await clickC('#btnExpand'); await p.waitForTimeout(150);
     ok('FN 店舗拡張', await p.evaluate(() => state.cap === 15));
+    // ---- クリアランク(難易度別) ----
+    ok('FN クリアランクの閾値が難易度ごとに違う', await p.evaluate(() => {
+      const d = ['easy','normal','hard'].map(k => RANK_DAYS[k]);
+      return d.every(t => t.s < t.a && t.a < t.b)
+        && d[0].s < d[1].s && d[1].s < d[2].s
+        && d[0].b < d[1].b && d[1].b < d[2].b;
+    }));
+    ok('FN 各難易度でS/A/B/Cが全部出せる', await p.evaluate(() => {
+      const keep = state.diff;
+      const ok2 = ['easy','normal','hard'].every(k => {
+        state.diff = k; const t = RANK_DAYS[k];
+        return clearRank(t.s) === 'S' && clearRank(t.a) === 'A'
+            && clearRank(t.b) === 'B' && clearRank(t.b + 1) === 'C';
+      });
+      state.diff = keep;
+      return ok2;
+    }));
+    ok('FN クリア画面に自分の難易度の閾値が出る', await p.evaluate(() => {
+      const keepC = state.cleared, keepD = state.clearDay, keepDay = state.day;
+      state.cleared = true; state.clearDay = 999; state.day = 999;
+      showDayResult({ rec: { day: 999, cust: 0, cas: 0, reg: 0, pro: 0, sales: 0, payout: 0, exp: 0, net: 1, interest: 0, note: '' }, notes: [] });
+      const t = RANK_DAYS[state.diff] || RANK_DAYS.normal;
+      const txt = document.getElementById('modalBox').textContent;
+      closeModal();
+      state.cleared = keepC; state.clearDay = keepD; state.day = keepDay;
+      return txt.includes(`S:${t.s}日以内`) && txt.includes(`A:${t.a}日`);
+    }));
+
     // ---- 規模維持費 ----
     ok('FN 規模維持費は12台まで無料で、台数とともに逓増する', await p.evaluate(() => {
       const keep = state.machines.slice(), kd = state.day;
