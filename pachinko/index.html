@@ -1210,7 +1210,7 @@ const MAX_CAP = 60;            // 店舗拡張の上限台数
 const DIFFS = {
   easy:   { label:"のんびり", money:13500000, rentMul:0.72, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.25, expandMul:0.80 },
   normal: { label:"標準",     money:11000000, rentMul:1.00, proMul:1.00, heatMul:1.00, fillMul:1.00, creditMul:1.00, expandMul:1.00 },
-  hard:   { label:"修羅",     money:5000000,  rentMul:1.60, proMul:2.00, heatMul:1.80, fillMul:0.90, creditMul:0.55, expandMul:1.30 },
+  hard:   { label:"修羅",     money:4500000,  rentMul:2.60, proMul:2.60, heatMul:2.20, fillMul:0.85, creditMul:0.30, expandMul:1.55 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -4378,7 +4378,7 @@ function showTutorial() {
           <span><b style="font-size:14px">標準</b> <small>推奨バランス</small></span>
           <span class="num" style="font-size:14px;font-weight:900">${yen(DIFFS.normal.money)}</span></button>
         <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('hard')">
-          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">家賃増・プロ多・警戒厳しめ</small></span>
+          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">家賃2.6倍・融資枠ほぼ無し・プロ殺到</small></span>
           <span class="num" style="font-size:14px;font-weight:900;color:var(--gold-hi)">${yen(DIFFS.hard.money)}</span></button>
       </div>
     </div>`);
