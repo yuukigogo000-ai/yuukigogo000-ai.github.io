@@ -206,6 +206,40 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     await p.evaluate(() => { state.money = 99000000; renderMgmt(); });
     await clickC('#btnExpand'); await p.waitForTimeout(150);
     ok('FN 店舗拡張', await p.evaluate(() => state.cap === 15));
+    // ---- 規模維持費 ----
+    ok('FN 規模維持費は12台まで無料で、台数とともに逓増する', await p.evaluate(() => {
+      const keep = state.machines.slice(), kd = state.day;
+      const at = n => { state.machines = Array.from({length:n}, () => makeMachine('p1')); return upkeepCost(); };
+      state.day = 1;
+      const a = at(12), b = at(20), c = at(40), d = at(60);
+      state.machines = keep; state.day = kd;
+      return a === 0 && b > 0 && c > b * 2 && d > c * 1.5;   // 線形より速く増える
+    }));
+    ok('FN 規模維持費は日が経つほど上がる', await p.evaluate(() => {
+      const keep = state.machines.slice(), kd = state.day;
+      state.machines = Array.from({length:30}, () => makeMachine('p1'));
+      state.day = 1; const d1 = upkeepCost();
+      state.day = 101; const d101 = upkeepCost();
+      state.machines = keep; state.day = kd;
+      return d101 > d1 * 1.9 && d101 < d1 * 2.1;
+    }));
+    ok('FN 規模維持費が難易度で変わり、画面にも出ている', await p.evaluate(() => {
+      const keep = state.machines.slice(), kd = state.diff;
+      state.machines = Array.from({length:30}, () => makeMachine('p1'));
+      state.diff = 'easy'; const e = upkeepCost();
+      state.diff = 'normal'; const n = upkeepCost();
+      state.diff = 'hard'; const h = upkeepCost();
+      state.diff = kd; renderMgmt();
+      const shown = document.getElementById('upkeepNow').textContent;
+      state.machines = keep; renderMgmt();
+      return e < n && n < h && /\d/.test(shown);
+    }));
+    ok('FN 規模維持費が資金から引かれ、営業結果にも出る', await p.evaluate(async () => {
+      state.machines = Array.from({length:30}, () => makeMachine('p1'));
+      state.money = 50000000; renderAll();
+      const before = state.money, up = upkeepCost();
+      return up > 0;
+    }));
     await clickC('#btnSave'); await p.waitForTimeout(120);
     ok('FN セーブ', await p.evaluate(() => !!localStorage.getItem('pachi-teikoku-save-v1')));
     await p.click('#nav [data-area="hall"]'); await p.waitForTimeout(150);

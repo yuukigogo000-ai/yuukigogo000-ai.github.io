@@ -132,9 +132,9 @@
    "len": 19
   },
   "DIFFS": {
-   "sha": "9d2badd373caab46c37ee3e5778c71ff",
-   "len": 395,
-   "prevSha": "fea666b9f55cc5c64a451a0cf2a0d255",
+   "sha": "62f7cec23981d7652e6b4b3f889eb50d",
+   "len": 443,
+   "prevSha": "9d2badd373caab46c37ee3e5778c71ff",
    "rebaselined": {
     "balance2026_09_05": {
      "date": "2026-09-05",
@@ -152,6 +152,12 @@
      "reason": "熟練プレイの生存率を指定の帯に合わせる調整(ユーザー指示: 標準は10〜13/15、修羅は半分以下)。easy は不変。",
      "change": "normal money 11,000,000→4,600,000 / rentMul 1.00→2.55 / proMul 1.00→2.00 / heatMul 1.00→1.70 / fillMul 1.00→0.90 / creditMul 1.00→0.40 / expandMul 1.00→1.35。hard money 4,500,000→4,200,000 / rentMul 2.60→2.80 / proMul 2.60→2.70 / heatMul 2.20→2.30 / fillMul 0.85→0.84 / creditMul 0.30→0.26 / expandMul 1.55→1.60",
      "prevSha": "fea666b9f55cc5c64a451a0cf2a0d255"
+    },
+    "upkeep2026_09_05": {
+     "date": "2026-09-05",
+     "reason": "初期資金を死因にしない方針への変更(ユーザー指示)。運転資金を戻し、代わりに規模維持費(upkeepMul)を新設して中盤以降の圧にした。",
+     "change": "easy money 13,500,000→12,000,000 / normal 4,600,000→9,000,000 / hard 4,200,000→6,500,000。rentMul は easy0.72→0.80 normal2.55→1.20 hard2.80→1.60 に戻し、upkeepMul(easy0.30 / normal1.00 / hard1.60)を追加。creditMul easy1.25→1.20 normal0.40→0.65 hard0.26→0.40。",
+     "prevSha": "9d2badd373caab46c37ee3e5778c71ff"
     }
    }
   },

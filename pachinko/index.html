@@ -1064,8 +1064,12 @@ svg{flex:0 0 auto}
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-expand"/></svg><b>店舗拡張</b></div>
           <div class="gp-b">
             <div class="row"><span class="k">現在の最大設置数</span><span class="v" id="capNow">10台</span></div>
+            <div class="row"><span class="k">規模維持費</span><span class="v" id="upkeepNow">¥0 / 日</span></div>
+            <div class="row s"><span class="k s">次の1台で</span><span class="v s" id="upkeepNext">—</span></div>
             <button class="btn wide" id="btnExpand" style="margin-top:6px">+5台 拡張する</button>
-            <p class="note">拡張すると家賃・光熱費も増える。台数を活かせる資金力があるうちに。序盤ほど安く、広げるほど1回あたりの費用は上がる。</p>
+            <p class="note">拡張すると家賃・光熱費も増える。序盤ほど安く、広げるほど1回あたりの費用は上がる。<br>
+            <b>規模維持費</b>は13台目から発生し、台数が増えるほど1台あたりが重くなる(警備・設備保守・駐車場・人員教育)。
+            さらに日が経つほど上がっていくので、<b>広げたまま伸ばせないと詰む</b>。</p>
           </div>
         </div>
 
@@ -1208,9 +1212,9 @@ const MAX_CAP = 60;            // 店舗拡張の上限台数
 
 // ---- 難易度 ----
 const DIFFS = {
-  easy:   { label:"のんびり", money:13500000, rentMul:0.72, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.25, expandMul:0.80 },
-  normal: { label:"標準",     money:4600000,  rentMul:2.55, proMul:2.00, heatMul:1.70, fillMul:0.90, creditMul:0.40, expandMul:1.35 },
-  hard:   { label:"修羅",     money:4200000,  rentMul:2.80, proMul:2.70, heatMul:2.30, fillMul:0.84, creditMul:0.26, expandMul:1.60 },
+  easy:   { label:"のんびり", money:12000000, rentMul:0.80, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.20, expandMul:0.85, upkeepMul:0.30 },
+  normal: { label:"標準",     money:9000000,  rentMul:1.20, proMul:1.00, heatMul:1.10, fillMul:0.97, creditMul:0.65, expandMul:1.10, upkeepMul:1.00 },
+  hard:   { label:"修羅",     money:6500000,  rentMul:1.60, proMul:1.80, heatMul:1.80, fillMul:0.90, creditMul:0.40, expandMul:1.35, upkeepMul:1.60 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -1945,6 +1949,29 @@ const artOf = cid => "./art/" + (MART[cid] || "m_normal") + ".jpg";
 /* 売却価格。machineValue(定価45%)は帳簿上の資産評価で、実際の下取りはもう少し良い。
    古い台を入れ替える動きに意味を持たせるための差。保護ロジックには触れない。 */
 const machineSale = m => Math.round(catalogOf(m).price * 0.55);
+
+/* ---------- 規模維持費 ----------
+   台数が増えるほど1台あたりの管理コストが重くなる(警備・設備保守・駐車場・
+   人員教育・本部管理)。12台までは無料で、そこから逓増する。
+   序盤ではなく「大きくしたあと」に効く固定費なので、拡大の判断に緊張が生まれる。
+   simulateDay の外で毎日引き、営業結果と帳簿に独立した行として出す。 */
+const UPKEEP_FREE = 12, UPKEEP_K = 3700, UPKEEP_E = 1.45, UPKEEP_INFL = 0.010;
+/* 経過日数ぶんの上昇率(家賃改定・設備の老朽化・人件費の上昇)。
+   止まっていても毎日重くなるので、「広げすぎ」でも「伸ばせない」でも詰む。 */
+const upkeepInfl = () => 1 + (state.day - 1) * UPKEEP_INFL;
+function upkeepCost() {
+  const D = DIFFS[state.diff] || DIFFS.normal;
+  const over = Math.max(0, state.machines.length - UPKEEP_FREE);
+  if (!over) return 0;
+  return Math.round(UPKEEP_K * Math.pow(over, UPKEEP_E) * (D.upkeepMul ?? 1) * upkeepInfl());
+}
+/* 次に1台増やしたときの増分(拡大の判断材料として画面に出す) */
+function upkeepMarginal() {
+  const D = DIFFS[state.diff] || DIFFS.normal;
+  const n = state.machines.length;
+  const f = k => Math.max(0, k - UPKEEP_FREE) ? UPKEEP_K * Math.pow(k - UPKEEP_FREE, UPKEEP_E) * (D.upkeepMul ?? 1) * upkeepInfl() : 0;
+  return Math.round(f(n + 1) - f(n));
+}
 let focusIdx = 0;
 let busy = false;
 
@@ -2482,6 +2509,13 @@ function renderMgmt() {
   $("debtNow").textContent = yen(state.debt);
   $("debtNow").className = "v num" + (state.debt ? " neg" : "");
   $("creditNow").textContent = yen(creditLimit());
+  const up = upkeepCost();
+  if ($("upkeepNow")) {
+    $("upkeepNow").textContent = `${yen(up)} / 日`;
+    $("upkeepNow").className = "v" + (up > 0 ? " neg" : "");
+  }
+  if ($("upkeepNext")) $("upkeepNext").textContent =
+    state.machines.length >= MAX_CAP ? "—" : `+${yen(upkeepMarginal())} / 日`;
   const canBorrow = Math.min(1000000, creditLimit() - state.debt);
   $("btnBorrow").disabled = dead || canBorrow <= 0;
   $("btnBorrow").textContent = canBorrow >= 1000000 || canBorrow <= 0
@@ -3857,6 +3891,10 @@ function runDay() {
   const finish = () => {
     let result;
     try { result = simulateDay(); } finally { busy = false; }
+    try {
+      result.upkeep = upkeepCost();
+      if (result.upkeep) { state.money -= result.upkeep; save(true); }
+    } catch (e) { result.upkeep = 0; }
     try { result.st = stDay(); if (result.st.notes.length) result.notes = result.notes.concat(result.st.notes); } catch (e) { result.st = null; }
     try { result.rg = rgDay(result.rec); } catch (e) { result.rg = null; }
     try { checkAchEx({ dayEnd: true, notes: result.notes }); } catch (e) {}
@@ -3942,6 +3980,7 @@ function showDayResult(result) {
         <span class="k">総売上(打ち込み)</span><span class="v">${yen(rec.sales)}</span>
         <span class="k">出玉払出</span><span class="v neg">−${yen(rec.payout)}</span>
         <span class="k">経費${rec.interest ? " (利息 " + yen(rec.interest) + " 含む)" : ""}</span><span class="v neg">−${yen(rec.exp)}</span>
+        ${result.upkeep ? `<span class="k">規模維持費 (${state.machines.length}台)</span><span class="v neg">−${yen(result.upkeep)}</span>` : ""}
         <span class="hr"></span>
         <span class="k">資金残高</span><span class="v">${yen(state.money)}</span>
         <span class="k">純資産</span><span class="v">${yen(totalAssets())}</span>
