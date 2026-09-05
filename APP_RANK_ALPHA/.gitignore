@@ -1,0 +1,18 @@
+# プロバイダ由来データは public リポジトリに置かない(利用規約・仕様 §82)
+data/
+data_synthetic/
+# トレード台帳(価格を含む)と合成データの出力
+results/**/ledger_*
+results/_synthetic/
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+build/
+dist/
+# 秘密情報(そもそも置かない)
+.env
+.env.*
