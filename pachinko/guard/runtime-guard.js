@@ -126,17 +126,60 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     ok('FN 1営業日の実行と当日結果', await p.evaluate(n => state.day === n + 1, day0));
     ok('FN 台別収支の提示', await p.evaluate(() => document.querySelectorAll('.mres div').length > 0));
     await p.evaluate(() => closeModal()); await p.waitForTimeout(200);
+    // 全国進出の解禁シートが挟まる場合は閉じる(資金99,000,000で解禁条件を満たすため)
+    ok('FN 全国進出の解禁シート', await p.evaluate(() => /全国進出 解禁/.test(document.getElementById('modalBox').textContent)));
+    await p.evaluate(() => closeModal()); await p.waitForTimeout(200);
     await p.click('#nav [data-area="ledger"]'); await p.waitForTimeout(250);
     ok('FN 損益推移グラフ', await p.evaluate(() => !!document.querySelector('#chartWrap svg')));
     ok('FN 営業成績一覧', await p.evaluate(() => document.querySelectorAll('#ledgerBody .led').length > 0));
     await p.evaluate(() => setArea('ach')); await p.waitForTimeout(200);
-    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張41件は別グループ)
+    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張50件は別グループ)
     ok('FN 実績一覧', await p.evaluate(() => {
       const rows = [...document.querySelectorAll('#achList .ach')];
       const names = rows.map(e => e.querySelector('.n').textContent);
       const BASE = ['開店初日','日給100万','地域の優良店','常連の店','中堅ホール','巨艦店','1ヶ月経営','特日の神','お上の世話','信用第一','軌道に乗る','パチスロ帝国','初当たり体験','事故連発生','ドル箱タワー'];
-      return rows.length === 56 && BASE.every(n => names.includes(n));
+      return rows.length === 65 && BASE.every(n => names.includes(n));
     }));
+    // ---- 全国 / 地方進出 / 国取り ----
+    await p.evaluate(() => setArea('map')); await p.waitForTimeout(200);
+    ok('FN 全国マップへの到達', await p.evaluate(() => document.getElementById('panel-map').classList.contains('on')));
+    ok('FN 5番目のナビ「全国」(解禁後)', await p.evaluate(() => !!document.querySelector('#nav [data-area="map"]')));
+    ok('FN 8地方のタイルが描画される', await p.evaluate(() => document.querySelectorAll('#mapGrid .mt').length === 8));
+    ok('FN 本店エリアが中部として表示される', await p.evaluate(() => {
+      const t = document.querySelector('[data-rg="chu"]');
+      return !!t && /home/.test(t.className) && t.querySelector('.mt-nm').textContent === '中部';
+    }));
+    await p.evaluate(() => document.querySelector('[data-rg="toh"]').click()); await p.waitForTimeout(200);
+    ok('FN エリア詳細シート(進出プラン)', await p.evaluate(() => !!document.querySelector('[data-rgopen="toh"]') && document.querySelectorAll('.rg-rank > div').length === 3));
+    const money0 = await p.evaluate(() => state.money);
+    await p.evaluate(() => { rgDraft.n = 40; rgDraft.tp = 'P'; document.querySelector('[data-rgopen="toh"]').click(); });
+    await p.waitForTimeout(250);
+    ok('FN 地方への進出(支店の開設)', await p.evaluate(() => rgState().br.length === 1 && rgState().br[0].a === 'toh' && rgState().br[0].n === 40));
+    ok('FN 出店費用が資金から引かれる', await p.evaluate(m => state.money === m - 10400000, money0));
+    await p.evaluate(() => document.querySelector('[data-rgpol="toh:5"]').click()); await p.waitForTimeout(200);
+    ok('FN 支店の出玉方針の変更', await p.evaluate(() => rgState().br[0].pol === 5));
+    await p.evaluate(() => document.querySelector('[data-rgmgr="toh"]').click()); await p.waitForTimeout(200);
+    ok('FN 敏腕店長の配属', await p.evaluate(() => rgState().br[0].mgr === true));
+    await p.evaluate(() => document.querySelector('[data-rgadd="toh"]').click()); await p.waitForTimeout(200);
+    ok('FN 支店の増床', await p.evaluate(() => rgState().br[0].n === 60));
+    await p.evaluate(() => closeModal()); await p.waitForTimeout(150);
+    await p.click('#nav [data-area="hall"]'); await p.waitForTimeout(150);
+    const rgDay0 = await p.evaluate(() => state.money);
+    await p.click('#btnOpen'); await p.waitForSelector('.res-hero', { timeout: 5000 });
+    ok('FN 営業結果に支店・エリアの収支が出る', await p.evaluate(() => !!document.querySelector('.rgres')));
+    ok('FN 支店の損益が資金に反映される', await p.evaluate(() => {
+      const h = rgState().hist[0];
+      return !!h && h.net === rgState().br[0].net;
+    }));
+    await p.evaluate(() => closeModal()); await p.waitForTimeout(200);
+    ok('FN 帳簿に支店損益が出る', await p.evaluate(() => {
+      setArea('ledger');
+      return document.getElementById('ledRegion').textContent.includes('支店損益');
+    }));
+    await p.evaluate(() => { const g = rgState(); for (const R of REGIONS) g.ctrl[R.id] = 1; renderAll(); }); await p.waitForTimeout(150);
+    ok('FN 全国制覇の進捗表示', await p.evaluate(() => { setArea('map'); return document.getElementById('mapCount').textContent.trim() === '8 / 8'; }));
+    await p.evaluate(() => { const g = rgState(); for (const R of REGIONS) delete g.ctrl[R.id]; g.br = []; save(true); renderAll(); });
+    await p.evaluate(() => setArea('mgmt')); await p.waitForTimeout(150);
     ok('FN 常時ステータス', await p.evaluate(() => ['stDay','stMoney','stRep','stRegs','stDebt','stMachines','stAssets'].every(i => document.getElementById(i).textContent.length > 0)));
     // 週次レポート
     await p.evaluate(() => { state.day = 14; state.history = Array.from({length:8},(_,i)=>({day:13-i,cust:100,cas:60,reg:30,pro:5,sales:4e6,payout:3e6,exp:9e5,net:1e5,interest:0,note:""})); });

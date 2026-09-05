@@ -284,6 +284,9 @@ svg{flex:0 0 auto}
 
 /* ---------- 780–844px : bottom navigation ---------- */
 #nav{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:6px}
+#nav.five{grid-template-columns:repeat(5,1fr);gap:3px}
+#nav.five button i{font-size:8.5px;letter-spacing:0}
+#nav.five button svg{width:17px;height:17px}
 #nav button{min-height:50px;border-radius:3px;position:relative;overflow:hidden;
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
   border:1px solid rgba(255,212,59,.20);color:var(--tx-3);
@@ -672,6 +675,103 @@ svg{flex:0 0 auto}
     transition-duration:.001ms!important;scroll-behavior:auto!important}
   #btnOpen::after{animation:none;opacity:.8}
 }
+
+/* ==========================================================================
+   全国マップ / 地方進出 / 国取り
+   ========================================================================== */
+.mapbar{height:5px;border-radius:3px;overflow:hidden;margin:2px 0 6px;
+  background:linear-gradient(180deg,#0a0c12,#05060a);border:1px solid var(--line-w)}
+.mapbar i{display:block;height:100%;border-radius:3px;transition:width .5s var(--ease);
+  background:linear-gradient(90deg,var(--gold-lo),var(--gold) 60%,var(--gold-hi));
+  box-shadow:0 0 10px rgba(255,196,60,.55)}
+
+/* 日本列島を模した弧状の配置(南西→北東) */
+.mapgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:6px}
+.mt{position:relative;display:flex;flex-direction:column;gap:1px;min-height:62px;padding:6px 7px;
+  border-radius:3px;text-align:left;border:1px solid rgba(255,212,59,.16);
+  background:linear-gradient(180deg,rgba(255,232,170,.045),transparent 46%),linear-gradient(180deg,#14171f,#08090e);
+  color:var(--tx-2)}
+.mt .mt-st{display:flex;align-items:center;gap:3px;font-size:8px;font-weight:800;
+  letter-spacing:.08em;color:var(--tx-3)}
+.mt .mt-st svg{width:10px;height:10px}
+.mt .mt-nm{font-size:12.5px;font-weight:900;letter-spacing:.02em;color:var(--tx)}
+.mt .mt-sub{font-size:8.5px;color:var(--tx-3);letter-spacing:.02em}
+.mt .mt-net{margin-top:auto;font-family:var(--f-num);font-size:10px;font-weight:800}
+.mt .mt-net.pos{color:var(--pos)} .mt .mt-net.neg{color:var(--neg)}
+.mt.home{border-color:var(--line-s);box-shadow:inset 0 0 16px rgba(255,180,40,.10)}
+.mt.home .mt-st{color:var(--gold)}
+.mt.ctrl,.mt.home-top{border-color:rgba(55,224,122,.55);
+  background:linear-gradient(180deg,rgba(55,224,122,.14),rgba(6,10,8,.9));
+  box-shadow:inset 0 0 18px rgba(55,224,122,.14),0 0 12px rgba(55,224,122,.16)}
+.mt.ctrl .mt-st,.mt.home-top .mt-st{color:var(--pos)}
+.mt.branch{border-color:rgba(45,156,255,.48);
+  background:linear-gradient(180deg,rgba(45,156,255,.10),rgba(6,8,14,.9))}
+.mt.branch .mt-st{color:var(--neon-b)}
+.mt.open{border-style:dashed;border-color:rgba(255,212,59,.38)}
+.mt.open .mt-st{color:var(--gold-lo)}
+.mt.lock{opacity:.42}
+.mt.lock .mt-nm{color:var(--tx-3)}
+
+/* 支店一覧 */
+.brw{display:grid;grid-template-columns:1fr auto;gap:1px 8px;width:100%;min-height:var(--tap);align-content:center;padding:6px 4px;text-align:left;
+  border-bottom:1px solid rgba(255,212,59,.10)}
+.brw:last-child{border-bottom:0}
+.brw-a{display:flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;color:var(--tx)}
+.brw-a svg{width:12px;height:12px;color:var(--gold)}
+.brw-m{grid-column:1;font-size:9px;color:var(--tx-3)}
+.brw-n{grid-column:2;grid-row:1/3;align-self:center;font-family:var(--f-num);font-size:12px;font-weight:800}
+.brw-n.pos{color:var(--pos)} .brw-n.neg{color:var(--neg)}
+
+/* エリア詳細シート */
+.rg-sheet .rg-h{display:flex;align-items:center;gap:5px;margin:10px 0 5px;font-size:10px;
+  font-weight:800;letter-spacing:.12em;color:var(--gold-hi)}
+.rg-sheet .rg-h svg{width:13px;height:13px;color:var(--gold)}
+.rg-tr{display:grid;gap:4px}
+.rg-tr>div{display:grid;grid-template-columns:88px 1fr auto;align-items:center;gap:6px}
+.rg-tr .k{font-size:9.5px;color:var(--tx-3)}
+.rg-tr b{font-family:var(--f-num);font-size:10.5px;font-weight:800;color:var(--tx-2);
+  min-width:44px;text-align:right}
+.rg-tr b.tastev{grid-column:2/4;font-family:var(--f-disp);text-align:left;color:var(--gold);font-size:11px}
+.rgbar{display:block;height:6px;border-radius:3px;overflow:hidden;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,212,59,.10)}
+.rgbar i{display:block;height:100%;background:linear-gradient(90deg,var(--gold-lo),var(--gold))}
+.rgbar.warn i{background:linear-gradient(90deg,#7a4a08,var(--warn))}
+.rgbar.me i{background:linear-gradient(90deg,#0a7a3c,var(--pos));box-shadow:0 0 8px rgba(55,224,122,.5)}
+
+.rg-rank{display:grid;gap:3px}
+.rg-rank>div{display:grid;grid-template-columns:16px 1fr 68px 34px;align-items:center;gap:6px;
+  padding:3px 4px;border-radius:2px}
+.rg-rank>div.me{background:rgba(55,224,122,.10);border:1px solid rgba(55,224,122,.30)}
+.rg-rank>div.top .p{color:var(--gold);font-weight:900}
+.rg-rank .p{font-family:var(--f-num);font-size:11px;color:var(--tx-3);text-align:center}
+.rg-rank .nm{font-size:10.5px;color:var(--tx-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rg-rank>div.me .nm{color:var(--tx);font-weight:800}
+.rg-rank b{font-family:var(--f-num);font-size:11px;font-weight:800;color:var(--tx);text-align:right}
+
+.rg-opt{display:grid;grid-template-columns:56px 1fr;align-items:center;gap:7px;margin-bottom:5px}
+.rg-opt .k{font-size:9.5px;color:var(--tx-3)}
+.seg.rgpol{grid-template-columns:repeat(5,1fr)}
+.rg-opt .seg{grid-template-columns:repeat(3,1fr)}
+.rg-opt .seg button{font-family:var(--f-disp);font-size:11px;font-weight:800}
+.seg.rgpol button:nth-child(-n+2)[aria-pressed="true"]{border-color:#ff9c8e;
+  background:linear-gradient(180deg,#ffd9d2,#ff6a58 52%,#a6291b);
+  box-shadow:0 0 14px rgba(255,90,70,.55),inset 0 1px 0 rgba(255,255,255,.5)}
+.seg.rgpol button:nth-child(n+4)[aria-pressed="true"]{border-color:#8affc0;
+  background:linear-gradient(180deg,#ccffe2,#37e07a 52%,#12854a);
+  box-shadow:0 0 14px rgba(55,224,122,.55),inset 0 1px 0 rgba(255,255,255,.5)}
+
+.rg-unlock{display:grid;gap:6px;margin:8px 0}
+.rg-unlock>div{padding:6px 8px;border-radius:3px;border:1px solid var(--line-w);
+  background:linear-gradient(180deg,rgba(255,232,170,.05),transparent)}
+.rg-unlock b{display:block;font-size:11px;color:var(--gold-hi);letter-spacing:.06em}
+.rg-unlock span{display:block;margin-top:2px;font-size:10px;color:var(--tx-2);line-height:1.5}
+
+/* 営業結果の全国ブロック */
+.rgres{margin-top:10px;padding-top:8px;border-top:1px solid var(--line-w)}
+.rgres h4{display:flex;align-items:center;gap:5px;margin:0 0 5px;font-size:10px;font-weight:800;
+  letter-spacing:.12em;color:var(--gold-hi)}
+.rgres h4 svg{width:13px;height:13px;color:var(--gold)}
+.ev.rgev svg{color:var(--neon-b)}
 </style>
 </head>
 <body>
@@ -709,6 +809,8 @@ svg{flex:0 0 auto}
 <g id="i-skull"><path d="M12 3c-4.4 0-8 3.2-8 7.2 0 2.4 1.3 4.2 3 5.4V19a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1v-3.4c1.7-1.2 3-3 3-5.4C20 6.2 16.4 3 12 3z"/><circle cx="9" cy="11" r="1.5"/><circle cx="15" cy="11" r="1.5"/></g>
 <g id="i-crown"><path d="m3 18 1.6-11L9 12l3-7 3 7 4.4-5L21 18z"/><path d="M3 20h18"/></g>
 <g id="i-info"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></g>
+<g id="i-map"><path d="M9 4 3 6.5v13.5L9 17.5l6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5"/><path d="M15 6.5V20"/></g>
+<g id="i-flag"><path d="M5 21V4"/><path d="M5 4.5h11l-2 3.5 2 3.5H5z"/></g>
 <g id="i-fire"><path d="M12 3s5 4.2 5 8.5a5 5 0 0 1-10 0C7 9 9 7 9 7s.5 2 1.5 2.5C11 8 12 6 12 3z"/></g>
 </defs></svg>
 
@@ -885,6 +987,16 @@ svg{flex:0 0 auto}
           </div>
         </div>
 
+        <div class="gp" style="margin-bottom:6px" id="gpMap">
+          <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-map"/></svg><b>全国進出</b><span class="r" id="mapCount2"></span></div>
+          <div class="gp-b">
+            <div class="row"><span class="k">支店</span><span class="v" id="mapBr">0店</span></div>
+            <div class="row"><span class="k">支店の前日損益</span><span class="v" id="mapNet">—</span></div>
+            <button class="btn wide" data-area="map" style="margin-top:6px">全国マップを開く</button>
+            <p class="note" id="mapNote"></p>
+          </div>
+        </div>
+
         <div class="gp" style="margin-bottom:6px">
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-trophy"/></svg><b>実績</b><span class="r" id="achCount2"></span></div>
           <div class="gp-b">
@@ -913,6 +1025,7 @@ svg{flex:0 0 auto}
         <div class="gp" style="margin-bottom:6px">
           <div class="gp-b">
             <div class="row"><span class="k">累計純利益</span><span class="v" id="ledTotal">—</span></div>
+            <div class="row" id="ledRegion" style="display:none"></div>
             <div class="chart" id="chartWrap"><div id="chartTip"></div></div>
             <div class="legend"><span><i style="background:var(--pos)"></i>基線より上 = 黒字</span><span><i style="background:var(--neg)"></i>基線より下 = 赤字</span></div>
           </div>
@@ -922,6 +1035,21 @@ svg{flex:0 0 auto}
     </section>
 
     <!-- ===================== ACHIEVEMENTS ===================== -->
+    <!-- ===================== MAP (全国) ===================== -->
+    <section class="panel" id="panel-map" aria-label="全国">
+      <div class="sec">
+        <div class="sec-h"><i class="bar"></i><h2>全国マップ</h2><span class="sub">CONQUEST</span><span class="r num" id="mapCount">0 / 8</span></div>
+        <div class="mapbar"><i id="mapBar" style="width:0%"></i></div>
+        <p class="note" id="mapLead"></p>
+        <div id="mapGrid" class="mapgrid"></div>
+        <div class="gp" style="margin-top:8px">
+          <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-flag"/></svg><b>支店一覧</b><span class="r">前日損益</span></div>
+          <div class="gp-b"><div id="mapList"></div></div>
+        </div>
+        <button class="btn" data-area="mgmt" style="margin-top:8px">店長室へ戻る</button>
+      </div>
+    </section>
+
     <section class="panel" id="panel-ach" aria-label="実績">
       <div class="sec">
         <div class="sec-h"><i class="bar"></i><h2>実績</h2><span class="sub" id="achCount"></span></div>
@@ -1724,6 +1852,16 @@ const ACH_EX = [
   { id:"ex-clear-s", name:"Sランク制覇",     desc:"Sランク(65日以内)でクリアした", g:"到達" },
   { id:"ex-clear-60",name:"電光石火",         desc:"60日以内に純資産1億円を達成した", g:"到達" },
   { id:"ex-clear-h", name:"修羅を越える",     desc:"難易度「修羅」でクリアした", g:"到達" },
+  // ---- 全国 ----
+  { id:"ex-rg-1st",  name:"県外進出",         desc:"初めて他の地方に支店を出した", g:"全国" },
+  { id:"ex-rg-top",  name:"地域一番店",       desc:"初めて地方を制圧した", g:"全国" },
+  { id:"ex-rg-home", name:"地元の覇者",       desc:"本店のある中部を制圧した", g:"全国" },
+  { id:"ex-rg-3",    name:"三国志",           desc:"3地方を同時に制圧した", g:"全国" },
+  { id:"ex-rg-kan",  name:"激戦区を獲る",     desc:"最大の激戦区・関東を制圧した", g:"全国" },
+  { id:"ex-rg-chain",name:"全国チェーン",     desc:"支店を5店舗まで増やした", g:"全国" },
+  { id:"ex-rg-mega", name:"大型店",           desc:"60台の支店を作った", g:"全国" },
+  { id:"ex-rg-fit",  name:"土地を読む",       desc:"客層と一致した構成の支店で一番店を獲った", g:"全国" },
+  { id:"ex-rg-nation",name:"全国制覇",        desc:"8地方すべてを同時に制圧した", g:"全国" },
 ];
 const ALL_ACH_COUNT = () => ACHIEVEMENTS.length + ACH_EX.length;
 
@@ -1829,6 +1967,19 @@ function checkAchEx(ctx) {
     if (state.clearDay <= 60) G("ex-clear-60");
     if (state.diff === "hard") G("ex-clear-h");
   }
+  // ---- 全国 ----
+  if (state.ex && state.ex.rg) {
+    const g2 = rgState(), ctrl = Object.keys(g2.ctrl);
+    if (g2.br.length >= 1) G("ex-rg-1st");
+    if (g2.br.length >= 5) G("ex-rg-chain");
+    if (g2.br.some(b => b.n >= 60)) G("ex-rg-mega");
+    if (ctrl.length >= 1) G("ex-rg-top");
+    if (ctrl.length >= 3) G("ex-rg-3");
+    if (g2.ctrl[RG_HOME]) G("ex-rg-home");
+    if (g2.ctrl.kan) G("ex-rg-kan");
+    if (g2.br.some(b => g2.ctrl[b.a] && rgFit(b.tp, regionOf(b.a)) === 1)) G("ex-rg-fit");
+    if (g2.done) G("ex-rg-nation");
+  }
   save(true);
 }
 
@@ -1887,16 +2038,22 @@ const AREAS = [
   ["mgmt", "経営", "owner"],
   ["ledger", "帳簿", "ledger"],
 ];
-const ALL_PANELS = ["hall", "shop", "mgmt", "ledger", "ach"];
+const AREA_MAP = ["map", "全国", "map"];
+const ALL_PANELS = ["hall", "shop", "mgmt", "ledger", "ach", "map"];
 let area = "hall";
+function navAreas() {
+  return rgUnlocked() ? AREAS.concat([AREA_MAP]) : AREAS;
+}
 function renderNav() {
   const short = state.staff < staffNeeded();
-  $("nav").innerHTML = AREAS.map(([id, label, icon]) =>
+  $("nav").classList.toggle("five", rgUnlocked());
+  $("nav").innerHTML = navAreas().map(([id, label, icon]) =>
     `<button data-area="${id}" ${area === id || (area === "ach" && id === "mgmt") ? 'aria-current="page"' : ""}>
       ${ic(icon)}<i>${label}</i>${id === "mgmt" && short ? '<span class="dot"></span>' : ""}
     </button>`).join("");
 }
 function setArea(id) {
+  if (id === "map" && !rgUnlocked()) id = "mgmt";
   area = id;
   ALL_PANELS.forEach(a => { const el = $("panel-" + a); if (el) el.classList.toggle("on", a === id); });
   renderNav();
@@ -2155,6 +2312,24 @@ function renderMgmt() {
 }
 
 /* ---------- 実績(既存15 + 追加41) ---------- */
+function renderMapCard() {
+  const card = $("gpMap"); if (!card) return;
+  const on = rgUnlocked();
+  card.style.display = on ? "" : "none";
+  if (!on) return;
+  const g = rgState(), n = rgCtrlCount(), last = g.hist[0];
+  $("mapCount2").textContent = `制圧 ${n} / ${REGIONS.length}`;
+  $("mapBr").textContent = `${g.br.length}店`;
+  const net = last ? last.net : null;
+  const el = $("mapNet");
+  el.textContent = net === null ? "—" : sign(net);
+  el.className = "v" + (net === null ? "" : net >= 0 ? " pos" : " neg");
+  $("mapNote").textContent = g.done
+    ? "全国制覇済み。全支店の利益に+8%の帝国ボーナスがかかっている。"
+    : g.br.length
+      ? "支店の出玉方針は毎日効いてくる。渋いままだと評判が落ちて一番店を明け渡す。"
+      : "地元と隣り合う地方から進出できる。まずは競合の薄い地方で足場を作るのが定石。";
+}
 function renderAch() {
   const w = $("achList"); if (!w) return;
   const exAch = exState().ach;
@@ -2169,7 +2344,7 @@ function renderAch() {
       ${ok ? `<span style="margin-left:auto;color:var(--gold)">${ic("check")}</span>` : ""}
     </div>`;
   const groups = [["基本", ACHIEVEMENTS.map(a => [a, hasAch(a.id)])]];
-  const order = ["収益", "継続", "集客", "ホール", "経営", "遊技", "到達"];
+  const order = ["収益", "継続", "集客", "ホール", "経営", "遊技", "到達", "全国"];
   for (const g of order) {
     const items = ACH_EX.filter(a => a.g === g).map(a => [a, exAch.includes(a.id)]);
     if (items.length) groups.push([g, items]);
@@ -2190,9 +2365,20 @@ function renderLedger() {
     return;
   }
   const total = h.reduce((a, r) => a + r.net, 0);
+  const rgh = rgState().hist;
+  const rgMap = {};
+  for (const r of rgh) rgMap[r.day] = r.net;
+  const rgTotal = rgh.reduce((a, r) => a + r.net, 0);
   const tEl = $("ledTotal");
   tEl.textContent = sign(total) + `  (${h.length}営業日)`;
   tEl.className = "v num " + (total >= 0 ? "pos" : "neg");
+  const rEl = $("ledRegion");
+  if (rEl) {
+    rEl.style.display = rgh.length ? "" : "none";
+    rEl.innerHTML = rgh.length
+      ? `<span class="k">うち支店損益 (直近${rgh.length}日)</span><span class="v num ${rgTotal >= 0 ? "pos" : "neg"}">${sign(rgTotal)}</span>`
+      : "";
+  }
 
   const data = h.slice(0, 30).reverse();
   const W = 660, H = 180, mL = 52, mR = 8, mT = 10, mB = 22;
@@ -2224,7 +2410,7 @@ function renderLedger() {
       <span class="d">${r.day}日目${r.note ? `<span class="flag" style="color:${r.note === "特日" ? "var(--red)" : "var(--neon-b)"}">${r.note}</span>` : ""}</span>
       <span></span>
       <span class="net ${r.net >= 0 ? "pos" : "neg"}"><small aria-hidden="true">${r.net >= 0 ? "▲" : "▼"}</small>${sign(r.net)}</span>
-      <span class="meta">客${r.cust} (${r.cas ?? "-"}/${r.reg ?? "-"}/${r.pro ?? "-"}) · 売上${yenShort(r.sales)} · 払出${yenShort(r.payout)} · 経費${yenShort(r.exp)}</span>
+      <span class="meta">客${r.cust} (${r.cas ?? "-"}/${r.reg ?? "-"}/${r.pro ?? "-"}) · 売上${yenShort(r.sales)} · 払出${yenShort(r.payout)} · 経費${yenShort(r.exp)}${rgMap[r.day] !== undefined ? ` · 支店${sign(rgMap[r.day])}` : ""}</span>
     </div>`).join("");
 
   const wrap = $("chartWrap"), tip = $("chartTip"), svg = wrap.querySelector("svg");
@@ -2288,7 +2474,7 @@ function renderSide() {
     </div>`;
 }
 
-const PANEL_BG = { shop: "bg_shop", mgmt: "bg_strategy", ledger: "bg_data", ach: "bg_home" };
+const PANEL_BG = { shop: "bg_shop", mgmt: "bg_strategy", ledger: "bg_data", ach: "bg_home", map: "bg_news" };
 function mountPanelArt() {
   for (const [id, art] of Object.entries(PANEL_BG)) {
     const el = $("panel-" + id);
@@ -2303,12 +2489,501 @@ function renderAll() {
   mountPanelArt();
   renderNav(); renderStatus(); renderIslands(); renderHall(); renderShop();
   renderMgmt(); renderLedger(); renderAch(); renderActs(); renderCTA(); renderSide();
+  renderMap(); renderMapCard();
+}
+
+/* ==========================================================================
+   REGION LAYER — 地方進出 / 地域一番店争い / 国取り
+   保護ロジック(simulateDay・sanitizeState・保存22キー)には一切触れない。
+   すべての状態は state.ex.rg 配下に隔離し、本店の日次計算は素通しする。
+   ========================================================================== */
+
+/* 8地方。pop=人口規模, rent=地代係数, taste=好まれる機種構成, rival=競合の強さ(1-5) */
+const REGIONS = [
+  { id:"hok", name:"北海道",    gc:3, gr:1, pop:0.75, rent:0.75, taste:"S",   rival:2, adj:["toh"],
+    tag:"雪と一発台",   note:"人口は少ないが客の熱量は高い。冬場は客足が読みづらく、当たれば一気に伸びる。" },
+  { id:"toh", name:"東北",      gc:2, gr:2, pop:0.85, rent:0.80, taste:"P",   rival:2, adj:["hok","kan","chu"],
+    tag:"常連が固い",   note:"派手さはないが、一度掴んだ客は簡単には離れない。海物語系の甘デジが根強い。" },
+  { id:"kan", name:"関東",      gc:3, gr:3, pop:1.35, rent:1.50, taste:"S",   rival:5, adj:["toh","chu"],
+    tag:"最大にして激戦", note:"人口最大にして競合最強。地代も家賃も跳ね上がる。ここを獲れば全国が見える。" },
+  { id:"chu", name:"中部",      gc:2, gr:3, pop:1.05, rent:1.00, taste:"bal", rival:3, adj:["toh","kan","kin"],
+    tag:"堅実",         note:"極端を嫌う土地柄。P・Sをバランスよく置いた店が長く生き残る。あなたの地元。" },
+  { id:"kin", name:"近畿",      gc:2, gr:4, pop:1.20, rent:1.25, taste:"S",   rival:4, adj:["chu","cgk"],
+    tag:"目が肥えている", note:"客の見る目が厳しい。渋い営業は初日でバレて、翌日から誰も来なくなる。" },
+  { id:"cgk", name:"中国・四国", gc:1, gr:4, pop:0.85, rent:0.80, taste:"P",   rival:2, adj:["kin","kyu"],
+    tag:"のんびり",     note:"回転は遅いが地代が安い。全国展開の足がかりにちょうどいい。" },
+  { id:"kyu", name:"九州",      gc:1, gr:5, pop:1.00, rent:0.90, taste:"S",   rival:3, adj:["cgk","oki"],
+    tag:"博打気質",     note:"荒れる台ほど支持される土地。丸く収めようとすると逆に客が離れる。" },
+  { id:"oki", name:"沖縄",      gc:1, gr:6, pop:0.70, rent:0.70, taste:"P",   rival:1, adj:["kyu"],
+    tag:"独自の島文化", note:"沖スロ文化が根づく。規模は小さく競合も弱い。最初の一歩に向く。" },
+];
+const RG_HOME = "chu";
+const regionOf = id => REGIONS.find(r => r.id === id) || null;
+
+/* ライバル店の名前素材(地方ごとの都市名 × チェーン名) */
+const RIV_CITY = {
+  hok:["札幌","旭川","函館"], toh:["仙台","郡山","盛岡"], kan:["池袋","横浜","大宮"],
+  chu:["名古屋","静岡","金沢"], kin:["難波","京都","神戸"], cgk:["広島","岡山","高松"],
+  kyu:["博多","熊本","鹿児島"], oki:["那覇","北谷","名護"],
+};
+const RIV_CHAIN = ["エンペラー","ベガス","ダイヤモンド","グランデ","タイタン","クラウン","ミラージュ","オーシャン"];
+
+const TASTE_LABEL = { P:"パチンコ好き", S:"スロッター気質", bal:"バランス型" };
+const TP_LABEL = { P:"パチンコ主体", S:"スロット主体", bal:"バランス構成" };
+const POL_LABEL = { 1:"全回収", 2:"回収寄り", 3:"標準", 4:"放出寄り", 5:"全開放" };
+const POL_MARGIN = { 1:0.26, 2:0.23, 3:0.20, 4:0.165, 5:0.13 };
+const POL_REPTGT = { 1:18, 2:35, 3:55, 4:75, 5:90 };
+const RG_WIN_DAYS = 5;   // 連続首位でエリア制圧
+const RG_LOSE_DAYS = 3;  // 連続で抜かれると制圧解除
+
+/* ---------- 状態 ---------- */
+/* 正規化は「読み込み直後の1回だけ」。毎回オブジェクトを作り直すと、
+   rgDay が保持している支店への書き込みが捨てられてしまう(__ok は非列挙なので保存されない)。 */
+function rgState() {
+  const ex = exState();
+  if (!ex.rg || typeof ex.rg !== "object" || Array.isArray(ex.rg)) ex.rg = {};
+  const g = ex.rg;
+  if (g.__ok) return g;
+  const num = (v, d, lo, hi) => {
+    v = Number(v);
+    if (!Number.isFinite(v)) v = d;
+    return Math.min(hi, Math.max(lo, v));
+  };
+  if (!g.ctrl || typeof g.ctrl !== "object" || Array.isArray(g.ctrl)) g.ctrl = {};
+  for (const k of Object.keys(g.ctrl)) {
+    if (!regionOf(k)) delete g.ctrl[k];
+    else g.ctrl[k] = Math.floor(num(g.ctrl[k], 1, 1, 1e6));
+  }
+  if (!g.win || typeof g.win !== "object" || Array.isArray(g.win)) g.win = {};
+  if (!g.lose || typeof g.lose !== "object" || Array.isArray(g.lose)) g.lose = {};
+  for (const o of [g.win, g.lose]) {
+    for (const k of Object.keys(o)) {
+      if (!regionOf(k)) delete o[k]; else o[k] = Math.floor(num(o[k], 0, 0, 9999));
+    }
+  }
+  g.br = (Array.isArray(g.br) ? g.br : [])
+    .filter(b => b && typeof b === "object" && regionOf(b.a) && b.a !== RG_HOME)
+    .slice(0, REGIONS.length)
+    .map(b => ({
+      a: b.a,
+      n: Math.floor(num(b.n, 20, 20, 60) / 20) * 20,
+      tp: (b.tp === "P" || b.tp === "S") ? b.tp : "bal",
+      pol: Math.floor(num(b.pol, 3, 1, 5)),
+      mgr: b.mgr === true,
+      rep: num(b.rep, 40, 0, 100),
+      since: Math.floor(num(b.since, 1, 1, 1e6)),
+      net: Math.round(num(b.net, 0, -1e11, 1e11)),
+      cash: Math.round(num(b.cash, 0, -1e13, 1e13)),
+    }));
+  // 1エリア1店舗
+  const seen = {};
+  g.br = g.br.filter(b => (seen[b.a] ? false : (seen[b.a] = true)));
+  if (!g.riv || typeof g.riv !== "object" || Array.isArray(g.riv)) g.riv = {};
+  for (const R of REGIONS) {
+    const list = Array.isArray(g.riv[R.id]) ? g.riv[R.id] : null;
+    if (!list || list.length !== 3 || !list.every(x => x && typeof x.nm === "string" && Number.isFinite(Number(x.sc)))) {
+      g.riv[R.id] = rgMakeRivals(R);
+    } else {
+      g.riv[R.id] = list.slice(0, 3).map((x, i) => ({
+        nm: String(x.nm).slice(0, 24),
+        sc: num(x.sc, 40, 5, 400),
+        cap: num(x.cap, (R.rival * 20 + R.pop * 22) * [1, 0.85, 0.7][i] * 1.25, 5, 400),
+      }));
+    }
+  }
+  for (const k of Object.keys(g.riv)) if (!regionOf(k)) delete g.riv[k];
+  g.hist = (Array.isArray(g.hist) ? g.hist : []).slice(0, 60)
+    .filter(r => r && Number.isFinite(Number(r.day)))
+    .map(r => ({ day: Math.floor(Number(r.day)), net: Math.round(num(r.net, 0, -1e11, 1e11)) }));
+  g.done = g.done === true;
+  g.doneDay = Number.isFinite(Number(g.doneDay)) && g.doneDay !== null ? Math.floor(Number(g.doneDay)) : null;
+  g.seen = g.seen === true;
+  Object.defineProperty(g, "__ok", { value: true, enumerable: false, configurable: true });
+  return g;
+}
+
+function rgMakeRivals(R) {
+  const cities = RIV_CITY[R.id] || ["中央", "本町", "駅前"];
+  const pool = RIV_CHAIN.slice().sort(() => Math.random() - 0.5);
+  const base = R.rival * 20 + R.pop * 22;
+  return [0, 1, 2].map(i => {
+    const b0 = base * [1, 0.85, 0.7][i];
+    return {
+      nm: `${pool[i]}${cities[i] || cities[0]}店`,
+      sc: Math.round((b0 + rand(-5, 5)) * 10) / 10,
+      cap: Math.round(b0 * 1.25 * 10) / 10,   // 際限なく伸びると勝てなくなるので上限を持たせる
+    };
+  });
+}
+
+/* ---------- 解禁 ---------- */
+function rgUnlocked() { return state.day >= 15 || totalAssets() >= 20000000; }
+
+/* ---------- スコア(集客力) ---------- */
+function rgBranch(a) { return rgState().br.find(b => b.a === a) || null; }
+function rgFit(tp, R) { return tp === R.taste ? 1 : (R.taste === "bal" || tp === "bal") ? 0 : -1; }
+
+/* あなたのそのエリアでの集客力。支店がなければ null */
+/* 集客力の配点。評判に最大の重みを置いてあるので、渋い営業では territory は守れない。
+   台数は効くが単体では足りず、関東のような激戦区は「周りを固めてから」でないと届かない。 */
+const SC_N = 0.45, SC_REP = 1.15, SC_FIT = 9, SC_MGR = 6, SC_FAME = 3, SC_FAME_MAX = 18;
+function rgFame(a) {
+  const g = rgState();
+  return Math.min(SC_FAME_MAX, SC_FAME * Object.keys(g.ctrl).filter(k => k !== a).length);
+}
+function rgMyScore(a) {
+  const R = regionOf(a); if (!R) return null;
+  if (a === RG_HOME) {
+    const n = state.machines.length;
+    if (!n) return null;
+    return Math.round((n * SC_N + state.rep * SC_REP + Math.min(22, state.regulars / 11) + rgFame(a)) * 10) / 10;
+  }
+  const b = rgBranch(a); if (!b) return null;
+  const fit = rgFit(b.tp, R);
+  return Math.round((b.n * SC_N + b.rep * SC_REP + fit * SC_FIT + (b.mgr ? SC_MGR : 0) + rgFame(a)) * 10) / 10;
+}
+
+/* 順位表: [{nm, sc, me}] を降順で */
+function rgRanking(a) {
+  const g = rgState();
+  const rows = (g.riv[a] || []).map(r => ({ nm: r.nm, sc: r.sc, me: false }));
+  const my = rgMyScore(a);
+  if (my !== null) rows.push({ nm: a === RG_HOME ? "自店(本店)" : "自店(支店)", sc: my, me: true });
+  rows.sort((x, y) => y.sc - x.sc);
+  return rows;
+}
+const rgIsTop = a => { const r = rgRanking(a); return r.length > 0 && r[0].me; };
+const rgCtrlCount = () => Object.keys(rgState().ctrl).length;
+
+/* 進出可能: 本店エリアか制圧済みエリアに隣接していること */
+function rgReachable(a) {
+  if (a === RG_HOME) return false;
+  const g = rgState();
+  const mine = [RG_HOME].concat(Object.keys(g.ctrl), g.br.map(b => b.a));
+  return REGIONS.some(R => mine.includes(R.id) && R.adj.includes(a));
+}
+const rgOpenCost = (R, n) => Math.round((3000000 + n * 250000) * R.rent);
+const rgAddCost = (R, add) => Math.round(add * 250000 * R.rent * 1.1);
+const rgSellBack = (R, b) => Math.round(rgOpenCost(R, b.n) * 0.4);
+
+/* ---------- 支店の日次損益 ---------- */
+function rgBranchNet(b) {
+  const R = regionOf(b.a); if (!R) return 0;
+  const fit = rgFit(b.tp, R);
+  const occ = (0.30 + (b.rep / 100) * 0.62) * R.pop * (1 + fit * 0.11);
+  const sales = b.n * 140000 * occ;
+  const gross = sales * POL_MARGIN[b.pol];
+  const cost = b.n * 4200 * R.rent + 120000 * R.rent + (b.mgr ? 100000 : 0);
+  let net = gross - cost;
+  if (rgState().ctrl[b.a]) net *= 1.12;              // 地域一番店の看板効果
+  net *= 1 + 0.03 * rgCtrlCount();                    // チェーン相乗効果
+  if (rgState().done) net *= 1.08;                    // 全国制覇ボーナス
+  return Math.round(net);
+}
+
+/* ---------- 1日の処理。runDay から simulateDay の後に呼ばれる ---------- */
+function rgDay(rec) {
+  if (!state.ex) exState();
+  const g = rgState();
+  const notes = [];
+  let total = 0;
+
+  // 1. 支店の評判が方針に寄っていく
+  for (const b of g.br) {
+    const tgt = POL_REPTGT[b.pol];
+    b.rep += (tgt - b.rep) * (b.mgr ? 0.10 : 0.07);
+    b.rep = Math.max(0, Math.min(100, b.rep));
+  }
+  // 2. 支店の損益
+  for (const b of g.br) {
+    const net = rgBranchNet(b);
+    b.net = net; b.cash += net; total += net;
+  }
+  if (total !== 0) state.money += total;
+
+  // 解禁前は勢力図を動かさない(プレイヤーの見えないところで地元が決着しないように)
+  if (!rgUnlocked()) {
+    g.hist.unshift({ day: rec.day, net: total });
+    if (g.hist.length > 60) g.hist.pop();
+    save(true);
+    return { net: total, notes, unlock: false, ctrl: 0 };
+  }
+
+  // 3. ライバルの成長と反攻
+  for (const R of REGIONS) {
+    const list = g.riv[R.id]; if (!list) continue;
+    for (const r of list) {
+      r.sc = Math.round(Math.min(r.cap, r.sc + (r.cap - r.sc) * 0.006 * (1 + R.rival / 5)) * 10) / 10;
+    }
+    if (g.ctrl[R.id] && Math.random() < 0.04) {
+      const r = list[Math.floor(Math.random() * list.length)];
+      r.sc = Math.round(Math.min(r.cap, r.sc + rand(6, 12)) * 10) / 10;
+      notes.push(`⚔️ ${R.name}: 「${r.nm}」が大型リニューアル!一番店の座を狙ってきている。`);
+    }
+  }
+
+  // 4. 一番店争いの判定
+  for (const R of REGIONS) {
+    const a = R.id;
+    const my = rgMyScore(a);
+    if (my === null) { g.win[a] = 0; g.lose[a] = 0; continue; }
+    const top = rgIsTop(a);
+    if (top) {
+      g.lose[a] = 0;
+      g.win[a] = (g.win[a] || 0) + 1;
+      if (!g.ctrl[a] && g.win[a] >= RG_WIN_DAYS) {
+        g.ctrl[a] = state.day;
+        notes.push(`🏆 ${R.name}を制圧!${RG_WIN_DAYS}日連続で一番店を守り抜き、この地方はあなたのものになった。`);
+      } else if (!g.ctrl[a]) {
+        notes.push(`🥇 ${R.name}で一番店(${g.win[a]}/${RG_WIN_DAYS}日連続)。あと${RG_WIN_DAYS - g.win[a]}日守れば制圧。`);
+      }
+    } else {
+      g.win[a] = 0;
+      if (g.ctrl[a]) {
+        g.lose[a] = (g.lose[a] || 0) + 1;
+        if (g.lose[a] >= RG_LOSE_DAYS) {
+          delete g.ctrl[a]; g.lose[a] = 0;
+          notes.push(`💥 ${R.name}の一番店を明け渡した…制圧が解除された。立て直さないと客が根こそぎ持っていかれる。`);
+        } else {
+          notes.push(`⚠️ ${R.name}で首位陥落(${g.lose[a]}/${RG_LOSE_DAYS}日)。あと${RG_LOSE_DAYS - g.lose[a]}日で制圧解除。`);
+        }
+      }
+    }
+  }
+
+  // 5. 地元を押さえている間は本店の評判がじわりと上がる
+  if (g.ctrl[RG_HOME]) state.rep = Math.max(1, Math.min(100, state.rep + 0.3));
+
+  // 6. 全国制覇
+  if (!g.done && rgCtrlCount() >= REGIONS.length) {
+    g.done = true; g.doneDay = state.day;
+    notes.push("👑 全国制覇!!北海道から沖縄まで、すべての地方であなたの店が一番店になった。");
+  }
+
+  g.hist.unshift({ day: rec.day, net: total });
+  if (g.hist.length > 60) g.hist.pop();
+
+  // 7. 解禁通知
+  let unlockNow = false;
+  if (!g.seen && rgUnlocked()) { g.seen = true; unlockNow = true; }
+
+  save(true);
+  return { net: total, notes, unlock: unlockNow, ctrl: rgCtrlCount() };
+}
+
+/* ---------- 全国パネル ---------- */
+function rgStatusOf(a) {
+  const g = rgState();
+  if (a === RG_HOME) return g.ctrl[a] ? "home-top" : "home";
+  if (g.ctrl[a]) return "ctrl";
+  if (rgBranch(a)) return "branch";
+  return rgReachable(a) ? "open" : "lock";
+}
+const RG_ST_LABEL = { "home":"本店", "home-top":"本店・制圧", "ctrl":"制圧", "branch":"支店", "open":"進出可", "lock":"未到達" };
+
+function renderMap() {
+  const w = $("mapGrid"); if (!w) return;
+  const g = rgState(), n = rgCtrlCount();
+  if ($("mapCount")) $("mapCount").textContent = `${n} / ${REGIONS.length}`;
+  if ($("mapBar")) $("mapBar").style.width = Math.round((n / REGIONS.length) * 100) + "%";
+  if ($("mapLead")) {
+    $("mapLead").textContent = g.done
+      ? "全国制覇達成。すべての地方があなたの看板を掲げている。"
+      : n === 0
+        ? "地元と隣り合う地方から支店を出し、5日連続で一番店を守れば制圧できる。"
+        : `${n}地方を制圧中。制圧エリアが増えるほどチェーン相乗効果で全支店の利益が伸びる(現在 +${n * 3}%)。`;
+  }
+  w.innerHTML = REGIONS.map(R => {
+    const st = rgStatusOf(R.id), b = rgBranch(R.id), rank = rgRanking(R.id);
+    const myPos = rank.findIndex(x => x.me);
+    const sub = st === "lock" ? "隣接エリアを取れ"
+      : myPos >= 0 ? `${myPos + 1}位 / ${rank.length}店`
+      : `競合${R.rival}軒`;
+    return `<button class="mt ${st}" data-rg="${R.id}" style="grid-column:${R.gc};grid-row:${R.gr}">
+      <span class="mt-st">${st === "ctrl" || st === "home-top" ? ic("crown") : st === "home" ? ic("hall") : st === "branch" ? ic("flag") : ""}${RG_ST_LABEL[st]}</span>
+      <span class="mt-nm">${esc(R.name)}</span>
+      <span class="mt-sub">${esc(sub)}</span>
+      ${b && b.since < state.day ? `<span class="mt-net ${b.net >= 0 ? "pos" : "neg"}">${sign(b.net)}</span>` : ""}
+    </button>`;
+  }).join("");
+
+  const list = $("mapList");
+  if (list) {
+    const brs = g.br.slice().sort((a, b) => b.net - a.net);
+    list.innerHTML = !brs.length
+      ? '<div class="empty">まだ支店はありません。地図から地方を選んで進出しましょう。</div>'
+      : brs.map(b => {
+        const R = regionOf(b.a);
+        return `<button class="brw" data-rg="${b.a}">
+          <span class="brw-a">${g.ctrl[b.a] ? ic("crown") : ic("flag")}${esc(R.name)}</span>
+          <span class="brw-m">${b.n}台 ・ ${esc(POL_LABEL[b.pol])} ・ 評判${Math.round(b.rep)}</span>
+          <span class="brw-n ${b.net >= 0 ? "pos" : "neg"}">${sign(b.net)}</span>
+        </button>`;
+      }).join("");
+  }
+}
+
+/* ---------- エリア詳細シート ---------- */
+let rgDraft = { n: 20, tp: "bal" };
+
+function rgBar(v, max, cls) {
+  const p = Math.max(0, Math.min(100, (v / max) * 100));
+  return `<span class="rgbar ${cls || ""}"><i style="width:${p}%"></i></span>`;
+}
+
+function openRegion(a) {
+  const R = regionOf(a); if (!R) return;
+  const g = rgState(), b = rgBranch(a), st = rgStatusOf(a);
+  const rank = rgRanking(a);
+  const mx = Math.max(60, ...rank.map(r => r.sc));
+
+  const traits = `<div class="rg-tr">
+    <div><span class="k">人口 (関東=100)</span>${rgBar(R.pop, 1.4)}<b>${(R.pop * 100 / 1.35).toFixed(0)}</b></div>
+    <div><span class="k">地代・家賃</span>${rgBar(R.rent, 1.55, "warn")}<b>${R.rent.toFixed(2)}倍</b></div>
+    <div><span class="k">競合の厚み</span>${rgBar(R.rival, 5, "warn")}<b>${R.rival} / 5</b></div>
+    <div><span class="k">客層</span><b class="tastev">${esc(TASTE_LABEL[R.taste])}</b></div>
+  </div>
+  <p class="note">${esc(R.note)}</p>`;
+
+  const rankHtml = `<div class="rg-rank">${rank.map((r, i) => `
+    <div class="${r.me ? "me" : ""}${i === 0 ? " top" : ""}">
+      <span class="p">${i + 1}</span>
+      <span class="nm">${esc(r.nm)}</span>
+      ${rgBar(r.sc, mx, r.me ? "me" : "")}
+      <b>${r.sc.toFixed(0)}</b>
+    </div>`).join("")}</div>`;
+
+  let body;
+  if (a === RG_HOME) {
+    const w = g.win[a] || 0;
+    body = `${traits}<h4 class="rg-h">${ic("target")}一番店争い</h4>${rankHtml}
+      <p class="note">${g.ctrl[a]
+        ? "地元を制圧中。看板効果で本店の評判が毎日わずかに上がっている。"
+        : rgIsTop(a)
+          ? `現在1位。${RG_WIN_DAYS}日連続で守れば地元を制圧できる(${w}/${RG_WIN_DAYS}日)。`
+          : "本店の集客力は <b>評判</b> を軸に、台数・常連数・他エリアの制圧数で決まる。設定を上げて評判を育てるのがいちばん効く。"}</p>`;
+  } else if (b) {
+    const R2 = R, net = b.net;
+    const canAdd = b.n < 60;
+    const addCost = canAdd ? rgAddCost(R2, 20) : 0;
+    body = `${traits}
+      <h4 class="rg-h">${ic("flag")}支店の状況</h4>
+      <div class="bd">
+        <span class="k">規模</span><span class="v">${b.n}台 (${esc(TP_LABEL[b.tp])})</span>
+        <span class="k">支店の評判</span><span class="v">${Math.round(b.rep)} / 100</span>
+        <span class="k">前日損益</span>${b.since >= state.day ? '<span class="v">— (明日から営業)</span>' : `<span class="v ${net >= 0 ? "pos" : "neg"}">${sign(net)}</span>`}
+        <span class="k">累計損益</span><span class="v ${b.cash >= 0 ? "pos" : "neg"}">${sign(b.cash)}</span>
+      </div>
+      <h4 class="rg-h">${ic("gear")}出玉方針</h4>
+      <div class="seg rgpol" role="group" aria-label="${esc(R.name)}支店の出玉方針">
+        ${[1,2,3,4,5].map(v => `<button type="button" data-rgpol="${a}:${v}" aria-pressed="${b.pol === v}">${v}</button>`).join("")}
+      </div>
+      <p class="note">現在 <b style="color:var(--gold)">${esc(POL_LABEL[b.pol])}</b> ・ 粗利率 ${(POL_MARGIN[b.pol] * 100).toFixed(1)}% ・ 評判は ${POL_REPTGT[b.pol]} に向かって動いていく。
+      渋くすれば粗利率は上がるが、評判が落ちて客が減り、一番店も明け渡す。甘くすれば評判と集客は伸びるが粗利率が下がる。
+      どちらに振り切っても利益は落ちる — エリアを取りにいくか、利益を取るかの選択。</p>
+      <div class="btn-grid" style="margin-top:6px">
+        <button class="btn" data-rgmgr="${a}" ${b.mgr ? "disabled" : ""}>${b.mgr ? "店長 配属済み" : "敏腕店長を雇う"}</button>
+        <button class="btn" data-rgadd="${a}" ${canAdd ? "" : "disabled"}>${canAdd ? `+20台 増床 ${yenShort(addCost)}` : "60台(上限)"}</button>
+      </div>
+      <p class="note">敏腕店長: 日給¥100,000。評判の立ち上がりが速くなり、集客力に+6。</p>
+      <h4 class="rg-h">${ic("target")}一番店争い</h4>${rankHtml}
+      <p class="note">${g.ctrl[a]
+        ? `制圧中(${state.day - g.ctrl[a]}日目)。首位を${RG_LOSE_DAYS}日連続で明け渡すと制圧は解ける。`
+        : rgIsTop(a)
+          ? `現在1位。あと${RG_WIN_DAYS - (g.win[a] || 0)}日守れば制圧。`
+          : "1位を5日連続で守ると制圧。集客力は<b>評判が最重要</b>で、台数・客層の相性・店長・他エリアの制圧数が積み上がる。"}</p>
+      <button class="btn red wide" style="margin-top:8px" data-rgclose="${a}">この支店を撤退する (${yenShort(rgSellBack(R2, b))} 回収)</button>`;
+  } else if (st === "open") {
+    const cost = rgOpenCost(R, rgDraft.n);
+    const afford = state.money >= cost;
+    body = `${traits}
+      <h4 class="rg-h">${ic("target")}現地の勢力図</h4>${rankHtml}
+      <h4 class="rg-h">${ic("plus")}進出プラン</h4>
+      <div class="rg-opt"><span class="k">規模</span>
+        <div class="seg">${[20,40,60].map(v => `<button type="button" data-rgn="${v}" aria-pressed="${rgDraft.n === v}">${v}台</button>`).join("")}</div>
+      </div>
+      <div class="rg-opt"><span class="k">機種構成</span>
+        <div class="seg">${["P","bal","S"].map(v => `<button type="button" data-rgtp="${v}" aria-pressed="${rgDraft.tp === v}">${v === "bal" ? "バランス" : v === "P" ? "パチンコ" : "スロット"}</button>`).join("")}</div>
+      </div>
+      <p class="note">この地方の客層は <b style="color:var(--gold)">${esc(TASTE_LABEL[R.taste])}</b>。
+      ${R.taste === "bal" ? "どの構成でも大きな有利不利はない。" : `<b>${esc(TP_LABEL[R.taste])}</b>で出せば集客力+9、真逆の構成だと−9。`}</p>
+      <div class="bd" style="margin-top:6px">
+        <span class="k">出店費用</span><span class="v ${afford ? "" : "neg"}">${yen(cost)}</span>
+        <span class="k">所持資金</span><span class="v">${yen(state.money)}</span>
+        <span class="k">想定初期評判</span><span class="v">40</span>
+      </div>
+      <button class="btn gold wide" style="margin-top:8px" data-rgopen="${a}" ${afford ? "" : "disabled"}>${afford ? `${R.name}に進出する` : "資金が足りない"}</button>`;
+  } else {
+    body = `${traits}
+      <h4 class="rg-h">${ic("target")}現地の勢力図</h4>${rankHtml}
+      <p class="note">${ic("lock")}まだ手が届かない。隣接する <b>${esc(R.adj.map(x => (regionOf(x) || {}).name).filter(Boolean).join(" / "))}</b> のいずれかを押さえれば進出できる。</p>`;
+  }
+
+  showModal(`${mh("map", R.name + " 〈" + R.tag + "〉", true)}<div class="mb rg-sheet">${body}</div>`);
+}
+
+/* ---------- 操作 ---------- */
+function rgOpen(a) {
+  if (isDead()) return;
+  const R = regionOf(a); if (!R || rgBranch(a) || !rgReachable(a)) return;
+  const cost = rgOpenCost(R, rgDraft.n);
+  if (state.money < cost) return;
+  state.money -= cost;
+  rgState().br.push({ a, n: rgDraft.n, tp: rgDraft.tp, pol: 3, mgr: false, rep: 40, since: state.day, net: 0, cash: -cost });
+  save(); checkAchEx(); renderAll();
+  toast(`${R.name}に${rgDraft.n}台の支店を出した`);
+  openRegion(a);
+}
+function rgClose(a) {
+  const R = regionOf(a), b = rgBranch(a); if (!R || !b) return;
+  if (!confirm(`${R.name}の支店を撤退しますか?${yen(rgSellBack(R, b))} が戻ります。`)) return;
+  const g = rgState();
+  state.money += rgSellBack(R, b);
+  g.br = g.br.filter(x => x !== b);
+  delete g.ctrl[a]; g.win[a] = 0; g.lose[a] = 0;
+  save(); renderAll(); closeModal();
+  toast(`${R.name}から撤退した`);
+}
+function rgAdd(a) {
+  if (isDead()) return;
+  const R = regionOf(a), b = rgBranch(a); if (!R || !b || b.n >= 60) return;
+  const cost = rgAddCost(R, 20);
+  if (state.money < cost) { toast("資金が足りません"); return; }
+  state.money -= cost; b.n += 20; b.cash -= cost;
+  save(); checkAchEx(); renderAll(); openRegion(a);
+  toast(`${R.name}支店を${b.n}台に増床`);
+}
+function rgMgr(a) {
+  if (isDead()) return;
+  const b = rgBranch(a); if (!b || b.mgr) return;
+  b.mgr = true; save(); renderAll(); openRegion(a);
+  toast("敏腕店長を配属した");
+}
+function rgPol(a, v) {
+  if (isDead()) return;
+  const b = rgBranch(a); if (!b || !(v >= 1 && v <= 5)) return;
+  b.pol = v; save(); checkAchEx(); renderAll(); openRegion(a);
+}
+
+/* ---------- 解禁演出 ---------- */
+function rgShowUnlock() {
+  showModal(`${mh("map", "全国進出 解禁", true)}
+    <div class="mb">
+      <p class="note" style="font-size:12px;color:var(--tx-2)">地元・中部で店が回り始めた。銀行も他県への出店に首を縦に振るようになった。</p>
+      <div class="rg-unlock">
+        <div><b>支店を出す</b><span>隣り合う地方に支店を出せる。台数と機種構成を選び、出玉方針で利益と評判の綱引きをする。</span></div>
+        <div><b>一番店を獲る</b><span>集客力でその地方の競合を上回り、5日連続で首位を守れば制圧。</span></div>
+        <div><b>全国制覇</b><span>8地方すべてを同時に制圧すれば全国制覇。制圧数が増えるほど全支店の利益が伸びる。</span></div>
+      </div>
+      <div class="rowbtns"><button class="btn gold" data-area="map">全国マップを開く</button></div>
+    </div>`);
 }
 
 /* ==========================================================================
    モーダル / 1営業日 / 当日結果 / 試打 / 起動
    ========================================================================== */
 let trialCleanup = null;
+let pendingUnlock = false;
 function showModal(html) {
   if (trialCleanup) { trialCleanup(); trialCleanup = null; }
   $("modalBox").innerHTML = html;
@@ -2321,6 +2996,7 @@ function closeModal() {
   if (isDead()) { showBankruptModal(); return; }
   $("modalBg").classList.remove("show");
   renderAll();
+  if (pendingUnlock) { pendingUnlock = false; rgShowUnlock(); }
 }
 $("modalBg").addEventListener("click", e => { if (e.target === $("modalBg")) closeModal(); });
 window.closeModal = closeModal;
@@ -2360,9 +3036,11 @@ function runDay() {
   const finish = () => {
     let result;
     try { result = simulateDay(); } finally { busy = false; }
+    try { result.rg = rgDay(result.rec); } catch (e) { result.rg = null; }
     try { checkAchEx({ dayEnd: true, notes: result.notes }); } catch (e) {}
     renderAll();
     showDayResult(result);
+    if (result.rg && result.rg.unlock) pendingUnlock = true;
   };
   if (reduced()) { setTimeout(finish, 120); return; }
   const cur = $("curtain");
@@ -2375,6 +3053,24 @@ function runDay() {
 
 function showDayResult(result) {
   const { rec, notes } = result;
+  const rg = result.rg || null;
+  const g = rgState();
+  const rgNotes = rg ? rg.notes.map(n => `<div class="ev rgev">${ic("flag")}<span>${esc(n)}</span></div>`).join("") : "";
+  const rgHtml = (g.br.length || rgNotes) ? `
+    <div class="rgres">
+      <h4>${ic("map")}全国 — 支店とエリア</h4>
+      ${rgNotes}
+      ${g.br.length ? `<div class="mres">${g.br.slice().sort((a, b) => b.net - a.net).map(b => {
+        const R = regionOf(b.a);
+        return `<div><span>${g.ctrl[b.a] ? "👑 " : ""}${esc(R.name)}支店 [${b.n}台・${esc(POL_LABEL[b.pol])}]</span><span class="n ${b.net >= 0 ? "pos" : "neg"}">${sign(b.net)}</span></div>`;
+      }).join("")}</div>
+      <div class="bd" style="margin-top:6px">
+        <span class="k">支店 合計</span><span class="v ${(rg ? rg.net : 0) >= 0 ? "pos" : "neg"}">${sign(rg ? rg.net : 0)}</span>
+        <span class="k">制圧エリア</span><span class="v">${rgCtrlCount()} / ${REGIONS.length}</span>
+        <span class="hr"></span>
+        <span class="k">本日の全社純利益</span><span class="v ${(rec.net + (rg ? rg.net : 0)) >= 0 ? "pos" : "neg"}">${sign(rec.net + (rg ? rg.net : 0))}</span>
+      </div>` : ""}
+    </div>` : "";
   const glyph = n => /^[\p{Extended_Pictographic}]/u.test(n);
   const evHtml = notes.map(n => `<div class="ev">${glyph(n) ? "" : ic("bolt")}<span>${esc(n)}</span></div>`).join("");
   const perMachine = state.machines.slice().sort((a, b) => (b.lastNet ?? 0) - (a.lastNet ?? 0)).map(m => {
@@ -2412,7 +3108,7 @@ function showDayResult(result) {
     <div class="res-hero${rec.net >= 0 ? " win" : " lose"}">
       <img class="res-art" src="./art/${rec.net >= 0 ? (state.cleared && state.clearDay === rec.day ? "fx_win" : "fx_bonus") : "atm_smoke"}.jpg" alt="" decoding="async">
       <div class="d">DAY ${rec.day}${rec.note ? " 〈" + esc(rec.note) + "〉" : ""}</div>
-      <div class="k">本日の純利益</div>
+      <div class="k">${g.br.length ? "本店の純利益" : "本日の純利益"}</div>
       <div class="amt num ${rec.net >= 0 ? "pos" : "neg"}" id="resAmt">${sign(rec.net)}</div>
     </div>
     <div class="mb">
@@ -2430,6 +3126,7 @@ function showDayResult(result) {
       </div>
       <div class="row" style="margin-top:8px"><span class="k">台別収支(店側)</span><span class="v">${state.machines.length}台</span></div>
       <div class="mres">${perMachine}</div>
+      ${rgHtml}
       ${weekHtml}
       ${endHtml}
       ${state.money >= 0 ? `<div class="rowbtns"><button class="btn gold" onclick="closeModal()">${ic("check")}確認して次の日へ</button></div>` : ""}
@@ -2872,9 +3569,22 @@ function showTutorial() {
    操作の結線
    ========================================================================== */
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist]");
+  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr]");
   if (!el) return;
   const d = el.dataset;
+
+  if (d.rg) { openRegion(d.rg); return; }
+  if (d.rgn || d.rgtp) {
+    if (d.rgn) rgDraft.n = Number(d.rgn); else rgDraft.tp = d.rgtp;
+    const cur = document.querySelector("[data-rgopen]");
+    if (cur) openRegion(cur.dataset.rgopen);
+    return;
+  }
+  if (d.rgopen) { rgOpen(d.rgopen); return; }
+  if (d.rgclose) { rgClose(d.rgclose); return; }
+  if (d.rgadd) { rgAdd(d.rgadd); return; }
+  if (d.rgmgr) { rgMgr(d.rgmgr); return; }
+  if (d.rgpol) { const [a, v] = d.rgpol.split(":"); rgPol(a, Number(v)); return; }
 
   if (d.setlist !== undefined) { openSetList(); return; }
   if (d.slsort) { setListSort = d.slsort; renderSetList(); return; }
