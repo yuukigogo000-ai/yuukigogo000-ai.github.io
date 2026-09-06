@@ -139,16 +139,6 @@ svg{flex:0 0 auto}
 .badge.boom{color:var(--neon-g)}
 .badge.warn{color:var(--warn)}
 
-/* 島オーバーレイ(既存データ: 同一機種グループ) */
-#islandOv .isl{position:absolute;z-index:4;min-width:74px;padding:3px 5px;border-radius:2px;
-  border:1px solid currentColor;background:linear-gradient(180deg,rgba(6,8,12,.88),rgba(3,4,7,.92));
-  box-shadow:0 0 14px rgba(0,0,0,.7),0 0 12px currentColor;backdrop-filter:blur(1px)}
-#islandOv .isl .nm{font-size:9px;font-weight:800;letter-spacing:0;color:currentColor;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:104px}
-#islandOv .isl .row{display:flex;justify-content:space-between;gap:7px;font-size:8px;color:var(--tx-2);margin-top:1px;white-space:nowrap}
-#islandOv .isl .row b{font-family:var(--f-num);font-size:9.5px;font-weight:800;color:var(--tx)}
-#islandOv .isl .row b.pos{color:var(--pos)} #islandOv .isl .row b.neg{color:var(--neg)}
-
 /* ステージ上の経営パネル */
 .ov{position:absolute;z-index:5;width:104px}
 .ov.tl{left:6px;top:24px} .ov.bl{display:none} .ov.tr{right:6px;top:24px}
@@ -443,6 +433,23 @@ svg{flex:0 0 auto}
 .empty{padding:22px 10px;text-align:center;color:var(--tx-3);font-size:11px;line-height:1.8}
 .empty svg{width:26px;height:26px;color:var(--gold-lo);margin-bottom:6px}
 .scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+/* 日次結果の増減バッジ */
+.dlt{margin-left:6px;padding:1px 5px;border-radius:2px;font-family:var(--f-num);font-size:10.5px;font-weight:800;
+  border:1px solid var(--ln);background:rgba(255,255,255,.04);color:var(--tx-3)}
+.dlt.pos{border-color:rgba(0,230,118,.45);background:rgba(0,230,118,.10);color:var(--pos)}
+.dlt.neg{border-color:rgba(255,82,82,.45);background:rgba(255,82,82,.10);color:var(--neg)}
+
+/* ---------- 確認ダイアログ(window.confirm は埋め込み環境で無効になるため自前) ---------- */
+#askBg{position:fixed;inset:0;z-index:90;display:none;background:rgba(2,3,6,.9);
+  align-items:center;justify-content:center;padding:20px}
+#askBg.show{display:flex;animation:fade .16s ease both}
+#askBox{width:100%;max-width:400px;padding:16px 16px 14px;border:1px solid var(--gold-d);border-radius:4px;
+  background:linear-gradient(180deg,#0d1017,#06080c);box-shadow:0 18px 60px rgba(0,0,0,.8)}
+#askTx{margin:0 0 14px;font-size:13px;line-height:1.7;color:var(--tx)}
+#askTx small{display:block;margin-top:8px;font-size:11.5px;line-height:1.6;color:var(--tx-2)}
+.askbtns{display:flex;gap:8px}
+.askbtns .btn{flex:1;justify-content:center}
 
 /* ---------- モーダル(P-29/P-30 準拠: modalBg / modalBox) ---------- */
 #modalBg{position:fixed;inset:0;z-index:70;display:none;background:rgba(2,3,6,.88);
@@ -877,8 +884,19 @@ svg{flex:0 0 auto}
 .stw.c .stw-r{color:var(--neg)}
 .stw.unk{border-style:dashed}
 .stw-n{font-size:11.5px;font-weight:800;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.stw-m{grid-column:2;font-size:8.5px;color:var(--tx-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.stw-m{grid-column:2;display:flex;flex-wrap:wrap;align-items:center;gap:3px 6px;min-width:0;
+  font-size:9px;color:var(--tx-3)}
 .stw-m b{font-weight:800} .stw-m b.g{color:var(--pos)} .stw-m b.b{color:var(--neg)}
+.stw-base{font-family:var(--f-num);letter-spacing:.01em;white-space:nowrap}
+/* 特性は「名前 + 効いている値」を必ずセットで出す。名前だけだと何が起きるか分からない */
+.stw-t{display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:1px 5px;border-radius:2px;
+  font-size:9px;font-weight:800;white-space:nowrap;
+  border:1px solid var(--ln);background:rgba(255,255,255,.04);color:var(--tx-2)}
+.stw-t i{font-style:normal;font-family:var(--f-num);font-weight:700;opacity:.95}
+.stw-t.g{border-color:rgba(0,230,118,.45);background:rgba(0,230,118,.10);color:var(--pos)}
+.stw-t.b{border-color:rgba(255,82,82,.45);background:rgba(255,82,82,.10);color:var(--neg)}
+#staffSum .v b{font-family:var(--f-num);font-weight:900}
+#staffSum .v b.pos{color:var(--pos)} #staffSum .v b.neg{color:var(--neg)}
 .stw-x{grid-column:3;grid-row:1/3;align-self:center;min-width:52px;font-size:10px}
 </style>
 </head>
@@ -953,8 +971,6 @@ svg{flex:0 0 auto}
         <span class="cn a"></span><span class="cn b"></span><span class="cn c"></span><span class="cn d"></span>
         <div class="stage-tag"><span class="lb">HALL</span><span id="stageFlags"></span></div>
 
-        <!-- 115–340px : 実データのオーバーレイ(2〜4個) -->
-        <div id="islandOv"></div>
         <div id="crest" aria-hidden="true">
           <svg viewBox="0 0 120 120">
             <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
@@ -1198,6 +1214,10 @@ svg{flex:0 0 auto}
 </div>
 
 <div id="modalBg"><div id="modalBox"></div></div>
+<div id="askBg" role="alertdialog" aria-modal="true" aria-labelledby="askTx"><div id="askBox">
+  <p id="askTx"></p>
+  <div class="askbtns"><button class="btn" id="askNo">やめる</button><button class="btn red" id="askYes">実行する</button></div>
+</div></div>
 <div id="curtain"><div class="fl"></div><div class="tx">開店</div></div>
 <div id="toasts" aria-live="polite"></div>
 
@@ -2350,34 +2370,6 @@ function renderSpark() {
     <polyline points="0,22 ${pts} 100,22" fill="rgba(0,230,118,.16)" stroke="none"/>`;
 }
 
-/* ---------- 島オーバーレイ(既存データ: 同一機種グループ) ---------- */
-const ISL_POS = [
-  { l: "5%", t: "10%" }, { l: "53%", t: "30%" },
-];
-function renderIslands() {
-  const wrap = $("islandOv");
-  const groups = {};
-  for (const m of state.machines) {
-    const c = catalogOf(m);
-    (groups[m.cid] = groups[m.cid] || { c, n: 0, set: 0, net: 0, cust: 0, known: false }).n++;
-    groups[m.cid].set += m.setting;
-    if (m.lastNet !== null) { groups[m.cid].net += m.lastNet; groups[m.cid].known = true; }
-    if (m.lastCust !== null) groups[m.cid].cust += m.lastCust;
-  }
-  const list = Object.values(groups).sort((a, b) => b.n - a.n || b.net - a.net).slice(0, ISL_POS.length);
-  wrap.innerHTML = list.map((g, i) => {
-    const p = ISL_POS[i], col = colOf(g.c.id);
-    const avg = (g.set / g.n).toFixed(1);
-    const netTxt = g.known ? sign(g.net) : "―";
-    const cls = g.known ? (g.net >= 0 ? "pos" : "neg") : "";
-    return `<div class="isl" style="left:${p.l};top:${p.t};color:${col}">
-      <div class="nm">${esc(g.c.name)}</div>
-      <div class="row"><span>設置 ${g.n}台</span><b>平均設定 ${avg}</b></div>
-      <div class="row"><span>前日収支</span><b class="${cls}">${netTxt}</b></div>
-    </div>`;
-  }).join("");
-}
-
 /* ---------- ホール: 1台フォーカス + 台ストリップ(MOBILE_MAPPING 400–640px) ---------- */
 function renderHall() {
   const dead = isDead(), list = state.machines;
@@ -2724,7 +2716,7 @@ function mountPanelArt() {
 }
 function renderAll() {
   mountPanelArt();
-  renderNav(); renderStatus(); renderIslands(); renderHall(); renderShop();
+  renderNav(); renderStatus(); renderHall(); renderShop();
   renderMgmt(); renderLedger(); renderAch(); renderActs(); renderCTA(); renderSide();
   renderMap(); renderMapCard();
 }
@@ -3473,10 +3465,11 @@ function rgOpen(a) {
   toast(`${R.name}に${rgDraft.n}台の支店を出した`);
   openRegion(a);
 }
-function rgClose(a) {
+async function rgClose(a) {
   const R = regionOf(a), b = rgBranch(a); if (!R || !b) return;
-  if (!confirm(`${R.name}の支店を撤退しますか?${yen(rgSellBack(R, b))} が戻ります。`)) return;
+  if (!(await ask(`${R.name}の支店を撤退しますか?`, `${yen(rgSellBack(R, b))} が戻ります。この土地の一番店争いも降りることになります。`, "撤退する"))) return;
   const g = rgState();
+  if (!rgState().br.includes(b)) return;
   state.money += rgSellBack(R, b);
   g.br = g.br.filter(x => x !== b);
   delete g.ctrl[a]; g.win[a] = 0; g.lose[a] = 0;
@@ -3499,15 +3492,16 @@ function rgMgr(a) {
   toast("敏腕店長を配属した");
 }
 const rgMidCost = (R, b) => Math.round(b.n * 90000 * R.rent);
-function rgMid(a, mid) {
+async function rgMid(a, mid) {
   if (isDead()) return;
   const R = regionOf(a); if (!R || !CATALOG.some(c => c.id === mid)) return;
   const b = rgBranch(a);
   if (!b) { rgDraft.mid = mid; openRegion(a); return; }   // 進出前は下書きを変えるだけ
   if (b.mid === mid) return;
   const cost = rgMidCost(R, b);
-  if (!confirm(`${R.name}支店の主力機種を「${midName(mid)}」に入れ替えますか?\n入れ替え費用 ${yen(cost)}・評判 −8`)) return;
-  if (state.money < cost) { toast("資金が足りません"); return; }
+  if (!(await ask(`${R.name}支店の主力機種を「${midName(mid)}」に入れ替えますか?`,
+    `入れ替え費用 ${yen(cost)}・支店の評判 −8(客が慣れるまでの空白期間)`, "入れ替える"))) return;
+  if (state.money < cost || !rgBranch(a) || rgBranch(a) !== b) { toast("資金が足りません"); return; }
   state.money -= cost; b.cash -= cost; b.mid = mid;
   b.rep = Math.max(0, b.rep - 8);
   save(); checkAchEx(); renderAll(); openRegion(a);
@@ -3520,15 +3514,16 @@ function rgPol(a, v) {
 }
 
 /* ---------- 設定: 地方の特色 ---------- */
-function rgSetMode(mode) {
+async function rgSetMode(mode) {
   if (isDead()) return;
   const g = rgState();
   const isRnd = mode === "random";
   if (!isRnd && g.rnd === 0) return;
-  const msg = isRnd
-    ? "地方の特色をランダムに引き直しますか?\n\n・各地方で強い機種/嫌われる機種、常連の固さ、行政の厳しさが変わります\n・人口・地代・競合の厚み・隣接関係は変わりません\n・把握済みの客層はリセットされ、また現地で調べ直しになります"
-    : "地方の特色を作り込みの標準に戻しますか?\n\n把握済みの客層はリセットされます。";
-  if (!confirm(msg)) return;
+  const sub = isRnd
+    ? "各地方で強い機種/嫌われる機種、常連の固さ、行政の厳しさが変わります。人口・地代・競合の厚み・隣接関係は変わりません。把握済みの客層はリセットされ、また現地で調べ直しになります。"
+    : "把握済みの客層はリセットされます。";
+  if (!(await ask(isRnd ? "地方の特色をランダムに引き直しますか?" : "地方の特色を作り込みの標準に戻しますか?", sub,
+    isRnd ? "引き直す" : "標準に戻す"))) return;
   g.rnd = isRnd ? (Math.floor(Math.random() * 999999998) + 1) : 0;
   g.known = {};
   rgApplyTraits(g.rnd);
@@ -3655,22 +3650,24 @@ const ST_RANK = {
   C: { w: 25, serve: -0.55, draw: -1.9, label: "C" },
 };
 /* 特性は1人ひとつ、または無し */
+/* ef = 名簿に出す短い効果表示。ランク素の値に「この人だけ」上乗せされる分。 */
 const ST_TRAIT = {
-  none:   { w: 30, good: null, name: "―",             desc: "特筆すべき癖はない" },
-  mood:   { w: 10, good: true,  name: "ムードメーカー", desc: "店の空気が明るくなる (評判 +0.50/日)" },
-  face:   { w: 9,  good: true,  name: "看板スタッフ",   desc: "この人目当ての客がいる (常連 +2.2/日)" },
-  mech:   { w: 8,  good: true,  name: "元整備士",       desc: "台のコンディションを保つ (全台の人気 +0.35/日)" },
-  clean:  { w: 8,  good: true,  name: "掃除が行き届く", desc: "店内が清潔に保たれる (評判 +0.35 / 常連 +0.9 /日)" },
-  late:   { w: 12, good: false, name: "遅刻魔",         desc: "たまに開店に間に合わない (25%で評判 −2.0)" },
-  cold:   { w: 12, good: false, name: "無愛想",         desc: "接客に難がある (評判 −0.60/日)" },
-  gossip: { w: 11, good: false, name: "口が軽い",       desc: "店の内情を客に喋ってしまう (評判 −0.45/日)" },
+  none:   { w: 30, good: null, name: "―",             ef: "",                    desc: "特筆すべき癖はない" },
+  mood:   { w: 10, good: true,  name: "ムードメーカー", ef: "評判 +0.50",          desc: "店の空気が明るくなる (評判 +0.50/日)" },
+  face:   { w: 9,  good: true,  name: "看板スタッフ",   ef: "常連 +2.2",           desc: "この人目当ての客がいる (常連 +2.2/日)" },
+  mech:   { w: 8,  good: true,  name: "元整備士",       ef: "全台の人気 +0.35",    desc: "台のコンディションを保つ (全台の人気 +0.35/日)" },
+  clean:  { w: 8,  good: true,  name: "掃除が行き届く", ef: "評判 +0.35 常連 +0.9", desc: "店内が清潔に保たれる (評判 +0.35 / 常連 +0.9 /日)" },
+  late:   { w: 12, good: false, name: "遅刻魔",         ef: "25%で評判 −2.0",      desc: "たまに開店に間に合わない (25%で評判 −2.0)" },
+  cold:   { w: 12, good: false, name: "無愛想",         ef: "評判 −0.60",          desc: "接客に難がある (評判 −0.60/日)" },
+  gossip: { w: 11, good: false, name: "口が軽い",       ef: "評判 −0.45",          desc: "店の内情を客に喋ってしまう (評判 −0.45/日)" },
   // ---- 壊れ人材の固有特性(通常抽選には出ない) ----
-  lgd_draw: { w: 0, good: true, name: "万枚の女神",   desc: "この人がいるだけで客が集まる (常連 +6.0/日)" },
-  lgd_rep:  { w: 0, good: true, name: "呼び込みの帝王", desc: "声ひとつで店の格が変わる (評判 +2.5/日)" },
-  lgd_pop:  { w: 0, good: true, name: "台と話す男",   desc: "どの台も枯れない (全台の人気 +1.20/日)" },
-  lgd_all:  { w: 0, good: true, name: "二刀流",       desc: "接客も集客も一級品 (評判 +1.2 / 常連 +3.0 /日)" },
-  lgd_buff: { w: 0, good: true, name: "伝説の店長",   desc: "店全体の力を引き出す (スタッフ全員の効果 1.5倍)" },
+  lgd_draw: { w: 0, good: true, name: "万枚の女神",   ef: "常連 +6.0",            desc: "この人がいるだけで客が集まる (常連 +6.0/日)" },
+  lgd_rep:  { w: 0, good: true, name: "呼び込みの帝王", ef: "評判 +2.5",           desc: "声ひとつで店の格が変わる (評判 +2.5/日)" },
+  lgd_pop:  { w: 0, good: true, name: "台と話す男",   ef: "全台の人気 +1.20",     desc: "どの台も枯れない (全台の人気 +1.20/日)" },
+  lgd_all:  { w: 0, good: true, name: "二刀流",       ef: "評判 +1.2 常連 +3.0",  desc: "接客も集客も一級品 (評判 +1.2 / 常連 +3.0 /日)" },
+  lgd_buff: { w: 0, good: true, name: "伝説の店長",   ef: "全員の効果 1.5倍",     desc: "店全体の力を引き出す (スタッフ全員の効果 1.5倍)" },
 };
+const ST_WAGE = 13000;      // 日給(全員一律。simulateDay の wages と同じ値)
 const ST_REVEAL_DAYS = 3;   // 何営業日で評価が出るか
 const ST_LOYAL_DAYS = 7;    // これ未満で解雇すると評判ペナルティ
 const ST_FIRE_REP = 4;      // 早期解雇の評判ペナルティ
@@ -3738,6 +3735,42 @@ function stSync(s) {
 }
 const stServe = m => ST_RANK[m.r].serve;
 const stTrait = m => ST_TRAIT[m.t];
+/* 1人が1日に出す素の値。日次処理(stDay)と名簿の表示(renderStaff)で
+   必ず同じ数字を使うため、ここ1か所にまとめている。
+   遅刻魔だけは確率なので含めず、呼び出し側で処理する。 */
+function stUnit(m) {
+  let sv = ST_RANK[m.r].serve, dr = ST_RANK[m.r].draw, pop = 0, buff = 1;
+  switch (m.t) {
+    case "mood":   sv += 0.50; break;
+    case "face":   dr += 2.20; break;
+    case "mech":   pop += 0.35; break;
+    case "clean":  sv += 0.35; dr += 0.90; break;
+    case "cold":   sv -= 0.60; break;
+    case "gossip": sv -= 0.45; break;
+    case "lgd_draw": dr += 6.0; break;
+    case "lgd_rep":  sv += 2.5; break;
+    case "lgd_pop":  pop += 1.20; break;
+    case "lgd_all":  sv += 1.2; dr += 3.0; break;
+    case "lgd_buff": buff = 1.5; break;
+  }
+  return { sv, dr, pop, buff };
+}
+/* 名簿を1日分の効果に畳む。分母は必ず在籍人数(見習い含む)。
+   onlyKnown=true なら見習いの寄与を 0 として扱う(まだ分からないので表示しない)。 */
+function stFold(list, onlyKnown) {
+  let sv = 0, dr = 0, pop = 0, buff = 1, late = 0, hid = 0;
+  for (const m of list) {
+    if (onlyKnown && !m.k) { hid++; continue; }
+    const u = stUnit(m);
+    sv += u.sv; dr += u.dr; pop += u.pop;
+    if (u.buff > buff) buff = u.buff;
+    if (m.t === "late") late++;
+  }
+  const n = list.length || 1;
+  let rep = (sv / n) * ST_REP_GAIN * buff;
+  rep = Math.max(-2.4, Math.min(2.4, rep));
+  return { rep, regs: (dr / n) * Math.min(n, 6) * ST_DRAW_GAIN * buff, pop, buff, late, hid, n };
+}
 
 /* ---------- 採用・解雇 ---------- */
 function stHire() {
@@ -3748,16 +3781,19 @@ function stHire() {
   save(); checkAchEx(); renderAll();
   toast(`${m.nm} を採用した(評価は${ST_REVEAL_DAYS}営業日後)`);
 }
-function stFire(i) {
+async function stFire(i) {
   if (isDead()) return;
   const s = stState(), m = s.list[i];
   if (!m || state.staff <= 1) return;
   const early = m.d < ST_LOYAL_DAYS;
-  const msg = early
-    ? `${m.nm} を解雇しますか?\n\n勤続${m.d}営業日での解雇です。すぐ人を切る店だと噂が立ち、評判が ${ST_FIRE_REP} 下がります。`
-    : `${m.nm} を解雇しますか?`;
-  if (!confirm(msg)) return;
-  s.list.splice(i, 1);
+  const sub = early
+    ? `勤続${m.d}営業日での解雇です。すぐ人を切る店だと噂が立ち、評判が ${ST_FIRE_REP} 下がります。`
+    : `勤続${m.d}営業日。日給 ${yen(ST_WAGE)} が浮きます。`;
+  if (!(await ask(`${m.nm} を解雇しますか?`, sub, "解雇する"))) return;
+  // 確認中に日が進んでいる可能性があるので、同じ人がまだ同じ場所にいるか見る
+  const j = s.list.indexOf(m);
+  if (j < 0 || isDead() || state.staff <= 1) return;
+  s.list.splice(j, 1);
   state.staff--;
   if (early) {
     state.rep = Math.max(1, state.rep - ST_FIRE_REP);
@@ -3791,25 +3827,12 @@ function stDay() {
   let sumServe = 0, sumDraw = 0, buff = 1;
   for (const m of s.list) {
     m.d++;
-    let sv = ST_RANK[m.r].serve, dr = ST_RANK[m.r].draw;
-    const t = stTrait(m);
-    switch (m.t) {
-      case "mood":   sv += 0.50; break;
-      case "face":   dr += 2.20; break;
-      case "mech":   pop += 0.35; break;
-      case "clean":  sv += 0.35; dr += 0.90; break;
-      case "cold":   sv -= 0.60; break;
-      case "gossip": sv -= 0.45; break;
-      case "lgd_draw": dr += 6.0; break;
-      case "lgd_rep":  sv += 2.5; break;
-      case "lgd_pop":  pop += 1.20; break;
-      case "lgd_all":  sv += 1.2; dr += 3.0; break;
-      case "lgd_buff": buff = 1.5; break;
-      case "late":
-        if (Math.random() < 0.25) { sv -= 2.00; notes.push(`⏰ ${m.nm}が寝坊。開店に穴が空いた…`); }
-        break;
-    }
-    sumServe += sv; sumDraw += dr;
+    const t = stTrait(m), u = stUnit(m);
+    let sv = u.sv;
+    pop += u.pop;
+    if (u.buff > buff) buff = u.buff;
+    if (m.t === "late" && Math.random() < 0.25) { sv -= 2.00; notes.push(`⏰ ${m.nm}が寝坊。開店に穴が空いた…`); }
+    sumServe += sv; sumDraw += u.dr;
     if (!m.k) {
       if (m.d >= ST_REVEAL_DAYS) {
         m.k = true;
@@ -3840,26 +3863,37 @@ function stDay() {
 }
 
 /* ---------- 名簿UI ---------- */
+const stNum = (v, d) => (v >= 0 ? "+" : "\u2212") + Math.abs(v).toFixed(d);
 function renderStaff() {
   const w = $("staffList"); if (!w) return;
   const s = stState(), dead = isDead();
-  const known = s.list.filter(m => m.k);
-  const avg = known.length ? known.reduce((a, m) => a + stServe(m), 0) : 0;
-  const draw = known.length ? known.reduce((a, m) => a + ST_RANK[m.r].draw + (m.t === "face" ? 2.2 : m.t === "clean" ? 0.9 : 0), 0) : 0;
+  /* 見習いの分は 0 として畳む。分母は在籍人数なので、判明していくにつれて
+     ここの数字が実際の効き方に近づいていく(表示と処理は同じ stFold)。 */
+  const f = stFold(s.list, true);
   const sum = $("staffSum");
   if (sum) {
+    const cls = v => v > 0.02 ? "pos" : v < -0.02 ? "neg" : "";
     sum.innerHTML = `
-      <div class="row"><span class="k">この陣容の1日効果</span><span class="v ${avg > 0.2 ? "pos" : avg < -0.1 ? "neg" : ""}">評判 ${avg >= 0 ? "+" : ""}${avg.toFixed(2)} ・ 常連 ${draw >= 0 ? "+" : ""}${draw.toFixed(1)}${known.length < state.staff ? ` <small style="color:var(--tx-3)">(見習い${state.staff - known.length}人を除く)</small>` : ""}</span></div>`;
+      <div class="row"><span class="k">この陣容の1日効果</span>
+        <span class="v"><b class="${cls(f.rep)}">評判 ${stNum(f.rep, 2)}</b> ・ <b class="${cls(f.regs)}">常連 ${stNum(f.regs, 2)}人</b>${
+          f.pop ? ` ・ <b class="pos">全台の人気 ${stNum(f.pop, 2)}</b>` : ""}</span></div>
+      <p class="note" style="margin:4px 0 0;font-size:11px;color:var(--tx-3)">
+        効くのは<b>頭数ではなく平均の質</b>。人を増やすだけでは伸びず、日給だけ増える。${
+          f.hid ? `<br>見習い${f.hid}人の分はまだ入っていない(評価が出たら加算される)。` : ""}${
+          f.late ? `<br>遅刻魔${f.late}人 — 25%で寝坊し、その日だけ評判が大きく落ちる(上の数字には入っていない)。` : ""}</p>`;
   }
   w.innerHTML = s.list.map((m, i) => {
     const t = stTrait(m);
     const cls = !m.k ? "unk" : m.r === "SS" ? "ss" : m.r === "S" ? "s" : m.r === "A" ? "a" : m.r === "C" ? "c" : "b";
+    const meta = m.k
+      ? `<span class="stw-base">評判 ${stNum(ST_RANK[m.r].serve, 2)} ・ 常連 ${stNum(ST_RANK[m.r].draw, 1)} ・ 勤続${m.d}日</span>` +
+        (t.name === "―" ? "" :
+          `<span class="stw-t ${t.good === true ? "g" : t.good === false ? "b" : ""}">${esc(t.name)}<i>${esc(t.ef)}</i></span>`)
+      : `<span class="stw-base">見習い — あと${Math.max(0, ST_REVEAL_DAYS - m.d)}営業日で評価が出る ・ 勤続${m.d}日</span>`;
     return `<div class="stw ${cls}">
       <span class="stw-r">${m.k ? m.r : "?"}</span>
       <span class="stw-n">${esc(m.nm)}</span>
-      <span class="stw-m">${m.k
-        ? `評判 ${stServe(m) >= 0 ? "+" : ""}${stServe(m).toFixed(2)} ・ 常連 ${ST_RANK[m.r].draw >= 0 ? "+" : ""}${ST_RANK[m.r].draw.toFixed(1)}${t.name === "―" ? "" : ` ・ <b class="${t.good === true ? "g" : t.good === false ? "b" : ""}">${esc(t.name)}</b>`}`
-        : `見習い — あと${Math.max(0, ST_REVEAL_DAYS - m.d)}営業日で評価が出る`} ・ 勤続${m.d}日</span>
+      <span class="stw-m">${meta}</span>
       <button class="btn sm red stw-x" data-fire="${i}" ${dead || state.staff <= 1 ? "disabled" : ""}>解雇</button>
     </div>`;
   }).join("");
@@ -3887,6 +3921,33 @@ function closeModal() {
 $("modalBg").addEventListener("click", e => { if (e.target === $("modalBg")) closeModal(); });
 window.closeModal = closeModal;
 
+/* ---------- 確認ダイアログ ----------
+   window.confirm は埋め込み(サンドボックス)環境ではブロックされ、
+   問答無用で false を返す。取り消しのきかない操作が「押しても何も起きない」
+   状態になるため、自前のダイアログに置き換えている。 */
+let askResolve = null;
+function ask(msg, sub, yesLabel) {
+  return new Promise(res => {
+    if (askResolve) { const prev = askResolve; askResolve = null; prev(false); }
+    askResolve = res;
+    $("askTx").innerHTML = esc(msg) + (sub ? `<small>${esc(sub)}</small>` : "");
+    $("askYes").textContent = yesLabel || "実行する";
+    $("askBg").classList.add("show");
+    $("askYes").focus();
+  });
+}
+function askClose(v) {
+  const r = askResolve; askResolve = null;
+  $("askBg").classList.remove("show");
+  if (r) r(v);
+}
+$("askYes").addEventListener("click", () => askClose(true));
+$("askNo").addEventListener("click", () => askClose(false));
+$("askBg").addEventListener("click", e => { if (e.target === $("askBg")) askClose(false); });
+/* 確認待ちの間は営業開始などを受け付けない */
+const uiBlocked = () => $("modalBg").classList.contains("show") || $("askBg").classList.contains("show");
+window.ask = ask;
+
 const mh = (icon, title, closable) =>
   `<div class="mh">${ic(icon)}<h2>${title}</h2>${closable ? `<button class="x" onclick="closeModal()" aria-label="閉じる">${ic("x")}</button>` : ""}</div>`;
 
@@ -3911,7 +3972,7 @@ function runDay() {
   if (isDead()) { showBankruptModal(); return; }
   if (busy) return;
   // 結果モーダル表示中の再クリック(Enter連打等)で日が進むのを防ぐ
-  if ($("modalBg").classList.contains("show")) return;
+  if (uiBlocked()) return;
   if (state.machines.length === 0) {
     showModal(`${mh("alert", "台がありません", true)}
       <div class="mb"><p class="note" style="font-size:12px;color:var(--tx-2)">台が1台もないと営業できません。「新台」から台を導入してください。</p>
@@ -3920,6 +3981,9 @@ function runDay() {
   }
   busy = true;
   const finish = () => {
+    // 営業前の値を控えておき、支店・スタッフ・維持費まで全部済んだあとの
+    // 差分を「今日どれだけ動いたか」として結果に出す
+    const before = { rep: state.rep, reg: state.regulars };
     let result;
     try { result = simulateDay(); } finally { busy = false; }
     try {
@@ -3928,6 +3992,8 @@ function runDay() {
     } catch (e) { result.upkeep = 0; }
     try { result.st = stDay(); if (result.st.notes.length) result.notes = result.notes.concat(result.st.notes); } catch (e) { result.st = null; }
     try { result.rg = rgDay(result.rec); } catch (e) { result.rg = null; }
+    result.dRep = state.rep - before.rep;
+    result.dReg = state.regulars - before.reg;
     try { checkAchEx({ dayEnd: true, notes: result.notes }); } catch (e) {}
     renderAll();
     showDayResult(result);
@@ -3942,6 +4008,12 @@ function runDay() {
   setTimeout(() => { cur.classList.remove("run", "on"); finish(); }, 800);
 }
 
+/* 増減バッジ。0.05未満は「動いていない」として ±0 と出す */
+function dlt(v, d) {
+  const x = Number(v) || 0;
+  if (Math.abs(x) < 0.05) return `<b class="dlt">\u00b10</b>`;
+  return `<b class="dlt ${x > 0 ? "pos" : "neg"}">${x > 0 ? "+" : "\u2212"}${Math.abs(x).toFixed(d)}</b>`;
+}
 function showDayResult(result) {
   const { rec, notes } = result;
   const rg = result.rg || null;
@@ -4013,6 +4085,9 @@ function showDayResult(result) {
         <span class="k">出玉払出</span><span class="v neg">−${yen(rec.payout)}</span>
         <span class="k">経費${rec.interest ? " (利息 " + yen(rec.interest) + " 含む)" : ""}</span><span class="v neg">−${yen(rec.exp)}</span>
         ${result.upkeep ? `<span class="k">規模維持費 (${state.machines.length}台)</span><span class="v neg">−${yen(result.upkeep)}</span>` : ""}
+        <span class="hr"></span>
+        <span class="k">店舗評価</span><span class="v">${Math.round(state.rep)}<small> / 100</small> ${dlt(result.dRep, 1)}</span>
+        <span class="k">固定客(常連)</span><span class="v">${Math.floor(state.regulars)}<small>人</small> ${dlt(result.dReg, 1)}</span>
         <span class="hr"></span>
         <span class="k">資金残高</span><span class="v">${yen(state.money)}</span>
         <span class="k">純資産</span><span class="v">${yen(totalAssets())}</span>
@@ -4461,6 +4536,20 @@ function showTutorial() {
 /* ==========================================================================
    操作の結線
    ========================================================================== */
+async function sellMachine(m) {
+  if (isDead() || !m) return;
+  const c = catalogOf(m);
+  if (!(await ask(`${c.name} を ${yen(machineSale(m))} で売却しますか?`,
+    "買値の55%しか戻りません。買い直すと差し引きで損になるので、資金繰りか設置枠の確保が目的のときに。", "売却する"))) return;
+  const idx = state.machines.indexOf(m);
+  if (idx < 0) return;
+  state.money += machineSale(m);
+  state.machines.splice(idx, 1);
+  if (focusIdx >= state.machines.length) focusIdx = Math.max(0, state.machines.length - 1);
+  save(); checkAchEx(); renderAll();
+  toast(`${c.name} を売却しました`);
+}
+
 document.addEventListener("click", e => {
   const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode],[data-fire]");
   if (!el) return;
@@ -4517,26 +4606,12 @@ document.addEventListener("click", e => {
         vs[3].textContent = sm.mode.t; vs[3].style.color = sm.mode.c;
       }
     }
-    renderHall(); renderIslands(); renderSide(); checkAchEx();
+    renderHall(); renderSide(); checkAchEx();
     return;
   }
   if (d.trial) { const m = state.machines[Number(d.trial)]; if (m) openTrial(catalogOf(m), m.setting); return; }
   if (d.shoptrial) { const c = CATALOG.find(x => x.id === d.shoptrial); if (c) openTrial(c, 3); return; }
-  if (d.sell) {
-    if (isDead()) return;
-    const m = state.machines[Number(d.sell)];
-    if (!m) return;
-    const c = catalogOf(m);
-    if (!confirm(`${c.name} を ${yen(machineSale(m))} で売却しますか?\n\n買値の55%しか戻りません。買い直すと差し引きで損になるので、資金繰りか設置枠の確保が目的のときに。`)) return;
-    const idx = state.machines.indexOf(m);
-    if (idx < 0) return;
-    state.money += machineSale(m);
-    state.machines.splice(idx, 1);
-    if (focusIdx >= state.machines.length) focusIdx = Math.max(0, state.machines.length - 1);
-    save(); checkAchEx(); renderAll();
-    toast(`${c.name} を売却しました`);
-    return;
-  }
+  if (d.sell) { sellMachine(state.machines[Number(d.sell)]); return; }
   if (d.buy) {
     if (isDead()) return;
     const c = CATALOG.find(x => x.id === d.buy);
@@ -4607,8 +4682,8 @@ $("btnRepay").addEventListener("click", () => {
   save(); renderAll();
 });
 $("btnSave").addEventListener("click", () => { save(); toast("セーブしました"); });
-$("btnReset").addEventListener("click", () => {
-  if (confirm("本当に最初からやり直しますか?セーブデータは消えます。")) doReset();
+$("btnReset").addEventListener("click", async () => {
+  if (await ask("本当に最初からやり直しますか?", "セーブデータは消えます。この操作は取り消せません。", "やり直す")) doReset();
 });
 
 /* ---- PWA: Service Worker登録 (http(s)配信時のみ。file://やElectronでは何もしない) ---- */

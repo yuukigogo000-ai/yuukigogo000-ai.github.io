@@ -61,7 +61,11 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     const ctx = await b.newContext({ viewport:{width:390,height:844}, isMobile:true, hasTouch:true });
     const p = await ctx.newPage();
     const errs = []; p.on('pageerror', e => errs.push(e.message));
-    p.on('dialog', d => d.accept());
+    // 埋め込み(サンドボックス)環境では window.confirm/alert が問答無用で無効化される。
+    // ここで踏んだら「本番では押しても何も起きない」ということなので記録して落とす。
+    await p.addInitScript(() => { window.__nativeDialog = []; 
+      for (const k of ['confirm','alert','prompt']) { const f = k; window[f] = (...a) => { window.__nativeDialog.push(f); return f === 'confirm' ? true : undefined; }; } });
+    p.on('dialog', d => { errs.push('native dialog:' + d.type()); d.accept(); });
     await p.goto(URL);
     await p.evaluate(k => localStorage.removeItem(k), SAVE);
     await p.reload(); await p.waitForTimeout(500);
@@ -97,16 +101,29 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     ok('FN 設置台の試打', await p.evaluate(() => !!document.getElementById('trLever') || !!document.getElementById('pSpin')));
     await p.evaluate(() => closeModal()); await p.waitForTimeout(150);
     const mBefore = await p.evaluate(() => state.machines.length);
-    await clickC('#focusCard [data-sell]'); await p.waitForTimeout(250);
+    await clickC('#focusCard [data-sell]'); await p.waitForTimeout(200);
+    ok('FN 売却の確認ダイアログが自前で出る',
+      await p.evaluate(() => document.getElementById('askBg').classList.contains('show')));
+    await p.click('#askYes'); await p.waitForTimeout(250);
     ok('FN 売却(確認あり)', await p.evaluate(n => state.machines.length === n - 1, mBefore));
+    ok('FN 確認ダイアログは実行後に閉じる',
+      await p.evaluate(() => !document.getElementById('askBg').classList.contains('show')));
     await p.click('#nav [data-area="mgmt"]'); await p.waitForTimeout(150);
     const s0 = await p.evaluate(() => state.staff);
     await clickC('#btnHire'); await p.waitForTimeout(120);
     ok('FN スタッフ雇用', await p.evaluate(n => state.staff === n + 1, s0));
     // 解雇は名簿から個別に行う(旧#btnFireはP-30のためDOMには残すが非表示)
-    await p.evaluate(() => { window.confirm = () => true; stFire(stState().list.length - 1); });
-    await p.waitForTimeout(150);
+    const s1 = await p.evaluate(() => state.staff);
+    await clickC('#staffList .stw:last-child .stw-x'); await p.waitForTimeout(200);
+    ok('FN 解雇ボタンで確認ダイアログが出る',
+      await p.evaluate(() => document.getElementById('askBg').classList.contains('show')));
+    await p.click('#askNo'); await p.waitForTimeout(200);
+    ok('FN 解雇をやめれば人数は変わらない', await p.evaluate(n => state.staff === n, s1));
+    await clickC('#staffList .stw:last-child .stw-x'); await p.waitForTimeout(200);
+    await p.click('#askYes'); await p.waitForTimeout(250);
     ok('FN スタッフ解雇', await p.evaluate(n => state.staff === n, s0));
+    ok('FN 解雇すると名簿の行も消える',
+      await p.evaluate(() => document.querySelectorAll('#staffList .stw').length === state.staff));
     // ---- 採用ガチャ / 試用期間 ----
     ok('FN 名簿の人数が state.staff と一致する', await p.evaluate(() => stState().list.length === state.staff));
     ok('FN 採用直後はランクと特性が伏せられている', await p.evaluate(() => {
@@ -177,13 +194,13 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
       s.list = keep; state.staff = keep.length; save(true);
       return rankClean && moved === 0;
     }));
-    ok('FN 早期解雇で評判が下がり、7日以上なら下がらない', await p.evaluate(() => {
-      window.confirm = () => true;
+    ok('FN 早期解雇で評判が下がり、7日以上なら下がらない', await p.evaluate(async () => {
+      window.ask = () => Promise.resolve(true);
       const s = stState();
       s.list.push({ nm: '試験 太郎', r: 'B', t: 'none', d: 1, k: true }); state.staff++;
-      const r0 = state.rep; stFire(s.list.length - 1); const early = r0 - state.rep;
+      const r0 = state.rep; await stFire(s.list.length - 1); const early = r0 - state.rep;
       s.list.push({ nm: '試験 次郎', r: 'B', t: 'none', d: 30, k: true }); state.staff++;
-      const r1 = state.rep; stFire(s.list.length - 1); const late = r1 - state.rep;
+      const r1 = state.rep; await stFire(s.list.length - 1); const late = r1 - state.rep;
       return Math.abs(early - ST_FIRE_REP) < 0.01 && Math.abs(late) < 0.01;
     }));
     ok('FN スタッフの日給は全員一律で simulateDay の計算と一致する', await p.evaluate(() => {
@@ -276,6 +293,16 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     await p.waitForSelector('.res-hero', { timeout: 5000 });
     ok('FN 1営業日の実行と当日結果', await p.evaluate(n => state.day === n + 1, day0));
     ok('FN 台別収支の提示', await p.evaluate(() => document.querySelectorAll('.mres div').length > 0));
+    // ---- 当日結果に評判と常連の増減が出る ----
+    const dl = await p.evaluate(() => {
+      const tx = document.getElementById('modalBox').textContent;
+      const b = [...document.querySelectorAll('#modalBox .dlt')];
+      return { hasRep: /店舗評価/.test(tx), hasReg: /固定客/.test(tx), n: b.length,
+               shaped: b.every(e => /^(\u00b10|[+\u2212][0-9.]+)$/.test(e.textContent.trim())) };
+    });
+    ok('FN 当日結果に店舗評価が出る', dl.hasRep);
+    ok('FN 当日結果に固定客(常連)が出る', dl.hasReg);
+    ok('FN 増減バッジが2つ、符号つきで出る', dl.n === 2 && dl.shaped, JSON.stringify(dl));
     await p.evaluate(() => closeModal()); await p.waitForTimeout(200);
     // 全国進出の解禁シートが挟まる場合は閉じる(資金99,000,000で解禁条件を満たすため)
     ok('FN 全国進出の解禁シート', await p.evaluate(() => /全国進出 解禁/.test(document.getElementById('modalBox').textContent)));
@@ -387,7 +414,7 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     ok('FN 敏腕店長の配属', await p.evaluate(() => rgState().br[0].mgr === true));
     await p.evaluate(() => document.querySelector('[data-rgadd="hrk"]').click()); await p.waitForTimeout(200);
     ok('FN 支店の増床', await p.evaluate(() => rgState().br[0].n === 60));
-    await p.evaluate(() => { const b = rgState().br[0]; state.money += 1e9; window.confirm = () => true; document.querySelector('[data-rgmid="hrk:s1"]').click(); }); await p.waitForTimeout(200);
+    await p.evaluate(() => { const b = rgState().br[0]; state.money += 1e9; window.ask = () => Promise.resolve(true); document.querySelector('[data-rgmid="hrk:s1"]').click(); }); await p.waitForTimeout(200);
     ok('FN 主力機種の入れ替え', await p.evaluate(() => rgState().br[0].mid === 's1'));
     await p.evaluate(() => closeModal()); await p.waitForTimeout(150);
     await p.click('#nav [data-area="hall"]'); await p.waitForTimeout(150);
@@ -420,13 +447,15 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     await p.evaluate(() => { const g = rgState(); for (const R of REGIONS) g.ctrl[R.id] = 1; renderAll(); }); await p.waitForTimeout(150);
     ok('FN 全国制覇の進捗表示', await p.evaluate(() => { setArea('map'); return document.getElementById('mapCount').textContent.trim() === '15 / 15'; }));
     // ---- 設定: 地方の特色ランダムモード ----
-    const rndInfo = await p.evaluate(() => {
-      window.confirm = () => true;
+    const rndInfo = await p.evaluate(async () => {
+      window.ask = () => Promise.resolve(true);
+      const tick = () => new Promise(r => setTimeout(r, 0));
       setArea('map');
       const snap = () => REGIONS.map(R => ({ id:R.id, spec:R.spec, like:R.like.join(), hate:R.hate.join(),
         pop:R.pop, rent:R.rent, rival:R.rival, adj:R.adj.join(), note:R.note, tag:R.tag }));
       const fixed = snap();
       document.querySelector('[data-rgmode="random"]').click();
+      await tick();
       const seed = rgState().rnd;
       const rnd = snap();
       const truthful = REGIONS.every(R => [...new Set(R.like.map(mType))].some(t => R.spec.includes(t)));
@@ -441,6 +470,7 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
       const again = snap();
       const stable = JSON.stringify(rnd) === JSON.stringify(again);
       document.querySelector('[data-rgmode="fixed"]').click();
+      await tick();
       const restored = JSON.stringify(snap()) === JSON.stringify(fixed);
       return { seed, truthful, noOverlap, backboneSame, changed, noLeak, knownCleared, stable, restored };
     });
@@ -460,6 +490,39 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     await p.evaluate(() => { state.day = 14; state.history = Array.from({length:8},(_,i)=>({day:13-i,cust:100,cas:60,reg:30,pro:5,sales:4e6,payout:3e6,exp:9e5,net:1e5,interest:0,note:""})); });
     const wk = await p.evaluate(() => !!weeklyData({ day: 14 }));
     ok('FN 週次レポートの生成', wk);
+    // ---- ホールのアート上に台のオーバーレイを出さない(邪魔なので撤去済み) ----
+    await p.evaluate(() => setArea('hall')); await p.waitForTimeout(200);
+    ok('FN ホールのアート上に台カードを重ねない',
+      await p.evaluate(() => !document.getElementById('islandOv') && document.querySelectorAll('#stage .isl').length === 0));
+    // ---- 特性は名前だけでなく効果まで出す ----
+    await p.evaluate(() => {
+      const s = stState();
+      s.list = [{ nm:'試験 花子', r:'A', t:'mood', d:30, k:true }, { nm:'試験 三郎', r:'C', t:'cold', d:30, k:true }];
+      state.staff = 2; save(true); renderAll(); setArea('mgmt');
+    });
+    await p.waitForTimeout(200);
+    const tr = await p.evaluate(() => {
+      const rows = [...document.querySelectorAll('#staffList .stw')];
+      const tags = rows.map(e => e.querySelector('.stw-t')).filter(Boolean);
+      const f = stFold(stState().list, true);
+      const sum = document.getElementById('staffSum').textContent.replace(/\s+/g, '');
+      return {
+        rows: rows.length, tags: tags.length,
+        withEf: tags.filter(e => e.querySelector('i') && e.querySelector('i').textContent.trim().length > 0).length,
+        good: tags.filter(e => e.classList.contains('g')).length,
+        bad: tags.filter(e => e.classList.contains('b')).length,
+        sumMatch: sum.includes('評判' + (f.rep >= 0 ? '+' : '\u2212') + Math.abs(f.rep).toFixed(2)),
+        allNamed: Object.keys(ST_TRAIT).every(k => typeof ST_TRAIT[k].ef === 'string' && (k === 'none' || ST_TRAIT[k].ef.length > 0)),
+      };
+    });
+    ok('FN 名簿の特性に効果の数値が並ぶ', tr.tags === 2 && tr.withEf === 2, JSON.stringify(tr));
+    ok('FN 良い特性と悪い特性を色で見分けられる', tr.good === 1 && tr.bad === 1, JSON.stringify(tr));
+    ok('FN 全特性に効果表記がある', tr.allNamed);
+    ok('FN 陣容の合計表示が実処理(stFold)と一致する', tr.sumMatch, JSON.stringify(tr));
+    // ---- 埋め込み環境で無効になるネイティブダイアログを使っていない ----
+    ok('FN window.confirm/alert を使っていない',
+      await p.evaluate(() => (window.__nativeDialog || []).length === 0),
+      await p.evaluate(() => (window.__nativeDialog || []).join(',')));
     ok('長時間操作でエラーなし', errs.length === 0, errs.slice(0,2).join(';'));
     await ctx.close();
   }
