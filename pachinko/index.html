@@ -1912,9 +1912,27 @@ const artOf = cid => "./art/" + (MART[cid] || "m_normal") + ".jpg";
 const TAI_PER_SHIMA = 10;
 const tai = u => Math.round(u * TAI_PER_SHIMA);
 
+/* ---------- 中古相場 ----------
+   ブーム中のカテゴリは、新品も中古も相場が上がる。人気機種は高く売れるし、
+   高く買わされる。定価(c.price)と帳簿上の資産評価(machineValue=定価45%)は
+   保護ロジックなので触らず、実際にやり取りする金額だけをここで動かす。
+
+   これが無いと売却は常に「定価の55%が返るだけ」で、いつ売っても同じだった。
+   相場が動くことで「枯れた台をブームのうちに手放す」判断が生まれる。
+   なお定価で買ってブームで売っても一周で約26%の損なので、転売では儲からない。
+
+   買値も同じように上げる案を試したが、測ったら修羅が壊れた(300日20回で
+   クリア19→3・倒産1→17)。ブーム機種はいちばん買いたい台なので、そこに
+   35%の割増が乗ると資金の細い難易度では立て直せない。買値は定価のままにする。 */
+const MKT_BOOM = 1.35;
+const marketMul = cid => (trendMult(cid) > 1 ? MKT_BOOM : 1);
+const isHotMarket = cid => marketMul(cid) > 1;
+/* 購入価格は定価のまま。相場が効くのは下取りだけ。
+   (購入もこの関数を通すことで、価格の出どころを1か所に保つ) */
+const machineBuy = c => c.price;
 /* 売却価格。machineValue(定価45%)は帳簿上の資産評価で、実際の下取りはもう少し良い。
    古い台を入れ替える動きに意味を持たせるための差。保護ロジックには触れない。 */
-const machineSale = m => Math.round(catalogOf(m).price * 0.55);
+const machineSale = m => Math.round(catalogOf(m).price * 0.55 * marketMul(m.cid));
 
 /* ---------- 規模維持費 ----------
    台数が増えるほど1台あたりの管理コストが重くなる(警備・設備保守・駐車場・
@@ -2389,7 +2407,7 @@ function renderHall() {
       <div class="fc-net">
         <div class="k">前日収支</div>
         <div class="v ${netCls}">${netTxt}</div>
-        <div class="s">客 ${m.lastCust === null ? "―" : m.lastCust} ・ 売却 ${yenShort(machineSale(m))}</div>
+        <div class="s">客 ${m.lastCust === null ? "―" : m.lastCust} ・ 売却 <b class="${isHotMarket(m.cid) ? "pos" : ""}">${yenShort(machineSale(m))}</b>${isHotMarket(m.cid) ? " <b class=\"pos\">相場高</b>" : ""}</div>
       </div>
     </div>
     <div class="fc-set">
@@ -2420,13 +2438,16 @@ function renderShop() {
     "弱い機種がブームでも、強い機種の素の集客力には届かないことが多い。" +
     "上の数字を見比べて、<b>店全体の平均人気を下げない</b>ように選ぶこと。<br>" +
     "新台は導入から5日間「新台効果」で人気1.4倍。同一機種のシマを複数並べると<b>シマ効果</b>(+6%/シマ・最大+30%)。" +
-    "売却額は購入価格の<b>55%</b>(帳簿上の資産評価は45%)。差額の分だけ売った方が現金は増えるが、" +
+    "ブーム中のカテゴリは<b>中古相場が1.35倍</b>になる(新品の価格は定価のまま)。" +
+    "枯れた台を手放すなら、そのカテゴリにブームが来ている週が得。<br>" +
+    "売却額は定価の<b>55%</b>(帳簿上の資産評価は45%)。差額の分だけ売った方が現金は増えるが、" +
     "買い直すと45%を失うので<b>入れ替え目的だと基本は損</b>。売却は資金繰りと設置枠の確保のための手段。" +
     "導入直後は<b>新装開店フェア</b>(店長室)で告知すると効果大。";
   const dead = isDead();
   $("shopList").innerHTML = CATALOG.map(c => {
     const owned = state.machines.filter(m => m.cid === c.id).length;
-    const full = state.machines.length >= state.cap, poor = state.money < c.price;
+    const buyPrice = machineBuy(c);
+    const full = state.machines.length >= state.cap, poor = state.money < buyPrice;
     const label = full ? "設置枠なし" : poor ? "資金不足" : "導入する";
     const boom = trendMult(c.id) > 1;
     const decay = c.decay <= 0.8 ? "遅い" : c.decay <= 1.4 ? "普通" : "速い";
@@ -2444,7 +2465,8 @@ function renderShop() {
         </div>
         <div style="text-align:right;flex:0 0 auto">
           <div class="k" style="font-size:8px;color:var(--tx-3)">価格</div>
-          <div class="num" style="font-size:15px;font-weight:900;color:var(--gold-hi)">${yenShort(c.price)}</div>
+          <div class="num" style="font-size:15px;font-weight:900;color:var(--gold-hi)">${yenShort(buyPrice)}</div>
+          ${boom ? `<div style="font-size:8.5px;color:var(--pos);text-align:right">下取り ${yenShort(Math.round(c.price * 0.55 * MKT_BOOM))}</div>` : ""}
         </div>
       </div>
       <div class="st">
@@ -4246,7 +4268,9 @@ async function sellMachine(m) {
   if (isDead() || !m) return;
   const c = catalogOf(m);
   if (!(await ask(`${c.name} を ${yen(machineSale(m))} で売却しますか?`,
-    "買値の55%しか戻りません。買い直すと差し引きで損になるので、資金繰りか設置枠の確保が目的のときに。", "売却する"))) return;
+    isHotMarket(m.cid)
+      ? `いまは「${state.trend.name}」で相場が高く、定価の55%に ${MKT_BOOM} 倍が乗っています(平常時なら ${yen(Math.round(c.price * 0.55))})。枯れた台を手放すなら今です。`
+      : "定価の55%しか戻りません。このカテゴリがブームのときに売れば1.35倍になります。", "売却する"))) return;
   const idx = state.machines.indexOf(m);
   if (idx < 0) return;
   state.money += machineSale(m);
@@ -4320,8 +4344,9 @@ document.addEventListener("click", e => {
     if (isDead()) return;
     const c = CATALOG.find(x => x.id === d.buy);
     if (!c) return;
-    if (state.money < c.price || state.machines.length >= state.cap) return;
-    state.money -= c.price;
+    const buyPrice = machineBuy(c);
+    if (state.money < buyPrice || state.machines.length >= state.cap) return;
+    state.money -= buyPrice;
     const m = makeMachine(c.id);
     m.uid = ++state.uid;
     m.boughtDay = state.day;

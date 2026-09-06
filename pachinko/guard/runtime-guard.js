@@ -599,6 +599,45 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
       const card = document.getElementById('focusCard').textContent;
       return card.includes(tr.name) && card.includes(mType(c.id)) && trendMult(c.id) > 1;
     }));
+    // ---- 中古相場: ブーム中は買値も売値も上がる ----
+    const mkt = await p.evaluate(() => {
+      const keep = JSON.stringify(state);
+      const tr = TRENDS.find(x => x.ids.length);
+      const hot = CATALOG.find(c => tr.ids.includes(c.id));
+      const cold = CATALOG.find(c => !tr.ids.includes(c.id));
+      state.trend = { name: tr.name, ids: tr.ids.slice() };
+      const mHot = { cid: hot.id, uid: 1, setting: 3, pop: hot.pop, boughtDay: 1, lastNet: 0, lastCust: 0 };
+      const mCold = { cid: cold.id, uid: 2, setting: 3, pop: cold.pop, boughtDay: 1, lastNet: 0, lastCust: 0 };
+      const out = {
+        buyHot: machineBuy(hot), priceHot: hot.price,
+        saleHot: machineSale(mHot), saleCold: machineSale(mCold),
+        baseHot: Math.round(hot.price * 0.55), baseCold: Math.round(cold.price * 0.55),
+        buyCold: machineBuy(cold), priceCold: cold.price,
+        bookHot: machineValue(mHot),
+      };
+      state = JSON.parse(keep); save(true);
+      return out;
+    });
+    // 買値に相場を乗せると修羅が壊れる(計測済み)。定価固定であることを固定する。
+    ok('FN 買値は相場に左右されず定価のまま',
+      mkt.buyHot === mkt.priceHot && mkt.buyCold === mkt.priceCold, JSON.stringify(mkt));
+    ok('FN ブーム中は売値が平常より高い', mkt.saleHot > mkt.baseHot, JSON.stringify(mkt));
+    ok('FN ブーム外は売値が定価の55%', mkt.saleCold === mkt.baseCold, JSON.stringify(mkt));
+    ok('FN 帳簿の資産評価(定価45%)は相場に影響されない',
+      mkt.bookHot === Math.round(mkt.priceHot * 0.45), JSON.stringify(mkt));
+    // 転売で儲からないこと(定価で買ってブーム中に売っても一周で損)
+    ok('FN 定価で買ってブームで売っても損になる', mkt.saleHot < mkt.priceHot, JSON.stringify(mkt));
+    ok('FN 売却の実額が実際に資金へ入る', await p.evaluate(() => {
+      const keep = JSON.stringify(state);
+      const m = state.machines[0], want = machineSale(m), before = state.money;
+      window.ask = () => Promise.resolve(true);
+      sellMachine(m);
+      return new Promise(r => setTimeout(() => {
+        const okv = state.money - before === want;
+        state = JSON.parse(keep); save(true); renderAll();
+        r(okv);
+      }, 60));
+    }));
     // ---- 表示単位: 内部1つ = 10台のシマ ----
     const unit = await p.evaluate(() => {
       const keep = JSON.stringify(state);
