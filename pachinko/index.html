@@ -1047,14 +1047,14 @@ svg{flex:0 0 auto}
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-staff"/></svg><b>スタッフ管理</b></div>
           <div class="gp-b">
             <div class="row"><span class="k">現在のスタッフ</span><span class="v" id="staffCount">2人</span></div>
-            <div class="row"><span class="k">必要人数</span><span class="v" id="staffNeed">1人</span></div>
+            <div class="row"><span class="k">必要人数 <small style="color:var(--tx-3)">(台8台に1人)</small></span><span class="v" id="staffNeed">1人</span></div>
             <div id="staffSum"></div>
             <div id="staffList" class="stlist"></div>
             <div class="btn-grid" style="margin-top:6px">
               <button class="btn" id="btnHire">雇用する</button>
               <button class="btn" id="btnFire" hidden>解雇する</button>
             </div>
-            <p class="note">台8台につきスタッフ1人が必要。不足すると接客が回らず評判が下がり、常連も育たない。日給 ¥13,000/人。<br>
+            <p class="note">台8台につきスタッフ1人が必要。<b>下回ると</b>その日の集客−15%・評判−2、常連も増えなくなる。日給 ¥13,000/人。<br>
             <b>誰が来るかは完全にランダム。</b>採用した時点では名前しか分からず、<b>3営業日</b>働かせて初めてランクと特性が判明する。
             勤続7日未満で解雇すると「すぐ人を切る店」と噂が立ち<b>評判−4</b>。</p>
           </div>
@@ -2479,8 +2479,12 @@ function renderMgmt() {
   $("staffCount").textContent = `${state.staff}人 (日給計 ${yen(state.staff * 13000)})`;
   renderStaff();
   const sn = $("staffNeed");
-  sn.textContent = `${need}人 ${state.staff < need ? "不足中!" : "充足"}`;
-  sn.className = "v " + (state.staff < need ? "neg" : "pos");
+  // 「1人 充足」だと 1人足りないのか足りているのか読めない。必要数と過不足を分けて書く。
+  const gap = state.staff - need;
+  sn.textContent = gap < 0 ? `${need}人 — ${-gap}人足りない!`
+                 : gap === 0 ? `${need}人 — ちょうど`
+                 : `${need}人 — ${gap}人多い`;
+  sn.className = "v " + (gap < 0 ? "neg" : gap === 0 ? "pos" : "");
   $("btnHire").disabled = dead;
   $("btnFire").disabled = dead || state.staff <= 1;
 
@@ -3673,6 +3677,7 @@ const ST_LOYAL_DAYS = 7;    // これ未満で解雇すると評判ペナルテ�
 const ST_FIRE_REP = 4;      // 早期解雇の評判ペナルティ
 const ST_REP_GAIN = 2.4;    // 平均接客力 → 日次の評判
 const ST_DRAW_GAIN = 0.45;  // 平均集客力 → 日次の常連
+const ST_DRAW_CAP = 6;      // 常連の集客に人数が効く上限
 
 
 const stEntry = i => {
@@ -3769,7 +3774,7 @@ function stFold(list, onlyKnown) {
   const n = list.length || 1;
   let rep = (sv / n) * ST_REP_GAIN * buff;
   rep = Math.max(-2.4, Math.min(2.4, rep));
-  return { rep, regs: (dr / n) * Math.min(n, 6) * ST_DRAW_GAIN * buff, pop, buff, late, hid, n };
+  return { rep, regs: (dr / n) * Math.min(n, ST_DRAW_CAP) * ST_DRAW_GAIN * buff, pop, buff, late, hid, n };
 }
 
 /* ---------- 採用・解雇 ---------- */
@@ -3870,6 +3875,7 @@ function renderStaff() {
   /* 見習いの分は 0 として畳む。分母は在籍人数なので、判明していくにつれて
      ここの数字が実際の効き方に近づいていく(表示と処理は同じ stFold)。 */
   const f = stFold(s.list, true);
+  const need = staffNeeded(), over = Math.max(0, state.staff - need);
   const sum = $("staffSum");
   if (sum) {
     const cls = v => v > 0.02 ? "pos" : v < -0.02 ? "neg" : "";
@@ -3878,7 +3884,9 @@ function renderStaff() {
         <span class="v"><b class="${cls(f.rep)}">評判 ${stNum(f.rep, 2)}</b> ・ <b class="${cls(f.regs)}">常連 ${stNum(f.regs, 2)}人</b>${
           f.pop ? ` ・ <b class="pos">全台の人気 ${stNum(f.pop, 2)}</b>` : ""}</span></div>
       <p class="note" style="margin:4px 0 0;font-size:11px;color:var(--tx-3)">
-        効くのは<b>頭数ではなく平均の質</b>。人を増やすだけでは伸びず、日給だけ増える。${
+        <b>評判</b>に効くのは平均の質だけで、頭数は関係ない。<b>常連</b>は 平均の質 × 人数 だが、${ST_DRAW_CAP}人を超えると増えない。${
+          need > 0 ? `<br>台${state.machines.length}台なら<b>${need}人</b>いれば営業は回る。${
+            over > 0 ? `いまは${over}人多く、その日給 <b>${yen(over * ST_WAGE)}/日</b> に見合う質かどうかで判断する。` : ""}` : ""}${
           f.hid ? `<br>見習い${f.hid}人の分はまだ入っていない(評価が出たら加算される)。` : ""}${
           f.late ? `<br>遅刻魔${f.late}人 — 25%で寝坊し、その日だけ評判が大きく落ちる(上の数字には入っていない)。` : ""}</p>`;
   }
