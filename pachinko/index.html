@@ -1232,9 +1232,9 @@ const MAX_CAP = 60;            // 店舗拡張の上限台数
 
 // ---- 難易度 ----
 const DIFFS = {
-  easy:   { label:"のんびり", money:12000000, rentMul:0.80, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.20, expandMul:0.85, upkeepMul:0.30, rivalMul:0.85 },
-  normal: { label:"標準",     money:9000000,  rentMul:1.20, proMul:1.00, heatMul:1.10, fillMul:0.97, creditMul:0.65, expandMul:1.10, upkeepMul:1.70, rivalMul:1.30 },
-  hard:   { label:"修羅",     money:6500000,  rentMul:1.90, proMul:1.80, heatMul:1.80, fillMul:0.90, creditMul:0.40, expandMul:1.35, upkeepMul:2.55, rivalMul:1.75 },
+  easy:   { label:"のんびり", money:12000000, rentMul:0.80, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.20, expandMul:0.85, upkeepMul:0.30, rivalMul:0.85, repMul:0.80 },
+  normal: { label:"標準",     money:9000000,  rentMul:1.20, proMul:1.00, heatMul:1.10, fillMul:0.97, creditMul:0.65, expandMul:1.10, upkeepMul:1.60, rivalMul:1.30, repMul:1.00 },
+  hard:   { label:"修羅",     money:6500000,  rentMul:1.80, proMul:1.80, heatMul:1.80, fillMul:0.90, creditMul:0.40, expandMul:1.35, upkeepMul:2.35, rivalMul:1.75, repMul:1.00 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -2003,6 +2003,43 @@ function upkeepMarginal() {
   const f = k => Math.max(0, k - UPKEEP_FREE) ? UPKEEP_K * Math.pow(k - UPKEEP_FREE, UPKEEP_E) * (D.upkeepMul ?? 1) * upkeepInfl() : 0;
   return Math.round(f(n + 1) - f(n));
 }
+/* ---------- 評判の自然減 ----------
+   客は「前によかった店」をいつまでも覚えていない。競合も宣伝を打つ。
+   放っておけば店の評価は落ちていく、という当たり前を入れる。
+   これが無いと評判は30日ほどで100に張り付き、そこから先はスタッフも
+   一番店争いの評判点(全員が同じ115点になる)も意味を失っていた。
+
+   低いうちは起きない(REP_SOFT以下)。序盤の立ち上げは今までどおり。
+   高いほど急に重くなるので、上のほうを維持するには毎日の営業か
+   良いスタッフで押し返し続ける必要がある。 */
+const REP_SOFT = 55, REP_DECAY_K = 3.2, REP_DECAY_E = 1.6;
+function repDecay() {
+  const r = state.rep;
+  if (!(r > REP_SOFT)) return 0;
+  const D = DIFFS[state.diff] || DIFFS.normal;
+  return Math.round(REP_DECAY_K * Math.pow((r - REP_SOFT) / (100 - REP_SOFT), REP_DECAY_E)
+    * (D.repMul ?? 1) * 100) / 100;
+}
+/* simulateDay の外で毎日引く。REP_SOFT より下には落とさない。 */
+function repDay() {
+  const d = repDecay();
+  if (d > 0) state.rep = Math.max(REP_SOFT, state.rep - d);
+  return d;
+}
+/* いまの陣容と営業で評判がどこに落ち着くかの目安(表示用) */
+function repEquilibrium(gain) {
+  if (!(gain > 0)) return REP_SOFT;
+  const D = DIFFS[state.diff] || DIFFS.normal;
+  const k = REP_DECAY_K * (D.repMul ?? 1);
+  if (gain >= k) return 100;
+  return Math.round(REP_SOFT + (100 - REP_SOFT) * Math.pow(gain / k, 1 / REP_DECAY_E));
+}
+
+/* 表示用の小物。均衡値の計算に使う。 */
+const avgSetNow = () => state.machines.length
+  ? state.machines.reduce((a, m) => a + m.setting, 0) / state.machines.length : 3;
+const staffRepGain = () => { try { return stFold(stState().list, true).rep; } catch (e) { return 0; } };
+
 let focusIdx = 0;
 let busy = false;
 
@@ -2375,7 +2412,11 @@ function renderHall() {
   const dead = isDead(), list = state.machines;
   $("hallNote").innerHTML =
     "<b>設定1〜2</b>は当日の利益が増えるが評判が下がり、続けると<b>行政指導</b>のリスク。" +
-    "<b>設定5〜6</b>は常連が育つが<b>プロ</b>に狙われる。同一機種を並べると<b>シマ効果</b>。";
+    "<b>設定5〜6</b>は常連が育つが<b>プロ</b>に狙われる。同一機種を並べると<b>シマ効果</b>。" +
+    (repDecay() > 0
+      ? `<br>評判${Math.round(state.rep)}の今日の<b>自然減は −${repDecay().toFixed(2)}</b>。`
+        + `いまの設定平均だと <b>${repEquilibrium((avgSetNow() - 3) * 1.4 + staffRepGain())}</b> あたりで釣り合う。`
+      : "<br>評判は" + REP_SOFT + "を超えると毎日<b>自然に落ちはじめる</b>(高いほど重い)。");
   if (!list.length) {
     focusIdx = 0;
     $("focusCard").innerHTML = `<div class="empty">${ic("slot")}<br>台がありません<br>「新台購入」から台を導入しよう。</div>`;
@@ -3876,6 +3917,11 @@ function renderStaff() {
      ここの数字が実際の効き方に近づいていく(表示と処理は同じ stFold)。 */
   const f = stFold(s.list, true);
   const need = staffNeeded(), over = Math.max(0, state.staff - need);
+  /* 評判は自然に落ちるので「いくらまで上げられるか」は陣容と設定で決まる。
+     いまの設定平均とこの名簿なら、どのあたりで釣り合うかを出しておく。 */
+  const nm = state.machines.length;
+  const avgSet = nm ? state.machines.reduce((a, m) => a + m.setting, 0) / nm : 3;
+  const eq = repEquilibrium((avgSet - 3) * 1.4 + f.rep);
   const sum = $("staffSum");
   if (sum) {
     const cls = v => v > 0.02 ? "pos" : v < -0.02 ? "neg" : "";
@@ -3884,7 +3930,9 @@ function renderStaff() {
         <span class="v"><b class="${cls(f.rep)}">評判 ${stNum(f.rep, 2)}</b> ・ <b class="${cls(f.regs)}">常連 ${stNum(f.regs, 2)}人</b>${
           f.pop ? ` ・ <b class="pos">全台の人気 ${stNum(f.pop, 2)}</b>` : ""}</span></div>
       <p class="note" style="margin:4px 0 0;font-size:11px;color:var(--tx-3)">
-        <b>評判</b>に効くのは平均の質だけで、頭数は関係ない。<b>常連</b>は 平均の質 × 人数 だが、${ST_DRAW_CAP}人を超えると増えない。${
+        <b>評判</b>に効くのは平均の質だけで、頭数は関係ない。<b>常連</b>は 平均の質 × 人数 だが、${ST_DRAW_CAP}人を超えると増えない。
+        <br>評判は毎日<b>自然に落ちる</b>(高いほど重い)。設定平均${avgSet.toFixed(1)}とこの陣容なら、評判は
+        <b style="color:${eq >= 90 ? "var(--pos)" : eq >= 75 ? "var(--gold)" : "var(--neg)"}">${eq}あたりで均衡</b>する。${
           need > 0 ? `<br>台${state.machines.length}台なら<b>${need}人</b>いれば営業は回る。${
             over > 0 ? `いまは${over}人多く、その日給 <b>${yen(over * ST_WAGE)}/日</b> に見合う質かどうかで判断する。` : ""}` : ""}${
           f.hid ? `<br>見習い${f.hid}人の分はまだ入っていない(評価が出たら加算される)。` : ""}${
@@ -3998,6 +4046,7 @@ function runDay() {
       result.upkeep = upkeepCost();
       if (result.upkeep) { state.money -= result.upkeep; save(true); }
     } catch (e) { result.upkeep = 0; }
+    try { result.repDec = repDay(); } catch (e) { result.repDec = 0; }
     try { result.st = stDay(); if (result.st.notes.length) result.notes = result.notes.concat(result.st.notes); } catch (e) { result.st = null; }
     try { result.rg = rgDay(result.rec); } catch (e) { result.rg = null; }
     result.dRep = state.rep - before.rep;
@@ -4095,6 +4144,7 @@ function showDayResult(result) {
         ${result.upkeep ? `<span class="k">規模維持費 (${state.machines.length}台)</span><span class="v neg">−${yen(result.upkeep)}</span>` : ""}
         <span class="hr"></span>
         <span class="k">店舗評価</span><span class="v">${Math.round(state.rep)}<small> / 100</small> ${dlt(result.dRep, 1)}</span>
+        ${result.repDec ? `<span class="k s">うち 自然減 (評判が高いほど重い)</span><span class="v s neg">\u2212${result.repDec.toFixed(2)}</span>` : ""}
         <span class="k">固定客(常連)</span><span class="v">${Math.floor(state.regulars)}<small>人</small> ${dlt(result.dReg, 1)}</span>
         <span class="hr"></span>
         <span class="k">資金残高</span><span class="v">${yen(state.money)}</span>
@@ -4523,6 +4573,7 @@ function showTutorial() {
       <div style="margin-top:8px">
         ${item("target", "設定のメリハリがすべて", "渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出す台」と「回収する台」を作り分けろ!")}
         ${item("fire", "7のつく日は特日 / 週替わりブーム / シマ効果", "特日は高設定で評判爆上げ。ブーム機種は集客1.4倍。同一機種を並べればシマ効果。")}
+        ${item("star", "評判は放っておくと落ちる", "客は前によかった店をいつまでも覚えていない。<b>評判が高いほど毎日の目減りは大きい</b>。上のほうを保つには出玉かスタッフの質で押し返し続けるしかない。")}
         ${item("bank", "銀行融資で攻めるか、堅実に行くか", "借金で一気に拡大もできるが利息は毎日重くのしかかる。クリア条件は「純資産」(借金は差し引き)。")}
         ${item("play", "実機を試打できる!", "どの台も「試打」で実際に打てる。設定ごとの出方を体感して経営に活かそう。")}
       </div>

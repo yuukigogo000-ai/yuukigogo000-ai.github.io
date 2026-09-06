@@ -288,10 +288,14 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     await clickC('#btnSave'); await p.waitForTimeout(120);
     ok('FN セーブ', await p.evaluate(() => !!localStorage.getItem('pachi-teikoku-save-v1')));
     await p.click('#nav [data-area="hall"]'); await p.waitForTimeout(150);
+    // 評判の自然減が結果に出るのは評判が高い日だけなので、ここで上げておく
+    await p.evaluate(() => { state.rep = 95; save(true); });
     const day0 = await p.evaluate(() => state.day);
     await p.click('#btnOpen');
     await p.waitForSelector('.res-hero', { timeout: 5000 });
     ok('FN 1営業日の実行と当日結果', await p.evaluate(n => state.day === n + 1, day0));
+    ok('FN 営業結果に評判の自然減が出る', await p.evaluate(() =>
+      /自然減/.test(document.getElementById('modalBox').textContent)));
     ok('FN 台別収支の提示', await p.evaluate(() => document.querySelectorAll('.mres div').length > 0));
     // ---- 当日結果に評判と常連の増減が出る ----
     const dl = await p.evaluate(() => {
@@ -519,6 +523,54 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     ok('FN 良い特性と悪い特性を色で見分けられる', tr.good === 1 && tr.bad === 1, JSON.stringify(tr));
     ok('FN 全特性に効果表記がある', tr.allNamed);
     ok('FN 陣容の合計表示が実処理(stFold)と一致する', tr.sumMatch, JSON.stringify(tr));
+    // ---- 評判の自然減 ----
+    const rd = await p.evaluate(() => {
+      const keep = state.rep;
+      const out = {};
+      state.rep = 40; out.low = repDecay();                 // 低いうちは起きない
+      state.rep = 100; out.top = repDecay();
+      state.rep = 80;  out.mid = repDecay();
+      state.rep = 90;  out.hi  = repDecay();
+      state.rep = 100; repDay(); out.afterTop = state.rep;  // 実際に引かれる
+      state.rep = REP_SOFT; repDay(); out.floor = state.rep; // 下限より下には落ちない
+      // 表示している均衡値が実際の関数と整合しているか
+      state.rep = 100;
+      const g = 1.5, eq = repEquilibrium(g);
+      state.rep = eq; const resid = Math.abs(repDecay() - g);
+      out.eqOk = eq > REP_SOFT && eq < 100 && resid < 0.06;
+      out.eqMax = repEquilibrium(99) === 100 && repEquilibrium(0) === REP_SOFT;
+      state.rep = keep;
+      return out;
+    });
+    ok('FN 評判は低いうちは自然減しない', rd.low === 0, JSON.stringify(rd));
+    ok('FN 評判が高いほど自然減が重い', rd.top > rd.hi && rd.hi > rd.mid && rd.mid > 0, JSON.stringify(rd));
+    ok('FN 自然減が実際に評判を下げる', rd.afterTop < 100 && rd.afterTop > 90, JSON.stringify(rd));
+    ok('FN 自然減は下限より下に落とさない', rd.floor === await p.evaluate(() => REP_SOFT), JSON.stringify(rd));
+    ok('FN 表示している均衡値が実処理と一致する', rd.eqOk && rd.eqMax, JSON.stringify(rd));
+    // 100 に張り付かないこと(この検査のためだけに素の営業を回す)
+    const pinned = await p.evaluate(() => {
+      const snap = JSON.stringify(state);
+      let over = 0, n = 0;
+      for (let i = 0; i < 60; i++) {
+        state.machines.forEach(m => m.setting = 4);
+        state.staff = Math.max(1, staffNeeded());
+        simulateDay(); repDay();
+        if (state.day > 30) { n++; if (state.rep >= 99.5) over++; }
+      }
+      const r = { pct: n ? Math.round(over / n * 100) : 100, rep: Math.round(state.rep) };
+      state = JSON.parse(snap); save(true);
+      return r;
+    });
+    ok('FN 30日を過ぎても評判が100に張り付かない', pinned.pct < 60, JSON.stringify(pinned));
+    ok('FN 営業を続ければ評判は高い帯を保てる', pinned.rep >= 70, JSON.stringify(pinned));
+    // 難易度で自然減の強さが変わる
+    ok('FN 評判の自然減は難易度で変わる', await p.evaluate(() => {
+      const keep = state.rep, kd = state.diff;
+      state.rep = 100;
+      const v = ['easy', 'normal', 'hard'].map(d => { state.diff = d; return repDecay(); });
+      state.rep = keep; state.diff = kd;
+      return v[0] < v[1] && v[1] <= v[2];
+    }));
     // ---- 埋め込み環境で無効になるネイティブダイアログを使っていない ----
     ok('FN window.confirm/alert を使っていない',
       await p.evaluate(() => (window.__nativeDialog || []).length === 0),
