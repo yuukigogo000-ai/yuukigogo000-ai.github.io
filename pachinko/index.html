@@ -1233,8 +1233,8 @@ const MAX_CAP = 60;            // 店舗拡張の上限台数
 // ---- 難易度 ----
 const DIFFS = {
   easy:   { label:"のんびり", money:12000000, rentMul:0.80, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.20, expandMul:0.85, upkeepMul:0.30, rivalMul:0.85 },
-  normal: { label:"標準",     money:9000000,  rentMul:1.20, proMul:1.00, heatMul:1.10, fillMul:0.97, creditMul:0.65, expandMul:1.10, upkeepMul:1.50, rivalMul:1.30 },
-  hard:   { label:"修羅",     money:6500000,  rentMul:1.60, proMul:1.80, heatMul:1.80, fillMul:0.90, creditMul:0.40, expandMul:1.35, upkeepMul:1.70, rivalMul:1.75 },
+  normal: { label:"標準",     money:9000000,  rentMul:1.20, proMul:1.00, heatMul:1.10, fillMul:0.97, creditMul:0.65, expandMul:1.10, upkeepMul:1.70, rivalMul:1.30 },
+  hard:   { label:"修羅",     money:6500000,  rentMul:1.90, proMul:1.80, heatMul:1.80, fillMul:0.90, creditMul:0.40, expandMul:1.35, upkeepMul:2.55, rivalMul:1.75 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -1282,7 +1282,7 @@ const CATALOG = [
 ];
 
 // 設定ごとの店側粗利率(売上に対する取り分の期待値)
-const MARGIN = { 1: 0.25, 2: 0.21, 3: 0.16, 4: 0.105, 5: 0.035, 6: -0.055 };
+const MARGIN = { 1: 0.31, 2: 0.26, 3: 0.20, 4: 0.13, 5: 0.045, 6: -0.075 };
 
 // 広告プラン (flat=固定集客, pct=規模比例の集客率ブースト)
 const ADS = [
@@ -1797,9 +1797,9 @@ function simulateDay() {
    単一の閾値だと のんびり=常にS / 修羅=常にC になって機能しない。
    各値は最適プレイと熟練プレイの実測分布から決めてある。 */
 const RANK_DAYS = {
-  easy:   { s:  55, a:  67, b:  86 },
-  normal: { s:  91, a: 112, b: 140 },
-  hard:   { s: 123, a: 158, b: 200 },
+  easy:   { s:  46, a:  55, b:  70 },
+  normal: { s:  70, a:  85, b: 110 },
+  hard:   { s: 116, a: 141, b: 182 },
 };
 function clearRank(d) {
   const t = RANK_DAYS[state && state.diff] || RANK_DAYS.normal;
@@ -4527,7 +4527,7 @@ function showTutorial() {
           <span><b style="font-size:14px">標準</b> <small>油断すると潰れる</small></span>
           <span class="num" style="font-size:14px;font-weight:900">${yen(DIFFS.normal.money)}</span></button>
         <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('hard')">
-          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">家賃2.8倍・融資枠ほぼ無し・大半が潰れる</small></span>
+          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">標準比 家賃${(DIFFS.hard.rentMul / DIFFS.normal.rentMul).toFixed(1)}倍・維持費${(DIFFS.hard.upkeepMul / DIFFS.normal.upkeepMul).toFixed(1)}倍・融資枠ほぼ無し</small></span>
           <span class="num" style="font-size:14px;font-weight:900;color:var(--gold-hi)">${yen(DIFFS.hard.money)}</span></button>
       </div>
     </div>`);
