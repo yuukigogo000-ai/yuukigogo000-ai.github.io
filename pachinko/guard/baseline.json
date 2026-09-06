@@ -23,10 +23,6 @@
    "sha": "5ffae59c12c56c8cb51200ba8f4d051b",
    "len": 54
   },
-  "slotDenom": {
-   "sha": "15478728fc309fe99d8a112fec2b24e1",
-   "len": 82
-  },
   "clearRank": {
    "sha": "b374ace1fc5632d0334b58c525583583",
    "len": 150,
@@ -107,18 +103,6 @@
   "effectivePop": {
    "sha": "585e0a03953cc014812e6e1e837be065",
    "len": 185
-  },
-  "rollFlag": {
-   "sha": "28ad093b3b21bdb4643e2a0d60f4d546",
-   "len": 435
-  },
-  "finalSymbols": {
-   "sha": "3a4e100acddc03bacce6f2f1c5d35de4",
-   "len": 496
-  },
-  "spinCost": {
-   "sha": "ef07d96e39071862161b4b4c9fd32425",
-   "len": 78
   },
   "hasAch": {
    "sha": "a85b12ff4ffbf0fb98f523028a051da3",
@@ -280,12 +264,17 @@
    "len": 5200
   },
   "ACHIEVEMENTS": {
-   "sha": "d53decab81b337e11708efd5f3aac789",
-   "len": 1015
-  },
-  "SLOT_SYMBOLS": {
-   "sha": "15d57696f0189116ccf617da809ca34b",
-   "len": 60
+   "sha": "4a14bcc822ace5d0b898fa0d00aed3cd",
+   "len": 1015,
+   "prevSha": "d53decab81b337e11708efd5f3aac789",
+   "rebaselined": {
+    "trial2026_09_06": {
+     "date": "2026-09-06",
+     "reason": "試打の廃止で trial-hit / trial-10 / trial-5k が永久に取得不能になるため差し替え。あわせて設置台数の表記を新しい単位(1シマ=10台)に合わせた。",
+     "change": "trial-hit→rep-keep(評判90以上を10営業日) / trial-10→crew-power(スタッフの力だけで評判の自然減を上回る) / trial-5k→rep-peak(評判98以上・自然減3.0超) / m20 の説明 20台→200台 / m60 の説明 60台→600台。新3件は simulateDay ではなく checkAchEx から grantAch する。",
+     "prevSha": "d53decab81b337e11708efd5f3aac789"
+    }
+   }
   },
   "RANK_DAYS": {
    "sha": "fb1c2ab77aaa029369ec72ceb27686fb",
@@ -331,34 +320,18 @@
   "creditNow",
   "dayNote",
   "debtNow",
-  "dg0",
-  "dg1",
-  "dg2",
   "hallList",
   "heatFill",
   "heatNote",
   "ledgerBody",
   "modalBg",
   "modalBox",
-  "pAuto",
-  "pBalls",
-  "pBanner",
-  "pDiff",
-  "pHits",
-  "pMaxRen",
-  "pReach",
-  "pRefill",
-  "pSpin",
-  "pSpins",
   "panel-hall",
   "panel-ledger",
   "panel-mgmt",
   "panel-shop",
   "rateButtons",
   "rateNote",
-  "reel0",
-  "reel1",
-  "reel2",
   "shopList",
   "stAssets",
   "stDay",
@@ -369,20 +342,7 @@
   "stRep",
   "staffCount",
   "staffNeed",
-  "stop0",
-  "stop1",
-  "stop2",
-  "tBB",
-  "tCredits",
-  "tDiff",
-  "tGames",
-  "tRB",
-  "toasts",
-  "trBanner",
-  "trLamp",
-  "trLever",
-  "trRefill",
-  "trSet"
+  "toasts"
  ],
  "copy": [
   "パチスロ帝国",
@@ -392,7 +352,6 @@
   "帳簿",
   "実績",
   "設定",
-  "試打",
   "売却",
   "導入する",
   "雇用する",

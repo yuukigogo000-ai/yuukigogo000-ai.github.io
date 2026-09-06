@@ -32,7 +32,6 @@
   "weeklyReport",
   "expandCost",
   "isDead",
-  "slotDenom",
   "clearRank",
   "save",
   "sanitizeState",
@@ -50,9 +49,6 @@
   "islandBonus",
   "trendMult",
   "effectivePop",
-  "rollFlag",
-  "finalSymbols",
-  "spinCost",
   "hasAch"
  ],
  "constants": [
@@ -68,7 +64,6 @@
   "LUCK_DAILY_P",
   "COND_EVENTS",
   "ACHIEVEMENTS",
-  "SLOT_SYMBOLS",
   "RANK_DAYS"
  ],
  "globals": [
@@ -95,34 +90,18 @@
   "creditNow",
   "dayNote",
   "debtNow",
-  "dg0",
-  "dg1",
-  "dg2",
   "hallList",
   "heatFill",
   "heatNote",
   "ledgerBody",
   "modalBg",
   "modalBox",
-  "pAuto",
-  "pBalls",
-  "pBanner",
-  "pDiff",
-  "pHits",
-  "pMaxRen",
-  "pReach",
-  "pRefill",
-  "pSpin",
-  "pSpins",
   "panel-hall",
   "panel-ledger",
   "panel-mgmt",
   "panel-shop",
   "rateButtons",
   "rateNote",
-  "reel0",
-  "reel1",
-  "reel2",
   "shopList",
   "stAssets",
   "stDay",
@@ -133,20 +112,7 @@
   "stRep",
   "staffCount",
   "staffNeed",
-  "stop0",
-  "stop1",
-  "stop2",
-  "tBB",
-  "tCredits",
-  "tDiff",
-  "tGames",
-  "tRB",
-  "toasts",
-  "trBanner",
-  "trLamp",
-  "trLever",
-  "trRefill",
-  "trSet"
+  "toasts"
  ],
  "requiredCopy": [
   "パチスロ帝国",
@@ -156,7 +122,6 @@
   "帳簿",
   "実績",
   "設定",
-  "試打",
   "売却",
   "導入する",
   "雇用する",
@@ -182,5 +147,55 @@
   "COND_EVENTS": 50,
   "TRENDS": 7,
   "ADS": 4
+ },
+ "removed": {
+  "trial2026_09_06": {
+   "date": "2026-09-06",
+   "reason": "実機を打てる試打ミニゲームの廃止(ユーザー指示)。経営そのものに集中させるため、営業収支に影響しないミニゲームを丸ごと落とした。",
+   "functions": [
+    "slotDenom",
+    "rollFlag",
+    "finalSymbols",
+    "spinCost"
+   ],
+   "constants": [
+    "SLOT_SYMBOLS"
+   ],
+   "domIds": [
+    "dg0",
+    "dg1",
+    "dg2",
+    "pAuto",
+    "pBalls",
+    "pBanner",
+    "pDiff",
+    "pHits",
+    "pMaxRen",
+    "pReach",
+    "pRefill",
+    "pSpin",
+    "pSpins",
+    "reel0",
+    "reel1",
+    "reel2",
+    "stop0",
+    "stop1",
+    "stop2",
+    "tBB",
+    "tCredits",
+    "tDiff",
+    "tGames",
+    "tRB",
+    "trBanner",
+    "trLamp",
+    "trLever",
+    "trRefill",
+    "trSet"
+   ],
+   "requiredCopy": [
+    "試打"
+   ],
+   "note": "保護対象からも外している。復活させる場合はこの記録を元に戻すこと。"
+  }
  }
 }

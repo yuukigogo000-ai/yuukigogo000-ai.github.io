@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#05060a">
 <meta name="color-scheme" content="dark">
-<meta name="description" content="出玉設定のジレンマを核にしたパチンコホール経営シミュレーション。実機の試打もできる。目指せ純資産1億円!">
+<meta name="description" content="出玉の平均設定と店舗規模のやりくりで地域一番店を目指すパチンコホール経営シミュレーション。目指せ純資産1億円!">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="apple-touch-icon" href="./icon-192.png">
@@ -258,9 +258,6 @@ svg{flex:0 0 auto}
 .sl-meta b{font-family:var(--f-num);font-size:10.5px;color:var(--tx-2)}
 .sl-meta .tag{font-size:8px;font-weight:800;padding:0 3px;border:1px solid currentColor;border-radius:2px}
 .sl-meta .tag.boom{color:var(--neon-g)} .sl-meta .tag.isl{color:var(--neon-b)} .sl-meta .tag.pro{color:var(--red)}
-.sl-play{width:var(--tap);height:var(--tap);flex:0 0 auto;border-radius:2px;display:grid;place-items:center;
-  border:1px solid rgba(255,212,59,.28);color:var(--gold);background:linear-gradient(180deg,#181b24,#0a0c11)}
-.sl-play svg{width:16px;height:16px}
 .sl-row .seg button{min-height:40px;font-size:12.5px}
 
 /* ---------- 640–710px : status band ---------- */
@@ -556,78 +553,6 @@ svg{flex:0 0 auto}
 .toast .m svg{width:14px;height:14px}
 .toast small{display:block;font-weight:600;color:var(--tx-3);font-size:9.5px}
 @keyframes tIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-
-/* ---------- 試打(実機) ---------- */
-.mach{border:1px solid var(--line);border-radius:3px;overflow:hidden;
-  background:linear-gradient(180deg,#1a1d26,#06070b);
-  box-shadow:0 20px 50px rgba(0,0,0,.75),inset 0 1px 0 rgba(255,255,255,.08)}
-.mach-h{display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--line-w);
-  background:linear-gradient(180deg,rgba(255,196,60,.12),transparent)}
-.mach-h .nm{display:block;font-size:12.5px;font-weight:900}
-.mach-h .sp{display:block;font-size:9px;color:var(--gold);margin-top:1px}
-.mach-h select{min-height:38px;border:1px solid var(--line);border-radius:2px;padding:0 6px;
-  background:linear-gradient(180deg,#1a1e28,#0c0e14);color:var(--tx);font-size:12px;font-weight:800}
-.mach-st{position:relative;padding:12px 10px 10px;text-align:center;
-  background:radial-gradient(92% 60% at 50% 20%,rgba(255,170,50,.18),transparent 64%),#05060a}
-.lamp{width:32px;height:32px;border-radius:50%;margin:0 auto 8px;border:2px solid #4a3c22;
-  background:radial-gradient(circle at 35% 32%,#3a2e1c,#120e08);transition:all .2s}
-.lamp.on{background:radial-gradient(circle at 35% 32%,#fff6d8,var(--gold));border-color:var(--gold-hi);
-  box-shadow:0 0 22px var(--gold),0 0 56px rgba(255,212,59,.6);animation:lampB .5s ease infinite alternate}
-@keyframes lampB{from{box-shadow:0 0 14px var(--gold),0 0 36px rgba(255,212,59,.45)}
-  to{box-shadow:0 0 30px var(--gold-hi),0 0 78px rgba(255,212,59,.8)}}
-.reels{display:flex;gap:7px;justify-content:center}
-.reel{flex:1;max-width:92px;aspect-ratio:3/4;border-radius:3px;position:relative;overflow:hidden;
-  background:linear-gradient(180deg,#fffaf0,#e6d9bd);border:3px solid #8a6c2c;
-  box-shadow:inset 0 0 20px rgba(90,60,10,.4),0 6px 16px rgba(0,0,0,.55);
-  display:grid;place-items:center}
-.reel svg{width:64%;height:64%}
-.reel.spin{animation:rspin .09s linear infinite}
-@keyframes rspin{0%{box-shadow:inset 0 12px 14px rgba(0,0,0,.4),0 6px 16px rgba(0,0,0,.5)}
-  100%{box-shadow:inset 0 -12px 14px rgba(0,0,0,.4),0 6px 16px rgba(0,0,0,.5)}}
-.reel.land{animation:rland .22s var(--ease) both}
-@keyframes rland{0%{transform:translateY(-9%)}60%{transform:translateY(3%)}100%{transform:none}}
-.digits{display:flex;gap:7px;justify-content:center}
-.digit{flex:1;max-width:84px;aspect-ratio:3/4;border-radius:3px;display:grid;place-items:center;
-  font-family:var(--f-num);font-size:38px;font-weight:900;color:var(--neon-b);
-  background:linear-gradient(180deg,#03060e,#000);border:2px solid #23415f;
-  box-shadow:inset 0 0 24px rgba(45,156,255,.28),0 6px 16px rgba(0,0,0,.5)}
-.digit.spin{animation:dsp .09s linear infinite;color:#6f9fc8}
-@keyframes dsp{50%{opacity:.5}}
-.digit.hit{color:var(--gold-hi);border-color:var(--gold);
-  box-shadow:inset 0 0 28px rgba(255,212,59,.4),0 0 22px rgba(255,212,59,.55)}
-.mbanner{min-height:26px;margin-top:8px;font-size:16px;font-weight:900;letter-spacing:.06em;color:var(--gold-hi)}
-.mbanner.win{animation:wPulse .45s ease infinite alternate}
-@keyframes wPulse{from{text-shadow:0 0 10px rgba(255,212,59,.6);transform:scale(1)}
-  to{text-shadow:0 0 26px rgba(255,240,180,.95);transform:scale(1.04)}}
-.reach{min-height:18px;font-size:13px;font-weight:900;letter-spacing:.16em;color:var(--neon-p)}
-.reach.on{animation:wPulse .4s ease infinite alternate}
-.mctl{display:flex;gap:7px;justify-content:center;align-items:center;padding:10px;flex-wrap:wrap;
-  border-top:1px solid var(--line-w);background:linear-gradient(180deg,#11131a,#07080d)}
-.lever{min-height:var(--cta);flex:1;min-width:130px;border-radius:3px;border:1px solid var(--gold-hi);
-  background:linear-gradient(180deg,#ffeeb6,#e6a92a 50%,#96591a);color:#1d1204;
-  font-size:15px;font-weight:900;letter-spacing:.10em;
-  box-shadow:0 8px 20px rgba(230,169,42,.3),inset 0 1px 0 rgba(255,255,255,.6)}
-.lever:active{transform:translateY(2px)}
-.lever[disabled]{filter:grayscale(.6) brightness(.7);pointer-events:none}
-.stopb{width:var(--tap);height:var(--tap);flex:0 0 auto;border-radius:50%;border:2px solid #7d1f18;
-  color:#fff;font-size:10.5px;font-weight:900;
-  background:radial-gradient(circle at 36% 30%,#ff8a7d,#b4271b 60%,#6d130e);
-  box-shadow:0 6px 14px rgba(0,0,0,.55),inset 0 2px 4px rgba(255,255,255,.35)}
-.stopb:active{transform:translateY(2px)}
-.stopb[disabled]{filter:grayscale(.8) brightness(.55);pointer-events:none}
-.mstats{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line-w);
-  border-top:1px solid var(--line-w)}
-.mstats div{background:#090b10;padding:6px 3px;text-align:center;min-width:0}
-.mstats .k{font-size:8px;color:var(--tx-3)}
-.mstats .v{font-family:var(--f-num);font-size:12.5px;font-weight:900;margin-top:1px}
-.switch{display:inline-flex;align-items:center;gap:6px;min-height:var(--tap);padding:0 10px;border-radius:2px;
-  border:1px solid var(--line-w);background:linear-gradient(180deg,#1a1e28,#0c0e14);font-size:11.5px;font-weight:800}
-.switch input{appearance:none;width:32px;height:18px;border-radius:99px;background:#2a2f3d;position:relative;
-  transition:background .2s;flex:0 0 auto}
-.switch input::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
-  background:#8a8577;transition:transform .2s,background .2s}
-.switch input:checked{background:linear-gradient(90deg,#8a5c0c,var(--gold))}
-.switch input:checked::after{transform:translateX(14px);background:#1c1305}
 
 /* ---------- 実績 ---------- */
 .ach-g{display:flex;align-items:center;gap:8px;padding:7px 8px 5px;border-top:1px solid var(--line-w);
@@ -999,10 +924,10 @@ svg{flex:0 0 auto}
       <!-- 400–640px : 設置台・設定判断 -->
       <div id="focusWrap">
         <div id="focusCard"></div>
-        <div id="hallList" role="tablist" aria-label="設置台の切替"></div>
+        <div id="hallList" role="tablist" aria-label="シマの切替"></div>
         <button class="btn wide" id="btnSetList" data-setlist style="margin-top:6px">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><use href="#i-gear"/></svg>
-          全台の設定を一覧で変更
+          全シマの平均設定を一覧で変更
         </button>
       </div>
 
@@ -1054,7 +979,7 @@ svg{flex:0 0 auto}
               <button class="btn" id="btnHire">雇用する</button>
               <button class="btn" id="btnFire" hidden>解雇する</button>
             </div>
-            <p class="note">台8台につきスタッフ1人が必要。<b>下回ると</b>その日の集客−15%・評判−2、常連も増えなくなる。日給 ¥13,000/人。<br>
+            <p class="note">80台(8シマ)につきスタッフ1人が必要。<b>下回ると</b>その日の集客−15%・評判−2、常連も増えなくなる。日給 ¥13,000/人。<br>
             <b>誰が来るかは完全にランダム。</b>採用した時点では名前しか分からず、<b>3営業日</b>働かせて初めてランクと特性が判明する。
             勤続7日未満で解雇すると「すぐ人を切る店」と噂が立ち<b>評判−4</b>。</p>
           </div>
@@ -1469,17 +1394,17 @@ const ACHIEVEMENTS = [
   { id:"million",    icon:"💴", name:"日給100万",      desc:"1日の純利益が100万円を超えた" },
   { id:"rep90",      icon:"🌟", name:"地域の優良店",   desc:"評判が90を超えた" },
   { id:"reg50",      icon:"🫂", name:"常連の店",       desc:"常連客が50人を超えた" },
-  { id:"m20",        icon:"🏬", name:"中堅ホール",     desc:"設置台数20台に到達" },
-  { id:"m60",        icon:"🏯", name:"巨艦店",         desc:"設置台数60台(最大)に到達" },
+  { id:"m20",        icon:"🏬", name:"中堅ホール",     desc:"設置台数200台に到達" },
+  { id:"m60",        icon:"🏯", name:"巨艦店",         desc:"設置台数600台(最大)に到達" },
   { id:"d30",        icon:"📆", name:"1ヶ月経営",      desc:"30日間営業を続けた" },
   { id:"tokubi-god", icon:"🔥", name:"特日の神",       desc:"特日を平均設定5以上で営業した" },
   { id:"shidou",     icon:"🚨", name:"お上の世話",     desc:"行政指導を受けてしまった…" },
   { id:"loan-clear", icon:"🏦", name:"信用第一",       desc:"1,000万円以上の借金を完済した" },
   { id:"asset30m",   icon:"📈", name:"軌道に乗る",     desc:"純資産3,000万円を達成" },
   { id:"asset100m",  icon:"👑", name:"パチスロ帝国",   desc:"純資産1億円を達成(クリア!)" },
-  { id:"trial-hit",  icon:"🎯", name:"初当たり体験",   desc:"試打で大当り/ボーナスを引いた" },
-  { id:"trial-10",   icon:"💥", name:"事故連発生",     desc:"試打で10連チャン or BIG10回を達成" },
-  { id:"trial-5k",   icon:"🗼", name:"ドル箱タワー",   desc:"試打で差玉+5,000 or 差枚+2,000を達成" },
+  { id:"rep-keep",   icon:"🛡️", name:"守り切る",       desc:"評判90以上を10営業日続けた" },
+  { id:"crew-power", icon:"🤝", name:"看板は人",       desc:"スタッフの力だけで評判の自然減を上回った" },
+  { id:"rep-peak",   icon:"⛰️", name:"頂の重圧",       desc:"評判98以上まで上りつめた(1日の自然減が3.0超)" },
 ];
 
 const $ = id => document.getElementById(id);
@@ -1845,10 +1770,6 @@ function expandCost() {
 
 function isDead() { return state && state.money < 0; }
 
-// ---- 試打で使う保護ロジック ----
-const SLOT_SYMBOLS = ["7️⃣", "🍇", "🍒", "🅱️", "🔔", "🃏"];
-function slotDenom(a1, a6, setting) { return a1 + (a6 - a1) * (setting - 1) / 5; }
-
 function save(silent) {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
   if (!silent) renderStatus();
@@ -1977,13 +1898,20 @@ const MART = {
   s6:"m_s_a", s7:"m_s_b", s8:"m_s_c", s9:"m_s_d", s10:"m_s_e",
 };
 const artOf = cid => "./art/" + (MART[cid] || "m_normal") + ".jpg";
+/* ---------- 表示単位 ----------
+   ゲーム内部の「1つ」は、同一機種を10台まとめた1シマとして扱う。
+   計算は一切変えず、画面に出す台数だけ10倍する。設定も「そのシマ10台の平均設定」。
+   1台単位で管理する店は現実にないし、最大10台のホールも存在しないため。 */
+const TAI_PER_SHIMA = 10;
+const tai = u => Math.round(u * TAI_PER_SHIMA);
+
 /* 売却価格。machineValue(定価45%)は帳簿上の資産評価で、実際の下取りはもう少し良い。
    古い台を入れ替える動きに意味を持たせるための差。保護ロジックには触れない。 */
 const machineSale = m => Math.round(catalogOf(m).price * 0.55);
 
 /* ---------- 規模維持費 ----------
    台数が増えるほど1台あたりの管理コストが重くなる(警備・設備保守・駐車場・
-   人員教育・本部管理)。12台までは無料で、そこから逓増する。
+   人員教育・本部管理)。120台(12シマ)までは無料で、そこから逓増する。
    序盤ではなく「大きくしたあと」に効く固定費なので、拡大の判断に緊張が生まれる。
    simulateDay の外で毎日引き、営業結果と帳簿に独立した行として出す。 */
 const UPKEEP_FREE = 12, UPKEEP_K = 3700, UPKEEP_E = 1.45, UPKEEP_INFL = 0.010;
@@ -1996,7 +1924,7 @@ function upkeepCost() {
   if (!over) return 0;
   return Math.round(UPKEEP_K * Math.pow(over, UPKEEP_E) * (D.upkeepMul ?? 1) * upkeepInfl());
 }
-/* 次に1台増やしたときの増分(拡大の判断材料として画面に出す) */
+/* 次に1シマ(10台)増やしたときの増分(拡大の判断材料として画面に出す) */
 function upkeepMarginal() {
   const D = DIFFS[state.diff] || DIFFS.normal;
   const n = state.machines.length;
@@ -2084,13 +2012,13 @@ const ACH_EX = [
   { id:"ex-revive",  name:"信頼回復",         desc:"評判25以下から70以上まで立て直した", g:"集客" },
   { id:"ex-pro20",   name:"プロの巣窟",       desc:"1日にプロが20人来店した", g:"集客" },
   // ---- ホール ----
-  { id:"ex-m40",     name:"大型店",           desc:"設置台数40台に到達", g:"ホール" },
-  { id:"ex-isl5",    name:"シマを作る",       desc:"同一機種を5台並べた", g:"ホール" },
-  { id:"ex-isl10",   name:"名物コーナー",     desc:"同一機種を10台並べた", g:"ホール" },
+  { id:"ex-m40",     name:"大型店",           desc:"設置台数400台に到達", g:"ホール" },
+  { id:"ex-isl5",    name:"シマを作る",       desc:"同一機種を50台(5シマ)並べた", g:"ホール" },
+  { id:"ex-isl10",   name:"名物コーナー",     desc:"同一機種を100台(10シマ)並べた", g:"ホール" },
   { id:"ex-allkind", name:"全機種制覇",       desc:"10機種すべてを同時に設置した", g:"ホール" },
-  { id:"ex-hi5",     name:"大盤振る舞い",     desc:"設定6を5台以上同時に入れた", g:"ホール" },
-  { id:"ex-lo-all",  name:"全台回収",         desc:"全台を設定1にして営業した", g:"ホール" },
-  { id:"ex-hi-all",  name:"全台解放",         desc:"全台を設定6にして営業した", g:"ホール" },
+  { id:"ex-hi5",     name:"大盤振る舞い",     desc:"平均設定6のシマを5つ以上同時に作った", g:"ホール" },
+  { id:"ex-lo-all",  name:"全台回収",         desc:"全シマを平均設定1にして営業した", g:"ホール" },
+  { id:"ex-hi-all",  name:"全台解放",         desc:"全シマを平均設定6にして営業した", g:"ホール" },
   // ---- 経営判断 ----
   { id:"ex-fair3",   name:"祭りの常連",       desc:"新装開店フェアを3回開催した", g:"経営" },
   { id:"ex-adall",   name:"宣伝マン",         desc:"3種類の広告をすべて使った", g:"経営" },
@@ -2099,10 +2027,6 @@ const ACH_EX = [
   { id:"ex-staff10", name:"大所帯",           desc:"スタッフを10人まで増やした", g:"経営" },
   { id:"ex-emg",     name:"綱渡り",           desc:"緊急融資を受けて生き延びた", g:"経営" },
   { id:"ex-heat",    name:"ほとぼり",         desc:"警戒度が最大付近まで上がった後、平常まで戻した", g:"経営" },
-  // ---- 遊技 ----
-  { id:"ex-t100g",   name:"打ち込み100G",    desc:"試打で通算100ゲーム回した", g:"遊技" },
-  { id:"ex-t500g",   name:"打ち込み500G",    desc:"試打で通算500ゲーム回した", g:"遊技" },
-  { id:"ex-t20ren",  name:"RUSH20連",        desc:"試打で20連チャンを達成した", g:"遊技" },
   // ---- 到達 ----
   { id:"ex-clear-s", name:"Sランク制覇",     desc:"Sランク(65日以内)でクリアした", g:"到達" },
   { id:"ex-clear-60",name:"電光石火",         desc:"60日以内に純資産1億円を達成した", g:"到達" },
@@ -2117,7 +2041,7 @@ const ACH_EX = [
   { id:"ex-rg-ew",   name:"東西二強",         desc:"東京と近畿を同時に制圧した", g:"全国" },
   { id:"ex-rg-ns",   name:"日本縦断",         desc:"北海道と沖縄を同時に制圧した", g:"全国" },
   { id:"ex-rg-chain",name:"全国チェーン",     desc:"支店を5店舗まで増やした", g:"全国" },
-  { id:"ex-rg-mega", name:"大型店",           desc:"60台の支店を作った", g:"全国" },
+  { id:"ex-rg-mega", name:"大型店",           desc:"600台の支店を作った", g:"全国" },
   { id:"ex-rg-fit",  name:"土地を読む",       desc:"客層と一致した構成の支店で一番店を獲った", g:"全国" },
   { id:"ex-rg-nation",name:"全国制覇",        desc:"15地方すべてを同時に制圧した", g:"全国" },
   // ---- 人事 ----
@@ -2140,8 +2064,7 @@ function exState() {
   const c = state.ex.c;
   const num = (v, d) => Number.isFinite(Number(v)) ? Math.max(0, Math.floor(Number(v))) : d;
   c.fair = num(c.fair, 0); c.low = num(c.low, 0); c.exp = num(c.exp, 0);
-  c.tg = num(c.tg, 0); c.ren = num(c.ren, 0);
-  c.repLow = num(c.repLow, 0); c.heat = num(c.heat, 0);
+  c.repLow = num(c.repLow, 0); c.heat = num(c.heat, 0); c.rep90 = num(c.rep90, 0);
   if (!Array.isArray(c.ads)) c.ads = [];
   c.ads = c.ads.filter(id => ADS.some(a => a.id === id && a.id !== "none"));
   return state.ex;
@@ -2217,9 +2140,18 @@ function checkAchEx(ctx) {
   if (c.ads.length >= 3) G("ex-adall");
   if (c.low >= 10) G("ex-low10");
   if (c.exp >= 5) G("ex-exp5");
-  if (c.tg >= 100) G("ex-t100g");
-  if (c.tg >= 500) G("ex-t500g");
-  if (c.ren >= 20) G("ex-t20ren");
+
+  /* 保護実績のうち、実機プレイの廃止で置き換えた3件はここで判定する
+     (simulateDay には触れずに、営業後のフックから grantAch を呼ぶ) */
+  if (ctx && ctx.dayEnd) {
+    c.rep90 = state.rep >= 90 ? c.rep90 + 1 : 0;
+    if (c.rep90 >= 10) grantAch("rep-keep");
+    try {
+      const dec = repDecay();
+      if (dec > 0 && stFold(stState().list, true).rep >= dec) grantAch("crew-power");
+      if (dec > 3.0) grantAch("rep-peak");
+    } catch (e) {}
+  }
 
   if (ctx && ctx.dayEnd && n) {
     const sets = state.machines.map(m => m.setting);
@@ -2363,7 +2295,7 @@ function renderStatus() {
   $("stRep").innerHTML = Math.round(state.rep) + "<small>/100</small>";
   $("repBar").style.width = Math.max(0, Math.min(100, state.rep)) + "%";
   if ($("crestVal")) $("crestVal").textContent = Math.round(state.rep);
-  $("stMachines").innerHTML = state.machines.length + "<small>/" + state.cap + "台</small>";
+  $("stMachines").innerHTML = tai(state.machines.length) + "<small>/" + tai(state.cap) + "台</small>";
   const dEl = $("stDebt");
   dEl.textContent = state.debt > 0 ? yenShort(state.debt) : "なし";
   dEl.style.color = state.debt > 0 ? "var(--neg)" : "var(--tx-2)";
@@ -2411,8 +2343,9 @@ function renderSpark() {
 function renderHall() {
   const dead = isDead(), list = state.machines;
   $("hallNote").innerHTML =
-    "<b>設定1〜2</b>は当日の利益が増えるが評判が下がり、続けると<b>行政指導</b>のリスク。" +
-    "<b>設定5〜6</b>は常連が育つが<b>プロ</b>に狙われる。同一機種を並べると<b>シマ効果</b>。" +
+    "1シマ=同一機種<b>10台</b>。数字はそのシマの<b>平均設定</b>。" +
+    "<b>1〜2</b>は当日の利益が増えるが評判が下がり、続けると<b>行政指導</b>のリスク。" +
+    "<b>5〜6</b>は常連が育つが<b>プロ</b>に狙われる。同じ機種のシマを並べると<b>シマ効果</b>。" +
     (repDecay() > 0
       ? `<br>評判${Math.round(state.rep)}の今日の<b>自然減は −${repDecay().toFixed(2)}</b>。`
         + `いまの設定平均だと <b>${repEquilibrium((avgSetNow() - 3) * 1.4 + staffRepGain())}</b> あたりで釣り合う。`
@@ -2452,14 +2385,13 @@ function renderHall() {
       </div>
     </div>
     <div class="fc-set">
-      <span class="lb">設定</span>
+      <span class="lb">平均設定</span>
       <div class="seg ${segCls}" role="group" aria-label="出玉設定">
         ${[1,2,3,4,5,6].map(v => `<button type="button" data-set="${focusIdx}:${v}" aria-pressed="${m.setting === v}" ${dead ? "disabled" : ""}>${v}</button>`).join("")}
       </div>
     </div>
     <div class="fc-acts">
-      <button class="btn sm" data-trial="${focusIdx}" style="flex:1">${ic("play")}実機を試打</button>
-      <button class="btn sm red" data-sell="${focusIdx}" ${dead ? "disabled" : ""}>${ic("tag")}売却</button>
+      <button class="btn sm red wide" data-sell="${focusIdx}" ${dead ? "disabled" : ""}>${ic("tag")}売却</button>
     </div>`;
 
   $("hallList").innerHTML = list.map((mm, i) => {
@@ -2472,9 +2404,9 @@ function renderHall() {
 }
 /* ---------- ショップ ---------- */
 function renderShop() {
-  $("shopSlots").textContent = `空き枠 ${Math.max(0, state.cap - state.machines.length)}`;
+  $("shopSlots").textContent = `空き ${tai(Math.max(0, state.cap - state.machines.length))}台`;
   $("shopNote").innerHTML =
-    "新台は導入から5日間「新台効果」で人気1.4倍。同一機種を複数並べると<b>シマ効果</b>(+6%/台・最大+30%)。" +
+    "新台は導入から5日間「新台効果」で人気1.4倍。同一機種のシマを複数並べると<b>シマ効果</b>(+6%/シマ・最大+30%)。" +
     "売却額は購入価格の<b>55%</b>(帳簿上の資産評価は45%)。差額の分だけ売った方が現金は増えるが、" +
     "買い直すと45%を失うので<b>入れ替え目的だと基本は損</b>。売却は資金繰りと設置枠の確保のための手段。" +
     "導入直後は<b>新装開店フェア</b>(店長室)で告知すると効果大。";
@@ -2507,8 +2439,7 @@ function renderShop() {
         <div><div class="k">タイプ</div><div class="v">${c.type === "P" ? "パチンコ" : "スロット"}</div></div>
       </div>
       <div class="acts">
-        <button class="btn sm" data-shoptrial="${c.id}" style="flex:1">${ic("play")}試打</button>
-        <button class="btn sm gold" data-buy="${c.id}" style="flex:1.3" ${full || poor || dead ? "disabled" : ""}>${ic("plus")}${label}</button>
+        <button class="btn sm gold wide" data-buy="${c.id}" ${full || poor || dead ? "disabled" : ""}>${ic("plus")}${label}</button>
       </div>
     </article>`;
   }).join("");
@@ -2549,9 +2480,9 @@ function renderMgmt() {
   gb.className = "btn wide" + (grandReady && !dead ? " gold" : "");
 
   const capMax = state.cap >= MAX_CAP;
-  $("capNow").textContent = state.cap + "台" + (capMax ? " (最大)" : "");
+  $("capNow").textContent = tai(state.cap) + "台" + (capMax ? " (最大)" : "");
   const eb = $("btnExpand");
-  eb.textContent = capMax ? "拡張上限に到達" : `+5台 拡張する (${yenShort(expandCost())})`;
+  eb.textContent = capMax ? "拡張上限に到達" : `+${tai(5)}台 拡張する (${yenShort(expandCost())})`;
   eb.disabled = dead || capMax || state.money < expandCost();
 
   $("debtNow").textContent = yen(state.debt);
@@ -2618,7 +2549,7 @@ function renderAch() {
       ${ok ? `<span style="margin-left:auto;color:var(--gold)">${ic("check")}</span>` : ""}
     </div>`;
   const groups = [["基本", ACHIEVEMENTS.map(a => [a, hasAch(a.id)])]];
-  const order = ["収益", "継続", "集客", "ホール", "経営", "遊技", "到達", "全国", "人事"];
+  const order = ["収益", "継続", "集客", "ホール", "経営", "到達", "全国", "人事"];
   for (const g of order) {
     const items = ACH_EX.filter(a => a.g === g).map(a => [a, exAch.includes(a.id)]);
     if (items.length) groups.push([g, items]);
@@ -3312,7 +3243,7 @@ function renderMap() {
         const R = regionOf(b.a);
         return `<button class="brw" data-rg="${b.a}">
           <span class="brw-a">${g.ctrl[b.a] ? ic("crown") : ic("flag")}${esc(R.name)}</span>
-          <span class="brw-m">${b.n}台 ・ ${esc(midName(b.mid))} ・ ${esc(POL_LABEL[b.pol])} ・ 評判${Math.round(b.rep)}</span>
+          <span class="brw-m">${tai(b.n)}台 ・ ${esc(midName(b.mid))} ・ ${esc(POL_LABEL[b.pol])} ・ 評判${Math.round(b.rep)}</span>
           <span class="brw-n ${b.net >= 0 ? "pos" : "neg"}">${sign(b.net)}</span>
         </button>`;
       }).join("");
@@ -3372,8 +3303,8 @@ function openRegion(a) {
     body = `${traits}
       <h4 class="rg-h">${ic("slot")}本店の品揃えと地元の相性</h4>
       <div class="bd">
-        <span class="k">得意機種の台数</span><span class="v pos">${nLike} / ${state.machines.length}台</span>
-        <span class="k">苦手機種の台数</span><span class="v ${nHate ? "neg" : ""}">${nHate} / ${state.machines.length}台</span>
+        <span class="k">得意機種の台数</span><span class="v pos">${tai(nLike)} / ${tai(state.machines.length)}台</span>
+        <span class="k">苦手機種の台数</span><span class="v ${nHate ? "neg" : ""}">${tai(nHate)} / ${tai(state.machines.length)}台</span>
         <span class="k">集客力への補正</span><span class="v ${hf > 0.02 ? "pos" : hf < -0.02 ? "neg" : ""}">${hf >= 0 ? "+" : ""}${(hf >= 0 ? hf * SC_FIT_UP : hf * SC_FIT_DN).toFixed(1)}</span>
       </div>
       <p class="note">本店も東海という土地の上にある。地元で長くやっている店なので客層は分かっている:
@@ -3392,7 +3323,7 @@ function openRegion(a) {
     body = `${traits}
       <h4 class="rg-h">${ic("flag")}支店の状況</h4>
       <div class="bd">
-        <span class="k">規模</span><span class="v">${b.n}台</span>
+        <span class="k">規模</span><span class="v">${tai(b.n)}台</span>
         <span class="k">主力機種</span><span class="v">${esc(midName(b.mid))}</span>
         <span class="k s">客の反応</span><span class="v s ${rgFit(b.mid, R) > 0 ? "pos" : rgFit(b.mid, R) < 0 ? "neg" : ""}">${
           rgFit(b.mid, R) > 0 ? "好評 (集客力 +12)" : rgFit(b.mid, R) < 0 ? "不評 (集客力 −10)" : "可もなく不可もなく (±0)"}</span>
@@ -3409,7 +3340,7 @@ function openRegion(a) {
       どちらに振り切っても利益は落ちる — エリアを取りにいくか、利益を取るかの選択。</p>
       <div class="btn-grid" style="margin-top:6px">
         <button class="btn" data-rgmgr="${a}" ${b.mgr ? "disabled" : ""}>${b.mgr ? "店長 配属済み" : "敏腕店長を雇う"}</button>
-        <button class="btn" data-rgadd="${a}" ${canAdd ? "" : "disabled"}>${canAdd ? `+20台 増床 ${yenShort(addCost)}` : "60台(上限)"}</button>
+        <button class="btn" data-rgadd="${a}" ${canAdd ? "" : "disabled"}>${canAdd ? `+${tai(20)}台 増床 ${yenShort(addCost)}` : `${tai(60)}台(上限)`}</button>
       </div>
       <p class="note">敏腕店長: 日給¥100,000。評判の立ち上がりが速くなり、集客力に+6。</p>
       ${(() => {
@@ -3451,7 +3382,7 @@ function openRegion(a) {
       <h4 class="rg-h">${ic("target")}現地の勢力図</h4>${rankHtml}
       <h4 class="rg-h">${ic("plus")}進出プラン</h4>
       <div class="rg-opt"><span class="k">規模</span>
-        <div class="seg">${[20,40,60].map(v => `<button type="button" data-rgn="${v}" aria-pressed="${rgDraft.n === v}">${v}台</button>`).join("")}</div>
+        <div class="seg">${[20,40,60].map(v => `<button type="button" data-rgn="${v}" aria-pressed="${rgDraft.n === v}">${tai(v)}台</button>`).join("")}</div>
       </div>
       <div class="rg-opt"><span class="k">主力機種</span><b class="midcur">${esc(midName(rgDraft.mid))}</b></div>
       <div class="midpick">${CATALOG.map(c => {
@@ -3507,7 +3438,7 @@ function rgOpen(a) {
   state.money -= cost;
   rgState().br.push({ a, n: rgDraft.n, mid: rgDraft.mid, pol: 3, mgr: false, rep: 40, since: state.day, net: 0, cash: -cost });
   save(); checkAchEx(); renderAll();
-  toast(`${R.name}に${rgDraft.n}台の支店を出した`);
+  toast(`${R.name}に${tai(rgDraft.n)}台の支店を出した`);
   openRegion(a);
 }
 async function rgClose(a) {
@@ -3528,7 +3459,7 @@ function rgAdd(a) {
   if (state.money < cost) { toast("資金が足りません"); return; }
   state.money -= cost; b.n += 20; b.cash -= cost;
   save(); checkAchEx(); renderAll(); openRegion(a);
-  toast(`${R.name}支店を${b.n}台に増床`);
+  toast(`${R.name}支店を${tai(b.n)}台に増床`);
 }
 function rgMgr(a) {
   if (isDead()) return;
@@ -3582,7 +3513,7 @@ function rgShowUnlock() {
     <div class="mb">
       <p class="note" style="font-size:12px;color:var(--tx-2)">地元・東海で店が回り始めた。銀行も他県への出店に首を縦に振るようになった。</p>
       <div class="rg-unlock">
-        <div><b>支店を出す</b><span>隣り合う地方に支店を出せる。台数と機種構成を選び、出玉方針で利益と評判の綱引きをする。</span></div>
+        <div><b>支店を出す</b><span>隣り合う地方に支店を出せる。規模と主力機種を選び、出玉方針で利益と評判の綱引きをする。</span></div>
         <div><b>一番店を獲る</b><span>集客力でその地方の競合を上回り、5日連続で首位を守れば制圧。</span></div>
         <div><b>全国制覇</b><span>15地方すべてを同時に制圧すれば全国制覇。制圧数が増えるほど全支店の利益が伸びる。</span></div>
       </div>
@@ -3933,7 +3864,7 @@ function renderStaff() {
         <b>評判</b>に効くのは平均の質だけで、頭数は関係ない。<b>常連</b>は 平均の質 × 人数 だが、${ST_DRAW_CAP}人を超えると増えない。
         <br>評判は毎日<b>自然に落ちる</b>(高いほど重い)。設定平均${avgSet.toFixed(1)}とこの陣容なら、評判は
         <b style="color:${eq >= 90 ? "var(--pos)" : eq >= 75 ? "var(--gold)" : "var(--neg)"}">${eq}あたりで均衡</b>する。${
-          need > 0 ? `<br>台${state.machines.length}台なら<b>${need}人</b>いれば営業は回る。${
+          need > 0 ? `<br>${tai(state.machines.length)}台なら<b>${need}人</b>いれば営業は回る。${
             over > 0 ? `いまは${over}人多く、その日給 <b>${yen(over * ST_WAGE)}/日</b> に見合う質かどうかで判断する。` : ""}` : ""}${
           f.hid ? `<br>見習い${f.hid}人の分はまだ入っていない(評価が出たら加算される)。` : ""}${
           f.late ? `<br>遅刻魔${f.late}人 — 25%で寝坊し、その日だけ評判が大きく落ちる(上の数字には入っていない)。` : ""}</p>`;
@@ -3956,18 +3887,15 @@ function renderStaff() {
 }
 
 /* ==========================================================================
-   モーダル / 1営業日 / 当日結果 / 試打 / 起動
+   モーダル / 1営業日 / 当日結果 / 起動
    ========================================================================== */
-let trialCleanup = null;
 let pendingUnlock = false;
 function showModal(html) {
-  if (trialCleanup) { trialCleanup(); trialCleanup = null; }
   $("modalBox").innerHTML = html;
   $("modalBg").classList.add("show");
   $("modalBg").scrollTop = 0;
 }
 function closeModal() {
-  if (trialCleanup) { trialCleanup(); trialCleanup = null; }
   // 倒産後はモーダルを閉じられない(リセットのみ)。doResetはstateを先に差し替えるので通る
   if (isDead()) { showBankruptModal(); return; }
   $("modalBg").classList.remove("show");
@@ -4082,7 +4010,7 @@ function showDayResult(result) {
       ${rgNotes}
       ${g.br.length ? `<div class="mres">${g.br.slice().sort((a, b) => b.net - a.net).map(b => {
         const R = regionOf(b.a);
-        return `<div><span>${g.ctrl[b.a] ? "👑 " : ""}${esc(R.name)}支店 [${b.n}台・${esc(POL_LABEL[b.pol])}]</span><span class="n ${b.net >= 0 ? "pos" : "neg"}">${sign(b.net)}</span></div>`;
+        return `<div><span>${g.ctrl[b.a] ? "👑 " : ""}${esc(R.name)}支店 [${tai(b.n)}台・${esc(POL_LABEL[b.pol])}]</span><span class="n ${b.net >= 0 ? "pos" : "neg"}">${sign(b.net)}</span></div>`;
       }).join("")}</div>
       <div class="bd" style="margin-top:6px">
         <span class="k">支店 合計</span><span class="v ${(rg ? rg.net : 0) >= 0 ? "pos" : "neg"}">${sign(rg ? rg.net : 0)}</span>
@@ -4141,7 +4069,7 @@ function showDayResult(result) {
         <span class="k">総売上(打ち込み)</span><span class="v">${yen(rec.sales)}</span>
         <span class="k">出玉払出</span><span class="v neg">−${yen(rec.payout)}</span>
         <span class="k">経費${rec.interest ? " (利息 " + yen(rec.interest) + " 含む)" : ""}</span><span class="v neg">−${yen(rec.exp)}</span>
-        ${result.upkeep ? `<span class="k">規模維持費 (${state.machines.length}台)</span><span class="v neg">−${yen(result.upkeep)}</span>` : ""}
+        ${result.upkeep ? `<span class="k">規模維持費 (${tai(state.machines.length)}台)</span><span class="v neg">−${yen(result.upkeep)}</span>` : ""}
         <span class="hr"></span>
         <span class="k">店舗評価</span><span class="v">${Math.round(state.rep)}<small> / 100</small> ${dlt(result.dRep, 1)}</span>
         ${result.repDec ? `<span class="k s">うち 自然減 (評判が高いほど重い)</span><span class="v s neg">\u2212${result.repDec.toFixed(2)}</span>` : ""}
@@ -4150,7 +4078,7 @@ function showDayResult(result) {
         <span class="k">資金残高</span><span class="v">${yen(state.money)}</span>
         <span class="k">純資産</span><span class="v">${yen(totalAssets())}</span>
       </div>
-      <div class="row" style="margin-top:8px"><span class="k">台別収支(店側)</span><span class="v">${state.machines.length}台</span></div>
+      <div class="row" style="margin-top:8px"><span class="k">シマ別収支(店側)</span><span class="v">${tai(state.machines.length)}台</span></div>
       <div class="mres">${perMachine}</div>
       ${rgHtml}
       ${weekHtml}
@@ -4163,7 +4091,7 @@ function showDayResult(result) {
 
 
 /* ==========================================================================
-   設定変更(全台一覧) — 一覧のまま各台の設定1〜6を直接変更できる
+   平均設定の変更(全シマ一覧) — 一覧のまま各シマの平均設定1〜6を直接変更できる
    ========================================================================== */
 let setListSort = "order";
 function openSetList() {
@@ -4197,9 +4125,8 @@ function setListRows() {
             ${boom ? '<span class="tag boom">ブーム</span>' : ""}${isl > 1 ? `<span class="tag isl">シマ+${Math.round((isl - 1) * 100)}%</span>` : ""}
             ${m.setting >= 5 ? '<span class="tag pro">プロ警戒</span>' : ""}</div>
         </div>
-        <button class="sl-play" data-trial="${i}" aria-label="試打">${ic("play")}</button>
       </div>
-      <div class="seg ${segCls}" role="group" aria-label="${esc(c.name)} の出玉設定">
+      <div class="seg ${segCls}" role="group" aria-label="${esc(c.name)} の平均設定">
         ${[1,2,3,4,5,6].map(v => `<button type="button" data-set="${i}:${v}" aria-pressed="${m.setting === v}" ${dead ? "disabled" : ""}>${v}</button>`).join("")}
       </div>
     </div>`;
@@ -4208,333 +4135,20 @@ function setListRows() {
 function renderSetList() {
   const s = stratSummary();
   const sorts = [["order", "設置順"], ["set", "設定順"], ["net", "収支順"], ["name", "機種順"]];
-  showModal(`${mh("gear", "設定変更", true)}
+  showModal(`${mh("gear", "平均設定の変更", true)}
     <div class="mb">
       <div class="sl-sum gp">
         <div><div class="k">平均設定</div><div class="v num">${s ? s.avg.toFixed(1) : "—"}</div></div>
-        <div><div class="k">高設定(5-6)</div><div class="v num">${s ? s.hi : 0}<small>台</small></div></div>
-        <div><div class="k">低設定(1-2)</div><div class="v num">${s ? s.lo : 0}<small>台</small></div></div>
+        <div><div class="k">高設定(5-6)</div><div class="v num">${s ? tai(s.hi) : 0}<small>台</small></div></div>
+        <div><div class="k">低設定(1-2)</div><div class="v num">${s ? tai(s.lo) : 0}<small>台</small></div></div>
         <div><div class="k">方針</div><div class="v" style="color:${s ? s.mode.c : "var(--tx-3)"};font-size:13px">${s ? esc(s.mode.t) : "—"}</div></div>
       </div>
       <div class="sl-sort">${sorts.map(([k, l]) =>
         `<button class="${setListSort === k ? "on" : ""}" data-slsort="${k}">${l}</button>`).join("")}</div>
       <div class="sl-list" id="slList">${setListRows()}</div>
-      <p class="note">数字をタップするとその場で設定が変わります。<b>設定1〜2</b>は利益重視で評判が下がり、<b>設定5〜6</b>は常連が育つがプロに狙われます。</p>
+      <p class="note">1シマ=同一機種<b>10台</b>。数字はそのシマの<b>平均設定</b>で、タップするとその場で変わります。<b>1〜2</b>は利益重視で評判が下がり、<b>5〜6</b>は常連が育つがプロに狙われます。</p>
       <div class="rowbtns"><button class="btn gold" onclick="closeModal()">${ic("check")}変更を終える</button></div>
     </div>`);
-}
-
-/* ==========================================================================
-   試打ミニゲーム (営業収支には影響しない)
-   ========================================================================== */
-function openTrial(c, setting) {
-  if (c.type === "S") openSlotTrial(c, setting);
-  else openPachiTrial(c, setting);
-}
-
-/* リール絵柄の描画(SLOT_SYMBOLS の値をそのまま受け取り、SVGで描く) */
-const SYM_SVG = {
-  "7️⃣": `<svg viewBox="0 0 40 48"><text x="20" y="39" text-anchor="middle" font-family="Georgia,serif" font-size="42" font-weight="700" fill="#d92d22" stroke="#7a140d" stroke-width="1.2">7</text></svg>`,
-  "🅱️": `<svg viewBox="0 0 60 34"><rect x="1" y="1" width="58" height="32" rx="3" fill="#2b2118" stroke="#8a6c2c" stroke-width="2"/><text x="30" y="24" text-anchor="middle" font-family="Georgia,serif" font-size="19" font-weight="700" fill="#f2d79a">BAR</text></svg>`,
-  "🍇": `<svg viewBox="0 0 40 46"><path d="M22 10c3-6 8-7 8-7s-1 5-6 8z" fill="#4fa84f"/><g fill="#7d4bd4"><circle cx="20" cy="17" r="6"/><circle cx="13" cy="26" r="6"/><circle cx="27" cy="26" r="6"/><circle cx="20" cy="34" r="6"/><circle cx="8" cy="35" r="5.4"/><circle cx="32" cy="35" r="5.4"/></g></svg>`,
-  "🍒": `<svg viewBox="0 0 44 46"><path d="M23 9c-5 6-9 12-10 17M23 9c4 6 7 11 8 16" stroke="#3f8f43" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M23 9c4-5 9-5 12-4-4 1-7 3-9 6z" fill="#4fa84f"/><circle cx="13" cy="33" r="9" fill="#d92d3f"/><circle cx="32" cy="32" r="8.4" fill="#b81f31"/><circle cx="10" cy="30" r="2.4" fill="#ff9aa4" opacity=".85"/></svg>`,
-  "🔔": `<svg viewBox="0 0 44 46"><path d="M22 6c7 0 11 5 11 12 0 8 3 12 3 12H8s3-4 3-12C11 11 15 6 22 6z" fill="#f3c33f" stroke="#9d7414" stroke-width="2" stroke-linejoin="round"/><circle cx="22" cy="36" r="4.4" fill="#9d7414"/></svg>`,
-  "🃏": `<svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="15" fill="none" stroke="#3a86c9" stroke-width="3"/><text x="22" y="29" text-anchor="middle" font-family="Georgia,serif" font-size="17" font-weight="700" fill="#4ea8ff">RE</text></svg>`,
-};
-const symHTML = s => SYM_SVG[s] || `<span>${esc(s)}</span>`;
-
-/* ---- スロット試打 ---- */
-function openSlotTrial(c, initSetting) {
-  const t = {
-    setting: initSetting,
-    credits: 500, diff: 0, games: 0, bb: 0, rb: 0,
-    spinning: false, stopped: [true, true, true],
-    flag: "none", final: [], timers: [],
-  };
-  showModal(`<div class="modal-art"><img src="./art/${MART[c.id] || "m_normal"}.jpg" alt="" decoding="async"></div>${mh("slot", "実機プレイ", true)}
-    <div class="mb">
-      <div class="mach">
-        <div class="mach-h">
-          <span style="min-width:0"><span class="nm">${esc(c.name)}</span><span class="sp">${esc(c.spec.label)}</span></span>
-          <label style="margin-left:auto;font-size:9px;color:var(--tx-3)">設定
-            <select id="trSet" aria-label="試打設定">${[1,2,3,4,5,6].map(v => `<option value="${v}" ${v===initSetting?"selected":""}>${v}</option>`).join("")}</select>
-          </label>
-        </div>
-        <div class="mach-st">
-          <div class="lamp" id="trLamp" aria-hidden="true"></div>
-          <div class="reels">
-            <div class="reel" id="reel0">${symHTML("7️⃣")}</div>
-            <div class="reel" id="reel1">${symHTML("🍇")}</div>
-            <div class="reel" id="reel2">${symHTML("🔔")}</div>
-          </div>
-          <div class="mbanner" id="trBanner" aria-live="polite"></div>
-        </div>
-        <div class="mctl">
-          <button class="lever" id="trLever">レバーON <small style="font-size:10px">3枚</small></button>
-          <button class="stopb" id="stop0" disabled>STOP</button>
-          <button class="stopb" id="stop1" disabled>STOP</button>
-          <button class="stopb" id="stop2" disabled>STOP</button>
-        </div>
-        <div class="mstats">
-          <div><div class="k">メダル</div><div class="v" id="tCredits">500</div></div>
-          <div><div class="k">ゲーム数</div><div class="v" id="tGames">0</div></div>
-          <div><div class="k">BIG</div><div class="v" style="color:var(--gold-hi)" id="tBB">0</div></div>
-          <div><div class="k">REG</div><div class="v" id="tRB">0</div></div>
-          <div><div class="k">差枚</div><div class="v" id="tDiff">0</div></div>
-        </div>
-      </div>
-      <p class="note">試打なので<b>営業収支には影響しません</b>。メダルが尽きたら無料で補充できます。</p>
-      <div class="rowbtns">
-        <button class="btn" id="trRefill">${ic("plus")}メダル補充 +500</button>
-        <button class="btn red" onclick="closeModal()">${ic("x")}試打を終える</button>
-      </div>
-    </div>`);
-
-  const lamp = $("trLamp"), banner = $("trBanner");
-  const reels = [$("reel0"), $("reel1"), $("reel2")];
-  const stops = [$("stop0"), $("stop1"), $("stop2")];
-
-  function updateStats() {
-    $("tCredits").textContent = t.credits;
-    $("tGames").textContent = t.games;
-    $("tBB").textContent = t.bb;
-    $("tRB").textContent = t.rb;
-    $("tDiff").textContent = (t.diff >= 0 ? "+" : "") + t.diff;
-  }
-
-  /* --- 抽選(保護ロジック: 数式・確率は不変) --- */
-  function rollFlag() {
-    const st = t.setting;
-    const pBig = 1 / slotDenom(c.spec.big1, c.spec.big6, st);
-    const pReg = 1 / slotDenom(c.spec.reg1, c.spec.reg6, st);
-    const r = Math.random();
-    if (r < pBig) return "big";
-    if (r < pBig + pReg) return "reg";
-    if (r < pBig + pReg + 1 / 6.5) return "grape";
-    if (r < pBig + pReg + 1 / 6.5 + 1 / 33) return "cherry";
-    if (r < pBig + pReg + 1 / 6.5 + 1 / 33 + 1 / 7.3) return "replay";
-    return "none";
-  }
-  function finalSymbols(flag) {
-    switch (flag) {
-      case "big":    return ["7️⃣","7️⃣","7️⃣"];
-      case "reg":    return ["🅱️","🅱️","🅱️"];
-      case "grape":  return ["🍇","🍇","🍇"];
-      case "cherry": return ["🍒","🔔","🃏"];
-      case "replay": return ["🃏","🃏","🃏"];
-      default: {
-        const a = SLOT_SYMBOLS[Math.floor(rand(1, 6))];
-        let b = SLOT_SYMBOLS[Math.floor(rand(0, 6))];
-        let d = SLOT_SYMBOLS[Math.floor(rand(0, 6))];
-        if (a === b && b === d) d = SLOT_SYMBOLS[(SLOT_SYMBOLS.indexOf(d) + 1) % 6];
-        return [a, b, d];
-      }
-    }
-  }
-
-  function lever() {
-    if (t.spinning || t.credits < 3) { if (t.credits < 3) banner.textContent = "メダル切れ — 補充してください"; return; }
-    t.credits -= 3; t.diff -= 3; t.games++;
-    try { exState().c.tg++; if (exState().c.tg % 25 === 0) checkAchEx(); } catch (e) {}
-    t.flag = rollFlag();
-    t.final = finalSymbols(t.flag);
-    t.spinning = true; t.stopped = [false, false, false];
-    lamp.classList.remove("on");
-    banner.textContent = ""; banner.classList.remove("win");
-    reels.forEach((r, i) => {
-      r.classList.remove("land"); r.classList.add("spin");
-      t.timers[i] = setInterval(() => { r.innerHTML = symHTML(SLOT_SYMBOLS[Math.floor(Math.random() * 6)]); }, 70);
-      stops[i].disabled = false;
-    });
-    $("trLever").disabled = true;
-    updateStats();
-  }
-  function stopReel(i) {
-    if (t.stopped[i]) return;
-    t.stopped[i] = true;
-    clearInterval(t.timers[i]);
-    reels[i].classList.remove("spin"); reels[i].classList.add("land");
-    reels[i].innerHTML = symHTML(t.final[i]);
-    stops[i].disabled = true;
-    if (t.stopped.every(Boolean)) resolve();
-  }
-  function resolve() {
-    t.spinning = false;
-    $("trLever").disabled = false;
-    let pay = 0, msg = "";
-    switch (t.flag) {
-      case "big":    pay = c.spec.bigPay; t.bb++; msg = `BIG BONUS! +${pay}枚`; break;
-      case "reg":    pay = c.spec.regPay; t.rb++; msg = `REG BONUS +${pay}枚`; break;
-      case "grape":  pay = 8;  msg = "ぶどう +8枚"; break;
-      case "cherry": pay = 2;  msg = "チェリー +2枚"; break;
-      case "replay": pay = 3;  msg = "リプレイ"; break;
-    }
-    if (t.flag === "big" || t.flag === "reg") {
-      lamp.classList.add("on");
-      banner.classList.add("win");
-      grantAch("trial-hit");
-      if (t.bb >= 10) grantAch("trial-10");
-    }
-    t.credits += pay; t.diff += pay;
-    if (t.diff >= 2000) grantAch("trial-5k");
-    banner.textContent = msg;
-    updateStats();
-  }
-
-  $("trLever").addEventListener("click", lever);
-  stops.forEach((b, i) => b.addEventListener("click", () => stopReel(i)));
-  $("trSet").addEventListener("change", e => { t.setting = Number(e.target.value); });
-  $("trRefill").addEventListener("click", () => { t.credits += 500; updateStats(); });
-  trialCleanup = () => { t.timers.forEach(x => clearInterval(x)); };
-}
-
-/* ---- パチンコ試打 ---- */
-function openPachiTrial(c, initSetting) {
-  const t = {
-    setting: initSetting,
-    balls: 1000, startBalls: 1000, spins: 0, hits: 0, maxRen: 0,
-    busy: false, auto: false, autoTimer: null, timers: [],
-  };
-  showModal(`<div class="modal-art"><img src="./art/${MART[c.id] || "m_p_a"}.jpg" alt="" decoding="async"></div>${mh("target", "実機プレイ", true)}
-    <div class="mb">
-      <div class="mach">
-        <div class="mach-h">
-          <span style="min-width:0"><span class="nm">${esc(c.name)}</span><span class="sp">${esc(c.spec.label)}</span></span>
-          <label style="margin-left:auto;font-size:9px;color:var(--tx-3)">釘
-            <select id="trSet" aria-label="釘(設定)">${[1,2,3,4,5,6].map(v => `<option value="${v}" ${v===initSetting?"selected":""}>${v}</option>`).join("")}</select>
-          </label>
-        </div>
-        <div class="mach-st">
-          <div class="reach" id="pReach" aria-live="polite"></div>
-          <div class="digits">
-            <div class="digit" id="dg0">7</div>
-            <div class="digit" id="dg1">7</div>
-            <div class="digit" id="dg2">7</div>
-          </div>
-          <div class="mbanner" id="pBanner" aria-live="polite"></div>
-        </div>
-        <div class="mctl">
-          <button class="lever" id="pSpin">回す</button>
-          <label class="switch"><input type="checkbox" id="pAuto"> オート</label>
-        </div>
-        <div class="mstats">
-          <div><div class="k">持ち玉</div><div class="v" id="pBalls">1000</div></div>
-          <div><div class="k">回転数</div><div class="v" id="pSpins">0</div></div>
-          <div><div class="k">当り</div><div class="v" style="color:var(--gold-hi)" id="pHits">0</div></div>
-          <div><div class="k">最高連</div><div class="v" id="pMaxRen">0</div></div>
-          <div><div class="k">差玉</div><div class="v" id="pDiff">0</div></div>
-        </div>
-      </div>
-      <p class="note">試打なので<b>営業収支には影響しません</b>。玉が尽きたら無料で補充できます。設定(釘)が良いほど玉持ちが良くなります。</p>
-      <div class="rowbtns">
-        <button class="btn" id="pRefill">${ic("plus")}玉補充 +1000</button>
-        <button class="btn red" onclick="closeModal()">${ic("x")}試打を終える</button>
-      </div>
-    </div>`);
-
-  const digits = [$("dg0"), $("dg1"), $("dg2")];
-  const banner = $("pBanner"), reach = $("pReach");
-
-  function updateStats() {
-    $("pBalls").textContent = t.balls;
-    $("pSpins").textContent = t.spins;
-    $("pHits").textContent = t.hits;
-    $("pMaxRen").textContent = t.maxRen;
-    const diff = t.balls - t.startBalls;
-    $("pDiff").textContent = (diff >= 0 ? "+" : "") + diff;
-    if (diff >= 5000) grantAch("trial-5k");
-  }
-  function later(fn, ms) { const id = setTimeout(fn, ms); t.timers.push(id); return id; }
-  /* --- 保護ロジック: 玉持ち(1回転あたりの消費) --- */
-  function spinCost() { return Math.max(2, Math.round(5.5 - t.setting * 0.5)); }
-  function setDigit(el, v, cls) { el.textContent = v; el.classList.remove("spin"); if (cls) el.classList.add(cls); }
-
-  function spin() {
-    if (t.busy) return;
-    const cost = spinCost();
-    if (t.balls < cost) { banner.textContent = "玉切れ — 補充してください"; t.busy = false; return; }
-    t.busy = true;
-    t.balls -= cost; t.spins++;
-    banner.textContent = ""; banner.classList.remove("win");
-    reach.textContent = ""; reach.classList.remove("on");
-    digits.forEach(d => { d.classList.remove("hit"); d.classList.add("spin"); });
-    const spinAnim = setInterval(() => {
-      digits.forEach(d => { if (d.classList.contains("spin")) d.textContent = Math.floor(Math.random() * 10); });
-    }, 80);
-    t.timers.push(spinAnim);
-
-    const win = Math.random() < 1 / c.spec.denom;
-    const isReach = win || Math.random() < 1 / 12;
-    const n = Math.floor(Math.random() * 10);
-    let mid;
-    if (win) mid = n;
-    else { mid = (n + 1 + Math.floor(Math.random() * 8)) % 10; }
-    const L = n, R = isReach ? n : (n + 1 + Math.floor(Math.random() * 8)) % 10;
-
-    later(() => setDigit(digits[0], L), 400);
-    later(() => {
-      setDigit(digits[2], R);
-      if (isReach) { reach.textContent = "リーチ!!"; reach.classList.add("on"); }
-    }, 800);
-    later(() => {
-      clearInterval(spinAnim);
-      setDigit(digits[1], win ? mid : (isReach ? mid : Math.floor(Math.random() * 10)));
-      if (!win && !isReach && digits[0].textContent === digits[1].textContent && digits[1].textContent === digits[2].textContent) {
-        digits[1].textContent = (Number(digits[1].textContent) + 1) % 10;
-      }
-      reach.classList.remove("on");
-      if (win) hitSequence();
-      else { reach.textContent = ""; t.busy = false; updateStats(); }
-    }, isReach ? 2000 : 1200);
-    updateStats();
-  }
-  function hitSequence() {
-    t.hits++;
-    let ren = 1;
-    digits.forEach(d => d.classList.add("hit"));
-    grantAch("trial-hit");
-    t.balls += c.spec.firstBalls;
-    banner.textContent = `大当り!! +${c.spec.firstBalls}玉`;
-    banner.classList.add("win");
-    reach.textContent = "RUSH突入!?"; reach.classList.add("on");
-    updateStats();
-    function rushStep() {
-      later(() => {
-        if (Math.random() < c.spec.rushPct) {
-          ren++;
-          t.balls += c.spec.rushBalls;
-          banner.textContent = `RUSH ${ren}連!! +${c.spec.rushBalls}玉`;
-          reach.textContent = "継続!";
-          if (ren >= 10) grantAch("trial-10");
-          try { const c2 = exState().c; if (ren > c2.ren) { c2.ren = ren; checkAchEx(); } } catch (e) {}
-          updateStats();
-          rushStep();
-        } else {
-          banner.textContent = `RUSH終了 (${ren}連 / +${(c.spec.firstBalls + (ren - 1) * c.spec.rushBalls).toLocaleString()}玉)`;
-          banner.classList.remove("win");
-          reach.textContent = ""; reach.classList.remove("on");
-          t.maxRen = Math.max(t.maxRen, ren);
-          digits.forEach(d => d.classList.remove("hit"));
-          t.busy = false;
-          updateStats();
-        }
-      }, 850);
-    }
-    rushStep();
-  }
-
-  $("pSpin").addEventListener("click", spin);
-  $("pAuto").addEventListener("change", e => {
-    t.auto = e.target.checked;
-    if (t.auto) t.autoTimer = setInterval(() => { if (!t.busy) spin(); }, 500);
-    else { clearInterval(t.autoTimer); t.autoTimer = null; }
-  });
-  $("trSet").addEventListener("change", e => { t.setting = Number(e.target.value); });
-  $("pRefill").addEventListener("click", () => { t.balls += 1000; t.startBalls += 1000; updateStats(); });
-  trialCleanup = () => {
-    t.timers.forEach(x => { clearTimeout(x); clearInterval(x); });
-    if (t.autoTimer) clearInterval(t.autoTimer);
-  };
 }
 
 /* ==========================================================================
@@ -4571,11 +4185,10 @@ function showTutorial() {
     <div class="mb">
       <p class="note" style="font-size:12px;color:var(--tx-2)">あなたは小さなパチンコホールの新米オーナー。<b>純資産1億円</b>の地域No.1ホールを目指そう!</p>
       <div style="margin-top:8px">
-        ${item("target", "設定のメリハリがすべて", "渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出す台」と「回収する台」を作り分けろ!")}
+        ${item("target", "平均設定のメリハリがすべて", "ホールは<b>1シマ=同一機種10台</b>の単位で動かす。渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出すシマ」と「回収するシマ」を作り分けろ!")}
         ${item("fire", "7のつく日は特日 / 週替わりブーム / シマ効果", "特日は高設定で評判爆上げ。ブーム機種は集客1.4倍。同一機種を並べればシマ効果。")}
         ${item("star", "評判は放っておくと落ちる", "客は前によかった店をいつまでも覚えていない。<b>評判が高いほど毎日の目減りは大きい</b>。上のほうを保つには出玉かスタッフの質で押し返し続けるしかない。")}
         ${item("bank", "銀行融資で攻めるか、堅実に行くか", "借金で一気に拡大もできるが利息は毎日重くのしかかる。クリア条件は「純資産」(借金は差し引き)。")}
-        ${item("play", "実機を試打できる!", "どの台も「試打」で実際に打てる。設定ごとの出方を体感して経営に活かそう。")}
       </div>
       <p class="note" style="margin-top:10px;color:var(--gold-hi);font-weight:800">難易度を選んで開店:</p>
       <div style="display:grid;gap:5px;margin-top:6px">
@@ -4610,7 +4223,7 @@ async function sellMachine(m) {
 }
 
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-area],[data-set],[data-trial],[data-sell],[data-buy],[data-shoptrial],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode],[data-fire]");
+  const el = e.target.closest("[data-area],[data-set],[data-sell],[data-buy],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode],[data-fire]");
   if (!el) return;
   const d = el.dataset;
 
@@ -4660,16 +4273,14 @@ document.addEventListener("click", e => {
       if (sm && box) {
         const vs = box.querySelectorAll(".v");
         vs[0].textContent = sm.avg.toFixed(1);
-        vs[1].innerHTML = sm.hi + "<small>台</small>";
-        vs[2].innerHTML = sm.lo + "<small>台</small>";
+        vs[1].innerHTML = tai(sm.hi) + "<small>台</small>";
+        vs[2].innerHTML = tai(sm.lo) + "<small>台</small>";
         vs[3].textContent = sm.mode.t; vs[3].style.color = sm.mode.c;
       }
     }
     renderHall(); renderSide(); checkAchEx();
     return;
   }
-  if (d.trial) { const m = state.machines[Number(d.trial)]; if (m) openTrial(catalogOf(m), m.setting); return; }
-  if (d.shoptrial) { const c = CATALOG.find(x => x.id === d.shoptrial); if (c) openTrial(c, 3); return; }
   if (d.sell) { sellMachine(state.machines[Number(d.sell)]); return; }
   if (d.buy) {
     if (isDead()) return;
@@ -4712,7 +4323,7 @@ $("btnExpand").addEventListener("click", () => {
   if (state.money < cost || state.cap >= MAX_CAP) return;
   state.money -= cost; state.cap += 5;
   exState().c.exp++;
-  save(); checkAchEx(); renderAll(); toast(`店舗を拡張(最大${state.cap}台)`);
+  save(); checkAchEx(); renderAll(); toast(`店舗を拡張(最大${tai(state.cap)}台)`);
 });
 $("btnGrand").addEventListener("click", () => {
   if (isDead()) return;

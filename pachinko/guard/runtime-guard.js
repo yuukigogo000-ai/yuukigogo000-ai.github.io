@@ -42,17 +42,15 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     // ID / グローバル
     const ids = JSON.parse(fs.readFileSync(path.join(__dirname,'protected-spec.json'),'utf8')).domIds;
     await p.evaluate(() => startGame('normal')); await p.waitForTimeout(300);
-    const missStatic = await p.evaluate(list => list.filter(i => !document.getElementById(i)), ids);
-    // 試打モーダルを開いて動的IDも確認
-    await p.evaluate(() => openTrial(CATALOG.find(c=>c.id==='s1'), 3)); await p.waitForTimeout(200);
-    const missSlot = await p.evaluate(list => list.filter(i => !document.getElementById(i)), ids);
-    await p.evaluate(() => { trialCleanup && trialCleanup(); openTrial(CATALOG.find(c=>c.id==='p1'), 3); }); await p.waitForTimeout(200);
-    const missPachi = await p.evaluate(list => list.filter(i => !document.getElementById(i)), ids);
-    const stillMissing = missStatic.filter(i => missSlot.includes(i) && missPachi.includes(i));
-    ok('DOM識別子70件が保持されている(P-30)', stillMissing.length === 0, stillMissing.join(','));
+    const stillMissing = await p.evaluate(list => list.filter(i => !document.getElementById(i)), ids);
+    ok(`DOM識別子${ids.length}件が保持されている(P-30)`, stillMissing.length === 0, stillMissing.join(','));
     ok('グローバル公開3件が保持されている(P-29)',
       await p.evaluate(() => ['closeModal','doReset','startGame'].every(k => typeof window[k] === 'function')));
-    await p.evaluate(() => { trialCleanup && trialCleanup(); closeModal(); });
+    // 試打ミニゲームは廃止済み。残骸が復活していないこと。
+    ok('実機の試打ミニゲームが残っていない', await p.evaluate(() =>
+      typeof window.openTrial === 'undefined' && typeof window.slotDenom === 'undefined'
+      && !document.body.innerHTML.includes('試打')));
+    await p.evaluate(() => closeModal());
     await ctx.close();
   }
 
@@ -93,13 +91,9 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     const before = await p.evaluate(() => state.machines.length);
     await clickC('[data-buy="p1"]'); await p.waitForTimeout(200);
     ok('FN 新台購入', await p.evaluate(n => state.machines.length === n + 1, before));
-    await clickC('[data-shoptrial="s1"]'); await p.waitForTimeout(250);
-    ok('FN カタログ試打(スロット)', await p.evaluate(() => !!document.getElementById('trLever')));
-    await p.evaluate(() => closeModal()); await p.waitForTimeout(150);
+    ok('FN 試打ボタンが残っていない', await p.evaluate(() =>
+      !document.querySelector('[data-trial],[data-shoptrial]')));
     await p.click('#nav [data-area="hall"]'); await p.waitForTimeout(150);
-    await clickC('#focusCard [data-trial]'); await p.waitForTimeout(250);
-    ok('FN 設置台の試打', await p.evaluate(() => !!document.getElementById('trLever') || !!document.getElementById('pSpin')));
-    await p.evaluate(() => closeModal()); await p.waitForTimeout(150);
     const mBefore = await p.evaluate(() => state.machines.length);
     await clickC('#focusCard [data-sell]'); await p.waitForTimeout(200);
     ok('FN 売却の確認ダイアログが自前で出る',
@@ -315,12 +309,12 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     ok('FN 損益推移グラフ', await p.evaluate(() => !!document.querySelector('#chartWrap svg')));
     ok('FN 営業成績一覧', await p.evaluate(() => document.querySelectorAll('#ledgerBody .led').length > 0));
     await p.evaluate(() => setArea('ach')); await p.waitForTimeout(200);
-    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張60件は別グループ)
+    // 保護定数 ACHIEVEMENTS の15件は「基本」グループとして必ず全件描画される(拡張57件は別グループ)
     ok('FN 実績一覧', await p.evaluate(() => {
       const rows = [...document.querySelectorAll('#achList .ach')];
       const names = rows.map(e => e.querySelector('.n').textContent);
-      const BASE = ['開店初日','日給100万','地域の優良店','常連の店','中堅ホール','巨艦店','1ヶ月経営','特日の神','お上の世話','信用第一','軌道に乗る','パチスロ帝国','初当たり体験','事故連発生','ドル箱タワー'];
-      return rows.length === 75 && BASE.every(n => names.includes(n));
+      const BASE = ['開店初日','日給100万','地域の優良店','常連の店','中堅ホール','巨艦店','1ヶ月経営','特日の神','お上の世話','信用第一','軌道に乗る','パチスロ帝国','守り切る','看板は人','頂の重圧'];
+      return rows.length === 72 && BASE.every(n => names.includes(n));
     }));
     // ---- 全国 / 地方進出 / 国取り ----
     await p.evaluate(() => setArea('map')); await p.waitForTimeout(200);
@@ -570,6 +564,36 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
       const v = ['easy', 'normal', 'hard'].map(d => { state.diff = d; return repDecay(); });
       state.rep = keep; state.diff = kd;
       return v[0] < v[1] && v[1] <= v[2];
+    }));
+    // ---- 表示単位: 内部1つ = 10台のシマ ----
+    const unit = await p.evaluate(() => {
+      const keep = JSON.stringify(state);
+      state.machines.forEach(m => m.setting = 3);
+      setArea('hall'); renderAll();
+      const out = {
+        k: TAI_PER_SHIMA,
+        tai10: tai(10),
+        stMach: document.getElementById('stMachines').textContent.replace(/\s/g, ''),
+        n: state.machines.length, cap: state.cap,
+      };
+      setArea('mgmt'); renderAll();
+      out.capNow = document.getElementById('capNow').textContent.replace(/\s/g, '');
+      out.expand = document.getElementById('btnExpand').textContent;
+      state = JSON.parse(keep); save(true); renderAll();
+      return out;
+    });
+    ok('FN 1つの内部単位が10台として表示される', unit.k === 10 && unit.tai10 === 100, JSON.stringify(unit));
+    ok('FN 設置台数がシマ単位で10倍表示される',
+      unit.stMach === `${unit.n * 10}/${unit.cap * 10}台`, JSON.stringify(unit));
+    ok('FN 上限台数もシマ単位で表示される', unit.capNow.startsWith(String(unit.cap * 10) + '台'), JSON.stringify(unit));
+    ok('FN 拡張ボタンが+50台と出る', /\+50台|拡張上限/.test(unit.expand), JSON.stringify(unit));
+    ok('FN 設定は「平均設定」として提示される', await p.evaluate(() => {
+      setArea('hall'); renderAll();
+      const hall = document.getElementById('panel-hall').textContent;
+      openSetList();
+      const modal = document.getElementById('modalBox').textContent;
+      closeModal();
+      return hall.includes('平均設定') && modal.includes('平均設定') && modal.includes('10台');
     }));
     // ---- 埋め込み環境で無効になるネイティブダイアログを使っていない ----
     ok('FN window.confirm/alert を使っていない',
