@@ -565,6 +565,40 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
       state.rep = keep; state.diff = kd;
       return v[0] < v[1] && v[1] <= v[2];
     }));
+    // ---- 機種カテゴリ: ラベル / 地方の好み / ブーム が同じ軸を指しているか ----
+    const cat = await p.evaluate(() => {
+      const noCat = CATALOG.filter(c => !mType(c.id)).map(c => c.id);
+      // ラベルの先頭がそのカテゴリを名乗っているか(名乗らないと数字が飾りになる)
+      const badLabel = CATALOG.filter(c => !c.spec.label.startsWith(mType(c.id))).map(c => c.id);
+      // ブームの対象がカテゴリから一意に決まるか
+      const badTrend = [];
+      for (const tr of TRENDS) {
+        const want = CATALOG.filter(c => mBoom(c.id) === tr.name).map(c => c.id).sort().join();
+        const got = tr.ids.slice().sort().join();
+        if (want !== got) badTrend.push(`${tr.name}: want[${want}] got[${got}]`);
+      }
+      // どの機種もちょうど1つのブーム軸に属すること
+      const axes = [...new Set(CATALOG.map(c => mBoom(c.id)))];
+      const covered = axes.every(a => TRENDS.some(t => t.name === a));
+      // 地方の好みもカテゴリで語られていること
+      const badSpec = REGIONS.filter(R =>
+        !R.like.length || ![...new Set(R.like.map(mType))].some(x => R.spec.includes(x))).map(R => R.id);
+      return { noCat, badLabel, badTrend, covered, axes: axes.length, badSpec };
+    });
+    ok('FN 全機種にカテゴリがある', cat.noCat.length === 0, cat.noCat.join(','));
+    ok('FN カタログのラベルが自分のカテゴリを名乗る', cat.badLabel.length === 0, cat.badLabel.join(','));
+    ok('FN ブームの対象がカテゴリから一意に決まる', cat.badTrend.length === 0, cat.badTrend.join(' / '));
+    ok('FN どの機種もいずれかのブーム軸に属する', cat.covered && cat.axes >= 5, JSON.stringify(cat.axes));
+    ok('FN 地方の得意機種もカテゴリで語られる', cat.badSpec.length === 0, cat.badSpec.join(','));
+    ok('FN ブーム中はカテゴリ名が画面に出る', await p.evaluate(() => {
+      const tr = TRENDS.find(x => x.ids.length);
+      state.trend = { name: tr.name, ids: tr.ids.slice() };
+      const c = CATALOG.find(x => tr.ids.includes(x.id));
+      state.machines[0].cid = c.id;
+      focusIdx = 0; setArea('hall'); renderAll();
+      const card = document.getElementById('focusCard').textContent;
+      return card.includes(tr.name) && card.includes(mType(c.id)) && trendMult(c.id) > 1;
+    }));
     // ---- 表示単位: 内部1つ = 10台のシマ ----
     const unit = await p.evaluate(() => {
       const keep = JSON.stringify(state);
