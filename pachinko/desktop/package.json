@@ -1,7 +1,7 @@
 {
   "name": "pachi-slot-teikoku",
   "version": "1.0.0",
-  "description": "パチスロ帝国 〜ホール経営シミュレーション〜 デスクトップ版",
+  "description": "パチンコ店経営シミュレーション 〜目指せ、純資産1億円〜 デスクトップ版",
   "main": "main.js",
   "author": "yuukigogo000-ai",
   "license": "MIT",
@@ -37,7 +37,7 @@
     },
     "nsis": {
       "oneClick": true,
-      "shortcutName": "パチスロ帝国"
+      "shortcutName": "パチンコ店経営シミュレーション"
     },
     "mac": {
       "target": [{ "target": "dmg", "arch": ["universal"] }],

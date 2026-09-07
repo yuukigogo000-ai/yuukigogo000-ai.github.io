@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>パチスロ帝国 〜ホール経営シミュレーション〜</title>
+<title>パチンコ店経営シミュレーション 〜目指せ、純資産1億円〜</title>
 <style>
 /* ==========================================================================
    パチスロ帝国 — V5 LIVE VISUAL IMPLEMENTATION
@@ -91,11 +91,15 @@ svg{flex:0 0 auto}
 #top{position:relative;z-index:20;padding:calc(var(--sat) + 6px) calc(8px + var(--sar)) 4px 8px;
   display:flex;align-items:stretch;gap:5px;min-width:0}
 .brand{display:flex;flex-direction:column;justify-content:center;min-width:0;flex:0 1 auto;overflow:hidden}
-.brand .jp{font-size:clamp(15px,4.6vw,19px);font-weight:900;letter-spacing:.02em;line-height:1;
+/* メインタイトルは2段。金のグラデーションは2段まとめて1つ掛ける */
+.brand .jp{font-size:clamp(12px,3.4vw,15px);font-weight:900;letter-spacing:.01em;line-height:1.14;
   background:linear-gradient(180deg,#fff6d0 8%,#ffd43b 46%,#a8720f 100%);
   -webkit-background-clip:text;background-clip:text;color:transparent;
   filter:drop-shadow(0 1px 0 rgba(0,0,0,.8)) drop-shadow(0 0 10px rgba(255,196,60,.35))}
-.brand .en{font-size:7px;letter-spacing:.30em;color:var(--gold-lo);margin-top:2px;font-weight:700}
+.brand .jp .l{display:block;white-space:nowrap}
+/* 3段目のサブタイトルは一回り小さく */
+.brand .sub{font-size:clamp(8px,2.1vw,9.5px);letter-spacing:.01em;color:var(--gold-lo);
+  margin-top:2px;font-weight:700;white-space:nowrap}
 #dayBox{flex:0 0 auto;min-width:54px;text-align:center;padding:3px 4px}
 #dayBox .d{font-size:8px;letter-spacing:.16em;color:var(--tx-3)}
 #dayBox .n{font-size:17px;font-weight:900;line-height:1.05;color:var(--gold-hi)}
@@ -872,9 +876,9 @@ svg{flex:0 0 auto}
 
 <div id="app">
   <header id="top">
-    <div class="brand">
-      <span class="jp">パチスロ帝国</span>
-      <span class="en">PACHISLOT EMPIRE</span>
+    <div class="brand" role="img" aria-label="パチンコ店経営シミュレーション 〜目指せ、純資産1億円〜">
+      <span class="jp" aria-hidden="true"><span class="l">パチンコ店経営</span><span class="l">シミュレーション</span></span>
+      <span class="sub" aria-hidden="true">〜目指せ、純資産1億円〜</span>
     </div>
     <div id="dayBox" class="gp">
       <div class="d">DAY</div>
@@ -4234,9 +4238,11 @@ function showTutorial() {
   showModal(`
     <div class="res-hero">
       <img class="res-art" src="./art/hall_crowd.jpg" alt="" decoding="async">
-      <div style="font-size:26px;font-weight:900;letter-spacing:.06em;
-        background:linear-gradient(180deg,#fff6d0,#ffd43b 46%,#a8720f);-webkit-background-clip:text;background-clip:text;color:transparent">パチスロ帝国</div>
-      <div style="font-size:8px;letter-spacing:.4em;color:var(--gold-lo);margin-top:4px">PACHISLOT EMPIRE</div>
+      <div role="img" aria-label="パチンコ店経営シミュレーション 〜目指せ、純資産1億円〜">
+        <div aria-hidden="true" style="font-size:clamp(19px,6.2vw,25px);font-weight:900;letter-spacing:.04em;line-height:1.2;
+          background:linear-gradient(180deg,#fff6d0,#ffd43b 46%,#a8720f);-webkit-background-clip:text;background-clip:text;color:transparent">パチンコ店経営<br>シミュレーション</div>
+        <div aria-hidden="true" style="font-size:clamp(9.5px,3vw,11.5px);letter-spacing:.04em;color:var(--gold-lo);margin-top:5px;font-weight:700">〜目指せ、純資産1億円〜</div>
+      </div>
     </div>
     <div class="mb">
       <p class="note" style="font-size:12px;color:var(--tx-2)">あなたは小さなパチンコホールの新米オーナー。<b>純資産1億円</b>の地域No.1ホールを目指そう!</p>
