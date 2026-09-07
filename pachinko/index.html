@@ -3709,7 +3709,11 @@ const ST_LOYAL_DAYS = 7;    // これ未満で解雇すると評判ペナルテ�
 const ST_FIRE_REP = 4;      // 早期解雇の評判ペナルティ
 const ST_REP_GAIN = 2.4;    // 平均接客力 → 日次の評判
 const ST_DRAW_GAIN = 0.45;  // 平均集客力 → 日次の常連
-const ST_DRAW_CAP = 6;      // 常連の集客に人数が効く上限
+const ST_DRAW_CAP = 6;      // 常連の集客に人数が効く下限ライン(小規模店の据え置き分)
+/* 常連に頭数が効く上限。店が要求する人数までは全員が効き、それを超えると増えない。
+   必要人数(40台に1人)が増えたぶん、雇わされた人が無駄にならないようにする。
+   stDay(実処理)と stFold(表示)の両方がここを見る — 数字が食い違わないため。 */
+const stDrawCap = () => Math.max(ST_DRAW_CAP, staffNeeded());
 
 
 const stEntry = i => {
@@ -3806,7 +3810,7 @@ function stFold(list, onlyKnown) {
   const n = list.length || 1;
   let rep = (sv / n) * ST_REP_GAIN * buff;
   rep = Math.max(-2.4, Math.min(2.4, rep));
-  return { rep, regs: (dr / n) * Math.min(n, ST_DRAW_CAP) * ST_DRAW_GAIN * buff, pop, buff, late, hid, n };
+  return { rep, regs: (dr / n) * Math.min(n, stDrawCap()) * ST_DRAW_GAIN * buff, pop, buff, late, hid, n };
 }
 
 /* ---------- 採用・解雇 ---------- */
@@ -3884,7 +3888,7 @@ function stDay() {
   // 良い人を揃えたときだけ伸びる。
   const n = s.list.length || 1;
   rep = (sumServe / n) * ST_REP_GAIN * buff;
-  regs = (sumDraw / n) * Math.min(n, 6) * ST_DRAW_GAIN * buff;
+  regs = (sumDraw / n) * Math.min(n, stDrawCap()) * ST_DRAW_GAIN * buff;
 
   rep = Math.max(-2.4, Math.min(2.4, rep));
   // プラスはそのまま積む。マイナスは現在の評判に比例させて効かせるので、
@@ -3921,7 +3925,7 @@ function renderStaff() {
         <span class="v"><b class="${cls(f.rep)}">評判 ${stNum(f.rep, 2)}</b> ・ <b class="${cls(f.regs)}">常連 ${stNum(f.regs, 2)}人</b>${
           f.pop ? ` ・ <b class="pos">全台の人気 ${stNum(f.pop, 2)}</b>` : ""}</span></div>
       <p class="note" style="margin:4px 0 0;font-size:11px;color:var(--tx-3)">
-        <b>評判</b>に効くのは平均の質だけで、頭数は関係ない。<b>常連</b>は 平均の質 × 人数 だが、${ST_DRAW_CAP}人を超えると増えない。
+        <b>評判</b>に効くのは平均の質だけで、頭数は関係ない。<b>常連</b>は 平均の質 × 人数 だが、${stDrawCap()}人を超えると増えない${stDrawCap() > ST_DRAW_CAP ? "(必要人数まで効く)" : ""}。
         <br>評判は毎日<b>自然に落ちる</b>(高いほど重い)。設定平均${avgSet.toFixed(1)}とこの陣容なら、評判は
         <b style="color:${eq >= 90 ? "var(--pos)" : eq >= 75 ? "var(--gold)" : "var(--neg)"}">${eq}あたりで均衡</b>する。${
           need > 0 ? `<br>${tai(state.machines.length)}台なら<b>${need}人</b>いれば営業は回る。${
