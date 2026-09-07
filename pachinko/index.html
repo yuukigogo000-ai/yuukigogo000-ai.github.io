@@ -979,14 +979,14 @@ svg{flex:0 0 auto}
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-staff"/></svg><b>スタッフ管理</b></div>
           <div class="gp-b">
             <div class="row"><span class="k">現在のスタッフ</span><span class="v" id="staffCount">2人</span></div>
-            <div class="row"><span class="k">必要人数 <small style="color:var(--tx-3)">(80台に1人)</small></span><span class="v" id="staffNeed">1人</span></div>
+            <div class="row"><span class="k">必要人数 <small style="color:var(--tx-3)">(40台に1人)</small></span><span class="v" id="staffNeed">1人</span></div>
             <div id="staffSum"></div>
             <div id="staffList" class="stlist"></div>
             <div class="btn-grid" style="margin-top:6px">
               <button class="btn" id="btnHire">雇用する</button>
               <button class="btn" id="btnFire" hidden>解雇する</button>
             </div>
-            <p class="note">80台(8シマ)につきスタッフ1人が必要。<b>下回ると</b>その日の集客−15%・評判−2、常連も増えなくなる。日給 ¥13,000/人。<br>
+            <p class="note">40台(4シマ)につきスタッフ1人が必要。<b>下回ると</b>その日の集客−15%・評判−2、常連も増えなくなる。日給 ¥13,000/人。<br>
             <b>誰が来るかは完全にランダム。</b>採用した時点では名前しか分からず、<b>3営業日</b>働かせて初めてランクと特性が判明する。
             勤続7日未満で解雇すると「すぐ人を切る店」と噂が立ち<b>評判−4</b>。</p>
           </div>
@@ -1479,7 +1479,7 @@ function creditLimit() {
 }
 function isTokubi(day) { return String(day).includes("7"); }
 function isWeekend(day) { const w = day % 7; return w === 6 || w === 0; }
-function staffNeeded() { return Math.max(1, Math.ceil(state.machines.length / 8)); }
+function staffNeeded() { return Math.max(1, Math.ceil(state.machines.length / 4)); }
 
 function islandBonus(cid) {
   const n = state.machines.filter(x => x.cid === cid).length;

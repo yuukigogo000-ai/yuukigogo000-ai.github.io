@@ -89,8 +89,14 @@
    "len": 73
   },
   "staffNeeded": {
-   "sha": "0f8a5b845b45ab4ae3a4346691ae8ef8",
-   "len": 84
+   "sha": "9aeb9801d8eb08b6a5bd8489aca0131e",
+   "len": 84,
+   "prevSha": "0f8a5b845b45ab4ae3a4346691ae8ef8",
+   "rebaselined": {
+    "date": "2026-09-07",
+    "reason": "必要スタッフ数を倍にする調整(ユーザー指示「スタッフの数40台に一人必要にしよう」)。分母のみの意図的変更で、simulateDay / sanitizeState / save / load / newGame は byte 一致のまま。セーブ形式にも影響しない。",
+    "change": "max(1, ceil(シマ数 / 8)) → max(1, ceil(シマ数 / 4))。表示上「80台に1人」→「40台に1人」。40台までは1人で変わらず、50台から必要数が増える。満床600台で 8人→15人、人件費 ¥104,000/日→¥195,000/日。"
+   }
   },
   "islandBonus": {
    "sha": "31cf384f4959e71f2f98f9fd1aee1878",
