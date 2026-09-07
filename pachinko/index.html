@@ -830,6 +830,87 @@ svg{flex:0 0 auto}
 #staffSum .v b{font-family:var(--f-num);font-weight:900}
 #staffSum .v b.pos{color:var(--pos)} #staffSum .v b.neg{color:var(--neg)}
 .stw-x{grid-column:3;grid-row:1/3;align-self:center;min-width:52px;font-size:10px}
+
+/* ==========================================================================
+   営業日の可視化 (BUSINESS DAY VISUALIZATION)
+   既存の #kpi(下部) / #crest(左下) / .stage-tag(左上) を隠さないこと。
+   客の主戦場はステージ中央帯。HUDは右上。
+   ========================================================================== */
+/* #kpi(5) / #crest(6) / .stage-tag(3) を絶対に隠さないため、演出はそれらより下に敷く。
+   内部の z-index 1〜8 はこのコンテナの中だけの積み順。 */
+#dayViz{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+#dayViz img{position:absolute;display:block;will-change:transform,opacity}
+
+/* --- 背景クロスフェード(z 1) --- */
+#dayViz .dv-bg{position:absolute;inset:0;z-index:1;opacity:0}
+#dayViz .dv-bg img{inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 50%;
+  filter:saturate(1.06) contrast(1.06)}
+
+/* --- 客・台発光・空間FX の親(z は個別に付ける) --- */
+#dayViz .dv-far,#dayViz .dv-mid,#dayViz .dv-near{position:absolute;inset:0}
+#dayViz .dv-far{z-index:1}
+#dayViz .dv-mid{z-index:4}
+#dayViz .dv-near{z-index:7}
+
+/* 客。奥ほど小さく暗い。横移動のみで、上下バウンドはしない */
+#dayViz .dv-cus{width:auto;bottom:0;opacity:0;transform-origin:50% 100%;
+  filter:drop-shadow(0 2px 8px rgba(0,0,0,.75))}
+/* 素材は正方形で、人物は下寄せ。KPI帯(下62px)に足元を潜らせないよう床を上げる */
+#dayViz .dv-far .dv-cus{height:42%;bottom:64px}   /* 奥客 */
+#dayViz .dv-mid .dv-cus{height:54%;bottom:56px}   /* 中景客 */
+/* 台発光・空間FX・結果FX。加算合成で光として乗せる */
+#dayViz .dv-glow{inset:0;width:100%;height:100%;object-fit:cover;opacity:0;
+  mix-blend-mode:screen}
+#dayViz .dv-fx{inset:0;width:100%;height:100%;object-fit:cover;opacity:0;
+  mix-blend-mode:screen}
+
+/* --- HUD(右上) --- */
+#dayViz .dv-hud{position:absolute;right:6px;top:5px;z-index:8;min-width:132px;max-width:52%;
+  padding:5px 7px 6px;border:1px solid var(--line-s);border-radius:3px;
+  background:linear-gradient(180deg,rgba(255,232,170,.10),transparent 40%),
+             linear-gradient(180deg,rgba(10,12,18,.90),rgba(3,4,7,.93));
+  box-shadow:0 4px 16px rgba(0,0,0,.6);opacity:0}
+#dayViz .dv-hud-top{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+#dayViz .dv-live{font-size:8.5px;font-weight:800;letter-spacing:.12em;color:var(--red);
+  border:1px solid currentColor;border-radius:2px;padding:0 4px;background:rgba(0,0,0,.5)}
+#dayViz .dv-day{margin-left:auto;font-size:9px;font-weight:800;color:var(--tx-3);letter-spacing:.08em}
+#dayViz .dv-hud-grid{display:grid;grid-template-columns:auto auto;gap:2px 10px}
+#dayViz .dv-hud-grid>div{display:flex;flex-direction:column;min-width:0}
+#dayViz .dv-k{font-size:7.5px;letter-spacing:.04em;color:var(--tx-3);white-space:nowrap}
+#dayViz .dv-v{font-size:14px;font-weight:900;line-height:1.15;white-space:nowrap;color:var(--gold-hi);
+  text-shadow:0 1px 0 #000}
+#dayViz .dv-net{margin-top:3px;padding-top:3px;border-top:1px solid var(--line-w);
+  display:flex;flex-direction:column}
+#dayViz .dv-net .dv-v{font-size:15px}
+#dayViz .dv-net .dv-v.pos{color:var(--pos)} #dayViz .dv-net .dv-v.neg{color:var(--neg)}
+
+/* --- 進行バー。左下 #crest(幅94px) の右、#kpi(下端62px) の上 --- */
+#dayViz .dv-progress{position:absolute;left:100px;right:6px;bottom:66px;z-index:8;opacity:0}
+#dayViz .dv-track{position:relative;height:3px;border-radius:2px;background:rgba(255,255,255,.14);
+  border:1px solid rgba(255,212,59,.16)}
+#dayViz .dv-track>i{display:block;height:100%;width:0;border-radius:2px;
+  background:linear-gradient(90deg,var(--gold-lo),var(--gold) 70%,var(--gold-hi));
+  box-shadow:0 0 8px rgba(255,196,60,.6)}
+#dayViz .dv-dot{position:absolute;top:50%;left:0;width:7px;height:7px;margin:-3.5px 0 0 -3.5px;
+  border-radius:50%;background:var(--gold-hi);box-shadow:0 0 8px rgba(255,196,60,.9)}
+#dayViz .dv-phases{display:flex;justify-content:space-between;margin-top:2px}
+#dayViz .dv-phases span{font-size:7.5px;letter-spacing:.06em;color:var(--tx-2);white-space:nowrap;
+  text-shadow:0 1px 3px #000,0 0 6px #000}
+#dayViz .dv-phases span.on{color:var(--gold-hi);font-weight:800}
+
+/* --- 操作ブロッカー(モーダル z70 より下) + スキップ --- */
+#dayVizBlocker{position:fixed;inset:0;z-index:36;background:transparent}
+#dayVizBlocker .dv-skip{position:fixed;right:calc(10px + var(--sar));bottom:calc(10px + var(--sab));
+  z-index:37;min-height:44px;min-width:96px;padding:0 16px;border-radius:3px;
+  font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--tx);
+  border:1px solid var(--line-s);
+  background:linear-gradient(180deg,rgba(28,31,40,.96),rgba(8,9,13,.97));
+  box-shadow:0 6px 20px rgba(0,0,0,.7)}
+#dayVizBlocker .dv-skip:active{transform:translateY(1px)}
+
+@media (prefers-reduced-motion:reduce){
+  #dayViz *{animation:none!important;transition:none!important}
+}
 </style>
 </head>
 <body>
@@ -903,6 +984,27 @@ svg{flex:0 0 auto}
         <span class="cn a"></span><span class="cn b"></span><span class="cn c"></span><span class="cn d"></span>
         <div class="stage-tag"><span class="lb">HALL</span><span id="stageFlags"></span></div>
 
+        <!-- 営業日の可視化。演出中だけ生きる。終わったら中身を空にする -->
+        <div id="dayViz" hidden aria-hidden="true">
+          <div class="dv-bg dv-bg-a"></div>
+          <div class="dv-bg dv-bg-b"></div>
+          <div class="dv-far"></div>
+          <div class="dv-mid"></div>
+          <div class="dv-near"></div>
+          <div class="dv-hud">
+            <div class="dv-hud-top"><span class="dv-live">営業中</span><span class="dv-day num"></span></div>
+            <div class="dv-hud-grid">
+              <div><span class="dv-k">来店客</span><span class="dv-v num" id="dvCust">0</span></div>
+              <div><span class="dv-k">売上</span><span class="dv-v num" id="dvSales">0</span></div>
+            </div>
+            <div class="dv-net" hidden><span class="dv-k">本日の純利益</span><span class="dv-v num" id="dvNet">0</span></div>
+          </div>
+          <div class="dv-progress">
+            <div class="dv-track"><i></i><span class="dv-dot"></span></div>
+            <div class="dv-phases"><span>開店</span><span>昼</span><span>夕方</span><span>閉店</span></div>
+          </div>
+        </div>
+
         <div id="crest" aria-hidden="true">
           <svg viewBox="0 0 120 120">
             <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1">
@@ -927,6 +1029,7 @@ svg{flex:0 0 auto}
             <div class="meter gg"><i id="repBar" style="width:50%"></i></div></div>
         </div>
       </div>
+      <div id="dayVizBlocker" hidden><button type="button" class="dv-skip" id="dvSkip">スキップ</button></div>
 
       <!-- 400–640px : 設置台・設定判断 -->
       <div id="focusWrap">
@@ -3951,6 +4054,389 @@ function renderStaff() {
 }
 
 /* ==========================================================================
+   BUSINESS DAY VISUALIZATION — 営業日の短い可視化
+   すでに確定・保存された営業結果を映像化するだけの層。
+   ここでゲームの計算・乱数・保存には一切触れない(Math.random も呼ばない)。
+   ========================================================================== */
+
+const BD_DIR = "./art/business-day/";
+const BD_NN = n => (n < 10 ? "0" + n : "" + n);
+
+const BD_BG = {
+  preopen: "backgrounds/hall_preopen.webp",
+  calm:    "backgrounds/hall_calm.webp",
+  normal:  "backgrounds/hall_normal.webp",
+  peak:    "backgrounds/hall_peak_master.webp",
+  special: "backgrounds/hall_special.webp",
+  closing: "backgrounds/hall_closing.webp",
+};
+/* group-10 / 11 / 14 は納品時点で実行時使用不可。ここに入れない */
+const BD_GRP_IDS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13, 15];
+const BD_IND   = Array.from({ length: 16 }, (_, i) => `customers/individual-${BD_NN(i)}.png`);
+const BD_GRP   = BD_GRP_IDS.map(i => `customers/group-${BD_NN(i)}.png`);
+const BD_LIGHT = Array.from({ length: 16 }, (_, i) => `machine/light-${BD_NN(i)}.png`);
+const BD_ATM   = Array.from({ length: 16 }, (_, i) => `atmosphere/atmosphere-${BD_NN(i)}.png`);
+const BD_POS   = Array.from({ length: 8 },  (_, i) => `financial/financial-${BD_NN(i)}.png`);
+const BD_NEG   = Array.from({ length: 8 },  (_, i) => `financial/financial-${BD_NN(i + 8)}.png`);
+const BD_SPE   = Array.from({ length: 16 }, (_, i) => `special/special-${BD_NN(i)}.png`);
+
+const BD_ALL = Object.keys(BD_BG).map(k => BD_BG[k])
+  .concat(BD_IND, BD_GRP, BD_LIGHT, BD_ATM, BD_POS, BD_NEG, BD_SPE);
+
+/* ---------- 決定論的な素材選択 ---------- */
+/* 同じ営業結果なら常に同じ絵になる。Math.random は使わない */
+function bdSeed(day, cust, net) {
+  return ((day * 73856093) ^ (cust * 19349663) ^ Math.abs(net)) >>> 0;
+}
+function bdPick(list, seed, salt) {
+  return list[(((seed + salt * 2654435761) >>> 0) % list.length)];
+}
+/* 同一リストから重複なしで n 枚。stride を list 長と互いに素にして全要素へ到達させる */
+function bdGcd(a, b) { while (b) { const t = a % b; a = b; b = t; } return a; }
+function bdPickN(list, seed, salt, n) {
+  const len = list.length, out = [];
+  if (!len || n <= 0) return out;
+  let i = ((seed + salt * 2654435761) >>> 0) % len;
+  let st = len > 1 ? 1 + (((seed >>> 7) + salt) % (len - 1)) : 1;
+  while (len > 1 && bdGcd(st, len) !== 1) st = (st % (len - 1)) + 1;
+  for (let k = 0; k < n && k < len; k++) { out.push(list[i]); i = (i + st) % len; }
+  return out;
+}
+
+/* ---------- 収容率と素材の割り当て ---------- */
+function bdOccupancy(cust, machines) {
+  const base = Math.max(1, machines * 20);
+  return Math.max(0, Math.min(1.15, cust / base));
+}
+function bdBgFor(occ) {
+  return occ < 0.30 ? BD_BG.calm : occ < 0.65 ? BD_BG.normal : BD_BG.peak;
+}
+function bdCusCount(occ) {
+  if (occ < 0.25) return { ind: 1, grp: 0 };
+  if (occ < 0.60) return { ind: 2, grp: 1 };
+  if (occ < 0.85) return { ind: 2, grp: 2 };
+  return { ind: 2, grp: 3 };
+}
+/* 1営業で作る画像レイヤーの一覧。合計は必ず12枚以下 */
+function bdPlan(sum) {
+  const seed = sum.seed, occ = sum.occupancy, cc = bdCusCount(occ);
+  return {
+    seed,
+    bgPeak:  sum.isHighlight ? BD_BG.special : bdBgFor(occ),
+    bgOpen:  BD_BG.preopen,
+    bgClose: BD_BG.closing,
+    far:     bdPickN(BD_IND, seed, 11, cc.ind),          // 奥客 最大2
+    mid:     bdPickN(BD_GRP, seed, 23, cc.grp),          // 中景客 最大3
+    lights:  bdPickN(BD_LIGHT, seed, 37, occ < 0.25 ? 1 : 2),
+    /* 強調日は special が1枚増えるので、空間FXを1枚に減らして合計12枚を超えないようにする */
+    atm:     bdPickN(BD_ATM, seed, 53, (sum.isHighlight || occ < 0.30) ? 1 : 2),
+    fin:     bdPick(sum.mainNet >= 0 ? BD_POS : BD_NEG, seed, 71),
+    spe:     sum.isHighlight ? bdPick(BD_SPE, seed, 89) : null,
+  };
+}
+function bdLayerCount(plan) {
+  return 2 + plan.far.length + plan.mid.length + plan.lights.length + plan.atm.length
+       + 1 + (plan.spe ? 1 : 0);
+}
+
+/* ---------- DaySummary(表示専用・不変) ---------- */
+/* ゲーム状態には保存しない。値はすべて確定済みの結果から取るだけで、再計算しない */
+function bdSummary(result, before, after) {
+  const rec = result.rec, notes = result.notes || [];
+  const grand = notes.some(n => String(n).indexOf("新装開店フェア開催") >= 0);
+  const isSpecial = rec.note === "特日";
+  const isClearDay = !!(state.cleared && state.clearDay === rec.day);
+  const branchNet = (result.rg && result.rg.net) || 0;
+  return Object.freeze({
+    day: rec.day,
+    moneyBefore: before.money, moneyAfter: after.money, moneyDelta: after.money - before.money,
+    repBefore: before.rep, repAfter: after.rep, repDelta: after.rep - before.rep,
+    regularsBefore: before.reg, regularsAfter: after.reg, regularsDelta: after.reg - before.reg,
+    customers: rec.cust, casual: rec.cas, regular: rec.reg, pro: rec.pro,
+    sales: rec.sales, mainNet: rec.net, branchNet: branchNet, companyNet: rec.net + branchNet,
+    upkeep: result.upkeep || 0,
+    dayNote: rec.note,
+    trendName: (state.trend && state.trend.name) || "",
+    notes: Object.freeze(notes.slice()),
+    occupancy: bdOccupancy(rec.cust, state.machines.length),
+    isSpecial, isGrandOpen: grand, isClearDay,
+    isHighlight: isSpecial || grand || isClearDay,
+    seed: bdSeed(rec.day, rec.cust, rec.net),
+  });
+}
+
+/* ---------- 先読み ---------- */
+const bdCache = Object.create(null);
+let bdPreloaded = false;
+function bdLoad(rel) {
+  if (bdCache[rel]) return bdCache[rel];
+  const im = new Image();
+  im.decoding = "async";
+  const p = new Promise(res => { im.onload = () => res(rel); im.onerror = () => res(null); });
+  im.src = BD_DIR + rel;
+  bdCache[rel] = p;
+  return p;
+}
+/* 起動後の空き時間に、背景6点と通常営業でよく出る代表素材だけ先に読む */
+function bdPreload() {
+  if (bdPreloaded) return;
+  bdPreloaded = true;
+  const first = Object.keys(BD_BG).map(k => BD_BG[k])
+    .concat(BD_IND[0], BD_IND[1], BD_GRP[0], BD_LIGHT[0], BD_ATM[0], BD_POS[0], BD_NEG[0]);
+  const go = () => first.forEach(bdLoad);
+  if (typeof requestIdleCallback === "function") requestIdleCallback(go, { timeout: 3000 });
+  else setTimeout(go, 1200);
+}
+/* 読み込み済みで確実に出せる同カテゴリの代役 */
+function bdFallback(rel) {
+  if (rel.indexOf("backgrounds/") === 0) return BD_BG.normal;
+  if (rel.indexOf("customers/individual") === 0) return BD_IND[0];
+  if (rel.indexOf("customers/group") === 0) return BD_GRP[0];
+  if (rel.indexOf("machine/") === 0) return BD_LIGHT[0];
+  if (rel.indexOf("atmosphere/") === 0) return BD_ATM[0];
+  if (rel.indexOf("financial/") === 0) return rel >= "financial/financial-08" ? BD_NEG[0] : BD_POS[0];
+  return null;
+}
+
+/* ---------- 尺 ---------- */
+const BD_T_NORMAL = { pre: 220, open: 380, inflow: 800, peak: 1260, end: 1600 };
+const BD_T_SPECIAL = { pre: 450, open: 850, inflow: 1900, peak: 3500, end: 4500 };
+const BD_T_REDUCED = 120;
+
+/* ---------- 再生 ---------- */
+let bdRun = null;   // いま生きている再生トークン(同時に1つだけ)
+
+function bdEl(cls, rel, parent) {
+  const im = document.createElement("img");
+  im.className = cls;
+  im.alt = "";
+  im.decoding = "async";
+  im.src = BD_DIR + rel;
+  im.addEventListener("error", () => {
+    const fb = bdFallback(rel);
+    if (fb && fb !== rel) im.src = BD_DIR + fb;
+    else im.style.display = "none";
+  }, { once: true });
+  parent.appendChild(im);
+  return im;
+}
+
+/* 演出の入口。onDone は必ず1回だけ呼ばれる */
+function bdPlayDay(sum, onDone) {
+  const box = $("dayViz"), blocker = $("dayVizBlocker");
+  if (!box || !blocker) { onDone(); return; }
+
+  const tok = { done: false, timers: [], anims: [], raf: 0 };
+  bdRun = tok;
+
+  const at = (ms, fn) => { tok.timers.push(setTimeout(() => { if (!tok.done) fn(); }, ms)); };
+  const anim = (el, frames, opt) => {
+    if (!el || typeof el.animate !== "function") return null;
+    const a = el.animate(frames, Object.assign({ easing: "cubic-bezier(.16,1,.3,1)", fill: "forwards" }, opt));
+    tok.anims.push(a);
+    return a;
+  };
+
+  const onHide = () => { if (document.visibilityState === "hidden") finish(); };
+  const onTap = e => { e.preventDefault(); finish(); };
+
+  /* 自然完了・スキップ・タブ非表示のすべてがここへ集まる。二度は走らない */
+  function finish() {
+    if (tok.done) return;
+    tok.done = true;
+    for (const t of tok.timers) clearTimeout(t);
+    tok.timers.length = 0;
+    if (tok.raf) { cancelAnimationFrame(tok.raf); tok.raf = 0; }
+    for (const a of tok.anims) { try { a.cancel(); } catch (e) {} }
+    tok.anims.length = 0;
+    document.removeEventListener("visibilitychange", onHide);
+    blocker.removeEventListener("pointerdown", onTap);
+    box.hidden = true; blocker.hidden = true;
+    /* 演出ノードを残さない */
+    for (const sel of [".dv-bg-a", ".dv-bg-b", ".dv-far", ".dv-mid", ".dv-near"]) {
+      const n = box.querySelector(sel); if (n) n.textContent = "";
+    }
+    const hud = box.querySelector(".dv-hud"), pg = box.querySelector(".dv-progress");
+    if (hud) hud.style.opacity = "";
+    if (pg) pg.style.opacity = "";
+    const netBox = box.querySelector(".dv-net"); if (netBox) netBox.hidden = true;
+    if (bdRun === tok) bdRun = null;
+    onDone();
+  }
+  tok.finish = finish;
+
+  const plan = bdPlan(sum);
+  const bgA = box.querySelector(".dv-bg-a"), bgB = box.querySelector(".dv-bg-b");
+  const far = box.querySelector(".dv-far"), mid = box.querySelector(".dv-mid"), near = box.querySelector(".dv-near");
+  const hud = box.querySelector(".dv-hud"), pg = box.querySelector(".dv-progress");
+  const elCust = $("dvCust"), elSales = $("dvSales"), elNet = $("dvNet");
+  const netBox = box.querySelector(".dv-net");
+  const dayLb = box.querySelector(".dv-day");
+
+  box.hidden = false;
+  blocker.hidden = false;
+  if (dayLb) dayLb.textContent = "DAY " + sum.day;
+  if (elCust) elCust.textContent = "0";
+  if (elSales) elSales.textContent = yen(0);
+  if (netBox) netBox.hidden = true;
+
+  blocker.addEventListener("pointerdown", onTap);
+  document.addEventListener("visibilitychange", onHide);
+
+  /* --- reduced-motion: 確定フレームを1枚だけ --- */
+  if (reduced()) {
+    bgA.appendChild(Object.assign(document.createElement("img"),
+      { className: "dv-bg-img", alt: "", src: BD_DIR + plan.bgPeak }));
+    bgA.querySelector("img").style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover";
+    bgA.style.opacity = "1";
+    if (hud) hud.style.opacity = "1";
+    if (elCust) elCust.textContent = String(sum.customers);
+    if (elSales) elSales.textContent = yen(sum.sales);
+    if (netBox) { netBox.hidden = false; elNet.textContent = sign(sum.mainNet); elNet.className = "dv-v num " + (sum.mainNet >= 0 ? "pos" : "neg"); }
+    at(BD_T_REDUCED, finish);
+    return finish;
+  }
+
+  const T = sum.isHighlight ? BD_T_SPECIAL : BD_T_NORMAL;
+
+  /* --- 背景2枚(クロスフェード用) --- */
+  const imgA = bdEl("dv-bgimg", plan.bgOpen, bgA);
+  imgA.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover";
+  const imgB = bdEl("dv-bgimg", plan.bgPeak, bgB);
+  imgB.style.cssText = "position:absolute;inset:0;width:100%;height:100%;object-fit:cover";
+  bgA.style.opacity = "0"; bgB.style.opacity = "0";
+
+  /* --- PREOPEN: 暗い待機 --- */
+  anim(bgA, [{ opacity: 0 }, { opacity: 0.85 }], { duration: Math.round(T.pre * 0.8) });
+  anim(hud, [{ opacity: 0, transform: "translateY(-6px)" }, { opacity: 1, transform: "none" }],
+       { duration: T.pre, delay: 40 });
+
+  /* --- OPEN: 金の発光(既存カーテンはここへ統合し、別に800ms足さない) --- */
+  at(T.pre, () => {
+    const flash = document.createElement("div");
+    flash.style.cssText = "position:absolute;inset:0;z-index:5;pointer-events:none;" +
+      "background:radial-gradient(120% 70% at 50% 55%," +
+      (sum.isHighlight ? "rgba(255,150,60,.95)" : "rgba(255,210,120,.85)") + ",transparent 62%)";
+    near.appendChild(flash);
+    const a = anim(flash, [{ opacity: 0 }, { opacity: 1, offset: 0.35 }, { opacity: 0 }],
+                   { duration: T.open - T.pre + 120 });
+    if (a) a.onfinish = () => { if (flash.parentNode) flash.parentNode.removeChild(flash); };
+    anim(pg, [{ opacity: 0 }, { opacity: 1 }], { duration: 200 });
+  });
+
+  /* --- INFLOW: 客が奥から入ってくる。横移動のみ --- */
+  at(T.open, () => {
+    const xs = [16, 62, 30, 72, 46];
+    plan.far.forEach((rel, i) => {
+      const im = bdEl("dv-cus", rel, far);
+      const dx = 6 + ((plan.seed >>> (i * 3)) % 23);          // 6〜28px
+      im.style.left = xs[i % xs.length] + "%";
+      im.style.transform = "scale(.74)";
+      im.style.zIndex = "1";
+      anim(im, [
+        { opacity: 0, transform: `translateX(${-dx}px) scale(.72)` },
+        { opacity: 0.56, transform: "translateX(0) scale(.80)" },
+      ], { duration: Math.round((T.inflow - T.open) * 0.9), delay: i * 70 });
+    });
+    plan.mid.forEach((rel, i) => {
+      const im = bdEl("dv-cus", rel, mid);
+      const dx = 8 + ((plan.seed >>> (i * 5 + 2)) % 21);
+      im.style.left = (10 + i * 27) + "%";
+      im.style.zIndex = "4";
+      anim(im, [
+        { opacity: 0, transform: `translateX(${dx}px) scale(.92)` },
+        { opacity: 0.78, transform: "translateX(0) scale(1.04)" },
+      ], { duration: Math.round((T.inflow - T.open) * 0.95), delay: 60 + i * 90 });
+    });
+  });
+
+  /* --- PEAK: 背景を収容率のものへ、台発光と空間FX --- */
+  at(T.inflow, () => {
+    anim(bgB, [{ opacity: 0 }, { opacity: 1 }], { duration: Math.round((T.peak - T.inflow) * 0.55) });
+    anim(bgA, [{ opacity: 0.85 }, { opacity: 0 }], { duration: Math.round((T.peak - T.inflow) * 0.55) });
+    plan.lights.forEach((rel, i) => {
+      const im = bdEl("dv-glow", rel, mid);
+      im.style.zIndex = "4";
+      anim(im, [{ opacity: 0 }, { opacity: 0.34 + 0.08 * i }, { opacity: 0.26 }],
+           { duration: T.peak - T.inflow, delay: i * 80 });
+    });
+    plan.atm.forEach((rel, i) => {
+      const im = bdEl("dv-fx", rel, near);
+      im.style.zIndex = "7";
+      anim(im, [
+        { opacity: 0, transform: "scale(1.02)" },
+        { opacity: 0.30, transform: "scale(1)" },
+      ], { duration: T.peak - T.inflow, delay: 60 + i * 110 });
+    });
+    if (plan.spe) {
+      const im = bdEl("dv-fx", plan.spe, near);
+      im.style.zIndex = "7";
+      anim(im, [
+        { opacity: 0, transform: "scale(1.06)" },
+        { opacity: 0.58, transform: "scale(1)", offset: 0.45 },
+        { opacity: 0.40, transform: "scale(1)" },
+      ], { duration: T.peak - T.inflow });
+    }
+  });
+
+  /* --- CLOSE: 閉店へ落として純利益を確定表示 --- */
+  at(T.peak, () => {
+    /* 背景は必ず2枚まで。PEAKで見えなくなった bgA を閉店用に差し替えて使い回す */
+    imgA.src = BD_DIR + plan.bgClose;
+    anim(bgA, [{ opacity: 0 }, { opacity: 1 }], { duration: Math.round((T.end - T.peak) * 0.7) });
+    anim(bgB, [{ opacity: 1 }, { opacity: 0 }], { duration: Math.round((T.end - T.peak) * 0.7) });
+    for (const n of far.querySelectorAll("img")) anim(n, [{ opacity: 0.56 }, { opacity: 0.14 }], { duration: 300 });
+    for (const n of mid.querySelectorAll("img")) anim(n, [{ opacity: 0.78 }, { opacity: 0.2 }], { duration: 300 });
+    const fin = bdEl("dv-fx", plan.fin, near);
+    fin.style.zIndex = "7";
+    anim(fin, [{ opacity: 0, transform: "scale(1.04)" }, { opacity: 0.52, transform: "scale(1)" }],
+         { duration: Math.round((T.end - T.peak) * 0.8) });
+    if (netBox) {
+      netBox.hidden = false;
+      elNet.textContent = sign(sum.mainNet);
+      elNet.className = "dv-v num " + (sum.mainNet >= 0 ? "pos" : "neg");
+      anim(netBox, [{ opacity: 0, transform: "scale(1.18)" }, { opacity: 1, transform: "scale(1)" }],
+           { duration: 260 });
+    }
+  });
+
+  /* --- 数字の補間。最終値は必ず DaySummary と一致させる --- */
+  const t0 = performance.now();
+  const bar = pg && pg.querySelector(".dv-track > i");
+  const dot = pg && pg.querySelector(".dv-dot");
+  const phaseEls = pg ? pg.querySelectorAll(".dv-phases span") : [];
+  const tick = () => {
+    if (tok.done) return;
+    const el = performance.now() - t0;
+    const p = Math.max(0, Math.min(1, el / T.end));
+    /* 客数・売上は INFLOW〜PEAK のあいだで上がりきる */
+    const q = Math.max(0, Math.min(1, (el - T.open) / Math.max(1, T.peak - T.open)));
+    const e = 1 - Math.pow(1 - q, 3);
+    if (elCust) elCust.textContent = String(Math.round(sum.customers * e));
+    if (elSales) elSales.textContent = yen(Math.round(sum.sales * e));
+    if (bar) bar.style.width = (p * 100).toFixed(1) + "%";
+    if (dot) dot.style.left = (p * 100).toFixed(1) + "%";
+    for (let i = 0; i < phaseEls.length; i++) {
+      phaseEls[i].classList.toggle("on", p >= i / phaseEls.length && p < (i + 1) / phaseEls.length);
+    }
+    if (el < T.end) tok.raf = requestAnimationFrame(tick);
+  };
+  tok.raf = requestAnimationFrame(tick);
+
+  /* 最終フレームを確定値で固定してから完了 */
+  at(T.end, () => {
+    if (elCust) elCust.textContent = String(sum.customers);
+    if (elSales) elSales.textContent = yen(sum.sales);
+    finish();
+  });
+
+  return finish;
+}
+
+/* 外から演出を止めたいとき(スキップボタン等)の入口 */
+function bdSkip() { if (bdRun && bdRun.finish) bdRun.finish(); }
+
+/* ==========================================================================
    モーダル / 1営業日 / 当日結果 / 起動
    ========================================================================== */
 let pendingUnlock = false;
@@ -4028,12 +4514,14 @@ function runDay() {
     return;
   }
   busy = true;
-  const finish = () => {
-    // 営業前の値を控えておき、支店・スタッフ・維持費まで全部済んだあとの
-    // 差分を「今日どれだけ動いたか」として結果に出す
-    const before = { rep: state.rep, reg: state.regulars };
-    let result;
-    try { result = simulateDay(); } finally { busy = false; }
+  /* 営業前の値を控えておき、支店・スタッフ・維持費まで全部済んだあとの
+     差分を「今日どれだけ動いたか」として結果に出す。
+     演出は「確定して保存し終えた結果」を映すだけなので、
+     計算順は演出の有無で一切変えない。 */
+  const before = { money: state.money, rep: state.rep, reg: state.regulars };
+  let result = null;
+  try {
+    result = simulateDay();
     try {
       result.upkeep = upkeepCost();
       if (result.upkeep) { state.money -= result.upkeep; save(true); }
@@ -4044,17 +4532,31 @@ function runDay() {
     result.dRep = state.rep - before.rep;
     result.dReg = state.regulars - before.reg;
     try { checkAchEx({ dayEnd: true, notes: result.notes }); } catch (e) {}
-    renderAll();
-    showDayResult(result);
+  } catch (e) {
+    /* 計算が途中で落ちたら演出には入らない。busy を握ったままにしない */
+    busy = false;
+    throw e;
+  }
+  /* 拡張処理まで全部終わった状態を、演出を始める前に保存する。
+     演出中にリロードしても同じ日をやり直さない */
+  save(true);
+
+  const after = { money: state.money, rep: state.rep, reg: state.regulars };
+  let sum = null;
+  try { sum = bdSummary(result, before, after); } catch (e) { sum = null; }
+  renderAll();
+
+  /* 結果モーダルを出すところ。自然完了でもスキップでも必ずここを1回だけ通る */
+  let shown = false;
+  const reveal = () => {
+    if (shown) return;
+    shown = true;
+    try { showDayResult(result); } finally { busy = false; }
     if (result.rg && result.rg.unlock) pendingUnlock = true;
   };
-  if (reduced()) { setTimeout(finish, 120); return; }
-  const cur = $("curtain");
-  cur.querySelector(".tx").textContent = isTokubi(state.day) ? "特日 開店" : "開店";
-  cur.classList.add("on");
-  void cur.offsetWidth;
-  cur.classList.add("run");
-  setTimeout(() => { cur.classList.remove("run", "on"); finish(); }, 800);
+
+  if (!sum || typeof bdPlayDay !== "function") { reveal(); return; }
+  try { bdPlayDay(sum, reveal); } catch (e) { reveal(); }
 }
 
 /* 増減バッジ。0.05未満は「動いていない」として ±0 と出す */
@@ -4383,6 +4885,8 @@ document.addEventListener("click", e => {
 });
 
 $("btnOpen").addEventListener("click", runDay);
+/* 演出のスキップ。ステージのどこを触っても止まるが、44px のボタンも出す */
+$("dvSkip").addEventListener("click", e => { e.stopPropagation(); bdSkip(); });
 $("btnHire").addEventListener("click", stHire);
 // 旧「解雇する」ボタンは名簿の個別解雇に置き換わった(IDはP-30のため残置)
 $("btnFire").addEventListener("click", () => { if (isDead()) return; if (state.staff > 1) stFire(stState().list.length - 1); });
@@ -4441,6 +4945,8 @@ if (loaded && Array.isArray(loaded.machines)) {
   renderAll();
   showTutorial();
 }
+/* 起動後の空き時間に、営業演出の背景と代表素材だけ先に読んでおく */
+try { bdPreload(); } catch (e) {}
 </script>
 </body>
 </html>
