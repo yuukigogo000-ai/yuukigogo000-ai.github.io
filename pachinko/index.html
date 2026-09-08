@@ -1031,6 +1031,75 @@ svg{flex:0 0 auto}
   .lr-pic .lr-fb b{font-size:22px}
   .lr-nm{font-size:9.5px}
 }
+
+/* ==========================================================================
+   選択イベント (CHOICE EVENTS)
+   ========================================================================== */
+.ce-pic{position:relative;display:block;width:44px;height:44px;flex:0 0 auto;border-radius:3px;
+  overflow:hidden;border:1px solid rgba(255,212,59,.28);background:#0a0b10}
+.ce-pic img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.ce-pic .ce-fb{position:absolute;inset:0;display:none;
+  background:linear-gradient(160deg,#2a2410,#0a0b10)}
+.ce-pic.fallback img{display:none}
+.ce-pic.fallback .ce-fb{display:block}
+
+.ce-active{display:flex;align-items:center;gap:8px;width:100%;min-height:var(--tap);
+  padding:6px 7px;border-radius:3px;text-align:left;
+  border:1px solid var(--gold);background:linear-gradient(180deg,rgba(255,196,60,.14),rgba(10,11,16,.9));
+  box-shadow:0 0 12px rgba(255,196,60,.22)}
+.ce-active:active{transform:translateY(1px)}
+.ce-active .ce-pic{width:52px;height:52px}
+.ce-a-tx{min-width:0;flex:1;display:flex;flex-direction:column;gap:1px}
+.ce-a-tx b{font-size:12px;font-weight:900;color:var(--gold-hi)}
+.ce-a-tx span{font-size:9.5px;color:var(--tx-2)}
+.ce-go{flex:0 0 auto;font-size:10px;font-weight:800;color:#221605;padding:3px 8px;border-radius:2px;
+  background:linear-gradient(180deg,#ffe9a8,#d9a52a)}
+
+.ce-sec{margin-top:8px;padding-top:6px;border-top:1px solid var(--line-w)}
+.ce-sec > b{display:block;font-size:9.5px;font-weight:900;letter-spacing:.08em;color:var(--gold-hi);margin-bottom:4px}
+.ce-own,.ce-pend{display:flex;align-items:center;gap:7px;padding:4px 0}
+.ce-own b,.ce-pend b{font-size:11px;font-weight:800;color:var(--tx);flex:0 0 auto}
+.ce-own span,.ce-pend span{font-size:9px;color:var(--tx-3);min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ce-pend{opacity:.85}
+.ce-eff{display:grid;grid-template-columns:1fr auto auto;gap:6px;align-items:baseline;
+  padding:3px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:10px}
+.ce-eff:last-child{border-bottom:0}
+.ce-eff b{font-weight:800;color:var(--tx-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ce-eff span{font-family:var(--f-num);font-weight:800;color:var(--pos)}
+.ce-eff i{font-style:normal;font-size:9px;color:var(--tx-3);white-space:nowrap}
+
+/* イベントシート */
+.ce-hero{position:relative;border-radius:3px;overflow:hidden;border:1px solid var(--line);
+  aspect-ratio:1/1;max-height:210px;margin:0 auto}
+.ce-hero img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+.ce-hero::after{content:"";position:absolute;left:0;right:0;bottom:0;height:34%;
+  background:linear-gradient(180deg,transparent,rgba(4,5,8,.8))}
+.ce-step{position:absolute;right:6px;top:6px;z-index:1;font-size:9px;font-weight:900;letter-spacing:.08em;
+  padding:2px 7px;border-radius:2px;color:#221605;background:linear-gradient(180deg,#ffe9a8,#d9a52a)}
+.ce-step.top{background:linear-gradient(180deg,#d6ffe9,#2ee07d)}
+.ce-step.min{background:linear-gradient(180deg,#ffd7cf,#ff6a58);color:#fff}
+.ce-lead{margin:8px 0 4px;font-size:12px;line-height:1.7;color:var(--gold-hi)}
+.ce-tx{margin:6px 0 8px;font-size:12px;line-height:1.75;color:var(--tx)}
+.ce-past{margin:0 0 8px;padding:5px 7px;border-radius:3px;border:1px solid var(--line-w);
+  background:rgba(255,255,255,.03);display:flex;flex-direction:column;gap:2px}
+.ce-past b{font-size:9px;letter-spacing:.08em;color:var(--tx-3)}
+.ce-past span{font-size:10px;color:var(--tx-2)}
+.ce-choices{display:flex;flex-direction:column;gap:6px}
+.ce-ch{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;
+  min-height:var(--tap);padding:7px 9px;border-radius:3px;text-align:left;
+  border:1px solid rgba(255,212,59,.22);background:linear-gradient(180deg,#161922,#0a0b10)}
+.ce-ch:active{transform:translateY(1px)}
+.ce-ch b{font-size:12.5px;font-weight:900;color:var(--tx)}
+.ce-ch .ce-d{font-size:10px;color:var(--tx-3);line-height:1.5}
+.ce-tag{font-size:8.5px;font-weight:900;letter-spacing:.08em;padding:1px 5px;border-radius:2px;
+  border:1px solid currentColor}
+.ce-ch.r0{border-color:rgba(120,200,255,.30)} .ce-ch.r0 .ce-tag{color:#79c8ff}
+.ce-ch.r1{border-color:rgba(255,212,59,.45)}  .ce-ch.r1 .ce-tag{color:var(--gold)}
+.ce-ch.r2{border-color:rgba(255,90,77,.50)}   .ce-ch.r2 .ce-tag{color:var(--neg)}
+
+@media (prefers-reduced-motion:reduce){
+  .ce-active,.ce-ch,.ce-hero img{animation:none!important;transition:none!important}
+}
 </style>
 </head>
 <body>
@@ -1197,6 +1266,8 @@ svg{flex:0 0 auto}
       <div class="sec">
         <div class="sec-h"><i class="bar"></i><h2>店長室</h2><span class="sub">OWNER ROOM</span></div>
         <div id="acts"></div>
+
+        <div class="gp" id="ceCard" style="margin-bottom:6px"></div>
 
         <div class="gp" id="lrCard" style="margin-bottom:6px"></div>
 
@@ -2516,7 +2587,7 @@ function renderNav() {
   $("nav").classList.toggle("five", rgUnlocked());
   $("nav").innerHTML = navAreas().map(([id, label, icon]) =>
     `<button data-area="${id}" ${area === id || (area === "ach" && id === "mgmt") ? 'aria-current="page"' : ""}>
-      ${ic(icon)}<i>${label}</i>${id === "mgmt" && short ? '<span class="dot"></span>' : ""}
+      ${ic(icon)}<i>${label}</i>${id === "mgmt" && (short || ceWork()) ? '<span class="dot"></span>' : ""}
     </button>`).join("");
 }
 function setArea(id) {
@@ -2715,6 +2786,7 @@ function renderShop() {
 /* ---------- 店長室(既存IDへ描画) ---------- */
 function renderMgmt() {
   const dead = isDead(), need = staffNeeded();
+  try { renderChoiceEvents(); } catch (e) {}
   try { renderLocalRivals(); } catch (e) {}
   $("staffCount").textContent = `${state.staff}人 (日給計 ${yen(state.staff * 13000)})`;
   renderStaff();
@@ -4494,6 +4566,687 @@ function lrIntroHtml() {
 }
 
 /* ==========================================================================
+   CHOICE EVENTS — 選択イベント15本(第3更新)
+   営業結果が確定・保存されたあとにだけ抽選する層。
+   ゲーム本体の Math.random() は消費しない(独立PRNG)。
+   結果は選択を確定した時点で保存するので、リロードで引き直せない。
+   ========================================================================== */
+
+const CE_VER = 1;
+const CE_DIR = "./art/events/";
+const CE_START_DAY = 5;        // DAY5以降の営業終了後から抽選
+const CE_RATE = 0.03;          // 適格営業日ごとに3%固定
+const CE_COOL = 7;             // 完結後の停止営業日数
+const CE_PANELS = ["p01","p02","p03","p04","p05","p06","p07","p08","p09"];
+const ceImg = (id, p) => CE_DIR + id + "-" + p + ".webp";
+
+/* ---------- 独立PRNG ---------- */
+/* seed と カウンタだけを保存し、引くたびに進める。
+   ゲーム本体の乱数列には一切触れない。 */
+function ceHash(a, b) {
+  let x = (a ^ Math.imul(b + 0x9e3779b9, 0x85ebca6b)) >>> 0;
+  x = Math.imul(x ^ (x >>> 16), 0x7feb352d) >>> 0;
+  x = Math.imul(x ^ (x >>> 15), 0x846ca68b) >>> 0;
+  return (x ^ (x >>> 16)) >>> 0;
+}
+let ceForcedSeed = null;       // テスト注入用。本番UIには出さない
+let ceForcedRoll = null;       // 次の1回だけ乱数値を固定する
+let ceForcedEvent = null;      // 次に発生させるイベントIDを固定する
+function ceNewSeed() {
+  if (ceForcedSeed !== null) return (Math.floor(ceForcedSeed) >>> 0) || 1;
+  try {
+    if (typeof crypto !== "undefined" && crypto && typeof crypto.getRandomValues === "function") {
+      const a = new Uint32Array(1); crypto.getRandomValues(a);
+      return a[0] >>> 0 || 1;
+    }
+  } catch (e) {}
+  const t = Date.now() >>> 0;
+  return (ceHash(t, (state && state.uid) || 0) >>> 0) || 1;
+}
+/* 1回引く。カウンタが進むので、同じ判定を二度引くことはない。 */
+function ceNext() {
+  const C = ceState();
+  if (ceForcedRoll !== null) { const v = ceForcedRoll; ceForcedRoll = null; return v; }
+  C.ctr = (C.ctr + 1) >>> 0;
+  return ceHash(C.seed, C.ctr) / 4294967296;
+}
+
+/* ---------- 状態 ---------- */
+const ceNum = (v, d, lo, hi) => { v = Number(v); if (!Number.isFinite(v)) v = d; return Math.max(lo, Math.min(hi, Math.floor(v))); };
+function ceState() {
+  const ex = exState();
+  let C = ex.ce;
+  if (!C || typeof C !== "object" || Array.isArray(C)) C = ex.ce = {};
+  C.v = ceNum(C.v, CE_VER, 0, 99);
+  let sd = Math.floor(Number(C.seed));
+  if (!Number.isFinite(sd) || sd <= 0 || sd > 4294967295) sd = ceNewSeed();
+  C.seed = sd >>> 0;
+  C.ctr = ceNum(C.ctr, 0, 0, 2147483647);
+  C.lastRolledDay = ceNum(C.lastRolledDay, 0, 0, 1e6);
+  C.init = C.init === 1 ? 1 : 0;
+  C.cool = ceNum(C.cool, 0, 0, 99);
+  C.act = (typeof C.act === "string" && CE_BY_ID[C.act]) ? C.act : null;
+  C.stage = ceNum(C.stage, 0, 0, 2);
+  C.due = ceNum(C.due, 0, 0, 1e6);
+  C.outcome = (C.outcome === "top" || C.outcome === "win" || C.outcome === "small" || C.outcome === "min") ? C.outcome : null;
+  C.hist = (Array.isArray(C.hist) ? C.hist : []).slice(0, 60)
+    .filter(h => h && CE_BY_ID[h.e])
+    .map(h => ({ e: h.e, s: ceNum(h.s, 0, 0, 2), c: ceNum(h.c, 0, 0, 2), d: ceNum(h.d, 0, 0, 1e6) }));
+  C.done = (Array.isArray(C.done) ? C.done : []).filter(x => CE_BY_ID[x]).filter((x, i, a) => a.indexOf(x) === i).slice(0, 30);
+  C.pend = (Array.isArray(C.pend) ? C.pend : []).filter(r => r && CE_BY_ID[r.e]).slice(0, 10)
+    .map(r => ({ e: r.e, k: r.k === "machine" ? "machine" : "staff", cid: typeof r.cid === "string" ? r.cid : null }));
+  C.eff = (Array.isArray(C.eff) ? C.eff : []).slice(0, 20)
+    .filter(f => f && CE_BY_ID[f.e] && CE_EFF[f.k])
+    .map(f => ({ e: f.e, k: f.k, n: ceNum(f.n, 0, 0, 9999), p: f.p === 1 ? 1 : 0,
+                 v: Math.max(-50, Math.min(50, Number(f.v) || 0)) }));
+  C.stf = (Array.isArray(C.stf) ? C.stf : []).filter(x => CE_BY_ID[x]).slice(0, 20);
+  C.mac = (Array.isArray(C.mac) ? C.mac : []).slice(0, 20)
+    .filter(m => m && CE_BY_ID[m.e]).map(m => ({ e: m.e, uid: ceNum(m.uid, 0, 0, 1e9) }));
+  C.seen = C.seen === true;
+  return C;
+}
+/* 旧セーブは初期化だけ。過去DAYぶんの抽選を遡って実行しない。
+   一度きりの処理なので印を付ける(以後 lastRolledDay を勝手に動かさない)。 */
+function ceInit() {
+  const C = ceState();
+  if (C.init === 1) return;
+  C.init = 1;
+  if (!C.lastRolledDay) C.lastRolledDay = Math.max(0, state.day - 1);
+}
+
+/* ---------- 継続効果 ---------- */
+/* 効果はここ1か所でしか適用しない(二重計上を防ぐ)。
+   n>0 なら残り営業日、n=0 は恒久。 */
+const CE_EFF = {
+  rep:    { nm: "評判", unit: "/日",   desc: "毎営業日の評判に加算" },
+  reg:    { nm: "常連", unit: "人/日", desc: "毎営業日の常連に加算" },
+  cost:   { nm: "維持費", unit: "%",   desc: "毎営業日の維持費を軽減" },
+  cust:   { nm: "集客", unit: "%",     desc: "翌営業日の来店客に加算(広告と別枠)" },
+  guard:  { nm: "事故軽減", unit: "%", desc: "臨時支出を軽減" },
+  info:   { nm: "情報",  unit: "",     desc: "相手の得意分野を開示" },
+};
+function ceEffOf(kind) {
+  const C = ceState(); let v = 0;
+  for (const f of C.eff) if (f.k === kind && (f.p === 1 || f.n > 0)) v += f.v;
+  return v;
+}
+/* 日次の効果適用。runDay の中から1回だけ呼ぶ。 */
+function ceApplyDaily() {
+  const C = ceState(); const out = [];
+  for (const f of C.eff) {
+    if (f.k === "rep" && f.v) { state.rep = Math.max(1, Math.min(100, state.rep + f.v)); out.push(["評判", f.v, f.e]); }
+    if (f.k === "reg" && f.v) { state.regulars = Math.max(0, state.regulars + f.v); out.push(["常連", f.v, f.e]); }
+  }
+  /* 期限を1営業日進め、切れたものだけ落とす。p=1 は恒久なので残る。 */
+  let expired = 0;
+  for (const f of C.eff) if (!f.p && f.n > 0) f.n--;
+  const keep = C.eff.filter(f => f.p === 1 || f.n > 0);
+  expired = C.eff.length - keep.length;
+  C.eff = keep;
+  out.expired = expired;
+  return out;
+}
+
+/* ---------- イベント定義 ---------- */
+/* risk: 0=安全策 1=本命策 2=大勝負
+   本命策の cond は「いまの店で判定できる公開情報」だけを見る。 */
+const CE_LIST = [
+  { id:"evt01", type:"staff", title:"伝説の店長、来店",
+    lead:"雨の夜、かつて業界で名を馳せた敏腕店長が傘もささずに立っていた。「この店が化けるか、三日だけ見せてもらおう」",
+    stages:[
+      { img:"p01", tx:"男は名乗らない。ただ、こちらの台の並びを一瞥しただけで欠点を三つ挙げた。",
+        ch:[{t:"助言だけを求める",  d:"契約はしない。改善案だけもらう",       r:0},
+            {t:"帳簿まで見せる",    d:"財務も弱点も隠さず、三営業日の試験を受ける", r:1},
+            {t:"一日すべてを任せる",d:"翌営業日の指揮を丸ごと委ねる",         r:2}]},
+      { img:"p05", tx:"「では課題を一つ。評判を落とさずに黒字を出せ。簡単なことだ」男は腕を組んだ。",
+        ch:[{t:"堅実に守る",      d:"確実に課題をこなす",           r:0},
+            {t:"提案を全部呑む",  d:"言われたとおりに店を組み替える", r:1},
+            {t:"逆に問い返す",    d:"こちらの考えをぶつける",       r:2}]},
+      { img:"p07", tx:"三日が過ぎた。「悪くない。さて、どうする」男はこちらの目を見た。",
+        ch:[{t:"経営指導を頼む",  d:"加入ではなく、店全体への継続指導", r:0},
+            {t:"正式に迎える",    d:"契約金を払い、店長として迎える",   r:1},
+            {t:"すべてを賭ける",  d:"店の全権を預けると言い切る",       r:2}]},
+    ],
+    staff:{ nm:"黎明の店長 鶴岡", r:"SS", t:"lgd_all" },
+    minor:{ k:"rep", v:0.5, n:14, tx:"「店が変わったら、また会おう」短い指導だけが残った。" } },
+
+  { id:"evt02", type:"staff", title:"設定師の置き手紙",
+    lead:"閉店後、一台の椅子に手紙が置かれていた。台配置への指摘が、異様に正確だ。",
+    stages:[
+      { img:"p01", tx:"便箋は三枚。どの島の何番が死んでいるかまで、名指しで書かれている。",
+        ch:[{t:"差出人を調査する",d:"防犯映像と営業記録を追う",     r:0},
+            {t:"書かれた配置を試す",d:"次の営業で提案どおりに並べる", r:1},
+            {t:"全配置を即入替",  d:"大胆な全面組み替えを一晩でやる", r:2}]},
+      { img:"p05", tx:"第二の手紙が届いた。今度はもっと踏み込んだ要求だ。「まだ甘い」",
+        ch:[{t:"一部だけ採用",  d:"効果の確かな範囲にとどめる", r:0},
+            {t:"素直に従う",    d:"書かれたとおりにやり切る",   r:1},
+            {t:"店内で待ち伏せる",d:"正体を暴きにいく",          r:2}]},
+      { img:"p07", tx:"夜明け前、細身の人影が現れた。「あんた、ちゃんとやったな」",
+        ch:[{t:"理屈を問い詰める",d:"根拠を全部聞き出す",     r:0},
+            {t:"結果を認める",  d:"腕を認めて誘う",           r:1},
+            {t:"条件を提示する",d:"こちらから破格の条件を出す", r:2}]},
+    ],
+    staff:{ nm:"幻の設定師 灰崎", r:"S", t:"mech" },
+    minor:{ k:"rep", v:0.3, n:10, tx:"人影は消えた。検証済みの配置案だけが手元に残った。" } },
+
+  { id:"evt03", type:"staff", title:"一日だけの神接客",
+    lead:"人手の足りない繁忙日。臨時で入った人物が、怒っていた客まで笑顔にして帰した。",
+    stages:[
+      { img:"p01", tx:"クレーム対応、落とし物、迷子の子ども。すべてを二十分で片づけた。",
+        ch:[{t:"研修を頼む",    d:"既存スタッフに接客術を教えてもらう", r:0},
+            {t:"即採用を打診",  d:"その場で条件を出し、繁忙試験へ",     r:1},
+            {t:"客として送り出す",d:"縛らずに帰し、再訪に賭ける",       r:2}]},
+      { img:"p05", tx:"忘れ物、クレーム、混雑が同時に起きた。指示を出す時間はない。",
+        ch:[{t:"最優先客を決める",d:"確実に一つずつ収める",     r:0},
+            {t:"チームで支える",d:"全員で回して見せる",         r:1},
+            {t:"本人に全部任せる",d:"口を出さず、腕を信じる",   r:2}]},
+      { img:"p07", tx:"閉店後。「ここ、面白いですね」と本人が先に言った。",
+        ch:[{t:"教育顧問として",d:"加入ではなく指導役を頼む",   r:0},
+            {t:"正式に誘う",    d:"接客責任者として迎える",     r:1},
+            {t:"店を任せると言う",d:"常連づくりを丸ごと預ける", r:2}]},
+    ],
+    staff:{ nm:"神接客 七尾", r:"S", t:"face" },
+    minor:{ k:"rep", v:0.4, n:12, tx:"「またご縁があれば」。常連たちの評判だけが残った。" } },
+
+  { id:"evt04", type:"staff", title:"炎上寸前の広報担当",
+    lead:"カメラに追われた元人気広報が、逃げ込むように店へ入ってきた。「かくまってください」",
+    stages:[
+      { img:"p01", tx:"数年前の大失敗が蒸し返されている。本人は否定も弁解もしない。",
+        ch:[{t:"事情を聞く",    d:"まず話を全部聞く",             r:0},
+            {t:"実力を見る",    d:"小さな宣伝企画を任せてみる",   r:1},
+            {t:"大型企画を託す",d:"炎上の渦中で大勝負を打たせる", r:2}]},
+      { img:"p05", tx:"古い失敗が掘り返された。ネットの空気が変わっていく。",
+        ch:[{t:"謝罪して収める",d:"火を消すことを優先",       r:0},
+            {t:"新企画で上書き",d:"話題を新しいもので塗り替える", r:1},
+            {t:"沈黙して現場で示す",d:"何も言わず結果だけ出す",  r:2}]},
+      { img:"p07", tx:"企画当日。開店前から人が並んでいる。本人の手は震えていた。",
+        ch:[{t:"無難にまとめる",d:"確実な範囲で成功させる", r:0},
+            {t:"企画を完遂する",d:"予定どおり最後までやる", r:1},
+            {t:"生配信に踏み切る",d:"全部見せて勝負する",   r:2}]},
+    ],
+    staff:{ nm:"バズメーカー 音羽", r:"S", t:"lgd_draw" },
+    minor:{ k:"rep", v:0.35, n:12, tx:"本人は去った。丁寧な謝罪対応が、店の評判を守った。" } },
+
+  { id:"evt05", type:"staff", title:"元銀行員の再出発",
+    lead:"融資審査の席。担当者はこちらの店を、こちらより詳しく理解していた。",
+    stages:[
+      { img:"p01", tx:"「この維持費、来月には効いてきますよ」書類から目も上げずに言う。",
+        ch:[{t:"事業計画を見せる",d:"改善の指導を受ける",       r:0},
+            {t:"交渉を任せる",  d:"融資条件の改善に挑ませる",   r:1},
+            {t:"その場で引き抜く",d:"銀行を辞める覚悟を問う",   r:2}]},
+      { img:"p05", tx:"「ここが危ない」資金繰りの穴を一つ、正確に指し示された。",
+        ch:[{t:"守りを固める",  d:"堅実に穴を埋める",       r:0},
+            {t:"成長投資を選ぶ",d:"攻めに回す",             r:1},
+            {t:"本人の案に賭ける",d:"全部その人のやり方で",  r:2}]},
+      { img:"p07", tx:"最後の審査を終え、その人はスーツを脱いだ。「もう戻れませんね」",
+        ch:[{t:"外部顧問として",d:"必要なときだけ相談する", r:0},
+            {t:"財務参謀に迎える",d:"正式に加入してもらう", r:1},
+            {t:"共同経営を持ちかける",d:"店の半分を託す",   r:2}]},
+    ],
+    staff:{ nm:"財務参謀 桐生", r:"S", t:"clean" },
+    minor:{ k:"rep", v:0.25, n:10, tx:"加入はならなかった。次の融資での関係だけが少し良くなった。" } },
+
+  { id:"evt06", type:"staff", title:"ライバル店の副店長",
+    lead:"地元ライバルの副店長から、直接連絡が入った。「一度、お話できませんか」",
+    stages:[
+      { img:"p01", tx:"方針が合わないのだという。声には疲れがにじんでいた。",
+        ch:[{t:"一度断る",      d:"忠誠を試し、再訪を待つ",   r:0},
+            {t:"秘密裏に会う",  d:"人目を避けて試用する",     r:1},
+            {t:"正面から誘う",  d:"公然と引き抜き勝負に出る", r:2}]},
+      { img:"p05", tx:"元の店長に発覚した。相手の店から抗議が来ている。",
+        ch:[{t:"本人に委ねる",  d:"決断を本人に返す",       r:0},
+            {t:"引き抜きを公表",d:"堂々と受けて立つ",       r:1},
+            {t:"両店で勝負する",d:"営業成績で決着をつける", r:2}]},
+      { img:"p07", tx:"古い襟章を外し、その人は深く頭を下げた。",
+        ch:[{t:"情報分析役に",  d:"裏方として迎える",     r:0},
+            {t:"現場統率を任せる",d:"フロアの責任者にする", r:1},
+            {t:"対ライバルの旗頭に",d:"競争の先頭に立たせる", r:2}]},
+    ],
+    staff:{ nm:"反逆の副店長 雪村", r:"S", t:"mood" },
+    minor:{ k:"info", v:1, n:20, tx:"加入はならなかった。相手の得意分野だけは教えてくれた。" } },
+
+  { id:"evt07", type:"staff", title:"商店街の顔役",
+    lead:"地域の店主たちを束ねる世話役が現れた。「この店は、街の一員かね」",
+    stages:[
+      { img:"p01", tx:"品定めするような目。だが、敵意はない。",
+        ch:[{t:"地域清掃へ参加",d:"行動で信用を得る",         r:0},
+            {t:"集会所として貸す",d:"ホールを街へ開く",       r:1},
+            {t:"共同企画を出す",d:"商店街ぐるみの大企画へ投資", r:2}]},
+      { img:"p05", tx:"騒音と駐車の苦情が出た。街の空気が少し冷たい。",
+        ch:[{t:"素直に謝る",    d:"波風を立てない",       r:0},
+            {t:"一緒に解決する",d:"街の側と手を組む",     r:1},
+            {t:"店の利益も主張",d:"言うべきことは言う",   r:2}]},
+      { img:"p07", tx:"商店主会議。顔役はこちらの店を、はっきりと擁護した。",
+        ch:[{t:"地域顧問として",d:"外から支えてもらう",   r:0},
+            {t:"正式に迎える",  d:"世話役として加入",     r:1},
+            {t:"街の代表を任せる",d:"店の顔として立てる", r:2}]},
+    ],
+    staff:{ nm:"街の世話役 大黒", r:"A", t:"clean" },
+    minor:{ k:"reg", v:0.15, n:20, tx:"加入はならなかった。商店街との関係だけは良くなった。" } },
+
+  { id:"evt08", type:"staff", title:"データ狂いの大学生",
+    lead:"毎日同じ席で、客数を数え続けている大学生がいる。ノートは十冊を超えていた。",
+    stages:[
+      { img:"p01", tx:"「先週の水曜、十四時の来店が落ちましたよね」当たっている。",
+        ch:[{t:"記録を見せてもらう",d:"精度だけ確かめる",     r:0},
+            {t:"アルバイトで試す",d:"現場を知ってから分析させる", r:1},
+            {t:"店のデータを渡す",d:"全部見せて全面予測させる", r:2}]},
+      { img:"p05", tx:"次の客数変動を予告された。数字は、かなり大胆だ。",
+        ch:[{t:"小さく検証する",d:"一部だけ試す",       r:0},
+            {t:"予測に投資する",d:"読みどおりに動く",   r:1},
+            {t:"逆の施策で反証",d:"あえて逆を張る",     r:2}]},
+      { img:"p07", tx:"結果を並べて検証した。当たりも外れも、隠さず表に出す。",
+        ch:[{t:"分析顧問として",d:"外部から手伝ってもらう", r:0},
+            {t:"正式に採用する",d:"営業予報担当として迎える", r:1},
+            {t:"研究室ごと抱える",d:"全面的に囲い込む",     r:2}]},
+    ],
+    staff:{ nm:"データ怪人 円城寺", r:"A", t:"mech" },
+    minor:{ k:"rep", v:0.2, n:10, tx:"加入はならなかった。検証レポートだけが一部残った。" } },
+
+  { id:"evt09", type:"staff", title:"修羅場専門スタッフ",
+    lead:"機械停止、混雑、クレームが重なった瞬間、見知らぬ人物が無線を取った。",
+    stages:[
+      { img:"p01", tx:"十分後、現場は静まっていた。誰も、その人の名前を知らない。",
+        ch:[{t:"安全を最優先",  d:"損失を受けても事故を防ぐ", r:0},
+            {t:"自分も前線へ出る",d:"共同指揮で信頼を作る",   r:1},
+            {t:"指揮を全部任せる",d:"現場の全権を渡す",       r:2}]},
+      { img:"p06", tx:"同じ日にもう一つ、別種のトラブルが重なった。",
+        ch:[{t:"機械を守る",    d:"設備の被害を最小に",   r:0},
+            {t:"客を守る",      d:"客の体験を最優先",     r:1},
+            {t:"スタッフを守る",d:"現場の人間を先に守る", r:2}]},
+      { img:"p07", tx:"「平和な日は退屈だ」その人は笑った。冗談には聞こえなかった。",
+        ch:[{t:"緊急招集型で",  d:"必要なときだけ呼ぶ",   r:0},
+            {t:"危機管理責任者に",d:"常勤で迎える",       r:1},
+            {t:"店の守護を託す",d:"すべての判断を預ける", r:2}]},
+    ],
+    staff:{ nm:"火消しの久遠", r:"A", t:"mood" },
+    minor:{ k:"guard", v:15, n:20, tx:"加入はならなかった。緊急時の連絡先だけを置いていった。" } },
+
+  { id:"evt10", type:"staff", title:"幸運を呼ぶ新人",
+    lead:"能力は未知。ただ、その新人が入った日にだけ、妙に良い偶然が続く。",
+    stages:[
+      { img:"p01", tx:"落とした玉が戻ってくる。壊れかけた台が直る。本人は困った顔をしている。",
+        ch:[{t:"じっくり育成する",d:"時間をかけて確実に伸ばす", r:0},
+            {t:"即戦力部署へ",  d:"早く強くなる代わりに幅を絞る", r:1},
+            {t:"別店舗へ送り出す",d:"一度手放し、帰還に賭ける", r:2}]},
+      { img:"p05", tx:"大きな失敗の直後に、それを帳消しにする幸運が起きた。",
+        ch:[{t:"本人の努力を見る",d:"運ではなく積み重ねを評価", r:0},
+            {t:"実力かを見極める",d:"厳しく試す",              r:1},
+            {t:"運も才能だと言う",d:"運ごと全部を買う",        r:2}]},
+      { img:"p08", tx:"一定の勤務を終えたその日、目の色が変わった。覚醒だ。",
+        ch:[{t:"堅実な道を選ぶ",d:"確実な成長先を選ばせる",   r:0},
+            {t:"最も伸びる道へ",d:"いちばん強い特性を狙う",   r:1},
+            {t:"未知の道へ賭ける",d:"誰も見たことのない形へ", r:2}]},
+    ],
+    staff:{ nm:"奇跡のルーキー 星野", r:"SS", t:"lgd_buff" },
+    minor:{ k:"rep", v:0.3, n:8, tx:"その人はまだ戻らない。小さな幸運だけが、しばらく続いた。" } },
+
+  { id:"evt11", type:"machine", title:"幻の新台、無償先行導入",
+    lead:"メーカーから連絡。全国で一店舗だけ、正式発表前の新台を試験導入させるという。",
+    stages:[
+      { img:"p01", tx:"三機種の資料が並べられた。どれも、まだ世に出ていない。",
+        ch:[{t:"安定型を選ぶ",  d:"振れが小さく長く使える",   r:0},
+            {t:"話題型を選ぶ",  d:"短期の集客に強い",         r:1},
+            {t:"未知型を選ぶ",  d:"効果の振れが大きいロマン", r:2}]},
+      { img:"p05", tx:"試験営業が始まった。メーカーの担当者が毎日見に来る。",
+        ch:[{t:"要望を優先する",d:"言われたとおりに運用",   r:0},
+            {t:"自店流で使う",  d:"こちらの判断で回す",     r:1},
+            {t:"客の反応に任せる",d:"現場の空気だけで決める", r:2}]},
+      { img:"p07", tx:"試験期間が終わる。報告書の書き方で、この先が変わる。",
+        ch:[{t:"正直に返す",    d:"良いも悪いも全部書く",   r:0},
+            {t:"成功を強調する",d:"手応えを前面に出す",     r:1},
+            {t:"共同改良を提案",d:"次の型まで一緒に作る",   r:2}]},
+    ],
+    machine:{ cid:"p8", nm:"先行試験機" },
+    minor:{ k:"rep", v:0.3, n:12, tx:"導入は見送られた。次回ロットの優先予約だけが残った。" } },
+
+  { id:"evt12", type:"machine", title:"閉店ホール、最後の一台",
+    lead:"閉店する老舗の店主が、長年愛された最後の一台を運んできた。「頼めるかね」",
+    stages:[
+      { img:"p01", tx:"塗装は剥げ、音は少し歪んでいる。それでも、艶がある。",
+        ch:[{t:"保存する",      d:"原形のまま記念台として扱う", r:0},
+            {t:"そのまま導入",  d:"傷も音も含めて営業に出す",   r:1},
+            {t:"高額改装に賭ける",d:"現代向けに全面修復する",   r:2}]},
+      { img:"p05", tx:"噂を聞いた元常連たちが、次々と顔を出すようになった。",
+        ch:[{t:"昔の遊び方を守る",d:"当時のまま静かに回す",   r:0},
+            {t:"新しい客へ開く",d:"誰でも打てるようにする",   r:1},
+            {t:"復刻祭を打つ",  d:"一日だけの大がかりな祭に",  r:2}]},
+      { img:"p07", tx:"老店主へ営業結果を届けにいく。手には、一枚の写真があった。",
+        ch:[{t:"静かに報告する",d:"数字だけを渡す",       r:0},
+            {t:"常連の声を伝える",d:"元常連の言葉を届ける", r:1},
+            {t:"店の看板にすると誓う",d:"名機として残すと約束", r:2}]},
+    ],
+    machine:{ cid:"s1", nm:"伝説の名機" },
+    minor:{ k:"rep", v:0.4, n:16, tx:"稼働はできなかった。記念展示としての評判だけが残った。" } },
+
+  { id:"evt13", type:"machine", title:"メーカー独占枠争奪戦",
+    lead:"人気新台の初回生産が少ない。自店と地元ライバルの、どちらか一方にしか入らない。",
+    stages:[
+      { img:"p01", tx:"「初回ロットを任せる店を、今週中に決めます」担当者は事務的だった。",
+        ch:[{t:"営業実績で勝負",d:"評判と常連で正面から評価される", r:0},
+            {t:"共同企画を提案",d:"広告費を負担し、導入後の集客を狙う", r:1},
+            {t:"価格で取りに行く",d:"資金を投じて初回枠を奪う",   r:2}]},
+      { img:"p05", tx:"相手が決まった。地元でいちばん手強い相手だ。",
+        ch:[{t:"守りを固める",  d:"隙を作らない戦い方",   r:0},
+            {t:"正面からぶつかる",d:"真っ向勝負に出る",   r:1},
+            {t:"総力戦を挑む",  d:"使えるものを全部使う", r:2}]},
+      { img:"p07", tx:"審査結果の封筒が届いた。担当者の表情からは、何も読み取れない。",
+        ch:[{t:"結果を受け入れる",d:"どちらでも関係は続ける", r:0},
+            {t:"優先枠を主張する",d:"勝ちに行く",           r:1},
+            {t:"独占を要求する",d:"すべてを取りに行く",     r:2}]},
+    ],
+    machine:{ cid:"p3", nm:"独占枠の新台" },
+    minor:{ k:"rep", v:0.25, n:10, tx:"枠は取れなかった。次回ロットの予約と、費用の一部返還が残った。" } },
+
+  { id:"evt14", type:"machine", title:"謎の倉庫から発見",
+    lead:"廃業した業者の倉庫で、台帳に存在しない未登録台が見つかった。",
+    stages:[
+      { img:"p01", tx:"型式も製造番号もない。電源を入れてよいものか、誰にも分からない。",
+        ch:[{t:"鑑定する",      d:"正体と危険を先に確認する", r:0},
+            {t:"修復する",      d:"費用をかけて安定させる",   r:1},
+            {t:"そのまま起動する",d:"最大の振れを受け入れる", r:2}]},
+      { img:"p06", tx:"出力が異常に振れる。数値が、想定の範囲を超えていく。",
+        ch:[{t:"停止する",      d:"安全を取る",           r:0},
+            {t:"制御装置を足す",d:"抑えながら使う",       r:1},
+            {t:"客前で試す",    d:"本番で振れ幅ごと見せる", r:2}]},
+      { img:"p07", tx:"正体が判明した。市場に出ることのなかった試作機だ。",
+        ch:[{t:"技術を秘匿する",d:"表に出さず静かに扱う", r:0},
+            {t:"安全証明を取る",d:"正式に使えるようにする", r:1},
+            {t:"ロマン台として公開",d:"すべて見せて客を呼ぶ", r:2}]},
+    ],
+    machine:{ cid:"s5", nm:"幻の試作機" },
+    minor:{ k:"rep", v:0.3, n:8, tx:"稼働はできなかった。話題になったことだけが、しばらく残った。" } },
+
+  { id:"evt15", type:"machine", title:"常連客からの遺産",
+    lead:"亡くなった常連の家族が、生前もっとも愛した一台と、小さな鍵を店へ持ってきた。",
+    stages:[
+      { img:"p01", tx:"鍵は、その人がいつも座っていた席の、下の引き出しのものだった。",
+        ch:[{t:"店の宝として預かる",d:"保存と記憶を優先する", r:0},
+            {t:"修復して再び回す",d:"遊べる状態へ戻す",     r:1},
+            {t:"皆が打てる台にする",d:"特別扱いせず日常へ返す", r:2}]},
+      { img:"p05", tx:"追悼の日。常連同士で、扱いを巡って意見が割れた。",
+        ch:[{t:"家族の希望を軸に",d:"遺族の意向を最優先",   r:0},
+            {t:"古参の希望を軸に",d:"長年の常連に合わせる", r:1},
+            {t:"新しい客の希望を軸に",d:"これからの客に開く", r:2}]},
+      { img:"p07", tx:"閉店後、最後の一回転。ハンドルは、まだ手の形を覚えていた。",
+        ch:[{t:"静かに終える",  d:"そっと送り出す",       r:0},
+            {t:"記念台として残す",d:"店の一台として据える", r:1},
+            {t:"完全修復に賭ける",d:"最後まで直しきる",     r:2}]},
+    ],
+    machine:{ cid:"p1", nm:"常連の形見" },
+    minor:{ k:"reg", v:0.2, n:20, tx:"稼働はできなかった。追悼の展示が、常連の心に残った。" } },
+];
+const CE_BY_ID = {};
+for (const e of CE_LIST) CE_BY_ID[e.id] = e;
+const CE_IDS = CE_LIST.map(e => e.id);
+const ceOf = id => CE_BY_ID[id] || null;
+
+/* ---------- 抽選 ---------- */
+const ceActive = () => ceState().act;
+const ceEligible = () => CE_IDS.filter(id => ceState().done.indexOf(id) < 0);
+/* 適格な営業日か。経営状態は一切見ない(3%固定・等確率) */
+function ceCanRoll(playedDay) {
+  const C = ceState();
+  if (playedDay < CE_START_DAY) return false;
+  if (C.act) return false;
+  if (C.cool > 0) return false;
+  if (C.lastRolledDay >= playedDay) return false;
+  return ceEligible().length > 0;
+}
+/* 1営業日の処理。runDay から1回だけ呼ぶ。 */
+function ceDay(rec) {
+  ceInit();
+  const C = ceState();
+  const playedDay = rec.day;
+  const notes = [];
+  /* 継続効果(ここ1か所だけで適用する) */
+  const applied = ceApplyDaily();
+  if (applied.expired) notes.push("⏳ 特別契約の効果が一部終了した。");
+  /* 停止日数は「その日の判定に使ってから」減らす。
+     先に減らすと、7営業日の停止が6営業日になってしまう。 */
+  const canRoll = ceCanRoll(playedDay);
+  if (C.cool > 0) C.cool--;
+  /* 進行中は新規抽選をしない。期限付きの段階だけ進める。 */
+  if (C.act) {
+    if (C.due && playedDay >= C.due) C.due = 0;
+    return { notes, applied, started: null };
+  }
+  if (!canRoll) return { notes, applied, started: null };
+  C.lastRolledDay = playedDay;
+  const roll = ceNext();
+  if (roll >= CE_RATE) return { notes, applied, started: null };
+  /* 未完了のイベントから等確率 */
+  const pool = ceEligible();
+  let pick = pool[Math.floor(ceNext() * pool.length)] || pool[0];
+  if (ceForcedEvent && pool.indexOf(ceForcedEvent) >= 0) { pick = ceForcedEvent; ceForcedEvent = null; }
+  C.act = pick; C.stage = 0; C.due = 0; C.outcome = null; C.seen = false;
+  const ev = ceOf(pick);
+  notes.push(`✉️ ${ev.type === "staff" ? "特別な来客" : "特別な届け物"}があった — 「${esc(ev.title)}」。経営画面で対応できる。`);
+  return { notes, applied, started: pick };
+}
+
+/* ---------- 選択の確定 ---------- */
+/* 本命策の条件。公開されている経営状態だけを見る。 */
+function ceCond(ev) {
+  return ev.type === "staff"
+    ? { ok: state.rep >= 45, tx: "評判45以上" }
+    : { ok: state.rep >= 40, tx: "評判40以上" };
+}
+const CE_GAMBLE_P = 0.45;      // 大勝負の成功率(経営状態では変えない)
+/* 段階の選択。二重確定しないよう、確定時に必ず状態を進めて保存する。 */
+function ceChoose(ci) {
+  const C = ceState(), ev = ceOf(C.act);
+  if (!ev) return null;
+  const st = ev.stages[C.stage];
+  if (!st || !st.ch[ci]) return null;
+  C.hist.unshift({ e: ev.id, s: C.stage, c: ci, d: state.day });
+  if (C.hist.length > 60) C.hist.pop();
+  if (C.stage < ev.stages.length - 1) {
+    C.stage++;
+    save(true);
+    return { done: false };
+  }
+  /* 最終段階 — ここで結果を確定して保存する(リロードで引き直せない) */
+  const risk = st.ch[ci].r;
+  let outcome;
+  if (risk === 0) outcome = "small";
+  else if (risk === 1) outcome = ceCond(ev).ok ? "win" : "small";
+  else outcome = ceNext() < CE_GAMBLE_P ? "top" : "min";
+  C.outcome = outcome;
+  const res = ceGrant(ev, outcome);
+  C.done.push(ev.id);
+  C.act = null; C.stage = 0; C.due = 0;
+  C.cool = CE_COOL;
+  save(true); renderAll();
+  return { done: true, outcome, res };
+}
+
+/* ---------- 報酬 ---------- */
+const CE_TOP_BONUS = { staff: { k: "rep", v: 0.35, n: 0 }, machine: { k: "reg", v: 0.12, n: 0 } };
+function ceAddEff(eid, k, v, n) {
+  const C = ceState();
+  C.eff.push({ e: eid, k, v, n: Math.max(0, Math.floor(n) || 0), p: (Number(n) === 0 ? 1 : 0) });
+  if (C.eff.length > 20) C.eff.shift();
+}
+/* イベント専用スタッフ。能力は加入時点で開示する(通常採用の3日隠しは適用しない)。 */
+function ceJoinStaff(ev) {
+  const C = ceState();
+  if (C.stf.indexOf(ev.id) >= 0) return false;      // 二重加入を防ぐ
+  const s = stState();
+  s.list.push({ nm: ev.staff.nm, r: ev.staff.r, t: ev.staff.t, d: 0, k: true, ev: ev.id });
+  state.staff++;
+  C.stf.push(ev.id);
+  return true;
+}
+/* イベント専用台。1枠=1シマ=表示10台。満台なら保留する(消さない)。 */
+function ceGiveMachine(ev) {
+  const C = ceState();
+  if (C.mac.some(m => m.e === ev.id)) return "dup";
+  if (state.machines.length >= state.cap) {
+    if (!C.pend.some(r => r.e === ev.id)) C.pend.push({ e: ev.id, k: "machine", cid: ev.machine.cid });
+    return "pending";
+  }
+  const m = makeMachine(ev.machine.cid);
+  m.uid = ++state.uid; m.boughtDay = state.day;
+  state.machines.push(m);
+  C.mac.push({ e: ev.id, uid: m.uid });
+  return "ok";
+}
+/* 保留分の受け取り。空き枠ができた時に一度だけ。 */
+function ceClaimPending() {
+  const C = ceState(); const got = [];
+  for (let i = C.pend.length - 1; i >= 0; i--) {
+    const r = C.pend[i];
+    if (state.machines.length >= state.cap) break;
+    const ev = ceOf(r.e); if (!ev) { C.pend.splice(i, 1); continue; }
+    if (C.mac.some(m => m.e === ev.id)) { C.pend.splice(i, 1); continue; }
+    const m = makeMachine(r.cid || ev.machine.cid);
+    m.uid = ++state.uid; m.boughtDay = state.day;
+    state.machines.push(m);
+    C.mac.push({ e: ev.id, uid: m.uid });
+    C.pend.splice(i, 1);
+    got.push(ev);
+  }
+  if (got.length) { save(true); renderAll(); }
+  return got;
+}
+function ceGrant(ev, outcome) {
+  const out = { tx: "", kind: outcome };
+  if (outcome === "small" || outcome === "min") {
+    ceAddEff(ev.id, ev.minor.k, ev.minor.v, ev.minor.n);
+    out.tx = ev.minor.tx;
+    return out;
+  }
+  /* win / top はスタッフ加入 or 台獲得 */
+  if (ev.type === "staff") {
+    const ok = ceJoinStaff(ev);
+    out.tx = ok ? `${ev.staff.nm} が正式に加入した。` : `${ev.staff.nm} はすでに在籍している。`;
+  } else {
+    const r = ceGiveMachine(ev);
+    out.tx = r === "pending"
+      ? `${ev.machine.nm} は満台のため保留になった。空きができたら受け取れる。`
+      : r === "dup" ? `${ev.machine.nm} はすでに導入済み。`
+      : `${ev.machine.nm} を1シマ(10台)無料で導入した。`;
+  }
+  if (outcome === "top") {
+    const b = CE_TOP_BONUS[ev.type];
+    ceAddEff(ev.id, b.k, b.v, b.n);
+    out.tx += " さらに、この人物(台)ならではの特別な効果がついた。";
+  }
+  return out;
+}
+
+/* ---------- 表示 ---------- */
+const ceHasWork = () => !!ceState().act || ceState().pend.length > 0;
+/* ナビの未処理バッジ。renderNav から呼ばれるので、失敗しても描画を止めない。 */
+function ceWork() { try { return ceHasWork(); } catch (e) { return false; } }
+function ceBadge() {}
+/* 経営画面の「特別契約・特別台」カード */
+function renderChoiceEvents() {
+  const box = $("ceCard");
+  if (!box) return;
+  const C = ceState(), ev = ceOf(C.act);
+  const effRows = C.eff.map(f => {
+    const E = CE_EFF[f.k], e2 = ceOf(f.e);
+    return `<div class="ce-eff"><b>${esc(e2 ? e2.title : "")}</b>
+      <span>${esc(E ? E.nm : f.k)} ${f.v > 0 ? "+" : ""}${f.v}${esc(E ? E.unit : "")}</span>
+      <i>${f.p === 1 ? "恒久" : `残り${f.n}営業日`}</i></div>`;
+  }).join("");
+  const stf = C.stf.map(id => { const e = ceOf(id); return e ? `<div class="ce-own">${ceThumb(e, "p09")}<b>${esc(e.staff.nm)}</b><span>${esc(e.title)}</span></div>` : ""; }).join("");
+  const mac = C.mac.map(m => { const e = ceOf(m.e); return e ? `<div class="ce-own">${ceThumb(e, "p09")}<b>${esc(e.machine.nm)}</b><span>${esc(e.title)} ・ 10台</span></div>` : ""; }).join("");
+  const pend = C.pend.map(r => { const e = ceOf(r.e); return e ? `<div class="ce-pend">${ceThumb(e, "p09")}<b>${esc(e.machine.nm)}</b><span>満台のため保留中。空き枠ができたら受け取れる</span></div>` : ""; }).join("");
+
+  box.innerHTML = `
+    <div class="gp-h">${ic("bolt")}<b>特別契約・特別台</b>
+      <span class="r">${C.done.length} / ${CE_LIST.length}</span></div>
+    <div class="gp-b">
+      ${ev ? `<button class="ce-active" data-ce="open">
+          ${ceThumb(ev, ev.stages[C.stage].img)}
+          <span class="ce-a-tx"><b>${esc(ev.title)}</b>
+            <span>${C.stage + 1} / ${ev.stages.length} 段階目 — 選択が必要</span></span>
+          <span class="ce-go">開く</span>
+        </button>`
+        : `<p class="note" style="margin:0 0 4px">特別な来客や届け物は、めったに来ない。来たときだけここに出る。</p>`}
+      ${pend ? `<div class="ce-sec"><b>受け取り待ち</b>${pend}
+        <button class="btn sm gold wide" data-ce="claim" style="margin-top:5px">空き枠へ受け取る</button></div>` : ""}
+      ${stf ? `<div class="ce-sec"><b>加入したスタッフ</b>${stf}</div>` : ""}
+      ${mac ? `<div class="ce-sec"><b>獲得した台</b>${mac}</div>` : ""}
+      ${effRows ? `<div class="ce-sec"><b>いま効いている効果</b>${effRows}
+        <p class="note" style="margin:4px 0 0">同じ種類の効果は合算される。営業結果には、その日に実際に効いた分だけを出す。</p></div>` : ""}
+    </div>`;
+  ceBindImgs(box);
+  ceBadge();
+}
+function ceThumb(ev, panel) {
+  return `<span class="ce-pic"><img src="${ceImg(ev.id, panel)}" alt="${esc(ev.title)} の場面" decoding="async"><span class="ce-fb"></span></span>`;
+}
+function ceImgFail(el) { const b = el.closest(".ce-pic"); if (b) b.classList.add("fallback"); }
+function ceBindImgs(root) {
+  if (!root) return;
+  for (const im of root.querySelectorAll(".ce-pic img")) {
+    if (im.dataset.b) continue;
+    im.dataset.b = "1";
+    if (im.complete && im.naturalWidth === 0) ceImgFail(im);
+    else im.addEventListener("error", () => ceImgFail(im), { once: true });
+  }
+}
+/* 分岐画像はカードを開いたときに読む */
+let cePrefetched = null;
+function cePrefetch(id) {
+  if (cePrefetched === id) return;
+  cePrefetched = id;
+  const go = () => { for (const p of CE_PANELS) { const im = new Image(); im.decoding = "async"; im.src = ceImg(id, p); } };
+  if (typeof requestIdleCallback === "function") requestIdleCallback(go, { timeout: 2000 }); else setTimeout(go, 400);
+}
+
+/* 導入・選択・結果を別カードで出す。長文を1枚に詰め込まない。 */
+let ceBusy = false;
+function ceOpen() {
+  const C = ceState(), ev = ceOf(C.act);
+  if (!ev) return;
+  cePrefetch(ev.id);
+  const st = ev.stages[C.stage];
+  const past = C.hist.filter(h => h.e === ev.id).slice().reverse()
+    .map(h => `<span>${h.s + 1}段階目: ${esc(ev.stages[h.s].ch[h.c].t)}</span>`).join("");
+  const cond = ceCond(ev);
+  showModal(`${mh("bolt", ev.title, true)}
+    <div class="mb ce-sheet">
+      <div class="ce-hero">
+        <img src="${ceImg(ev.id, st.img)}" alt="${esc(ev.title)} 第${C.stage + 1}段階" decoding="async">
+        <span class="ce-step">${C.stage + 1} / ${ev.stages.length}</span>
+      </div>
+      ${C.stage === 0 ? `<p class="ce-lead">${esc(ev.lead)}</p>` : ""}
+      <p class="ce-tx">${esc(st.tx)}</p>
+      ${past ? `<div class="ce-past"><b>これまでの選択</b>${past}</div>` : ""}
+      <div class="ce-choices">
+        ${st.ch.map((c, i) => `<button class="ce-ch r${c.r}" data-cec="${i}">
+          <span class="ce-tag">${["安全策", "本命策", "大勝負"][c.r]}</span>
+          <b>${esc(c.t)}</b><span class="ce-d">${esc(c.d)}</span></button>`).join("")}
+      </div>
+      <p class="note" style="margin-top:6px">
+        <b>安全策</b>は確実だが小さい。<b>本命策</b>は条件(${esc(cond.tx)})を満たせば強い報酬。
+        <b>大勝負</b>は最上位か、加入・獲得の失敗。失敗しても最低保証は残る。<br>
+        選んだ結果はその場で確定して保存される。読み込み直しても引き直せない。</p>
+    </div>`);
+  ceBindImgs($("modalBox"));
+}
+/* 結果カード */
+function ceShowResult(ev, outcome, res) {
+  const lbl = { top: "大成功", win: "成功", small: "手応えあり", min: "不成立" }[outcome] || "";
+  const panel = (outcome === "top" || outcome === "win") ? "p08" : "p06";
+  showModal(`${mh("bolt", ev.title, true)}
+    <div class="mb ce-sheet">
+      <div class="ce-hero">
+        <img src="${ceImg(ev.id, panel)}" alt="${esc(ev.title)} の結末" decoding="async">
+        <span class="ce-step ${outcome === "top" ? "top" : outcome === "min" ? "min" : ""}">${lbl}</span>
+      </div>
+      <p class="ce-tx">${esc(res.tx)}</p>
+      <div class="rowbtns"><button class="btn gold" data-tile="closemodal">閉じる</button></div>
+    </div>`);
+  ceBindImgs($("modalBox"));
+}
+
+/* ==========================================================================
    STAFF LAYER — 完全ランダム採用 / 試用期間 / 特性
    保護ロジックには触れない。名簿は state.ex.st に隔離し、
    state.staff(保護スキーマの人数)とは常に長さを一致させる。
@@ -4668,13 +5421,18 @@ function stState() {
   s.list = (Array.isArray(s.list) ? s.list : [])
     .filter(m => m && typeof m === "object")
     .slice(0, 200)
-    .map(m => ({
-      nm: typeof m.nm === "string" ? m.nm.slice(0, 24) : stMakeName(),
-      r: ST_RANK[m.r] ? m.r : "B",
-      t: ST_TRAIT[m.t] ? m.t : "none",
-      d: Math.max(0, Math.floor(Number(m.d) || 0)),
-      k: m.k === true,
-    }));
+    .map(m => {
+      const o = {
+        nm: typeof m.nm === "string" ? m.nm.slice(0, 24) : stMakeName(),
+        r: ST_RANK[m.r] ? m.r : "B",
+        t: ST_TRAIT[m.t] ? m.t : "none",
+        d: Math.max(0, Math.floor(Number(m.d) || 0)),
+        k: m.k === true,
+      };
+      /* イベント加入の出所。通常スタッフには付けない(付けると保存前後で形が変わる) */
+      if (typeof m.ev === "string" && m.ev) o.ev = m.ev.slice(0, 12);
+      return o;
+    });
   s.fired = Math.max(0, Math.floor(Number(s.fired) || 0));
   Object.defineProperty(s, "__ok", { value: true, enumerable: false, configurable: true });
   return stSync(s);
@@ -4739,15 +5497,19 @@ async function stFire(i) {
   const s = stState(), m = s.list[i];
   if (!m || state.staff <= 1) return;
   const early = m.d < ST_LOYAL_DAYS;
-  const sub = early
+  let sub = early
     ? `勤続${m.d}営業日での解雇です。すぐ人を切る店だと噂が立ち、評判が ${ST_FIRE_REP} 下がります。`
     : `勤続${m.d}営業日。日給 ${yen(ST_WAGE)} が浮きます。`;
+  /* イベントで加入した人は二度と入らない。必ず明示する。 */
+  if (m.ev) sub = `この人はイベントで加入した専属です。解雇すると<b>二度と入りません</b>。\n` + sub;
   if (!(await ask(`${m.nm} を解雇しますか?`, sub, "解雇する"))) return;
   // 確認中に日が進んでいる可能性があるので、同じ人がまだ同じ場所にいるか見る
   const j = s.list.indexOf(m);
   if (j < 0 || isDead() || state.staff <= 1) return;
+  const evId = m.ev || "";
   s.list.splice(j, 1);
   state.staff--;
+  if (evId) { try { const C = ceState(); const k = C.stf.indexOf(evId); if (k >= 0) C.stf.splice(k, 1); } catch (e) {} }
   if (early) {
     state.rep = Math.max(1, state.rep - ST_FIRE_REP);
     s.fired++;
@@ -4849,7 +5611,7 @@ function renderStaff() {
     const t = stTrait(m);
     const cls = !m.k ? "unk" : m.r === "SS" ? "ss" : m.r === "S" ? "s" : m.r === "A" ? "a" : m.r === "C" ? "c" : "b";
     const meta = m.k
-      ? `<span class="stw-base">評判 ${stNum(ST_RANK[m.r].serve, 2)} ・ 常連 ${stNum(ST_RANK[m.r].draw, 1)} ・ 勤続${m.d}日</span>` +
+      ? `<span class="stw-base">${m.ev ? "★専属 ・ " : ""}評判 ${stNum(ST_RANK[m.r].serve, 2)} ・ 常連 ${stNum(ST_RANK[m.r].draw, 1)} ・ 勤続${m.d}日</span>` +
         (t.name === "―" ? "" :
           `<span class="stw-t ${t.good === true ? "g" : t.good === false ? "b" : ""}">${esc(t.name)}<i>${esc(t.ef)}</i></span>`)
       : `<span class="stw-base">見習い — あと${Math.max(0, ST_REVEAL_DAYS - m.d)}営業日で評価が出る ・ 勤続${m.d}日</span>`;
@@ -5341,6 +6103,12 @@ function runDay() {
     result.dRep = state.rep - before.rep;
     result.dReg = state.regulars - before.reg;
     try { checkAchEx({ dayEnd: true, notes: result.notes }); } catch (e) {}
+    /* 選択イベント。営業結果が確定したあとにだけ抽選する。
+       ここで自動モーダルは出さない(結果アニメを遮らない)。 */
+    try {
+      result.ce = ceDay(result.rec);
+      if (result.ce && result.ce.notes.length) result.notes = result.notes.concat(result.ce.notes);
+    } catch (e) { result.ce = null; }
   } catch (e) {
     /* 計算が途中で落ちたら演出には入らない。busy を握ったままにしない */
     busy = false;
@@ -5603,10 +6371,29 @@ async function sellMachine(m) {
 }
 
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-area],[data-set],[data-sell],[data-buy],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode],[data-fire],[data-lr]");
+  const el = e.target.closest("[data-area],[data-set],[data-sell],[data-buy],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode],[data-fire],[data-lr],[data-ce],[data-cec]");
   if (!el) return;
   const d = el.dataset;
 
+  if (d.ce) {
+    if (d.ce === "open") ceOpen();
+    else if (d.ce === "claim") {
+      const got = ceClaimPending();
+      toast(got.length ? `${got.length}件の特別台を受け取った` : "空き枠がない。シマを増やすと受け取れる");
+    }
+    return;
+  }
+  if (d.cec !== undefined) {
+    if (ceBusy) return;
+    ceBusy = true;
+    try {
+      const ev = ceOf(ceState().act);
+      const r = ceChoose(Number(d.cec));
+      if (r && r.done) { closeModal(); ceShowResult(ev, r.outcome, r.res); }
+      else if (r) { closeModal(); ceOpen(); }
+    } finally { ceBusy = false; }
+    return;
+  }
   if (d.lr !== undefined) { lrOpen(Number(d.lr)); return; }
   if (d.rg) { openRegion(d.rg); return; }
   if (d.rgn || d.rgtp) {
@@ -5751,6 +6538,7 @@ if (loaded && Array.isArray(loaded.machines)) {
   state = loaded;
   renderAll();
   try { lrBegin(); } catch (e) {}
+  try { ceInit(); ceClaimPending(); } catch (e) {}
   if (isDead()) showBankruptModal();
 } else {
   state = newGame("normal");
