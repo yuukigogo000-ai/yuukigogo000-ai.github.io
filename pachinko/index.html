@@ -911,6 +911,85 @@ svg{flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){
   #dayViz *{animation:none!important;transition:none!important}
 }
+
+/* ==========================================================================
+   地元のライバル (LOCAL RIVALS)
+   既存の黒・金・赤へ統合する。人物ごとの色は --lc / --lc2 で差し込む。
+   ========================================================================== */
+.lr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:6px 0 4px}
+.lr-tile{display:flex;flex-direction:column;align-items:center;gap:2px;min-height:var(--tap);
+  padding:6px 4px 7px;border-radius:3px;text-align:center;
+  border:1px solid rgba(255,212,59,.20);
+  background:linear-gradient(180deg,rgba(255,232,170,.05),transparent 45%),linear-gradient(180deg,#161922,#0a0b10)}
+.lr-tile.boss{border-color:rgba(255,212,59,.55);
+  box-shadow:inset 0 0 14px rgba(255,180,40,.12),0 0 10px rgba(255,196,60,.18)}
+.lr-tile:active{transform:translateY(1px)}
+.lr-nm{font-size:10.5px;font-weight:900;color:var(--tx);line-height:1.25;
+  display:flex;align-items:center;gap:3px;flex-wrap:wrap;justify-content:center}
+.lr-shop{font-size:8px;color:var(--tx-3);line-height:1.25;overflow:hidden;text-overflow:ellipsis;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.lr-tp{font-size:8px;color:var(--gold-lo);font-weight:700}
+.lr-sc{font-size:8.5px;color:var(--tx-3)}
+.lr-sc b{font-family:var(--f-num);font-size:11px;color:var(--tx-2)}
+.lr-sc i{font-style:normal;color:var(--gold-lo)}
+.lr-boss{font-size:7.5px;font-weight:900;letter-spacing:.06em;padding:0 3px;border-radius:2px;
+  color:#2a1a02;background:linear-gradient(180deg,#ffe9a8,#d9a52a);white-space:nowrap}
+
+/* 人物画像が無い間のモノグラム */
+.lr-mono{position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:3px;
+  overflow:hidden;flex:0 0 auto;
+  border:1px solid color-mix(in srgb,var(--lc2) 55%,transparent);
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.14),transparent 42%),
+    repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 1px,transparent 1px 5px),
+    linear-gradient(160deg,var(--lc) 0%,#0a0b10 92%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -10px 16px rgba(0,0,0,.5)}
+.lr-mono b{font-size:20px;font-weight:900;line-height:1;color:var(--lc2);
+  text-shadow:0 1px 0 rgba(0,0,0,.7),0 0 10px color-mix(in srgb,var(--lc2) 60%,transparent)}
+/* 紋章名は長いものがあるので、小さいモノグラムでは出さない(はみ出す) */
+.lr-mono i{display:none}
+.lr-head .lr-mono i{display:block;position:absolute;left:2px;right:2px;bottom:1px;font-style:normal;
+  font-size:6px;line-height:1.1;text-align:center;color:var(--lc2);opacity:.8;
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.lr-mono.boss{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(255,212,59,.35),0 0 12px rgba(255,196,60,.35)}
+.lr-face{width:44px;height:44px;object-fit:cover;border-radius:3px;display:block;
+  border:1px solid rgba(255,212,59,.35)}
+
+/* 詳細シート */
+.lr-head{display:flex;gap:9px;align-items:center;padding:7px 8px;border-radius:3px;
+  border:1px solid color-mix(in srgb,var(--lc2) 40%,transparent);
+  background:linear-gradient(120deg,color-mix(in srgb,var(--lc) 26%,transparent),transparent 70%),
+             linear-gradient(180deg,#14171f,#0a0b10)}
+.lr-head.boss{border-color:var(--gold);box-shadow:0 0 14px rgba(255,196,60,.2)}
+.lr-head .lr-mono,.lr-head .lr-face{width:56px;height:56px}
+.lr-head .lr-mono b{font-size:26px}
+.lr-hid{min-width:0;display:flex;flex-direction:column;gap:1px}
+.lr-hid b{font-size:14px;font-weight:900;color:var(--tx);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.lr-hid span{font-size:10px;color:var(--tx-2)}
+.lr-hid .lr-tp{font-size:9px;color:var(--tx-3)}
+.lr-cred{margin:7px 0 4px;font-size:11px;line-height:1.6;color:var(--gold-hi)}
+.lr-say{margin:0 0 8px;padding:7px 9px;border-radius:3px;font-size:12px;line-height:1.6;color:var(--tx);
+  border:1px solid var(--line-w);border-left:3px solid var(--gold);
+  background:linear-gradient(180deg,rgba(40,30,14,.6),rgba(10,10,12,.75))}
+.lr-acts{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.lr-acts b{font-size:10px;font-weight:900;letter-spacing:.08em;color:var(--gold-hi);margin-right:2px}
+.lr-acts span{font-size:9.5px;padding:2px 6px;border-radius:2px;color:var(--tx-2);
+  border:1px solid var(--line-w);background:rgba(255,255,255,.04)}
+.lr-log{margin-top:9px;border:1px solid var(--line-w);border-radius:3px;overflow:hidden}
+.lr-log b{display:block;padding:5px 8px;font-size:10px;font-weight:900;letter-spacing:.08em;
+  color:var(--gold-hi);background:linear-gradient(180deg,rgba(255,196,60,.12),transparent)}
+.lr-log div{display:grid;grid-template-columns:58px 1fr auto;gap:8px;align-items:center;
+  padding:4px 8px;font-size:10.5px;border-top:1px solid rgba(255,255,255,.05)}
+.lr-log div span:first-child{font-family:var(--f-num);color:var(--tx-3);font-size:9.5px}
+.lr-log i{font-style:normal;font-family:var(--f-num);font-weight:800;color:var(--tx-3)}
+.lr-log i.pos{color:var(--pos)} .lr-log i.neg{color:var(--neg)}
+.lr-intro b{display:flex;align-items:center;gap:5px}
+
+@media (max-width:374px){
+  .lr-mono{width:38px;height:38px}
+  .lr-mono b{font-size:17px}
+  .lr-nm{font-size:9.5px}
+}
 </style>
 </head>
 <body>
@@ -1077,6 +1156,8 @@ svg{flex:0 0 auto}
       <div class="sec">
         <div class="sec-h"><i class="bar"></i><h2>店長室</h2><span class="sub">OWNER ROOM</span></div>
         <div id="acts"></div>
+
+        <div class="gp" id="lrCard" style="margin-bottom:6px"></div>
 
         <div class="gp" style="margin-bottom:6px">
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-staff"/></svg><b>スタッフ管理</b></div>
@@ -2593,6 +2674,7 @@ function renderShop() {
 /* ---------- 店長室(既存IDへ描画) ---------- */
 function renderMgmt() {
   const dead = isDead(), need = staffNeeded();
+  try { renderLocalRivals(); } catch (e) {}
   $("staffCount").textContent = `${state.staff}人 (日給計 ${yen(state.staff * 13000)})`;
   renderStaff();
   const sn = $("staffNeed");
@@ -3072,6 +3154,8 @@ function rgState() {
   g.seen = g.seen === true;
   Object.defineProperty(g, "__ok", { value: true, enumerable: false, configurable: true });
   rgApplyTraits(g.rnd);
+  /* 地元3枠に人物を割り当て、店名をそろえる。数値枠は作り直さない。 */
+  try { lrApplyNames(); } catch (e) {}
   return g;
 }
 
@@ -3249,10 +3333,20 @@ function rgDay(rec) {
   }
 
   // 3. ライバルの成長と反攻
+  let lrRows = [];
+  const prevHomePos = Math.max(0, Math.floor(Number(g.homePos) || 0));
   for (const R of REGIONS) {
     const list = g.riv[R.id]; if (!list) continue;
-    for (const r of list) {
-      r.sc = Math.round(Math.min(r.cap, r.sc + (r.cap - r.sc) * 0.006 * (1 + R.rival / 5)) * 10) / 10;
+    if (R.id === RG_HOME) {
+      /* 地元は人物ごとの行動で伸び方が変わる。増分の作り方(capへの漸近)は同じ。 */
+      try { lrRows = lrGrowHome(R, list, rec); }
+      catch (e) {
+        for (const r of list) r.sc = Math.round(Math.min(r.cap, r.sc + (r.cap - r.sc) * 0.006 * (1 + R.rival / 5)) * 10) / 10;
+      }
+    } else {
+      for (const r of list) {
+        r.sc = Math.round(Math.min(r.cap, r.sc + (r.cap - r.sc) * 0.006 * (1 + R.rival / 5)) * 10) / 10;
+      }
     }
     if (g.ctrl[R.id] && Math.random() < 0.04) {
       const r = list[Math.floor(Math.random() * list.length)];
@@ -3307,6 +3401,8 @@ function rgDay(rec) {
       if (P.reg) state.regulars = Math.max(0, state.regulars * (1 + P.reg));
       if (P.msg && state.day % 5 === 0) notes.push(P.msg);
       g.homePos = pos + 1;
+      /* 地元ライバルの話題は、順位が動いた日か大きな行動があった日だけ1件 */
+      try { const n = lrNews(lrRows, prevHomePos, g.homePos); if (n) notes.push(n); } catch (e) {}
     }
   }
 
@@ -3680,8 +3776,557 @@ function rgShowUnlock() {
         <div><b>一番店を獲る</b><span>集客力でその地方の競合を上回り、5日連続で首位を守れば制圧。</span></div>
         <div><b>全国制覇</b><span>15地方すべてを同時に制圧すれば全国制覇。制圧数が増えるほど全支店の利益が伸びる。</span></div>
       </div>
+      ${lrIntroHtml()}
       <div class="rowbtns"><button class="btn gold" data-area="map">全国マップを開く</button></div>
     </div>`);
+}
+
+/* ==========================================================================
+   LOCAL RIVALS — 地元ライバル(固定10人プールから毎プレイ3人)
+   既存の地元3枠(rgState().riv[RG_HOME])そのものに人格を載せる層。
+   別のライバルシミュレーションは作らない。数値は既存の sc / cap を使う。
+   ここではゲーム本体の Math.random() を一切消費しない(専用PRNGのみ)。
+   ========================================================================== */
+
+/* ---------- 固定プロフィール10人 ---------- */
+/* tp: 型 / boss: 強敵 / capMul: 既存capに対する実効上限倍率 / acts: 行動6種
+   iv(): その日の成長強度。平均が約1.0になるように作り、
+         「いつ伸びるか」の違いだけで人格を出す(プレイヤー側の数値には触れない)。 */
+const LR_LIST = [
+  { id:"R01", nm:"鬼塚ゴウ",     shop:"ライコウ・セントラル", tp:"攻勢型",   boss:false, capMul:1.00,
+    col:"#c8102e", col2:"#ffd43b", crest:"虎", ini:"鬼",
+    cred:"店は、覚悟を見せた分だけ前へ出る。",
+    acts:["現場巡回","攻勢準備","設備刷新","大型広告","新台集中導入","特日強化"] },
+  { id:"R02", nm:"水城カヨ",     shop:"ブルータイド東海",     tp:"地域密着型", boss:false, capMul:1.00,
+    col:"#1f6b52", col2:"#e8d9a0", crest:"波", ini:"水",
+    cred:"常連さんは、昨日の仕事を覚えています。",
+    acts:["清掃強化","口コミ対応","接客研修","常連感謝","地域協力","遊びやすい営業"] },
+  { id:"R03", nm:"久世ケイ",     shop:"ソウリュウ・ステーション", tp:"分析型", boss:false, capMul:1.00,
+    col:"#1b3a6b", col2:"#9fc3e8", crest:"龍の眼", ini:"久",
+    cred:"一日の黒字より、三十日の傾向を見ます。",
+    acts:["観察","稼働分析","トレンド分析","広告調整","設定配分調整","機種構成見直し"] },
+  { id:"R04", nm:"早乙女レイ",   shop:"レッドフェニックス",   tp:"話題先行型", boss:false, capMul:1.00,
+    col:"#c8267a", col2:"#ffd43b", crest:"不死鳥", ini:"早",
+    cred:"選ばれる前に、まず思い出される店になるの。",
+    acts:["次企画準備","撮影企画","店内演出","SNS施策","トレンド便乗","話題作り"] },
+  { id:"R05", nm:"釘見サダオ",   shop:"ゲンブ・クラシック",   tp:"老練型",   boss:false, capMul:1.00,
+    col:"#5a3a22", col2:"#b87333", crest:"亀甲", ini:"釘",
+    cred:"数字は新しくても、客の顔は昔から変わらん。",
+    acts:["設備点検","常連観察","回収調整","営業配分見直し","経験則による修正","還元準備"] },
+  { id:"R06", nm:"愛想ヨシコ",   shop:"ホワイトキリン",       tp:"接客型",   boss:false, capMul:1.00,
+    col:"#e8e8e0", col2:"#3fbf9f", crest:"麒麟", ini:"愛",
+    cred:"また来たいは、出玉だけで決まらないのよ。",
+    acts:["スタッフ面談","地域挨拶","店内美化","客対応","新人教育","接客巡回"] },
+  { id:"R07", nm:"爆出シタロウ", shop:"ゴールドライオン",     tp:"勝負師型", boss:false, capMul:1.00,
+    col:"#ff7a18", col2:"#ffd43b", crest:"獅子", ini:"爆",
+    cred:"出す日を間違えなきゃ、店は伝説になる!",
+    acts:["反省会","準備日","勢い任せの告知","再攻勢","全力営業","大勝負"] },
+  { id:"R08", nm:"黒字マモル",   shop:"ファルコン・ヒル",     tp:"堅守型",   boss:false, capMul:1.00,
+    col:"#2a3550", col2:"#c0c6d0", crest:"鷹と盾", ini:"黒",
+    cred:"派手な一日より、赤字を出さない一週間です。",
+    acts:["収益確認","費用点検","設備保守","守備継続","堅実営業","慎重な改善"] },
+  { id:"R09", nm:"皇レイジ",     shop:"ウルフズクラウン",     tp:"王者型",   boss:true,  capMul:1.17,
+    col:"#d8d0e8", col2:"#7b4fbf", crest:"王冠を戴く狼", ini:"皇",
+    cred:"勝つことではない。勝ち続けることが経営です。",
+    acts:["顧客分析","全店監査","弱点修正","精密な広告","設備更新","王者の営業"] },
+  { id:"R10", nm:"万枚ゴンゾウ", shop:"ブラックホエール",     tp:"追撃型",   boss:true,  capMul:1.14,
+    col:"#141018", col2:"#a03a7a", crest:"深海から浮上する黒鯨", ini:"万",
+    cred:"沈んだ店ほど、浮かぶときは速ぇんだ。",
+    acts:["深海待機","追撃準備","旗艦店強化","巻き返し","急浮上","大型攻勢"] },
+];
+const LR_BY_ID = {};
+for (const p of LR_LIST) LR_BY_ID[p.id] = p;
+const LR_IDS = LR_LIST.map(p => p.id);
+const lrProf = id => LR_BY_ID[id] || null;
+
+/* ---------- 専用PRNG ---------- */
+/* 描画のたびに値が変わらないよう、(seed, 日, 枠, 用途) だけから決まる純関数にする。
+   ここでゲーム本体の Math.random() を呼ばないのが最重要。 */
+function lrHash(a, b, c, d) {
+  let x = (a ^ Math.imul(b + 0x9e3779b9, 0x85ebca6b) ^ Math.imul(c + 0x165667b1, 0xc2b2ae35) ^ Math.imul(d + 0x27d4eb2f, 0x27d4eb2f)) >>> 0;
+  x = Math.imul(x ^ (x >>> 16), 0x7feb352d) >>> 0;
+  x = Math.imul(x ^ (x >>> 15), 0x846ca68b) >>> 0;
+  return (x ^ (x >>> 16)) >>> 0;
+}
+const lrRnd = (seed, day, slot, salt) => lrHash(seed, day, slot, salt) / 4294967296;
+
+/* テストから固定seedを注入するための口。null 以外なら必ずこれが使われる。
+   通常プレイでは触らない(=毎回ちがう顔ぶれになる)。 */
+let lrForcedSeed = null;
+/* 初回seed。crypto があればそれを使い、無ければ本体の乱数を消費しない代替で作る。 */
+function lrNewSeed() {
+  if (lrForcedSeed !== null) return (Math.floor(lrForcedSeed) >>> 0) || 1;
+  try {
+    const c = (typeof crypto !== "undefined" && crypto) ? crypto : null;
+    if (c && typeof c.getRandomValues === "function") {
+      const a = new Uint32Array(1); c.getRandomValues(a);
+      return a[0] >>> 0 || 1;
+    }
+  } catch (e) {}
+  /* フォールバックも Math.random() は使わない */
+  const t = Date.now() >>> 0;
+  const p = (typeof performance !== "undefined" && performance.now) ? Math.floor(performance.now() * 1000) : 0;
+  return (lrHash(t, p, (state && state.uid) || 0, 0x5bf03635) >>> 0) || 1;
+}
+
+/* ---------- 3人の選出 ---------- */
+/* 10人を完全シャッフルして先頭3人。経営状態・難易度・日数は一切見ない。
+   → 順列が一様なので、120通りの組み合わせも一様になる。 */
+function lrPick3(seed) {
+  const pool = LR_IDS.slice();
+  const rnd = rgRand((seed ^ 0x9e3779b9) >>> 0);
+  for (let k = pool.length - 1; k > 0; k--) {
+    const j = Math.floor(rnd() * (k + 1));
+    const t = pool[k]; pool[k] = pool[j]; pool[j] = t;
+  }
+  return pool.slice(0, 3);
+}
+/* 数値枠は 0 が最強(既存の base × [1, .85, .7])。強敵は上の枠へ置く。
+   強敵2人ならその2人を上位2枠へ。通常だけならシャッフル順のまま。 */
+function lrOrderForSlots(ids) {
+  const boss = ids.filter(i => lrProf(i) && lrProf(i).boss);
+  const rest = ids.filter(i => !(lrProf(i) && lrProf(i).boss));
+  return boss.concat(rest);
+}
+
+/* ---------- 状態 ---------- */
+/* rgState 内の num は関数ローカルなので、こちらにも同じ役割の小物を持つ */
+const lrNum = (v, d, lo, hi) => { v = Number(v); if (!Number.isFinite(v)) v = d; return Math.max(lo, Math.min(hi, v)); };
+const LR_LOG_MAX = 30;
+const LR_MIG_DAYS = 8;        // 旧セーブは強敵特性を数日かけて反映する
+function lrState() {
+  const g = rgState();
+  let L = g.lr;
+  if (!L || typeof L !== "object" || Array.isArray(L)) L = g.lr = {};
+  /* seed */
+  let sd = Math.floor(Number(L.seed));
+  if (!Number.isFinite(sd) || sd <= 0 || sd > 4294967295) sd = 0;
+  /* 選出ID: 必ず3件・既知ID・重複なし */
+  let ids = Array.isArray(L.ids) ? L.ids.filter(x => typeof x === "string" && LR_BY_ID[x]) : [];
+  ids = ids.filter((x, i) => ids.indexOf(x) === i).slice(0, 3);
+  if (ids.length !== 3) {
+    if (!sd) sd = lrNewSeed();
+    const fresh = lrOrderForSlots(lrPick3(sd));
+    /* 壊れたセーブから拾えたぶんは活かし、足りない枠だけ埋める */
+    for (const f of fresh) { if (ids.length >= 3) break; if (ids.indexOf(f) < 0) ids.push(f); }
+    ids = lrOrderForSlots(ids);
+    /* 旧セーブ(すでに何日か営業している)は強敵特性を段階的に反映する */
+    L.mig = (state.day > 1 && L.mig === undefined) ? LR_MIG_DAYS : Math.max(0, Math.floor(Number(L.mig) || 0));
+  }
+  if (!sd) sd = lrNewSeed();
+  L.seed = sd >>> 0;
+  L.ids = ids;
+  L.mig = Math.max(0, Math.min(LR_MIG_DAYS, Math.floor(Number(L.mig) || 0)));
+  /* 枠ごとの実行時状態(追撃の位相など) */
+  const st = Array.isArray(L.st) ? L.st : [];
+  L.st = [0, 1, 2].map(i => {
+    const s = st[i] && typeof st[i] === "object" ? st[i] : {};
+    return {
+      ph: Math.max(0, Math.min(3, Math.floor(Number(s.ph) || 0))),
+      n:  Math.max(0, Math.min(60, Math.floor(Number(s.n) || 0))),
+      last: Math.max(0, Math.floor(Number(s.last) || 0)),
+    };
+  });
+  /* 行動履歴 */
+  L.log = (Array.isArray(L.log) ? L.log : [])
+    .filter(r => r && Number.isFinite(Number(r.d)) && LR_BY_ID[r.r])
+    .slice(0, LR_LOG_MAX)
+    .map(r => ({
+      d: Math.floor(Number(r.d)),
+      r: r.r,
+      a: Math.max(0, Math.min(5, Math.floor(Number(r.a) || 0))),
+      ds: Math.round(lrNum(r.ds, 0, -400, 400) * 10) / 10,
+      iv: Math.round(lrNum(r.iv, 1, 0, 9) * 100) / 100,
+      pos: Math.max(0, Math.min(9, Math.floor(Number(r.pos) || 0))),
+    }));
+  L.intro = L.intro === true;
+  return L;
+}
+/* 枠 i の人物 */
+const lrAt = i => lrProf((lrState().ids || [])[i]);
+const lrHasBoss = () => (lrState().ids || []).some(i => lrProf(i) && lrProf(i).boss);
+
+/* 地元3枠の店名を人物の店舗名にそろえる。sc / cap には触れない。 */
+function lrApplyNames() {
+  const g = rgState(), L = lrState();
+  const list = g.riv[RG_HOME];
+  if (!Array.isArray(list)) return;
+  for (let i = 0; i < 3 && i < list.length; i++) {
+    const p = lrProf(L.ids[i]);
+    if (p && list[i] && list[i].nm !== p.shop) list[i].nm = p.shop;
+  }
+}
+
+/* ---------- 行動と成長強度 ---------- */
+/* 戻り値 iv は「その日どれだけ伸びるか」の倍率。平均が約1になるよう作る。
+   act は acts[] のindex。表示と実際の増減が食い違わないよう、必ず両方をここで決める。 */
+const LR_CHASE_GAP = 6;     // 追撃が始まる点差(公開されている集客力の差)
+const LR_CHASE_TEL = 2;     // 兆候の日数
+const LR_CHASE_RUN = 6;     // 追撃の上限日数
+const LR_CHASE_CD  = 8;     // 追撃後の休止日数
+
+/* 行動名は「その日どれだけ動いたか」から決める。
+   acts[] は静か→大きく動く順に並べてあるので、強度の帯がそのまま行動になる。
+   これで「伸びていない日に大型攻勢と出る」ことが起きない。 */
+function lrActIdx(iv, seed, day, slot) {
+  const j = lrHash(seed, day, slot, 47) % 2;
+  if (iv < 0.55) return j;
+  if (iv < 1.15) return 2 + j;
+  if (iv < 1.90) return 4;
+  return 5;
+}
+function lrAction(p, day, slot, seed, ctx) {
+  const k = lrRnd(seed, day, slot, 11);      // その日の揺らぎ(純関数)
+  const j = (k - 0.5) * 0.18;                // ±9%程度
+  switch (p.id) {
+    case "R01": {                            // 攻勢型: 3日ためて3日出る
+      const c = day % 6;
+      return c < 3 ? { iv: 0.34 + j }
+                   : { iv: 1.92 + j };
+    }
+    case "R02":                              // 地域密着: なめらか
+      return { iv: 1.02 + j * 0.14 };
+    case "R03": {                            // 分析型: 観察5日 → 改善5日
+      const c = day % 10;
+      return c < 5 ? { iv: 0.46 + j * 0.5 }
+                   : { iv: 1.58 + j };
+    }
+    case "R04": {                            // 話題先行: 波を作る
+      const w = Math.sin((day % 9) / 9 * Math.PI * 2);
+      return { iv: 1.00 + w * 0.82 + j };
+    }
+    case "R05": {                            // 老練: 回収4日 / 還元4日。無駄な攻勢はしない
+      const c = day % 8;
+      return c < 4 ? { iv: 0.78 + j * 0.5 } : { iv: 1.24 + j * 0.5 };
+    }
+    case "R06": {                            // 接客型: じわじわ効いてくる
+      const drift = Math.min(0.30, day * 0.0035);
+      return { iv: 0.92 + drift + j * 0.5 };
+    }
+    case "R07": {                            // 勝負師: 通常8人で最も振れ幅が大きい
+      const hit = lrRnd(seed, day, slot, 29) < 0.16;
+      return hit ? { iv: 3.35 + j * 2 } : { iv: 0.29 + j * 0.4 };
+    }
+    case "R08":                              // 堅守: 小さいが止まらない
+      return { iv: 0.94 + j * 0.22 };
+    case "R09":                              // 王者: 序盤から強く、弱い日が少ない
+      return { iv: 1.34 + j * 0.35 };
+    case "R10": {                            // 追撃型: 位相で挙動が変わる
+      /* 追撃は後半ほど速い。上限は cap があるので青天井にはならない */
+      if (ctx.ph === 2) return { iv: (2.55 + j) * (1 + Math.min(0.85, day / 130)) };   // 追撃中
+      if (ctx.ph === 1) return { iv: 0.85 + j * 0.4 };            // 兆候(追撃準備)
+      if (ctx.ph === 3) return { iv: 0.80 + j * 0.4 };            // 休止(深海待機)
+      return { iv: 1.14 + j * 0.5 };  // 通常でも並より上
+    }
+  }
+  return { iv: 1 };
+}
+
+/* 追撃の位相を進める。見るのは「公開されている前日の順位と点差」だけ。
+   プレイヤーの非公開情報も将来の結果も参照しない。 */
+function lrStepChase(L, slot, prevPos, gap) {
+  const s = L.st[slot];
+  if (s.ph === 0) {
+    if (prevPos === 1 && gap >= LR_CHASE_GAP) { s.ph = 1; s.n = LR_CHASE_TEL; }
+  } else if (s.ph === 1) {
+    if (--s.n <= 0) { s.ph = 2; s.n = LR_CHASE_RUN; }
+  } else if (s.ph === 2) {
+    if (--s.n <= 0) { s.ph = 3; s.n = LR_CHASE_CD; }
+  } else if (s.ph === 3) {
+    if (--s.n <= 0) { s.ph = 0; s.n = 0; }
+  }
+  return s.ph;
+}
+
+/* ---------- 1営業日 ---------- */
+/* rgDay() の「3. ライバルの成長」から、地元(RG_HOME)だけこちらへ回す。
+   増分の作り方(cap への漸近)は既存式のまま。強度と実効capだけ人物で変える。 */
+function lrGrowHome(R, list, rec) {
+  const g = rgState(), L = lrState();
+  lrApplyNames();
+  const day = rec.day;
+  /* 同じ営業日を二重処理しても履歴が重複しないようにする */
+  const dup = L.log.length && L.log[0].d === day;
+  const prevPos = Math.max(0, Math.floor(Number(g.homePos) || 0));
+  const mul = rivalMul();
+  const migK = L.mig > 0 ? (1 - L.mig / LR_MIG_DAYS) : 1;   // 旧セーブは段階的に
+  const rows = [];
+  for (let i = 0; i < list.length && i < 3; i++) {
+    const r = list[i], p = lrProf(L.ids[i]);
+    if (!r) continue;
+    if (!p) { r.sc = Math.round(Math.min(r.cap, r.sc + (r.cap - r.sc) * 0.006 * (1 + R.rival / 5)) * 10) / 10; continue; }
+    let ph = 0;
+    if (p.id === "R10") {
+      const gapNow = Math.round(((rgMyScore(RG_HOME) || 0) - r.sc * mul) * 10) / 10;
+      ph = lrStepChase(L, i, prevPos, gapNow);
+    }
+    const a = lrAction(p, day, i, L.seed, { ph });
+    const iv = Math.max(0, a.iv);
+    a.act = lrActIdx(iv, L.seed, day, i);
+    /* 強敵の実効上限。移行中の旧セーブでは 1 から徐々に効かせる */
+    const capMul = 1 + (p.capMul - 1) * migK;
+    const eff = r.cap * capMul;
+    const before = r.sc;
+    const step = (eff - r.sc) * 0.006 * (1 + R.rival / 5) * iv;
+    r.sc = Math.round(Math.min(eff, r.sc + step) * 10) / 10;
+    rows.push({ i, p, ds: Math.round((r.sc - before) * 10) / 10, iv, act: a.act, ph });
+  }
+  if (L.mig > 0) L.mig--;
+
+  /* 行動履歴。長文は持たず、定数から組み立て直す */
+  if (!dup) {
+    for (const x of rows) L.log.unshift({ d: day, r: x.p.id, a: x.act, ds: x.ds, iv: Math.round(x.iv * 100) / 100, pos: prevPos });
+    while (L.log.length > LR_LOG_MAX) L.log.pop();
+  }
+  return rows;
+}
+
+/* 結果画面へ出す地元ニュース。順位が動いた日か、大きな行動があった日だけ1件。 */
+function lrNews(rows, prevPos, newPos) {
+  if (!rgUnlocked() || !rows.length) return null;
+  const moved = prevPos > 0 && newPos > 0 && prevPos !== newPos;
+  const tel = rows.find(x => x.ph === 1);
+  if (tel) return `🐋 ${esc(tel.p.shop)}が動きを止めた。${esc(tel.p.nm)}が何かを狙っている…`;
+  const chase = rows.find(x => x.ph === 2);
+  if (chase) return `🌊 ${esc(chase.p.nm)}の追撃が始まった!${esc(chase.p.shop)}が急浮上している。`;
+  const big = rows.slice().sort((a, b) => b.ds - a.ds)[0];
+  if (big && big.iv >= 1.8 && big.ds > 0.15)
+    return `⚔️ ${esc(big.p.nm)}が「${esc(big.p.acts[big.act])}」。${esc(big.p.shop)}の集客力が伸びた。`;
+  if (moved) {
+    const top = rgRanking(RG_HOME)[0];
+    return newPos < prevPos
+      ? `📈 地元で${newPos}位に上がった。${esc(top.nm)}が首位を守っている。`
+      : `📉 地元で${newPos}位に落ちた。${esc(top.nm)}に押されている。`;
+  }
+  return null;
+}
+
+/* ---------- 台詞 ---------- */
+/* 状態: 0=大幅優勢 1=僅差で優勢 2=僅差で劣勢 3=大幅劣勢 4=プレイヤーを認めた
+   「優勢/劣勢」はライバルから見た言い方。 */
+const LR_TALK = {
+  R01: [
+    ["まだ本気を出してねえ。それでこの差だ。","悪いな、うちは前に出ると決めてる。","覚悟の差だよ。数字はあとからついてくる。","背中は見せてやる。追ってこい。"],
+    ["いい線いってるじゃねえか。だが半歩足りねえ。","もう一押しだ。ここで緩めたら終わる。","接戦は嫌いじゃない。燃えてくる。","この距離、簡単には渡さねえぞ。"],
+    ["食らいついてくるじゃねえか。上等だ。","抜かれたか。だが明日の朝には戻す。","惜しいな。準備が足りなかった。","ここからが俺の時間だ。見てろ。"],
+    ["やられたな。今回は完敗だ。","差をつけられた。腹が立つが認める。","覚悟が足りなかったのは俺の方か。","一からやり直す。次は行くぞ。"],
+    ["あんたは本物だ。素直に認めるよ。","競り合えてよかった。いい経営者だ。","あんたと同じ街でやれて、悪くなかった。","次に会うときは、俺も上げてくる。"],
+  ],
+  R02: [
+    ["おかげさまで、常連さんに支えられています。","派手さはありませんが、続けております。","昨日の積み重ねが、今日になっただけです。","こつこつと。それだけでございます。"],
+    ["すぐ後ろにいらっしゃいますね。気は抜けません。","いい競争をさせていただいています。","この距離、こちらも必死なんですよ。","明日も同じことを、丁寧にやるだけです。"],
+    ["少し離されましたね。学ばせていただきます。","お客様は正直ですから。反省します。","悔しいですが、良いお店だと思います。","足元を、もう一度見直します。"],
+    ["完全に及びません。見事です。","うちの常連さんまで、目を輝かせていました。","負けを認めた上で、まだ続けます。","この差は、一日では埋まりませんね。"],
+    ["あなたのお店には、人の顔が見えます。","お客様を大切になさっている。伝わります。","いいお店です。地元として誇らしいくらい。","どうか、そのまま続けてください。"],
+  ],
+  R03: [
+    ["数字上は、こちらが優位です。想定通りですね。","傾向は読めています。慌てる必要はありません。","一日の差ではなく、三十日の差です。","データは僕の味方をしてくれています。"],
+    ["差は誤差の範囲。まだ確定していません。","面白い。読み切れない相手は久しぶりです。","僅差ですね。ここからが観察の本番です。","一手の精度で決まります。慎重にいきます。"],
+    ["負けています。原因はもう特定しました。","想定より早い。前提を修正します。","悪くない。データが増えるのはありがたい。","改善期間に入ります。しばらく静かになりますよ。"],
+    ["完敗です。僕のモデルが間違っていました。","この差は誤差ではなく、実力差ですね。","作り直します。数字は嘘をつきませんから。","負けから学べる量が一番多い。悪くない。"],
+    ["あなたの判断は、僕の予測より的確でした。","理屈で説明できる強さです。敬意を払います。","いい相手でした。統計以上のものを見ました。","次は、僕の方が読み切ってみせます。"],
+  ],
+  R04: [
+    ["今週も、街の話題はうちだったみたい。","思い出してもらえる店が勝つのよ。","写真映えって、ちゃんと集客なの。","ふふ、今のところ私の勝ちね。"],
+    ["いい勝負。こういうの、盛り上がるじゃない。","僅差って、いちばん話題になるのよ。","油断はしてないわ。次の企画、仕込み中。","私の背中、まだ見えてる?"],
+    ["先を越されたわね。悔しいけど認める。","話題を持っていかれたわ。やるじゃない。","次はもっと派手にいくから、覚悟して。","負けてるときこそ、笑っておくのよ。"],
+    ["完全に持っていかれたわね。参りました。","ここまで差がつくと、逆に清々しいわ。","一から企画を練り直す。それだけよ。","でも、まだ終わってないから。"],
+    ["あなたの店、行ってみたくなるもの。悔しい。","話題じゃなくて中身で勝ったのね。強いわ。","いい店。素直にそう思う。","今度、こっそり打ちに行かせて。"],
+  ],
+  R05: [
+    ["まあ、長くやっとるとこうなるわい。","新しいことはせん。それで足りとる。","客の顔ぶれは、昔から変わらんよ。","勝っとるうちは、何も変えんのが一番じゃ。"],
+    ["ふむ、いい勝負じゃな。気は抜けん。","この歳で競り合うとは思わんかった。","似たようなことを考えとるのう、お互い。","僅差か。まあ、そういう日もある。"],
+    ["負けとるな。まあ、慌てんでもええ。","若いのは伸びが早い。それだけじゃ。","そろそろ還元の頃合いかのう。","焦って動くと、だいたい失敗するわい。"],
+    ["こりゃ参った。完全に置いていかれたわ。","わしの経験則も、ここまでかのう。","悔しいというより、感心しとる。","まだ店は畳まんよ。ぼちぼちやる。"],
+    ["あんた、客の顔をちゃんと見とるな。","数字だけの経営者ではないわい。感心した。","この街は、あんたに任せてよさそうじゃ。","たまには年寄りの話も聞きに来なさい。"],
+  ],
+  R06: [
+    ["うちのスタッフ、みんな笑顔がいいのよ。","出玉だけじゃないの。分かるでしょ?","また来たいって言われるのが一番よ。","接客で勝つって、地味だけど強いのよ。"],
+    ["いい勝負ねえ。うちも気が抜けないわ。","接戦のほうが、スタッフも締まるのよ。","もうちょっとで抜けそう。がんばるわ。","負けず嫌いなの、実は。"],
+    ["抜かれちゃった。ちょっと悔しいわね。","うちのどこが足りないか、洗い出すわ。","笑顔だけじゃ足りないってことね。","明日から新人教育、厳しくいくわよ。"],
+    ["完敗。ここまで差がつくと言葉もないわ。","でもね、腐ったら本当に終わりだから。","うちの子たちには、笑っていてもらう。","立て直すわよ。見ててちょうだい。"],
+    ["あなたのお店、スタッフがいい顔してる。","人を大事にしてるお店は分かるのよ。","悔しいけど、いいお店。認めるわ。","うちの子、引き抜かないでね?"],
+  ],
+  R07: [
+    ["よっしゃー! 今日も出したぜ!","出す日を間違えなきゃ、こうなるんだよ!","オレの勘は当たるんだ。今日は当たり日!","この勢い、止まらねえぞ!"],
+    ["おっ、いい勝負じゃねえか! 燃えるな!","僅差? そういうの一番好きだぜ!","次の大勝負で決めてやる。見てろよ!","接戦は嫌いじゃねえ。むしろ好きだ!"],
+    ["くそっ、抜かれた! 準備日が長すぎたか!","オレのタイミングが悪かっただけだ!","次だ、次! 一発で取り返す!","停滞は一時的なもんだ。見てろって!"],
+    ["ぐぬぬ… 完全に負けてるじゃねえか…","こういう日もある。反省会だな…","オレの勘、今回は外れたか…","でも次は当てる。絶対に当てる!"],
+    ["あんた、すげえよ! 本気でそう思う!","勘じゃなくて実力だな。まいった!","いい店だ! オレも打ちに行きてえ!","次は勝つけどな! 覚えとけよ!"],
+  ],
+  R08: [
+    ["派手ではありませんが、黒字は続いています。","堅実にやっております。それだけです。","赤字を出さない。それが一番の戦略です。","守りを崩さなければ、こうなります。"],
+    ["僅差ですね。気を引き締めます。","この距離なら、まだ守り切れます。","無理はしません。着実にいきます。","接戦でも、やることは変わりません。"],
+    ["負けていますね。費用を見直します。","慌てて攻めるつもりはありません。","じわじわ戻します。それが私のやり方です。","守っていれば、いつか順番は回ってきます。"],
+    ["大きく離されました。事実として受け止めます。","それでも赤字だけは出しません。","派手に負けるより、静かに立て直します。","一週間単位で見れば、まだ分かりません。"],
+    ["あなたの経営は、攻めていて崩れない。","真似はできませんが、尊敬します。","堅実さと大胆さの両立ですか。参りました。","私は私のやり方で、追いかけ続けます。"],
+  ],
+  R09: [
+    ["この程度で驚かれても困ります。","勝ち続けることが経営です。今日もそれだけ。","差は開いていますが、油断はしません。","当然の結果です。準備をしてきましたから。"],
+    ["僅差ですか。これは私の準備不足ですね。","面白い。久しぶりに気が引き締まります。","この距離を許したこと自体が問題です。","明日には離します。見ていてください。"],
+    ["負けていますね。素直に認めましょう。","あなたを軽く見ていたつもりはありません。","弱点を修正します。時間はかかりません。","一度の敗北は、負け続ける理由になりません。"],
+    ["完敗です。言い訳をするつもりはない。","ここまで差をつけられたのは初めてです。","経営者として、学ばせていただきました。","ですが、私はまだ終わっていません。"],
+    ["あなたは、勝ち続けられる経営者だ。","一日の勝ちではなく、積み重ねがある。","認めます。あなたは本物です。","次に相対するときを、楽しみにしています。"],
+  ],
+  R10: [
+    ["ハッハー! 見ろよこの数字!","沈んでたのが嘘みてえだろ?","オレは浮かぶときが速えんだ。","今が一番いい波だぜ。乗っとけよ。"],
+    ["いい勝負じゃねえか。楽しくなってきた。","僅差か。オレの好きな距離だ。","そのへんにいてくれると、狙いやすい。","逃げるなよ。まだ始まってねえ。"],
+    ["……ふうん。上に行ったか。","いいぜ。深いところで待ってる。","今は沈んでる。それだけの話だ。","そのまま、上にいてくれよ。"],
+    ["……随分と、遠くまで行ったな。","オレが浮上するまでの距離が伸びただけだ。","焦っちゃいねえ。沈むほど速く浮く。","せいぜい、上で息を吸っておけ。"],
+    ["あんたは強えよ。追いつけなかった。","本気で追って、届かなかったのは初めてだ。","悔しいが、いい勝負だった。","次は沈む前に、追いついてやる。"],
+  ],
+};
+/* 状態の判定はライバル視点。0=大幅優勢 …… 4=認めた */
+function lrTalkState(slot) {
+  const g = rgState(), L = lrState();
+  const list = g.riv[RG_HOME] || [];
+  const r = list[slot]; if (!r) return 0;
+  const my = rgMyScore(RG_HOME);
+  if (my === null) return 0;
+  const his = r.sc * rivalMul();
+  const d = his - my;                       // 正 = ライバルが上
+  if (g.ctrl[RG_HOME]) return 4;            // 地元を制圧されたら認める
+  if (d >= 12) return 0;
+  if (d >= 0) return 1;
+  if (d > -12) return 2;
+  return 3;
+}
+/* 台詞は (seed, 枠, 状態, 日) から決まる純関数。連日で同じ台詞にならないよう日で回す。 */
+function lrLine(slot) {
+  const p = lrAt(slot); if (!p) return "";
+  const L = lrState(), s = lrTalkState(slot);
+  const arr = (LR_TALK[p.id] || [])[s] || [];
+  if (!arr.length) return "";
+  const h = lrHash(L.seed, slot, s, 0x1b873593) % arr.length;
+  return arr[(h + state.day) % arr.length];
+}
+
+/* ---------- 表示 ---------- */
+/* 人物画像はまだ無い。用意されたら art/rivals/r01-normal.webp … を差せるよう、
+   ここだけ見ればよい構造にしておく。存在しないURLは踏まない(404を出さない)。 */
+const LR_ART = {};                     // 例: { R01: "./art/rivals/r01-normal.webp" }
+const lrArt = p => LR_ART[p.id] || null;
+
+/* 画像が無い間の代替。既存の金枠・カーボン地に合わせたモノグラム。 */
+function lrMono(p, size) {
+  const a = lrArt(p);
+  if (a) return `<img class="lr-face" src="${a}" alt="" decoding="async">`;
+  return `<span class="lr-mono${p.boss ? " boss" : ""}" style="--lc:${p.col};--lc2:${p.col2}"
+    aria-hidden="true"><b>${esc(p.ini)}</b><i>${esc(p.crest)}</i></span>`;
+}
+const lrBossBadge = p => p.boss ? `<span class="lr-boss">強敵</span>` : "";
+
+/* 地元での自店順位(1始まり)。まだ順位が出ていなければ0 */
+function lrMyPos() {
+  const rank = rgRanking(RG_HOME);
+  const i = rank.findIndex(r => r.me);
+  return i < 0 ? 0 : i + 1;
+}
+/* いま最も警戒すべき相手 = 地元3枠で sc が最大の人物 */
+function lrTopThreat() {
+  const g = rgState(), list = g.riv[RG_HOME] || [];
+  let bi = -1, bv = -Infinity;
+  for (let i = 0; i < 3 && i < list.length; i++) if (list[i] && list[i].sc > bv) { bv = list[i].sc; bi = i; }
+  return bi < 0 ? null : { i: bi, p: lrAt(bi), sc: bv };
+}
+/* 直近の重要行動(履歴の先頭から、伸びた行動を1件) */
+function lrLastBig() {
+  const L = lrState();
+  for (const r of L.log) { if (r.iv >= 1.6) return r; }
+  return L.log[0] || null;
+}
+
+function renderLocalRivals() {
+  const box = $("lrCard");
+  if (!box) return;
+  const L = lrState(), g = rgState();
+  const list = g.riv[RG_HOME] || [];
+  const open = rgUnlocked();
+  const pos = lrMyPos(), n = rgRanking(RG_HOME).length;
+  const th = lrTopThreat(), big = lrLastBig();
+  const mul = rivalMul();
+
+  const tiles = [0, 1, 2].map(i => {
+    const p = lrAt(i); if (!p) return "";
+    const r = list[i];
+    const sc = r ? Math.round(r.sc * mul * 10) / 10 : 0;
+    return `<button class="lr-tile${p.boss ? " boss" : ""}" data-lr="${i}"
+      aria-label="${esc(p.nm)} ${esc(p.shop)} の詳細">
+      ${lrMono(p)}
+      <span class="lr-nm">${esc(p.nm)}${lrBossBadge(p)}</span>
+      <span class="lr-shop">${esc(p.shop)}</span>
+      <span class="lr-tp">${esc(p.tp)}</span>
+      <span class="lr-sc">${open ? `集客力 <b>${sc}</b>` : `<i>勢力調査中</i>`}</span>
+    </button>`;
+  }).join("");
+
+  box.innerHTML = `
+    <div class="gp-h">${ic("flag")}<b>地元のライバル</b>
+      <span class="r">${esc(regionOf(RG_HOME).name)}</span></div>
+    <div class="gp-b">
+      <div class="row"><span class="k">地元での自店</span>
+        <span class="v ${pos === 1 ? "pos" : pos >= 3 ? "neg" : ""}">${pos ? `${pos}位 / ${n}店` : "―"}</span></div>
+      <div class="lr-grid">${tiles}</div>
+      ${th ? `<div class="row"><span class="k">最も警戒すべき相手</span>
+        <span class="v">${esc(th.p ? th.p.nm : "―")}</span></div>` : ""}
+      ${big && open ? `<div class="row"><span class="k">直近の動き</span>
+        <span class="v" style="font-size:11px">${esc(lrProf(big.r) ? lrProf(big.r).nm : "")}「${esc(lrProf(big.r) ? lrProf(big.r).acts[big.a] : "")}」</span></div>` : ""}
+      <p class="note" style="margin-top:5px">10人の候補から、このプレイでは<b>3人</b>が選ばれている。
+      顔ぶれはやり直すまで変わらない。${open ? "" : "<br>集客力と点差は<b>全国進出が解禁</b>されると見えるようになる。"}</p>
+    </div>`;
+}
+
+/* 詳細シート */
+function lrOpen(i) {
+  const p = lrAt(i); if (!p) return;
+  const g = rgState(), L = lrState();
+  const list = g.riv[RG_HOME] || [], r = list[i];
+  const open = rgUnlocked(), mul = rivalMul();
+  const sc = r ? Math.round(r.sc * mul * 10) / 10 : 0;
+  const my = rgMyScore(RG_HOME);
+  const gap = (my === null || !r) ? null : Math.round((my - sc) * 10) / 10;
+  const rank = rgRanking(RG_HOME);
+  const hisPos = r ? rank.findIndex(x => !x.me && x.nm === r.nm) + 1 : 0;
+  const logs = L.log.filter(x => x.r === p.id).slice(0, 12);
+  const ph = (L.st[i] || {}).ph || 0;
+  const phTx = p.id === "R10" ? ["", "追撃準備", "追撃中", "深海待機"][ph] : "";
+
+  showModal(`${mh("flag", "地元のライバル", true)}
+    <div class="mb">
+      <div class="lr-head${p.boss ? " boss" : ""}" style="--lc:${p.col};--lc2:${p.col2}">
+        ${lrMono(p)}
+        <div class="lr-hid">
+          <b>${esc(p.nm)}${lrBossBadge(p)}</b>
+          <span>${esc(p.shop)}</span>
+          <span class="lr-tp">${esc(p.tp)} ・ 紋章: ${esc(p.crest)}</span>
+        </div>
+      </div>
+      <p class="lr-cred">「${esc(p.cred)}」</p>
+      <div class="lr-say">${esc(lrLine(i))}</div>
+      <div class="bd">
+        <span class="k">地元順位</span><span class="v">${open && hisPos ? `${hisPos}位` : "―"}</span>
+        <span class="k">集客力</span><span class="v">${open ? sc : "調査中"}</span>
+        <span class="k">自店との差</span><span class="v ${gap !== null && gap >= 0 ? "pos" : "neg"}">${open && gap !== null ? (gap >= 0 ? `+${gap}` : gap) : "調査中"}</span>
+        ${phTx ? `<span class="k">状態</span><span class="v warnc">${esc(phTx)}</span>` : ""}
+      </div>
+      <div class="lr-acts"><b>行動</b>${p.acts.map(a => `<span>${esc(a)}</span>`).join("")}</div>
+      ${logs.length ? `<div class="lr-log"><b>行動履歴</b>${logs.map(x =>
+        `<div><span>DAY ${x.d}</span><span>${esc(p.acts[x.a] || "")}</span><i class="${x.ds > 0.05 ? "pos" : x.ds < -0.05 ? "neg" : ""}">${x.ds > 0 ? "+" : ""}${x.ds}</i></div>`).join("")}</div>`
+        : `<p class="note">まだ記録がない。営業を重ねると、この相手が何をしてきたかが残る。</p>`}
+    </div>`);
+}
+
+/* 解禁シートでの1回だけの紹介 */
+function lrIntroHtml() {
+  let L; try { L = lrState(); } catch (e) { return ""; }
+  const rows = [0, 1, 2].map(i => {
+    const p = lrAt(i); if (!p) return "";
+    return `<div><b>${esc(p.nm)}${lrBossBadge(p)}</b><span>${esc(p.shop)} ・ ${esc(p.tp)}<br>「${esc(p.cred)}」</span></div>`;
+  }).join("");
+  if (!rows) return "";
+  L.intro = true;
+  return `<p class="note" style="margin:10px 0 4px;color:var(--gold-hi)">今回の地元ライバル(3人)</p>
+    <div class="rg-unlock lr-intro">${rows}</div>`;
 }
 
 /* ==========================================================================
@@ -4793,10 +5438,11 @@ async function sellMachine(m) {
 }
 
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-area],[data-set],[data-sell],[data-buy],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode],[data-fire]");
+  const el = e.target.closest("[data-area],[data-set],[data-sell],[data-buy],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode],[data-fire],[data-lr]");
   if (!el) return;
   const d = el.dataset;
 
+  if (d.lr !== undefined) { lrOpen(Number(d.lr)); return; }
   if (d.rg) { openRegion(d.rg); return; }
   if (d.rgn || d.rgtp) {
     if (d.rgn) rgDraft.n = Number(d.rgn); else rgDraft.tp = d.rgtp;
