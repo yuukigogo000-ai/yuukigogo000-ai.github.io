@@ -135,9 +135,9 @@
    "len": 19
   },
   "DIFFS": {
-   "sha": "82d6f39a9e4e0ffd8c90b598bdac5981",
+   "sha": "acbfb9464982af4b0584296fe57317bd",
    "len": 527,
-   "prevSha": "d444e5fc4626430595e93e16f53254fd",
+   "prevSha": "82d6f39a9e4e0ffd8c90b598bdac5981",
    "rebaselined": {
     "balance2026_09_05": {
      "date": "2026-09-05",
@@ -186,6 +186,13 @@
      "change": "easy money 12,000,000→10,000,000 / rentMul 0.80→1.00 / fillMul 1.06→0.95 / expandMul 0.85→1.10 / upkeepMul 0.30→0.80。normal money 9,000,000→7,000,000 / rentMul 1.20→1.25 / fillMul 0.97→0.85 / expandMul 1.10→1.95 / upkeepMul 1.60→1.30。hard money 6,500,000→6,800,000 / rentMul 1.80→1.32 / fillMul 0.90→0.85 / creditMul 0.40→0.55 / expandMul 1.35→2.05 / upkeepMul 2.35→1.45。proMul / heatMul / rivalMul / repMul は全難易度で不変。",
      "measured": "各96回。のんびり 96.9%(中央82日) / 標準 69.8%(中央114日) / 修羅 35.4%(中央126日)。修羅の固定費を下げたのは、変更前が92%倒産で「難易度」ではなく壁だったため。",
      "prevSha": "d444e5fc4626430595e93e16f53254fd"
+    },
+    "clearrate2026_09_08b": {
+     "date": "2026-09-08",
+     "reason": "標準のクリア率を3分の2に詰める(ユーザー指示)。前回の調整は96回の測定で69.8%としていたが、240回で測り直すと72.1%(95%CI 66.4-77.8)で、2分の3ではなく7割強だった。easy / hard は変更なし。",
+     "change": "normal money 7,000,000→6,900,000 / rentMul 1.25→1.30 / expandMul 1.95→2.00 / upkeepMul 1.30→1.35。fillMul 0.85 と proMul / heatMul / creditMul / rivalMul / repMul は不変。難易度順(初期資金は easy>normal>hard、家賃・拡張費・維持費は easy<normal<hard、融資枠は easy>normal>hard)は維持している。",
+     "measured": "「ふつうの腕」160回で 66.9%(95%CI 59.6-74.2)、クリア日 中央117。参考: 修羅は240回で36.2%(CI 28.8-43.6)で3分の1の範囲内のため据え置き。",
+     "prevSha": "82d6f39a9e4e0ffd8c90b598bdac5981"
     }
    }
   },
@@ -314,14 +321,14 @@
    }
   },
   "RANK_DAYS": {
-   "sha": "afd23b332da0c5c13d6dd310c532d667",
+   "sha": "ec97fea33b34fa213118c802c975b510",
    "len": 123,
    "added": {
     "date": "2026-09-05",
     "reason": "難易度別クリアランク閾値。clearRank の分離に伴い新設。",
     "tuned": "難易度調整のたびに実測分布から取り直している。最終: easy 55/67/86、normal 91/112/140、hard 123/158/200。最適プレイでSが約6割、熟練プレイでA、それ以下でB/C。"
    },
-   "prevSha": "fb1c2ab77aaa029369ec72ceb27686fb",
+   "prevSha": "afd23b332da0c5c13d6dd310c532d667",
    "rebaselined": {
     "tempo2026_09_06": {
      "date": "2026-09-06",
@@ -335,6 +342,13 @@
      "change": "easy 46/55/70→78/82/86 / normal 70/85/110→104/111/116 / hard 116/141/182→118/126/133",
      "measured": "クリア回の分布(96回中)。のんびり n=93 最速74 中央82 最遅89 / 標準 n=67 最速101 中央111 最遅119 / 修羅 n=34 最速112 中央126 最遅144。S は上位1〜2割、A は中央前後、B は大半、C は制限日ぎりぎり。",
      "prevSha": "fb1c2ab77aaa029369ec72ceb27686fb"
+    },
+    "clearrate2026_09_08b": {
+     "date": "2026-09-08",
+     "reason": "標準の DIFFS 再調整でクリア日分布が動いたため、標準の閾値だけ取り直し。",
+     "change": "normal 104/111/116→105/113/118(easy 78/82/86 と hard 118/126/133 は不変)",
+     "measured": "制限日内にクリアした107回の分布: 最速98 / p10 105 / 中央113 / p75 117 / p90 119 / 最遅120。",
+     "prevSha": "afd23b332da0c5c13d6dd310c532d667"
     }
    }
   }

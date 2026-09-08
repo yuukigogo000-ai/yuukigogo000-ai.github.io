@@ -1471,7 +1471,7 @@ const LIMIT_DAYS = { easy: 90, normal: 120, hard: 150 };
 // ---- 難易度 ----
 const DIFFS = {
   easy:   { label:"のんびり", money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.95, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80 },
-  normal: { label:"標準",     money:7000000,  rentMul:1.25, proMul:1.00, heatMul:1.10, fillMul:0.85, creditMul:0.65, expandMul:1.95, upkeepMul:1.30, rivalMul:1.30, repMul:1.00 },
+  normal: { label:"標準",     money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.85, creditMul:0.65, expandMul:2.00, upkeepMul:1.35, rivalMul:1.30, repMul:1.00 },
   hard:   { label:"修羅",     money:6800000,  rentMul:1.32, proMul:1.80, heatMul:1.80, fillMul:0.85, creditMul:0.55, expandMul:2.05, upkeepMul:1.45, rivalMul:1.75, repMul:1.00 },
 };
 
@@ -2040,7 +2040,7 @@ function simulateDay() {
    各値は最適プレイと熟練プレイの実測分布から決めてある。 */
 const RANK_DAYS = {
   easy:   { s:  78, a:  82, b:  86 },
-  normal: { s: 104, a: 111, b: 116 },
+  normal: { s: 105, a: 113, b: 118 },
   hard:   { s: 118, a: 126, b: 133 },
 };
 function clearRank(d) {
