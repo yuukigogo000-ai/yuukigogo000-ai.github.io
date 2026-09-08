@@ -1316,12 +1316,14 @@ svg{flex:0 0 auto}
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-expand"/></svg><b>店舗拡張</b></div>
           <div class="gp-b">
             <div class="row"><span class="k">現在の最大設置数</span><span class="v" id="capNow">10台</span></div>
+            <div class="row"><span class="k">店舗簿価(純資産に計上)</span><span class="v" id="buildNow">¥0</span></div>
             <div class="row"><span class="k">規模維持費</span><span class="v" id="upkeepNow">¥0 / 日</span></div>
             <div class="row s"><span class="k s">次の1台で</span><span class="v s" id="upkeepNext">—</span></div>
             <button class="btn wide" id="btnExpand" style="margin-top:6px">+5台 拡張する</button>
-            <p class="note">拡張すると家賃・光熱費も増える。序盤ほど安く、広げるほど1回あたりの費用は上がる。<br>
-            <b>規模維持費</b>は13台目から発生し、台数が増えるほど1台あたりが重くなる(警備・設備保守・駐車場・人員教育)。
-            さらに日が経つほど上がっていくので、<b>広げたまま伸ばせないと詰む</b>。</p>
+            <p class="note">増設費は消えない。払った額の<b>6割が「店舗簿価」として純資産に残る</b>ので、拡張は罰ではなく<b>初期投資</b>だ。<br>
+            ただし現金は確実に出ていく。序盤ほど安く、広げるほど1回あたりの費用は上がる。<br>
+            <b>規模維持費</b>は130台目(13シマ目)から発生し、台数が増えるほど1台あたりが重くなる(警備・設備保守・駐車場・人員教育)。
+            さらに日が経つほど上がっていくので、<b>広げたまま埋められないと詰む</b>。</p>
           </div>
         </div>
 
@@ -1465,14 +1467,18 @@ svg{flex:0 0 auto}
 const SAVE_KEY = "pachi-teikoku-save-v1";
 const GOAL_ASSETS = 100000000; // 純資産1億円でクリア
 const MAX_CAP = 60;            // 店舗拡張の上限台数
+/* シマ増設に払った金のうち、店舗(内装・設備)の簿価として純資産に残る割合。
+   1.0 なら拡張は純資産に対して無傷、0 なら払った瞬間に消える(旧仕様)。
+   拡張を「罰」ではなく「初期投資」にするための係数。 */
+const BUILD_BOOK = 0.60;
 // 営業できる日数の上限。これを過ぎると期限切れで終了(クリア済みなら関係ない)
 const LIMIT_DAYS = { easy: 90, normal: 120, hard: 150 };
 
 // ---- 難易度 ----
 const DIFFS = {
-  easy:   { label:"のんびり", money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.95, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80 },
-  normal: { label:"標準",     money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.85, creditMul:0.65, expandMul:2.00, upkeepMul:1.35, rivalMul:1.30, repMul:1.00 },
-  hard:   { label:"修羅",     money:6800000,  rentMul:1.32, proMul:1.80, heatMul:1.80, fillMul:0.85, creditMul:0.55, expandMul:2.05, upkeepMul:1.45, rivalMul:1.75, repMul:1.00 },
+  easy:   { label:"のんびり", money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.84, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80 },
+  normal: { label:"標準",     money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.74, creditMul:0.65, expandMul:2.00, upkeepMul:1.45, rivalMul:1.30, repMul:1.00 },
+  hard:   { label:"修羅",     money:6750000,  rentMul:1.33, proMul:1.80, heatMul:1.80, fillMul:0.74, creditMul:0.60, expandMul:2.05, upkeepMul:1.52, rivalMul:1.75, repMul:1.00 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -1778,7 +1784,10 @@ function makeMachine(catalogId) {
 function catalogOf(m) { return CATALOG.find(c => c.id === m.cid); }
 function machineValue(m) { return Math.round(catalogOf(m).price * 0.45); }
 function machineAssets() { return state.machines.reduce((s, m) => s + machineValue(m), 0); }
-function totalAssets() { return state.money + machineAssets() - state.debt; }
+/* 店舗(内装・設備)の簿価。増設費は消えるのではなく資産として残る。
+   融資枠(creditLimit)には算入しない ─ 担保に取れるのは台だけ、という扱い */
+function buildAssets() { return Math.round(expandPaid() * BUILD_BOOK); }
+function totalAssets() { return state.money + machineAssets() + buildAssets() - state.debt; }
 function creditLimit() {
   const D = DIFFS[state.diff] || DIFFS.normal;
   return Math.round((machineAssets() * 0.45 + 1200000) * (D.creditMul || 1));
@@ -2039,9 +2048,9 @@ function simulateDay() {
    単一の閾値だと のんびり=常にS / 修羅=常にC になって機能しない。
    各値は最適プレイと熟練プレイの実測分布から決めてある。 */
 const RANK_DAYS = {
-  easy:   { s:  78, a:  82, b:  86 },
-  normal: { s: 105, a: 113, b: 118 },
-  hard:   { s: 118, a: 126, b: 133 },
+  easy:   { s:  79, a:  84, b:  88 },
+  normal: { s: 104, a: 111, b: 119 },
+  hard:   { s: 117, a: 132, b: 146 },
 };
 function clearRank(d) {
   const t = RANK_DAYS[state && state.diff] || RANK_DAYS.normal;
@@ -2080,9 +2089,18 @@ function weeklyReport(rec) {
 // ============================================================
 //  UI (経営画面)
 
+/* cap 台の状態から +5 台するのに要る素の金額。expandCost と expandPaid が同じ式を使う */
+function expandBase(cap) { return 1200000 + (cap - 10) * 320000; }
 function expandCost() {
   const D = DIFFS[state.diff] || DIFFS.normal;
-  return Math.round((1200000 + (state.cap - 10) * 320000) * (D.expandMul || 1));
+  return Math.round(expandBase(state.cap) * (D.expandMul || 1));
+}
+/* いまの cap に至るまでに払った増設費の合計。cap から一意に決まるので保存項目は要らない */
+function expandPaid() {
+  const D = DIFFS[state.diff] || DIFFS.normal;
+  let paid = 0;
+  for (let c = 10; c < state.cap; c += 5) paid += expandBase(c);
+  return Math.round(paid * (D.expandMul || 1));
 }
 
 /* 期限切れ。最終日そのものは営業できる(day > 上限 で初めて終了) */
@@ -2849,6 +2867,11 @@ function renderMgmt() {
 
   const capMax = state.cap >= MAX_CAP;
   $("capNow").textContent = tai(state.cap) + "台" + (capMax ? " (最大)" : "");
+  if ($("buildNow")) {
+    const ba = buildAssets();
+    $("buildNow").textContent = ba ? yen(ba) : "—";
+    $("buildNow").className = "v" + (ba ? " pos" : "");
+  }
   const eb = $("btnExpand");
   eb.textContent = capMax ? "拡張上限に到達" : `+${tai(5)}台 拡張する (${yenShort(expandCost())})`;
   eb.disabled = dead || capMax || state.money < expandCost();
@@ -6271,6 +6294,8 @@ function showDayResult(result) {
         <span class="hr"></span>
         <span class="k">資金残高</span><span class="v">${yen(state.money)}</span>
         <span class="k">純資産</span><span class="v">${yen(totalAssets())}</span>
+        <span class="k s">うち 台の簿価 / 店舗簿価</span><span class="v s">${yenShort(machineAssets())} / ${yenShort(buildAssets())}</span>${state.debt ? `
+        <span class="k s">うち 借入(差し引き)</span><span class="v s neg">−${yenShort(state.debt)}</span>` : ""}
       </div>
       <div class="row" style="margin-top:8px"><span class="k">シマ別収支(店側)</span><span class="v">${tai(state.machines.length)}台</span></div>
       <div class="mres">${perMachine}</div>
@@ -6385,7 +6410,7 @@ function showTutorial() {
         ${item("target", "平均設定のメリハリがすべて", "ホールは<b>1シマ=同一機種10台</b>の単位で動かす。渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出すシマ」と「回収するシマ」を作り分けろ!")}
         ${item("fire", "7のつく日は特日 / 週替わりブーム / シマ効果", "特日は高設定で評判爆上げ。ブームは<b>機種カテゴリ単位</b>で来て、その機種の集客力1.4倍 — ただし弱い機種はブームでも強い機種に届かない。同一機種を並べればシマ効果。")}
         ${item("star", "評判は放っておくと落ちる", "客は前によかった店をいつまでも覚えていない。<b>評判が高いほど毎日の目減りは大きい</b>。上のほうを保つには出玉かスタッフの質で押し返し続けるしかない。")}
-        ${item("bank", "銀行融資で攻めるか、堅実に行くか", "借金で一気に拡大もできるが利息は毎日重くのしかかる。クリア条件は「純資産」(借金は差し引き)。")}
+        ${item("bank", "拡張は罰ではなく投資", "クリア条件の「純資産」は <b>現金＋台の簿価＋店舗簿価−借金</b>。シマ増設費は消えず<b>6割が店舗簿価として残る</b>ので、拡張は計算できる投資だ。ただし現金は出るし、広げた席を埋められなければ規模維持費で溶ける。")}
       </div>
       <p class="note" style="margin-top:10px;color:var(--gold-hi);font-weight:800">難易度を選んで開店:</p>
       <div style="display:grid;gap:5px;margin-top:6px">
