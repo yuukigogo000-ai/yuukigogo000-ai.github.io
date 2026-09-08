@@ -935,34 +935,57 @@ svg{flex:0 0 auto}
 .lr-boss{font-size:7.5px;font-weight:900;letter-spacing:.06em;padding:0 3px;border-radius:2px;
   color:#2a1a02;background:linear-gradient(180deg,#ffe9a8,#d9a52a);white-space:nowrap}
 
-/* 人物画像が無い間のモノグラム */
-.lr-mono{position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:3px;
-  overflow:hidden;flex:0 0 auto;
-  border:1px solid color-mix(in srgb,var(--lc2) 55%,transparent);
+/* 人物画像。画像が出せなかったときだけ裏のモノグラムへ落ちる */
+.lr-pic{position:relative;display:block;width:76px;height:76px;flex:0 0 auto;border-radius:3px;
+  overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--lc2) 50%,transparent);
+  background:linear-gradient(160deg,var(--lc) 0%,#0a0b10 92%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.18),0 2px 10px rgba(0,0,0,.6)}
+.lr-pic img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;
+  display:block}
+/* 文字はDOMで出すので、画像側は下端だけ黒を敷いて読みやすさを確保する */
+.lr-pic::after{content:"";position:absolute;left:0;right:0;bottom:0;height:38%;pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(4,5,8,.72))}
+.lr-pic .lr-fb{position:absolute;inset:0;display:none;place-items:center;
   background:
-    linear-gradient(180deg,rgba(255,255,255,.14),transparent 42%),
+    linear-gradient(180deg,rgba(255,255,255,.12),transparent 42%),
     repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 1px,transparent 1px 5px),
-    linear-gradient(160deg,var(--lc) 0%,#0a0b10 92%);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 -10px 16px rgba(0,0,0,.5)}
-.lr-mono b{font-size:20px;font-weight:900;line-height:1;color:var(--lc2);
-  text-shadow:0 1px 0 rgba(0,0,0,.7),0 0 10px color-mix(in srgb,var(--lc2) 60%,transparent)}
-/* 紋章名は長いものがあるので、小さいモノグラムでは出さない(はみ出す) */
-.lr-mono i{display:none}
-.lr-head .lr-mono i{display:block;position:absolute;left:2px;right:2px;bottom:1px;font-style:normal;
-  font-size:6px;line-height:1.1;text-align:center;color:var(--lc2);opacity:.8;
-  overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
-.lr-mono.boss{border-color:var(--gold);box-shadow:inset 0 0 0 1px rgba(255,212,59,.35),0 0 12px rgba(255,196,60,.35)}
-.lr-face{width:44px;height:44px;object-fit:cover;border-radius:3px;display:block;
-  border:1px solid rgba(255,212,59,.35)}
+    linear-gradient(160deg,var(--lc) 0%,#0a0b10 92%)}
+.lr-pic .lr-fb b{font-size:26px;font-weight:900;line-height:1;color:var(--lc2);
+  text-shadow:0 1px 0 rgba(0,0,0,.7)}
+.lr-pic.fallback img{display:none}
+.lr-pic.fallback .lr-fb{display:grid}
+.lr-pic.tile{width:76px;height:76px}
+.lr-pic.big{width:150px;height:150px}
+.lr-pic.intro{width:56px;height:56px}
+.lr-pic.intro .lr-fb b{font-size:20px}
+/* 強敵フレーム。R09は白金・紫、R10は黒・赤紫(人物の色をそのまま枠に使う) */
+/* 強敵フレームは人物の2色で組む。R09は白金(--lc)と紫(--lc2)、R10は黒と赤紫。 */
+.lr-pic.boss{border-width:2px;border-color:var(--lc2);
+  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--lc) 85%,transparent),
+             inset 0 0 0 3px rgba(0,0,0,.55),
+             0 0 14px color-mix(in srgb,var(--lc2) 60%,transparent),
+             0 2px 12px rgba(0,0,0,.7)}
+/* 紋章 */
+.lr-em{position:relative;display:block;width:30px;height:30px;border-radius:3px;overflow:hidden;
+  border:1px solid color-mix(in srgb,var(--lc2) 45%,transparent);background:#0a0b10}
+.lr-em img{width:100%;height:100%;object-fit:cover;display:block}
+.lr-em .lr-fb{position:absolute;inset:0;display:none;place-items:center;background:#0a0b10}
+.lr-em .lr-fb b{font-size:14px;font-weight:900;color:var(--lc2)}
+.lr-em.corner{position:absolute;right:6px;top:6px;width:26px;height:26px}
+@media (min-width:400px){ .lr-pic.tile{width:84px;height:84px} .lr-pic.big{width:164px;height:164px} }
 
 /* 詳細シート */
-.lr-head{display:flex;gap:9px;align-items:center;padding:7px 8px;border-radius:3px;
+.lr-head{position:relative;overflow:hidden;display:flex;gap:9px;align-items:center;padding:8px 9px;border-radius:3px;
   border:1px solid color-mix(in srgb,var(--lc2) 40%,transparent);
   background:linear-gradient(120deg,color-mix(in srgb,var(--lc) 26%,transparent),transparent 70%),
              linear-gradient(180deg,#14171f,#0a0b10)}
 .lr-head.boss{border-color:var(--gold);box-shadow:0 0 14px rgba(255,196,60,.2)}
-.lr-head .lr-mono,.lr-head .lr-face{width:56px;height:56px}
-.lr-head .lr-mono b{font-size:26px}
+.lr-head .lr-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;
+  opacity:.30;filter:saturate(.85) brightness(.7)}
+.lr-head::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,rgba(4,5,8,.90),rgba(4,5,8,.62) 55%,rgba(4,5,8,.86))}
+.lr-head > *:not(.lr-bg){position:relative;z-index:1}
 .lr-hid{min-width:0;display:flex;flex-direction:column;gap:1px}
 .lr-hid b{font-size:14px;font-weight:900;color:var(--tx);display:flex;align-items:center;gap:5px;flex-wrap:wrap}
 .lr-hid span{font-size:10px;color:var(--tx-2)}
@@ -971,6 +994,13 @@ svg{flex:0 0 auto}
 .lr-say{margin:0 0 8px;padding:7px 9px;border-radius:3px;font-size:12px;line-height:1.6;color:var(--tx);
   border:1px solid var(--line-w);border-left:3px solid var(--gold);
   background:linear-gradient(180deg,rgba(40,30,14,.6),rgba(10,10,12,.75))}
+/* 店舗外観と直近の動き */
+.lr-shots{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:9px}
+.lr-shots figure{margin:0;border-radius:3px;overflow:hidden;border:1px solid var(--line-w);background:#0a0b10}
+.lr-shots img{width:100%;aspect-ratio:1/1;object-fit:cover;object-position:center;display:block}
+.lr-shots figcaption{padding:3px 5px;font-size:8.5px;letter-spacing:.06em;color:var(--tx-3);
+  background:linear-gradient(180deg,rgba(255,196,60,.10),transparent)}
+
 .lr-acts{margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
 .lr-acts b{font-size:10px;font-weight:900;letter-spacing:.08em;color:var(--gold-hi);margin-right:2px}
 .lr-acts span{font-size:9.5px;padding:2px 6px;border-radius:2px;color:var(--tx-2);
@@ -983,11 +1013,22 @@ svg{flex:0 0 auto}
 .lr-log div span:first-child{font-family:var(--f-num);color:var(--tx-3);font-size:9.5px}
 .lr-log i{font-style:normal;font-family:var(--f-num);font-weight:800;color:var(--tx-3)}
 .lr-log i.pos{color:var(--pos)} .lr-log i.neg{color:var(--neg)}
-.lr-intro b{display:flex;align-items:center;gap:5px}
+.lr-introwrap{position:relative;border-radius:3px;overflow:hidden;border:1px solid var(--line-w)}
+.lr-introwrap.boss{border-color:rgba(255,212,59,.5);box-shadow:0 0 14px rgba(255,196,60,.2)}
+.lr-introwrap .lr-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+  object-position:center;opacity:.34;filter:saturate(.9) brightness(.72)}
+.lr-introwrap::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(4,5,8,.78),rgba(4,5,8,.90))}
+.lr-introwrap .rg-unlock{position:relative;z-index:1;margin:0;padding:7px}
+.lr-intro > div{display:grid;grid-template-columns:auto 1fr;grid-template-rows:auto auto;
+  column-gap:8px;align-items:center;background:rgba(8,9,13,.55)}
+.lr-intro .lr-pic{grid-row:1/3}
+.lr-intro b{display:flex;align-items:center;gap:5px;align-self:end}
+.lr-intro span{align-self:start}
 
 @media (max-width:374px){
-  .lr-mono{width:38px;height:38px}
-  .lr-mono b{font-size:17px}
+  .lr-pic.tile{width:66px;height:66px}
+  .lr-pic .lr-fb b{font-size:22px}
   .lr-nm{font-size:9.5px}
 }
 </style>
@@ -4201,19 +4242,124 @@ function lrLine(slot) {
   return arr[(h + state.day) % arr.length];
 }
 
-/* ---------- 表示 ---------- */
-/* 人物画像はまだ無い。用意されたら art/rivals/r01-normal.webp … を差せるよう、
-   ここだけ見ればよい構造にしておく。存在しないURLは踏まない(404を出さない)。 */
-const LR_ART = {};                     // 例: { R01: "./art/rivals/r01-normal.webp" }
-const lrArt = p => LR_ART[p.id] || null;
-
-/* 画像が無い間の代替。既存の金枠・カーボン地に合わせたモノグラム。 */
-function lrMono(p, size) {
-  const a = lrArt(p);
-  if (a) return `<img class="lr-face" src="${a}" alt="" decoding="async">`;
-  return `<span class="lr-mono${p.boss ? " boss" : ""}" style="--lc:${p.col};--lc2:${p.col2}"
-    aria-hidden="true"><b>${esc(p.ini)}</b><i>${esc(p.crest)}</i></span>`;
+/* ---------- 人物画像 ---------- */
+/* 1人9点 × 10人 + 共通4点 = 94点。すべて同梱。外部URL・CDN・手書きBase64は使わない。
+   表情の切替は台詞と同じ5状態分類をそのまま使う(画像専用の閾値は作らない)。 */
+const LR_ART_DIR = "./art/rivals/";
+const LR_VARIANTS = ["normal", "advantage", "alarm", "defeat", "respect", "action", "storefront", "interior", "emblem"];
+const LR_SHARED = {
+  reveal: "shared/local-rival-reveal.webp",
+  three:  "shared/three-challengers.webp",
+  boss:   "shared/boss-warning.webp",
+  champ:  "shared/local-champion.webp",
+};
+const lrImg = (p, v) => LR_ART_DIR + p.id.toLowerCase() + "-" + v + ".webp";
+const lrShared = k => LR_ART_DIR + LR_SHARED[k];
+/* 全94パス。検査用にここから引ける */
+function lrAllArt() {
+  const out = [];
+  for (const p of LR_LIST) for (const v of LR_VARIANTS) out.push(lrImg(p, v));
+  for (const k of Object.keys(LR_SHARED)) out.push(lrShared(k));
+  return out;
 }
+
+/* 台詞の5状態 → 表情画像。追撃の前兆・追撃中は警戒(alarm)を出す。 */
+const LR_STATE_ART = ["advantage", "advantage", "alarm", "defeat", "respect"];
+function lrFaceVariant(slot) {
+  const p = lrAt(slot); if (!p) return "normal";
+  /* 画像専用のしきい値は作らない。台詞と同じ5状態分類をそのまま使う。
+     まだ順位が成立しない(自店スコアが出せない)ときだけ normal。 */
+  if (rgMyScore(RG_HOME) === null) return "normal";
+  const ph = (lrState().st[slot] || {}).ph || 0;
+  /* alarm は「僅差で劣勢」に加えて追撃の前兆・追撃中にも使う(納品仕様どおり) */
+  if (p.id === "R10" && (ph === 1 || ph === 2)) return "alarm";
+  return LR_STATE_ART[lrTalkState(slot)] || "normal";
+}
+
+/* 読み込み(遅延読込の記録も兼ねる)。94点を初回に全部デコードしない。 */
+const lrLoaded = Object.create(null);
+function lrFetch(url) {
+  if (lrLoaded[url]) return lrLoaded[url];
+  const im = new Image();
+  im.decoding = "async";
+  const pr = new Promise(res => { im.onload = () => res(true); im.onerror = () => res(false); });
+  im.src = url;
+  lrLoaded[url] = pr;
+  return pr;
+}
+const lrIdle = fn => (typeof requestIdleCallback === "function")
+  ? requestIdleCallback(fn, { timeout: 2500 }) : setTimeout(fn, 600);
+
+/* 先読みは「いまの顔ぶれ」に紐づける。
+   起動時の仮ゲームと、難易度を選んだあとの本ゲームでは3人が変わるので、
+   ただのフラグで止めると別人の画像を先読みしてしまう。 */
+const lrRoster = () => (lrState().ids || []).join("-");
+let lrFirstFor = null, lrFacesFor = null;
+/* 起動直後は難易度選択の裏で仮のゲームが1つでき、経営画面も一度描かれる。
+   そこで先読みすると、選ばれてもいない人物の画像を取りに行ってしまう。
+   本編が始まった(難易度を選んだ / セーブを読んだ)ことを明示的な合図にする。 */
+let lrStarted = false;
+function lrBegin() {
+  lrStarted = true;
+  try { renderLocalRivals(); } catch (e) {}
+  lrPreloadFirst(); lrPreloadFaces();
+}
+/* 初期表示ぶん: 選出3人の normal と emblem + いま要る共通背景だけ */
+function lrPreloadFirst() {
+  const key = lrRoster();
+  if (lrFirstFor === key) return;
+  lrFirstFor = key;
+  for (let i = 0; i < 3; i++) {
+    const p = lrAt(i); if (!p) continue;
+    lrFetch(lrImg(p, "normal")); lrFetch(lrImg(p, "emblem"));
+  }
+  lrFetch(lrShared("reveal"));
+  lrFetch(lrShared(lrHasBoss() ? "boss" : "three"));
+}
+/* カードを出したあとに、選ばれた3人ぶんの表情と行動画像を遅延で足す */
+function lrPreloadFaces() {
+  const key = lrRoster();
+  if (lrFacesFor === key) return;
+  lrFacesFor = key;
+  lrIdle(() => {
+    if (lrRoster() !== key) return;          // その間に顔ぶれが変わったら捨てる
+    for (let i = 0; i < 3; i++) {
+      const p = lrAt(i); if (!p) continue;
+      for (const v of ["advantage", "alarm", "defeat", "respect", "action"]) lrFetch(lrImg(p, v));
+    }
+  });
+}
+/* 詳細シートを開く直前だけ、その人の店舗外観と内装を読む */
+function lrPreloadDetail(i) {
+  const p = lrAt(i); if (!p) return;
+  lrFetch(lrImg(p, "storefront")); lrFetch(lrImg(p, "interior"));
+}
+
+/* 画像が出せなかったときだけモノグラムへ戻す。通常時に画像を省略しない。 */
+function lrImgFail(el) {
+  const box = el.closest(".lr-pic");
+  if (box) box.classList.add("fallback");
+}
+function lrBindImgs(root) {
+  if (!root) return;
+  for (const im of root.querySelectorAll(".lr-pic img")) {
+    if (im.dataset.b) continue;
+    im.dataset.b = "1";
+    if (im.complete && im.naturalWidth === 0) lrImgFail(im);
+    else im.addEventListener("error", () => lrImgFail(im), { once: true });
+  }
+}
+
+/* 人物の顔。画像 + 失敗時のモノグラム(常に裏に置いておく) */
+function lrFace(p, variant, cls) {
+  return `<span class="lr-pic ${cls || ""}${p.boss ? " boss" : ""}" style="--lc:${p.col};--lc2:${p.col2}" aria-hidden="true">
+    <img src="${lrImg(p, variant)}" alt="" decoding="async">
+    <span class="lr-fb"><b>${esc(p.ini)}</b></span>
+  </span>`;
+}
+/* 紋章 */
+const lrEmblem = (p, cls) => `<span class="lr-em ${cls || ""}" style="--lc2:${p.col2}" aria-hidden="true">
+  <img src="${lrImg(p, "emblem")}" alt="" decoding="async"><span class="lr-fb"><b>${esc(p.ini)}</b></span></span>`;
 const lrBossBadge = p => p.boss ? `<span class="lr-boss">強敵</span>` : "";
 
 /* 地元での自店順位(1始まり)。まだ順位が出ていなければ0 */
@@ -4239,6 +4385,8 @@ function lrLastBig() {
 function renderLocalRivals() {
   const box = $("lrCard");
   if (!box) return;
+  /* 本編が始まるまでは中身を作らない。仮ゲームの3人の画像を読みに行かせないため。 */
+  if (!lrStarted) { box.innerHTML = ""; return; }
   const L = lrState(), g = rgState();
   const list = g.riv[RG_HOME] || [];
   const open = rgUnlocked();
@@ -4252,7 +4400,7 @@ function renderLocalRivals() {
     const sc = r ? Math.round(r.sc * mul * 10) / 10 : 0;
     return `<button class="lr-tile${p.boss ? " boss" : ""}" data-lr="${i}"
       aria-label="${esc(p.nm)} ${esc(p.shop)} の詳細">
-      ${lrMono(p)}
+      ${lrFace(p, lrFaceVariant(i), "tile")}
       <span class="lr-nm">${esc(p.nm)}${lrBossBadge(p)}</span>
       <span class="lr-shop">${esc(p.shop)}</span>
       <span class="lr-tp">${esc(p.tp)}</span>
@@ -4274,11 +4422,14 @@ function renderLocalRivals() {
       <p class="note" style="margin-top:5px">10人の候補から、このプレイでは<b>3人</b>が選ばれている。
       顔ぶれはやり直すまで変わらない。${open ? "" : "<br>集客力と点差は<b>全国進出が解禁</b>されると見えるようになる。"}</p>
     </div>`;
+  lrBindImgs(box);
+  if (lrStarted) { lrPreloadFirst(); lrPreloadFaces(); }
 }
 
 /* 詳細シート */
 function lrOpen(i) {
   const p = lrAt(i); if (!p) return;
+  lrPreloadDetail(i);
   const g = rgState(), L = lrState();
   const list = g.riv[RG_HOME] || [], r = list[i];
   const open = rgUnlocked(), mul = rivalMul();
@@ -4294,12 +4445,14 @@ function lrOpen(i) {
   showModal(`${mh("flag", "地元のライバル", true)}
     <div class="mb">
       <div class="lr-head${p.boss ? " boss" : ""}" style="--lc:${p.col};--lc2:${p.col2}">
-        ${lrMono(p)}
+        <img class="lr-bg" src="${lrImg(p, "interior")}" alt="" decoding="async">
+        ${lrFace(p, lrFaceVariant(i), "big")}
         <div class="lr-hid">
           <b>${esc(p.nm)}${lrBossBadge(p)}</b>
           <span>${esc(p.shop)}</span>
           <span class="lr-tp">${esc(p.tp)} ・ 紋章: ${esc(p.crest)}</span>
         </div>
+        ${lrEmblem(p, "corner")}
       </div>
       <p class="lr-cred">「${esc(p.cred)}」</p>
       <div class="lr-say">${esc(lrLine(i))}</div>
@@ -4309,11 +4462,16 @@ function lrOpen(i) {
         <span class="k">自店との差</span><span class="v ${gap !== null && gap >= 0 ? "pos" : "neg"}">${open && gap !== null ? (gap >= 0 ? `+${gap}` : gap) : "調査中"}</span>
         ${phTx ? `<span class="k">状態</span><span class="v warnc">${esc(phTx)}</span>` : ""}
       </div>
+      <div class="lr-shots">
+        <figure><img src="${lrImg(p, "storefront")}" alt="" decoding="async"><figcaption>店舗外観</figcaption></figure>
+        <figure><img src="${lrImg(p, "action")}" alt="" decoding="async"><figcaption>直近の動き</figcaption></figure>
+      </div>
       <div class="lr-acts"><b>行動</b>${p.acts.map(a => `<span>${esc(a)}</span>`).join("")}</div>
       ${logs.length ? `<div class="lr-log"><b>行動履歴</b>${logs.map(x =>
         `<div><span>DAY ${x.d}</span><span>${esc(p.acts[x.a] || "")}</span><i class="${x.ds > 0.05 ? "pos" : x.ds < -0.05 ? "neg" : ""}">${x.ds > 0 ? "+" : ""}${x.ds}</i></div>`).join("")}</div>`
         : `<p class="note">まだ記録がない。営業を重ねると、この相手が何をしてきたかが残る。</p>`}
     </div>`);
+  lrBindImgs($("modalBox"));
 }
 
 /* 解禁シートでの1回だけの紹介 */
@@ -4321,12 +4479,18 @@ function lrIntroHtml() {
   let L; try { L = lrState(); } catch (e) { return ""; }
   const rows = [0, 1, 2].map(i => {
     const p = lrAt(i); if (!p) return "";
-    return `<div><b>${esc(p.nm)}${lrBossBadge(p)}</b><span>${esc(p.shop)} ・ ${esc(p.tp)}<br>「${esc(p.cred)}」</span></div>`;
+    return `<div>${lrFace(p, "action", "intro")}<b>${esc(p.nm)}${lrBossBadge(p)}</b>
+      <span>${esc(p.shop)} ・ ${esc(p.tp)}<br>「${esc(p.cred)}」</span></div>`;
   }).join("");
   if (!rows) return "";
   L.intro = true;
+  /* 強敵が1人でもいれば boss-warning、いなければ three-challengers */
+  const bg = lrHasBoss() ? "boss" : "three";
   return `<p class="note" style="margin:10px 0 4px;color:var(--gold-hi)">今回の地元ライバル(3人)</p>
-    <div class="rg-unlock lr-intro">${rows}</div>`;
+    <div class="lr-introwrap${lrHasBoss() ? " boss" : ""}">
+      <img class="lr-bg" src="${lrShared(bg)}" alt="" decoding="async">
+      <div class="rg-unlock lr-intro">${rows}</div>
+    </div>`;
 }
 
 /* ==========================================================================
@@ -5378,6 +5542,7 @@ function startGame(diff) {
   save(true);
   closeModal();
   renderAll();
+  try { lrBegin(); } catch (e) {}
   toast(`難易度「${DIFFS[diff].label}」で開店!`);
 }
 window.startGame = startGame;
@@ -5585,6 +5750,7 @@ const loaded = load();
 if (loaded && Array.isArray(loaded.machines)) {
   state = loaded;
   renderAll();
+  try { lrBegin(); } catch (e) {}
   if (isDead()) showBankruptModal();
 } else {
   state = newGame("normal");
