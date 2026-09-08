@@ -1470,9 +1470,9 @@ const LIMIT_DAYS = { easy: 90, normal: 120, hard: 150 };
 
 // ---- 難易度 ----
 const DIFFS = {
-  easy:   { label:"のんびり", money:12000000, rentMul:0.80, proMul:0.45, heatMul:0.65, fillMul:1.06, creditMul:1.20, expandMul:0.85, upkeepMul:0.30, rivalMul:0.85, repMul:0.80 },
-  normal: { label:"標準",     money:9000000,  rentMul:1.20, proMul:1.00, heatMul:1.10, fillMul:0.97, creditMul:0.65, expandMul:1.10, upkeepMul:1.60, rivalMul:1.30, repMul:1.00 },
-  hard:   { label:"修羅",     money:6500000,  rentMul:1.80, proMul:1.80, heatMul:1.80, fillMul:0.90, creditMul:0.40, expandMul:1.35, upkeepMul:2.35, rivalMul:1.75, repMul:1.00 },
+  easy:   { label:"のんびり", money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.95, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80 },
+  normal: { label:"標準",     money:7000000,  rentMul:1.25, proMul:1.00, heatMul:1.10, fillMul:0.85, creditMul:0.65, expandMul:1.95, upkeepMul:1.30, rivalMul:1.30, repMul:1.00 },
+  hard:   { label:"修羅",     money:6800000,  rentMul:1.32, proMul:1.80, heatMul:1.80, fillMul:0.85, creditMul:0.55, expandMul:2.05, upkeepMul:1.45, rivalMul:1.75, repMul:1.00 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -2039,9 +2039,9 @@ function simulateDay() {
    単一の閾値だと のんびり=常にS / 修羅=常にC になって機能しない。
    各値は最適プレイと熟練プレイの実測分布から決めてある。 */
 const RANK_DAYS = {
-  easy:   { s:  46, a:  55, b:  70 },
-  normal: { s:  70, a:  85, b: 110 },
-  hard:   { s: 116, a: 141, b: 182 },
+  easy:   { s:  78, a:  82, b:  86 },
+  normal: { s: 104, a: 111, b: 116 },
+  hard:   { s: 118, a: 126, b: 133 },
 };
 function clearRank(d) {
   const t = RANK_DAYS[state && state.diff] || RANK_DAYS.normal;
@@ -6390,13 +6390,13 @@ function showTutorial() {
       <p class="note" style="margin-top:10px;color:var(--gold-hi);font-weight:800">難易度を選んで開店:</p>
       <div style="display:grid;gap:5px;margin-top:6px">
         <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('easy')">
-          <span><b style="font-size:14px;color:var(--pos)">のんびり</b> <small style="color:var(--tx-3)">じっくり学べる・まず潰れない</small></span>
+          <span><b style="font-size:14px;color:var(--pos)">のんびり</b> <small style="color:var(--tx-3)">${LIMIT_DAYS.easy}日以内に1億 / まず潰れない・じっくり学べる</small></span>
           <span class="num" style="font-size:14px;font-weight:900;color:var(--gold-hi)">${yen(DIFFS.easy.money)}</span></button>
         <button class="btn wide gold" style="min-height:52px;justify-content:space-between" onclick="startGame('normal')">
-          <span><b style="font-size:14px">標準</b> <small>油断すると潰れる</small></span>
+          <span><b style="font-size:14px">標準</b> <small>${LIMIT_DAYS.normal}日以内に1億 / 3割は間に合わない</small></span>
           <span class="num" style="font-size:14px;font-weight:900">${yen(DIFFS.normal.money)}</span></button>
         <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('hard')">
-          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">標準比 家賃${(DIFFS.hard.rentMul / DIFFS.normal.rentMul).toFixed(1)}倍・維持費${(DIFFS.hard.upkeepMul / DIFFS.normal.upkeepMul).toFixed(1)}倍・融資枠ほぼ無し</small></span>
+          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">${LIMIT_DAYS.hard}日以内に1億 / 辿り着けるのは3人に1人</small></span>
           <span class="num" style="font-size:14px;font-weight:900;color:var(--gold-hi)">${yen(DIFFS.hard.money)}</span></button>
       </div>
     </div>`);
