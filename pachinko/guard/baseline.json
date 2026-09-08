@@ -20,8 +20,14 @@
    }
   },
   "isDead": {
-   "sha": "5ffae59c12c56c8cb51200ba8f4d051b",
-   "len": 54
+   "sha": "296df2808b9d8ba8d7c651d61e4cd515",
+   "len": 72,
+   "prevSha": "5ffae59c12c56c8cb51200ba8f4d051b",
+   "rebaselined": {
+    "date": "2026-09-08",
+    "reason": "日にち制限の導入(ユーザー指示。のんびり90/標準120/修羅150営業日)。isDead は「もう営業できない」を表す判定なので、倒産に加えて期限切れも含めるようにした。倒産だけを見たい表示のために isBankrupt を別に用意し、既存の倒産シートはそちらで出し分ける。simulateDay / sanitizeState / save / load / newGame は byte 一致のまま、セーブ形式も不変。",
+    "change": "state.money < 0 → state.money < 0 || isTimeUp()。isTimeUp は state.day > LIMIT_DAYS[難易度] かつ未クリアのとき true。最終日そのものは営業できる。"
+   }
   },
   "clearRank": {
    "sha": "b374ace1fc5632d0334b58c525583583",

@@ -1100,6 +1100,13 @@ svg{flex:0 0 auto}
 @media (prefers-reduced-motion:reduce){
   .ce-active,.ce-ch,.ce-hero img{animation:none!important;transition:none!important}
 }
+
+/* 期限までの残り日数 */
+#dayBox .lim{font-size:8px;font-weight:800;letter-spacing:.02em;color:var(--tx-3);margin-top:1px;white-space:nowrap}
+#dayBox .lim.near{color:var(--warn)}
+#dayBox .lim.warn{color:var(--neg)}
+#dayBox .lim.over{color:var(--neg)}
+#dayBox .lim.ok{color:var(--pos)}
 </style>
 </head>
 <body>
@@ -1154,6 +1161,7 @@ svg{flex:0 0 auto}
       <div class="d">DAY</div>
       <div class="n num" id="stDay">1</div>
       <div class="s" id="dayNote">開店前</div>
+      <div class="lim" id="dayLeft"></div>
     </div>
     <div id="fundBox" class="gp">
       <div class="k">資金</div>
@@ -1457,6 +1465,8 @@ svg{flex:0 0 auto}
 const SAVE_KEY = "pachi-teikoku-save-v1";
 const GOAL_ASSETS = 100000000; // 純資産1億円でクリア
 const MAX_CAP = 60;            // 店舗拡張の上限台数
+// 営業できる日数の上限。これを過ぎると期限切れで終了(クリア済みなら関係ない)
+const LIMIT_DAYS = { easy: 90, normal: 120, hard: 150 };
 
 // ---- 難易度 ----
 const DIFFS = {
@@ -2075,7 +2085,16 @@ function expandCost() {
   return Math.round((1200000 + (state.cap - 10) * 320000) * (D.expandMul || 1));
 }
 
-function isDead() { return state && state.money < 0; }
+/* 期限切れ。最終日そのものは営業できる(day > 上限 で初めて終了) */
+function isTimeUp() {
+  if (!state || state.cleared) return false;
+  const lim = LIMIT_DAYS[state.diff] || LIMIT_DAYS.normal;
+  return state.day > lim;
+}
+/* もう営業できない状態。倒産と期限切れの両方を含む */
+function isDead() { return !!state && (state.money < 0 || isTimeUp()); }
+/* 倒産だけを見たいとき(表示の出し分け用) */
+function isBankrupt() { return !!state && state.money < 0; }
 
 function save(silent) {
   try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
@@ -2605,6 +2624,15 @@ function renderStatus() {
   const dn = $("dayNote");
   dn.textContent = tk ? "特日" : wk ? "週末" : "通常営業";
   dn.className = "s" + (tk ? " tokubi" : wk ? " week" : "");
+  /* 期限までの残り。締切があることを常に見せる */
+  const dl = $("dayLeft");
+  if (dl) {
+    const lim = LIMIT_DAYS[state.diff] || LIMIT_DAYS.normal;
+    const left = lim - state.day + 1;
+    if (state.cleared) { dl.textContent = "達成"; dl.className = "lim ok"; }
+    else if (left <= 0) { dl.textContent = "期限切れ"; dl.className = "lim over"; }
+    else { dl.textContent = "残り" + left + "日"; dl.className = "lim" + (left <= 10 ? " warn" : left <= 25 ? " near" : ""); }
+  }
   $("stMoney").textContent = yen(state.money);
   const last = state.history[0], nEl = $("stNet");
   if (last) { nEl.textContent = sign(last.net); nEl.className = "num " + (last.net >= 0 ? "pos" : "neg"); }
@@ -6018,7 +6046,7 @@ function showModal(html) {
 }
 function closeModal() {
   // 倒産後はモーダルを閉じられない(リセットのみ)。doResetはstateを先に差し替えるので通る
-  if (isDead()) { showBankruptModal(); return; }
+  if (isDead()) { showEndModal(); return; }
   $("modalBg").classList.remove("show");
   renderAll();
   if (pendingUnlock) { pendingUnlock = false; rgShowUnlock(); }
@@ -6057,6 +6085,29 @@ const mh = (icon, title, closable) =>
   `<div class="mh">${ic(icon)}<h2>${title}</h2>${closable ? `<button class="x" onclick="closeModal()" aria-label="閉じる">${ic("x")}</button>` : ""}</div>`;
 
 /* ---------- 倒産 ---------- */
+/* 期限切れ。倒産とは別の終わり方なので、文面も結果も分ける。 */
+function showTimeUpModal() {
+  const lim = LIMIT_DAYS[state.diff] || LIMIT_DAYS.normal;
+  const assets = totalAssets();
+  const pct = Math.max(0, Math.min(100, assets / GOAL_ASSETS * 100));
+  showModal(`<div class="modal-art"><img src="./art/bg_news.jpg" alt="" decoding="async"></div>${mh("alert", "期限切れ", false)}
+    <div class="mb">
+      <p class="note" style="font-size:12px;color:var(--tx-2)">
+        ${DIFFS[state.diff].label}の期限は<b>${lim}営業日</b>。店は潰れなかったが、
+        目標の純資産1億円には届かなかった。</p>
+      <div class="bd" style="margin-top:8px">
+        <span class="k">最終営業日</span><span class="v">${lim} 日目</span>
+        <span class="k">到達した純資産</span><span class="v">${yen(assets)}</span>
+        <span class="k">目標への到達率</span><span class="v ${pct >= 80 ? "warnc" : "neg"}">${pct.toFixed(1)}%</span>
+        <span class="k">借入残高</span><span class="v ${state.debt ? "neg" : ""}">${yen(state.debt)}</span>
+        <span class="k">解除した実績</span><span class="v">${state.ach.length} / ${ACHIEVEMENTS.length}</span>
+      </div>
+      <p class="note" style="margin-top:6px">拡張と平均設定の切り替えを早めに回すと、期限内に届きやすくなる。</p>
+      <div class="rowbtns"><button class="btn red" onclick="doReset()">${ic("refresh")}最初からやり直す</button></div>
+    </div>`);
+}
+/* 倒産か期限切れかを見て、正しい終わり方を出す */
+function showEndModal() { if (isBankrupt()) showBankruptModal(); else showTimeUpModal(); }
 function showBankruptModal() {
   showModal(`<div class="modal-art"><img src="./art/atm_smoke.jpg" alt="" decoding="async"></div>${mh("skull", "倒産", false)}
     <div class="mb">
@@ -6074,7 +6125,7 @@ function showBankruptModal() {
    1営業日の実行(A-05 DAY START → RESULT)
    ========================================================================== */
 function runDay() {
-  if (isDead()) { showBankruptModal(); return; }
+  if (isDead()) { showEndModal(); return; }
   if (busy) return;
   // 結果モーダル表示中の再クリック(Enter連打等)で日が進むのを防ぐ
   if (uiBlocked()) return;
@@ -6238,7 +6289,7 @@ function showDayResult(result) {
    ========================================================================== */
 let setListSort = "order";
 function openSetList() {
-  if (isDead()) { showBankruptModal(); return; }
+  if (isDead()) { showEndModal(); return; }
   if (!state.machines.length) {
     showModal(`${mh("alert", "台がありません", true)}
       <div class="mb"><p class="note" style="font-size:12px;color:var(--tx-2)">台が1台もありません。「新台購入」から台を導入してください。</p>
@@ -6539,7 +6590,7 @@ if (loaded && Array.isArray(loaded.machines)) {
   renderAll();
   try { lrBegin(); } catch (e) {}
   try { ceInit(); ceClaimPending(); } catch (e) {}
-  if (isDead()) showBankruptModal();
+  if (isDead()) showEndModal();
 } else {
   state = newGame("normal");
   renderAll();
