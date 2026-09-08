@@ -1477,8 +1477,8 @@ const LIMIT_DAYS = { easy: 90, normal: 120, hard: 150 };
 // ---- 難易度 ----
 const DIFFS = {
   easy:   { label:"のんびり", money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.84, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80 },
-  normal: { label:"標準",     money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.74, creditMul:0.65, expandMul:2.00, upkeepMul:1.45, rivalMul:1.30, repMul:1.00 },
-  hard:   { label:"修羅",     money:6750000,  rentMul:1.33, proMul:1.80, heatMul:1.80, fillMul:0.74, creditMul:0.60, expandMul:2.05, upkeepMul:1.52, rivalMul:1.75, repMul:1.00 },
+  normal: { label:"標準",     money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.75, creditMul:0.65, expandMul:2.00, upkeepMul:1.45, rivalMul:1.30, repMul:1.00 },
+  hard:   { label:"修羅",     money:6750000,  rentMul:1.33, proMul:1.80, heatMul:1.80, fillMul:0.66, creditMul:0.60, expandMul:2.05, upkeepMul:1.60, rivalMul:1.75, repMul:1.00 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -1527,6 +1527,20 @@ const CATALOG = [
 
 // 設定ごとの店側粗利率(売上に対する取り分の期待値)
 const MARGIN = { 1: 0.31, 2: 0.26, 3: 0.20, 4: 0.13, 5: 0.045, 6: -0.075 };
+
+/* プロが台を狙う強さ。設定5以上だけが的だと「特日は設定4で止める」が
+   ノーリスクの安全地帯になり、プロも proMul も完全に無効化できていた。
+   設定4も「そこそこ甘い」ので薄く狙われる。設定5・6の扱いは従来どおり。 */
+const PRO_PULL = { 4: 0.40, 5: 1.00, 6: 1.00 };
+/* 1日に来られるプロの上限(収容の何割まで)。ここが難易度共通だと proMul を
+   いくら上げても上限に早く当たるだけで実害が増えず、修羅の proMul 1.80 は
+   事実上死んでいた。上限そのものを難易度で変える。 */
+const PRO_CAP = { easy: 0.10, normal: 0.15, hard: 0.30 };
+
+/* 組合・行政が「回収営業」とみなす平均設定の線。これより下で営業すると
+   警戒度(ヒート)が溜まる。修羅だけ線が高く、常連が育つ 3.4 が安全地帯に
+   ならない ─ 常連を取るか、組合の目を避けるかの二択になる。 */
+const HEAT_LINE = { easy: 2.60, normal: 2.60, hard: 4.00 };
 
 // 広告プラン (flat=固定集客, pct=規模比例の集客率ブースト)
 const ADS = [
@@ -1832,6 +1846,9 @@ function simulateDay() {
   const n = s.machines.length;
   const avgSet = n ? s.machines.reduce((a, m) => a + m.setting, 0) / n : 3;
   const highList = s.machines.filter(m => m.setting >= 5);
+  /* プロを引く力。設定4も薄く数える(highList は数値依存イベントの条件用なので触らない) */
+  const proWeight = m => PRO_PULL[m.setting] || 0;
+  const proPull = s.machines.reduce((a, m) => a + proWeight(m), 0);
 
   // --- イベント(運80種+数値依存50種) ---
   let custMult = 1, repDelta = 0, extraCost = 0, marginDelta = 0, eventGain = 0;
@@ -1886,7 +1903,8 @@ function simulateDay() {
   }
 
   // --- 行政・組合ヒート(回収営業の監視) ---
-  if (n && avgSet < 2.6) s.heat += (2.6 - avgSet) * 2.2 * D.heatMul;
+  const heatLine = HEAT_LINE[s.diff] ?? 2.6;
+  if (n && avgSet < heatLine) s.heat += (heatLine - avgSet) * 2.2 * D.heatMul;
   else s.heat = Math.max(0, s.heat * 0.65 - 0.2);
   if (s.heat > 8 && Math.random() < 0.25) {
     extraCost += 500000; repDelta -= 8; s.heat = 2;
@@ -1923,8 +1941,8 @@ function simulateDay() {
   }
 
   let regs = Math.round(s.regulars * (tokubi ? 0.9 : 0.65) * (s.rate === "low" ? 0.95 : 1) * rand(0.9, 1.05));
-  let pros = highList.length
-    ? Math.round(Math.min(highList.length * 3 * D.proMul * (tokubi ? 1.5 : 1), capacity * 0.15) * rand(0.8, 1.2))
+  let pros = proPull
+    ? Math.round(Math.min(proPull * 3 * D.proMul * (tokubi ? 1.5 : 1), capacity * (PRO_CAP[s.diff] ?? 0.15)) * rand(0.8, 1.2))
     : 0;
   if (pros > 0) notes.push(`🕶️ 高設定の匂いを嗅ぎつけたプロが${pros}人来店。彼らは勝ちにだけ来る…`);
   // 特日・新装開店は立ち回り客で収容+15%まで詰め込める
@@ -1934,7 +1952,7 @@ function simulateDay() {
   const customers = n ? casual + regs + pros : 0;
 
   // --- 台ごとの売上・粗利 ---
-  const highW = highList.reduce((sum, m) => sum + effectivePop(m), 0) || 1;
+  const highW = s.machines.reduce((sum, m) => sum + effectivePop(m) * proWeight(m), 0) || 1;
   const rateBonus = s.rate === "low" ? 0.025 : 0;
   let sales = 0, gross = 0;
   // 特日に渋い店では客が期待外れと悟って早帰り→打ち込みが浅くなる
@@ -1944,7 +1962,7 @@ function simulateDay() {
     const w = effectivePop(m) / totalW;
     const nCas = casual * w;
     const nReg = regs * w;
-    const nPro = m.setting >= 5 ? pros * (effectivePop(m) / highW) : 0;
+    const nPro = pros * (effectivePop(m) * proWeight(m) / highW);
     // 台の鮮度: 人気が枯れた台は座られても打ち込まれない
     const qual = 0.75 + 0.25 * Math.min(1, m.pop / 80);
     const spend = (c.type === "P" ? 30000 : 36000) * qual * tokubiGap * rand(0.8, 1.2);
@@ -2048,9 +2066,9 @@ function simulateDay() {
    単一の閾値だと のんびり=常にS / 修羅=常にC になって機能しない。
    各値は最適プレイと熟練プレイの実測分布から決めてある。 */
 const RANK_DAYS = {
-  easy:   { s:  79, a:  84, b:  88 },
-  normal: { s: 104, a: 111, b: 119 },
-  hard:   { s: 117, a: 132, b: 146 },
+  easy:   { s:  72, a:  84, b:  88 },
+  normal: { s:  90, a: 110, b: 118 },
+  hard:   { s: 125, a: 140, b: 148 },
 };
 function clearRank(d) {
   const t = RANK_DAYS[state && state.diff] || RANK_DAYS.normal;
@@ -6407,7 +6425,7 @@ function showTutorial() {
     <div class="mb">
       <p class="note" style="font-size:12px;color:var(--tx-2)">あなたは小さなパチンコホールの新米オーナー。<b>純資産1億円</b>の地域No.1ホールを目指そう!</p>
       <div style="margin-top:8px">
-        ${item("target", "平均設定のメリハリがすべて", "ホールは<b>1シマ=同一機種10台</b>の単位で動かす。渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出すシマ」と「回収するシマ」を作り分けろ!")}
+        ${item("target", "平均設定のメリハリがすべて", "ホールは<b>1シマ=同一機種10台</b>の単位で動かす。渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。警戒される平均設定の線は難易度で違う(のんびり・標準は2.6、<b>修羅は4.0</b> ─ 修羅では渋り営業そのものが成立しない)。出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出すシマ」と「回収するシマ」を作り分けろ!")}
         ${item("fire", "7のつく日は特日 / 週替わりブーム / シマ効果", "特日は高設定で評判爆上げ。ブームは<b>機種カテゴリ単位</b>で来て、その機種の集客力1.4倍 — ただし弱い機種はブームでも強い機種に届かない。同一機種を並べればシマ効果。")}
         ${item("star", "評判は放っておくと落ちる", "客は前によかった店をいつまでも覚えていない。<b>評判が高いほど毎日の目減りは大きい</b>。上のほうを保つには出玉かスタッフの質で押し返し続けるしかない。")}
         ${item("bank", "拡張は罰ではなく投資", "クリア条件の「純資産」は <b>現金＋台の簿価＋店舗簿価−借金</b>。シマ増設費は消えず<b>6割が店舗簿価として残る</b>ので、拡張は計算できる投資だ。ただし現金は出るし、広げた席を埋められなければ規模維持費で溶ける。")}
