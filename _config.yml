@@ -46,6 +46,13 @@ exclude:
   - honmono/design/UI_REVIEW_BRIEF.md
   - pachinko/DESIGN.md
   - pachinko/ASSET_BRIEF.md
+  # パチスロ帝国の開発用資料(設計メモ・監査・絵の発注書・保護ロジックの検査器・再設計とレビューの記録)
+  - pachinko/FEATURE_ROADMAP.md
+  - pachinko/CAPABILITY_AUDIT.md
+  - pachinko/CHATGPT_ARTWORK_REQUEST.md
+  - pachinko/guard/
+  - pachinko/redesign/
+  - pachinko/review/
 
   # デスクトップ版のビルド定義(Webサイトとしては配信しない)
   - desktop/

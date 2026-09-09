@@ -1,0 +1,38 @@
+{
+  "schema": "FUNCTION_PRESENCE_CONTRACT/1.0",
+  "definitions": {
+    "HOME": "起動直後(オンボーディング完了後)に利用者が最初に置かれる文脈。どこに何があるかを利用者が最初に理解する場所。",
+    "TASK": "その能力を実際に行使する作業文脈。",
+    "recognizable_at_home": "HOME に居るだけで、その能力が存在することを利用者が認識できる必要があるか。",
+    "required_at_task": "その能力を行使している間、その情報/操作が必ず利用可能でなければならないか。",
+    "must_be_reachable": "利用者が必ず到達できる必要があるか(到達手段の形式は問わない)。",
+    "note": "本ファイルは存在と到達可能性のみを定義する。表示方法・配置・グルーピング・情報量の見せ方は Design Authority が決定する。"
+  },
+  "capabilities": [
+    { "id": "CAP_STATUS_AWARENESS", "importance": "primary", "recognizable_at_home": true, "required_at_task": true, "must_be_reachable": true, "reason": "すべての意思決定がこの7指標に依存する" },
+    { "id": "CAP_DAY_ADVANCE", "importance": "primary", "recognizable_at_home": true, "required_at_task": true, "must_be_reachable": true, "reason": "ゲームを進行させる唯一の主要アクションであり、どの作業文脈からも実行できる必要がある" },
+    { "id": "CAP_SETTING_CONTROL", "importance": "primary", "recognizable_at_home": true, "required_at_task": true, "must_be_reachable": true, "reason": "製品の中心となるジレンマを操作する能力" },
+    { "id": "CAP_MACHINE_ACQUISITION", "importance": "primary", "recognizable_at_home": true, "required_at_task": true, "must_be_reachable": true, "reason": "成長のための主要な再投資手段" },
+    { "id": "CAP_TRIAL_PLAY", "importance": "primary", "recognizable_at_home": true, "required_at_task": true, "must_be_reachable": true, "reason": "経営シミュレーションと並ぶ製品のもう一方の柱であり、存在に気づかれないと価値が失われる" },
+    { "id": "CAP_DAY_RESULT_REVIEW", "importance": "primary", "recognizable_at_home": false, "required_at_task": true, "must_be_reachable": true, "reason": "1日の判断の結果を理解させる。実行直後に必ず提示される" },
+    { "id": "CAP_RECORDS", "importance": "secondary", "recognizable_at_home": true, "required_at_task": true, "must_be_reachable": true, "reason": "過去の検証は上達に必要だが、毎日の操作ではない" },
+    { "id": "CAP_STAFFING", "importance": "secondary", "recognizable_at_home": false, "required_at_task": true, "must_be_reachable": true, "reason": "台数増加に伴い必須になるが常時操作はしない。不足時は警告が利用者へ届く必要がある" },
+    { "id": "CAP_ADVERTISING", "importance": "secondary", "recognizable_at_home": false, "required_at_task": true, "must_be_reachable": true },
+    { "id": "CAP_GRAND_OPENING", "importance": "secondary", "recognizable_at_home": false, "required_at_task": true, "must_be_reachable": true, "reason": "新台導入直後の短い機会にのみ有効なため、条件が満たされたことに利用者が気づける必要がある" },
+    { "id": "CAP_FINANCING", "importance": "secondary", "recognizable_at_home": false, "required_at_task": true, "must_be_reachable": true, "reason": "借入残高そのものは常時把握が必要(CAP_STATUS_AWARENESSに含む)" },
+    { "id": "CAP_EXPANSION", "importance": "secondary", "recognizable_at_home": false, "required_at_task": true, "must_be_reachable": true },
+    { "id": "CAP_EXCHANGE_POLICY", "importance": "secondary", "recognizable_at_home": false, "required_at_task": true, "must_be_reachable": true },
+    { "id": "CAP_REGULATORY_AWARENESS", "importance": "secondary", "recognizable_at_home": false, "required_at_task": true, "must_be_reachable": true, "reason": "危険水準では利用者が気づけないと不意の損失になる" },
+    { "id": "CAP_WEEKLY_REPORT", "importance": "secondary", "recognizable_at_home": false, "required_at_task": true, "must_be_reachable": true, "reason": "7日ごとに自動提示される" },
+    { "id": "CAP_ACHIEVEMENTS", "importance": "tertiary", "recognizable_at_home": false, "required_at_task": false, "must_be_reachable": true, "reason": "解除の瞬間の通知は進行を妨げずに届く必要がある" },
+    { "id": "CAP_SAVE_CONTROL", "importance": "tertiary", "recognizable_at_home": false, "required_at_task": false, "must_be_reachable": true },
+    { "id": "CAP_DIFFICULTY_CHOICE", "importance": "primary", "recognizable_at_home": false, "required_at_task": true, "must_be_reachable": true, "reason": "開始時にのみ行使される。開始前に必ず選択させる" }
+  ],
+  "hard_presence_rules": [
+    "CAP_DAY_ADVANCE は4つの機能領域のいずれに居ても実行できなければならない",
+    "CAP_STATUS_AWARENESS の7指標は4つの機能領域のいずれに居ても参照できなければならない",
+    "CAP_TRIAL_PLAY は、設置済みの台と未購入の機種の両方から開始できなければならない",
+    "S-WARNING / S-DANGER に該当する状態(スタッフ不足・警戒度上昇)は、当該作業文脈を開いていなくても利用者が気づける必要がある",
+    "破壊的操作(売却・やり直し)は誤操作で完了してはならない"
+  ]
+}

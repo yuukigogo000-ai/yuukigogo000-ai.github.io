@@ -1,0 +1,101 @@
+{
+  "schema": "DESIGN_RETURN_SCHEMA/1.0",
+  "purpose": "Design Authority(ChatGPT)からの返却物の必須構成。ここに定義された内容が揃っていない返却は、実装前の検証で不合格となり差し戻される。",
+  "return_package_name": "CHATGPT_DESIGN_RETURN.zip",
+  "required_files": [
+    {
+      "path": "DESIGN_RETURN_BINDING.json",
+      "required": true,
+      "must_contain": [
+        "request_binding_id: 依頼パッケージの binding_id をそのまま echo すること",
+        "design_return_id: 返却物の識別子",
+        "acknowledged_function_freeze_range: 'F-001..F-045'",
+        "acknowledged_state_ids: SCREEN_STATE_INVENTORY.json の states の全ID",
+        "declares_no_function_change: true",
+        "declares_no_invented_claims: true"
+      ]
+    },
+    {
+      "path": "DESIGN_DECISION.md",
+      "required": true,
+      "must_contain": [
+        "ビジュアルディレクションの決定と、その根拠(Product Truth のどの事実に応えるか)",
+        "製品の雰囲気および世界観の定義",
+        "シグネチャとなる視覚要素の定義",
+        "BRAND_CRITICAL と TASK_CRITICAL の扱いの違いと、共有するデザイン言語の定義",
+        "BLIND_DESIGN_BRIEF.md 第14節の未定義事項1〜14すべてに対する決定"
+      ]
+    },
+    {
+      "path": "DESIGN_SYSTEM.md",
+      "required": true,
+      "must_contain": [
+        "色: 役割ごとの定義(面 / 本文 / 補助文 / 強調 / 肯定 / 否定 / 警告 / 危険 / 実行不可)と具体値",
+        "色の使用規則(明暗両モードを提供する場合はその全値。単一モードで確定する場合はその明示)",
+        "色以外での状態識別手段(形・記号・テキスト・パターンのいずれか)の規定",
+        "書体: OS標準フォントスタックのみで構成された指定と、文字サイズ・太さの階層",
+        "面と境界の扱い、余白の尺度",
+        "アイコン言語(採用有無と方式。インラインSVG等、外部依存のない実現方法であること)",
+        "本文と背景のコントラスト比が十分であることの明示",
+        "タップ対象の最小寸法"
+      ]
+    },
+    {
+      "path": "SCREEN_SPEC.md",
+      "required": true,
+      "must_contain": [
+        "SCREEN_STATE_INVENTORY.json の全 screen(13件)に対する構成仕様",
+        "各 screen の must_contain_meaning をすべて満たしていることの対応表",
+        "FUNCTION_PRESENCE_CONTRACT.json の hard_presence_rules を満たす方法",
+        "必須対応幅(360 / 390 / 430)およびデスクトップ幅での構成の指定",
+        "最大60件の台一覧、最大60日×8項目の記録、最大30日の推移の扱い方",
+        "各 state(S-ID)の視覚的な表し分け",
+        "空状態・実行不可・実行確認・終局の扱い"
+      ]
+    },
+    {
+      "path": "MOTION_SPEC.md",
+      "required": true,
+      "must_contain": [
+        "モーション一覧。各項目に 目的(feedback / state-transition / brand)・対象・所要時間・イージング・使用プロパティ を明記",
+        "使用プロパティは合成向き(transform / opacity 等)を優先していること",
+        "1営業日の実行から結果提示までの遷移の指定(進行をブロックしないこと)",
+        "遊技中の当選・リーチ・連チャンの演出指定",
+        "prefers-reduced-motion: reduce 時の代替挙動(意味の伝達を損なわないこと)",
+        "常時再生される動きがある場合、その必要性と負荷の根拠"
+      ]
+    },
+    {
+      "path": "ASSET_MANIFEST.json",
+      "required": true,
+      "must_contain": [
+        "同梱アセットの一覧(ファイル名 / 用途 / 形式 / 想定サイズ)",
+        "各アセットが外部リクエストなしで実装可能であること(インラインSVG / data URI / 同梱静的ファイル)",
+        "アプリアイコン(192px / 512px)の指定の有無",
+        "テーマ色値の指定"
+      ]
+    }
+  ],
+  "required_visual_assets": [
+    { "id": "HOME_MASTER", "required": true, "description": "起動直後に利用者が置かれる文脈の完成ビジュアル。幅390基準。" },
+    { "id": "TASK_MASTER", "required": true, "description": "作業文脈(経営の判断を行う文脈)の完成ビジュアル。幅390基準。" },
+    { "id": "STATE_VISUALS", "required": true, "description": "少なくとも 実行結果 / 警告または危険 / 実行不可 / 空 / 終局 / 遊技中の当選 の各状態のビジュアル。" },
+    { "id": "TRIAL_MASTER", "required": true, "description": "遊技(スロットまたはパチンコ)の完成ビジュアル。BRAND_CRITICAL の基準となる。" },
+    { "id": "NARROW_AND_WIDE", "required": true, "description": "幅360および幅430での主要文脈の成立を示すビジュアル。" },
+    { "id": "BACKGROUND_OR_ILLUSTRATION", "required": false, "description": "必要と判断した場合のみ。外部依存なしで実装可能な形式であること。" }
+  ],
+  "hard_requirements": [
+    "F-001〜F-045 のいずれも削除・意味変更しないこと",
+    "SCREEN_STATE_INVENTORY.json の全 state を表現可能であること",
+    "REQUIRED_COPY.json の literal:true をそのまま保持すること",
+    "TRUST_AND_SAFETY_FACTS.json の禁止クレームを一切含めないこと",
+    "TECHNICAL_CONSTRAINTS.json に反する要求(Webフォント、外部リクエスト、ビルド工程、サーバー処理)を含めないこと",
+    "実装不能な指示(存在しないデータの表示、取得不可能な情報の提示)を含めないこと"
+  ],
+  "out_of_scope_for_design_authority": [
+    "実装コードの記述(実装は Claude Code が行う)",
+    "既存機能の仕様変更提案",
+    "新機能の提案",
+    "技術選定"
+  ]
+}

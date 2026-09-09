@@ -1,0 +1,96 @@
+{
+  "schema": "PRODUCT_TRUTH/1.0",
+  "product_id": "pachi-teikoku",
+  "target_app_path": "pachinko/index.html",
+  "product_name_literal": "パチスロ帝国",
+  "product_subtitle_literal": "ホール経営シミュレーション",
+  "product_purpose": "架空のパチンコ・スロット店を経営し、1営業日ずつ意思決定を重ねて純資産1億円を目指す、単一ページのシミュレーションゲーム。出玉設定を渋れば当日の利益が増えるが評判と固定客を失い、出せば客は増えるが利益が減るというトレードオフが遊びの中心にある。",
+  "primary_audience": "パチンコ・スロットの文化に馴染みがある日本語話者のカジュアルゲーマー。経営シミュレーション/タイクーン系のやり込みを好む層。実機の遊技経験がなくても遊べる想定。",
+  "primary_user_jobs": [
+    "1営業日ごとに出玉設定と経営施策を決め、その結果を確認して次の判断に活かす",
+    "資金を再投資して店舗を成長させ、純資産1億円というゴールに到達する",
+    "自分の店に置いた架空の実機を実際に遊技して、設定ごとの出方を体感する",
+    "過去の営業成績を振り返って、経営判断の良し悪しを検証する"
+  ],
+  "secondary_user_jobs": [
+    "実績の解除を集める",
+    "難易度を変えて再挑戦し、より短い日数でのクリア評価を狙う"
+  ],
+  "primary_capabilities": [
+    "CAP_DAY_ADVANCE: 1営業日を実行し、その日の経営結果を受け取る",
+    "CAP_SETTING_CONTROL: 設置中の各台の出玉設定(1〜6)を個別に変更する",
+    "CAP_MACHINE_ACQUISITION: 新台を購入して設置する / 設置済みの台を売却する",
+    "CAP_TRIAL_PLAY: 架空の実機(スロット/パチンコ)を実際に操作して遊技する",
+    "CAP_STATUS_AWARENESS: 経営の現在値(営業日・資金・評判・常連・台数・借入・純資産)を常時把握する"
+  ],
+  "secondary_capabilities": [
+    "CAP_STAFFING: スタッフを雇用・解雇する",
+    "CAP_ADVERTISING: 翌営業日に効く広告プランを選ぶ",
+    "CAP_GRAND_OPENING: 条件を満たすとき新装開店フェアを予約する",
+    "CAP_FINANCING: 銀行から借入する / 返済する",
+    "CAP_EXCHANGE_POLICY: 交換率ポリシーを切り替える",
+    "CAP_EXPANSION: 店舗を拡張して最大設置台数を増やす",
+    "CAP_REGULATORY_AWARENESS: 行政・組合の警戒度を把握する",
+    "CAP_RECORDS: 過去の営業成績と損益の推移を確認する",
+    "CAP_WEEKLY_REPORT: 7日ごとの週次サマリーと経営助言を受け取る",
+    "CAP_ACHIEVEMENTS: 解除済み/未解除の実績を確認する",
+    "CAP_SAVE_CONTROL: 手動セーブする / 最初からやり直す",
+    "CAP_DIFFICULTY_CHOICE: 新規開始時に難易度を選ぶ"
+  ],
+  "routes": {
+    "model": "単一HTMLドキュメント。URLルーティングは存在しない。アプリ内の機能領域切り替えとフローで構成される。",
+    "functional_areas": [
+      { "id": "AREA_OPERATIONS", "literal_label": "ホール", "role": "設置中の台の運用(設定変更・試打・売却)" },
+      { "id": "AREA_ACQUISITION", "literal_label": "新台購入", "role": "機種カタログの閲覧・試打・購入" },
+      { "id": "AREA_MANAGEMENT", "literal_label": "経営", "role": "スタッフ/広告/新装開店/拡張/融資/交換率/警戒度/実績/データ操作" },
+      { "id": "AREA_RECORDS", "literal_label": "帳簿", "role": "損益推移と営業成績の確認" }
+    ],
+    "persistent_action": "営業開始(1営業日を進める主要アクション)は、どの機能領域を見ているときでも常に到達可能でなければならない。",
+    "note": "機能領域の切り替え方法および常時アクションの提示方法は Design Authority の決定事項。"
+  },
+  "entry_points": [
+    "https配信のWebページ(GitHub Pages)",
+    "PWAとしてインストールされたスタンドアロンウィンドウ",
+    "Electronデスクトップアプリ(file:読み込み)",
+    "ローカルファイル直接オープン(file:)"
+  ],
+  "data_sources": {
+    "external_network": "なし。実行時に外部APIやリモートデータを一切取得しない。",
+    "content": "機種カタログ10件・イベント130件・実績15件はすべてアプリ内に静的定義された架空データ。",
+    "persistence": "localStorage キー 'pachi-teikoku-save-v1' に単一のセーブJSONを保存。",
+    "randomness": "Math.random によるクライアント内擬似乱数。サーバー抽選は存在しない。"
+  },
+  "processing_facts": {
+    "server_side": "サーバー処理は一切ない。バックエンドもアカウントも存在しない。",
+    "client_side": "ゲーム進行・抽選・保存・描画のすべてが利用者の端末内で完結する。",
+    "offline": "Service Worker により、一度読み込めばオフラインでも動作する。Electron版はもともとオフライン動作。"
+  },
+  "privacy_facts": [
+    "個人情報を一切収集しない",
+    "アナリティクス・トラッキング・広告SDKを一切含まない",
+    "外部への送信が発生しない(実行時ネットワークリクエストゼロ)",
+    "セーブデータは利用者のブラウザ内にのみ存在し、他端末や他ブラウザへ同期されない"
+  ],
+  "trust_claims_allowed": [
+    "登場する機種・メーカー・演出はすべて架空であり、実在の製品を模したものではない",
+    "現金・課金・実際の賭博は一切存在しない",
+    "データは端末内に保存され外部送信されない"
+  ],
+  "important_product_facts": {
+    "goal": "純資産(資金+台資産−借金)1億円の達成でクリア",
+    "failure": "資金がマイナスになり融資枠も尽きると倒産(ゲームオーバー)",
+    "clear_grades": "クリア日数で S(65日以内)/A(85日以内)/B(120日以内)/C の評価が付く",
+    "difficulties": ["のんびり", "標準", "修羅"],
+    "special_days": "日付に7を含む日は特日として客が大きく増え、出玉への期待も高まる",
+    "trial_play_is_free": "試打は営業収支に一切影響しない練習/体験モード"
+  },
+  "required_interaction_facts": [
+    "1営業日の実行は利用者の明示的な操作によってのみ発生する(自動進行しない)",
+    "営業結果は次の操作へ進む前に必ず利用者へ提示される",
+    "台ごとの出玉設定は1〜6の離散値から選択する",
+    "試打は利用者の入力(スロット=開始操作と3つの停止操作、パチンコ=回転操作または自動回転)で進行する",
+    "破壊的操作(売却・やり直し)は実行前に確認を要する",
+    "倒産後は、やり直す以外の経営操作を受け付けない"
+  ],
+  "constraints_summary": "単一HTMLファイル・外部依存ゼロ・オフライン動作・localStorage保存・モバイル幅360〜430pxで完全動作・prefers-reduced-motion対応必須。詳細は TECHNICAL_CONSTRAINTS.json を参照。"
+}
