@@ -22,8 +22,8 @@ npm run dist   # 実行したOS向けのインストーラが dist/ にできる
 
 ## GitHub Actions での3OS一括ビルド
 
-タグ `desktop-v*`(例: `desktop-v1.0.0`)を push するか、Actions タブから
-`Desktop Build` ワークフローを手動実行すると、Windows / macOS / Linux の
+タグ `pachinko-desktop-v*`(例: `pachinko-desktop-v1.0.0`)を push するか、Actions タブから
+`Pachinko Desktop Build` ワークフローを手動実行すると、Windows / macOS / Linux の
 インストーラがビルドされ Artifacts としてダウンロードできる。
 
 ## ブラウザから入れる軽量版(PWA)

@@ -1,0 +1,61 @@
+/* 自動生成: node gen_tokens.mjs (シード #2d5a4c / Material Design 3 公式ロール)
+   手で書き換えない。色を変えるときはシードを変えて再生成する。 */
+:root {
+  --md-primary: #006b55;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #7ff8d3;
+  --md-on-primary-container: #002118;
+  --md-secondary: #4b635a;
+  --md-on-secondary: #ffffff;
+  --md-secondary-container: #cee9dd;
+  --md-on-secondary-container: #072019;
+  --md-error: #ba1a1a;
+  --md-on-error: #ffffff;
+  --md-error-container: #ffdad6;
+  --md-on-error-container: #410002;
+  --md-background: #fbfdfa;
+  --md-on-background: #191c1b;
+  --md-surface: #fbfdfa;
+  --md-on-surface: #191c1b;
+  --md-surface-variant: #dbe5df;
+  --md-on-surface-variant: #3f4945;
+  --md-outline: #6f7975;
+  --md-outline-variant: #bfc9c3;
+  --md-inverse-surface: #2e312f;
+  --md-inverse-on-surface: #eff1ee;
+  --md-surface-container-lowest: #ffffff;
+  --md-surface-container-low: #f2f4f1;
+  --md-surface-container: #eceeeb;
+  --md-surface-container-high: #e6e9e6;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --md-primary: #61dbb8;
+    --md-on-primary: #00382b;
+    --md-primary-container: #00513f;
+    --md-on-primary-container: #7ff8d3;
+    --md-secondary: #b2ccc1;
+    --md-on-secondary: #1e352d;
+    --md-secondary-container: #344c43;
+    --md-on-secondary-container: #cee9dd;
+    --md-error: #ffb4ab;
+    --md-on-error: #690005;
+    --md-error-container: #93000a;
+    --md-on-error-container: #ffb4ab;
+    --md-background: #191c1b;
+    --md-on-background: #e1e3e0;
+    --md-surface: #191c1b;
+    --md-on-surface: #e1e3e0;
+    --md-surface-variant: #3f4945;
+    --md-on-surface-variant: #bfc9c3;
+    --md-outline: #89938e;
+    --md-outline-variant: #3f4945;
+    --md-inverse-surface: #e1e3e0;
+    --md-inverse-on-surface: #2e312f;
+    --md-surface-container-lowest: #0b0f0d;
+    --md-surface-container-low: #191c1b;
+    --md-surface-container: #1d201f;
+    --md-surface-container-high: #272b29;
+  }
+}

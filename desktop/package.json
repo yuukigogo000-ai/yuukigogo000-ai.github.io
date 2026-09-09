@@ -1,0 +1,60 @@
+{
+  "name": "setlism-desktop",
+  "productName": "セトリズム",
+  "version": "1.0.0",
+  "description": "バンドのためのセトリ設計スタジオ(デスクトップ版)",
+  "main": "main.js",
+  "author": "yuukigogo000-ai",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io.git"
+  },
+  "scripts": {
+    "prepare-app": "node scripts/prepare-app.mjs",
+    "start": "npm run prepare-app && electron .",
+    "dist": "npm run prepare-app && electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "^37.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "io.github.yuukigogo000-ai.setlism",
+    "productName": "セトリズム",
+    "artifactName": "SETLISM-${version}-${os}-${arch}.${ext}",
+    "publish": null,
+    "files": [
+      "main.js",
+      "app/**"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "mac": {
+      "category": "public.app-category.music",
+      "target": [
+        { "target": "dmg", "arch": ["arm64", "x64"] },
+        { "target": "zip", "arch": ["arm64", "x64"] }
+      ]
+    },
+    "win": {
+      "target": [
+        { "target": "nsis", "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    },
+    "linux": {
+      "target": [
+        { "target": "AppImage", "arch": ["x64"] }
+      ],
+      "category": "Audio"
+    }
+  }
+}

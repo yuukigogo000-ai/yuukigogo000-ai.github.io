@@ -1,0 +1,7 @@
+node_modules/
+shots/
+*.tsbuildinfo
+*.local
+.tmp_tokens/
+stitch_A/
+stitch_B/

@@ -1,0 +1,17 @@
+{
+  "name": "setlism-tests",
+  "private": true,
+  "type": "module",
+  "description": "セトリズムのブラウザ実動テスト(スモーク・破壊的検証・Electron)",
+  "scripts": {
+    "test": "npm run test:web && npm run test:torture",
+    "test:web": "node smoke.mjs",
+    "test:torture": "node torture.mjs",
+    "test:electron": "node electron-smoke.mjs"
+  },
+  "devDependencies": {
+    "jsqr": "^1.4.0",
+    "playwright-core": "^1.62.0",
+    "pngjs": "^7.0.0"
+  }
+}
