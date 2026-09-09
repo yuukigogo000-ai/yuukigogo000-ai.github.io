@@ -1491,15 +1491,17 @@ const MAX_CAP = 60;            // 店舗拡張の上限台数
    拡張を「罰」ではなく「初期投資」にするための係数。 */
 const BUILD_BOOK = 0.60;
 // 営業できる日数の上限。これを過ぎると期限切れで終了(クリア済みなら関係ない)
-const LIMIT_DAYS = { easy: 90, normal: 120, hard: 150 };
+const LIMIT_DAYS = { easy: 90, normal: 120, hard: 150, hardx: 150 };
 
 // ---- 難易度 ----
-// branchMul = 支店の客入り(修羅だけ本店と同じ 0.66 で絞る)
-// calamMul  = 災厄の発生倍率。実装済みだが、修羅の位置づけ(3人に1人 / 上級者向け / 4段階目)が決まるまで全難易度 0 で眠らせている
+// branchMul = 支店の客入り(修羅系だけ本店と同じ比率で絞る) / deckMul = 商機デッキ(修羅・熟練だけ 1)
+// hardx は「修羅」を選んだあと「熟練者として挑む」を選んだときの難易度。地力が修羅より厳しく、
+// その穴を30枚の商機で埋める。どの商機がいつ来るかは運。
 const DIFFS = {
-  easy:   { label:"のんびり", money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.84, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80, branchMul:1.00, calamMul:0 },
-  normal: { label:"標準",     money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.75, creditMul:0.65, expandMul:2.00, upkeepMul:1.45, rivalMul:1.30, repMul:1.00, branchMul:1.00, calamMul:0 },
-  hard:   { label:"修羅",     money:6750000,  rentMul:1.33, proMul:1.80, heatMul:1.80, fillMul:0.66, creditMul:0.60, expandMul:2.05, upkeepMul:1.60, rivalMul:1.75, repMul:1.00, branchMul:0.66, calamMul:0 },
+  easy:   { label:"のんびり",   money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.84, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80, branchMul:1.00, deckMul:0 },
+  normal: { label:"標準",       money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.75, creditMul:0.65, expandMul:2.00, upkeepMul:1.45, rivalMul:1.30, repMul:1.00, branchMul:1.00, deckMul:0 },
+  hard:   { label:"修羅",       money:6750000,  rentMul:1.33, proMul:1.80, heatMul:1.80, fillMul:0.66, creditMul:0.60, expandMul:2.05, upkeepMul:1.60, rivalMul:1.75, repMul:1.00, branchMul:0.66, deckMul:0 },
+  hardx:  { label:"修羅・熟練", money:6750000,  rentMul:1.45, proMul:1.80, heatMul:1.80, fillMul:0.42, creditMul:0.60, expandMul:2.05, upkeepMul:1.85, rivalMul:1.75, repMul:1.00, branchMul:0.60, deckMul:1 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -1556,12 +1558,12 @@ const PRO_PULL = { 4: 0.40, 5: 1.00, 6: 1.00 };
 /* 1日に来られるプロの上限(収容の何割まで)。ここが難易度共通だと proMul を
    いくら上げても上限に早く当たるだけで実害が増えず、修羅の proMul 1.80 は
    事実上死んでいた。上限そのものを難易度で変える。 */
-const PRO_CAP = { easy: 0.10, normal: 0.15, hard: 0.30 };
+const PRO_CAP = { easy: 0.10, normal: 0.15, hard: 0.30, hardx: 0.30 };
 
 /* 組合・行政が「回収営業」とみなす平均設定の線。これより下で営業すると
    警戒度(ヒート)が溜まる。修羅だけ線が高く、常連が育つ 3.4 が安全地帯に
    ならない ─ 常連を取るか、組合の目を避けるかの二択になる。 */
-const HEAT_LINE = { easy: 2.60, normal: 2.60, hard: 4.00 };
+const HEAT_LINE = { easy: 2.60, normal: 2.60, hard: 4.00, hardx: 4.00 };
 
 // 広告プラン (flat=固定集客, pct=規模比例の集客率ブースト)
 const ADS = [
@@ -2090,6 +2092,7 @@ const RANK_DAYS = {
   easy:   { s:  72, a:  84, b:  88 },
   normal: { s:  90, a: 110, b: 118 },
   hard:   { s: 125, a: 140, b: 148 },
+  hardx:  { s: 132, a: 141, b: 147 },
 };
 function clearRank(d) {
   const t = RANK_DAYS[state && state.diff] || RANK_DAYS.normal;
@@ -2305,7 +2308,7 @@ const marketMul = cid => (trendMult(cid) > 1 ? MKT_BOOM : 1);
 const isHotMarket = cid => marketMul(cid) > 1;
 /* 購入価格は定価のまま。相場が効くのは下取りだけ。
    (購入もこの関数を通すことで、価格の出どころを1か所に保つ) */
-const machineBuy = c => c.price;
+const machineBuy = c => Math.round(c.price * (typeof dsBuyMul === "function" ? dsBuyMul() : 1));
 /* 売却価格。machineValue(定価45%)は帳簿上の資産評価で、実際の下取りはもう少し良い。
    古い台を入れ替える動きに意味を持たせるための差。保護ロジックには触れない。 */
 const machineSale = m => Math.round(catalogOf(m).price * 0.55 * marketMul(m.cid) * (typeof dsSaleMul === "function" ? dsSaleMul() : 1));
@@ -2318,18 +2321,19 @@ const machineSale = m => Math.round(catalogOf(m).price * 0.55 * marketMul(m.cid)
 const UPKEEP_FREE = 12, UPKEEP_K = 3700, UPKEEP_E = 1.45, UPKEEP_INFL = 0.010;
 /* 経過日数ぶんの上昇率(家賃改定・設備の老朽化・人件費の上昇)。
    止まっていても毎日重くなるので、「広げすぎ」でも「伸ばせない」でも詰む。 */
-const upkeepInfl = () => 1 + (state.day - 1) * UPKEEP_INFL;
+const upkeepInfl = () => 1 + Math.max(0, (state.day - 1) - (typeof dsInflBack === "function" ? dsInflBack() : 0)) * UPKEEP_INFL;
 function upkeepCost() {
   const D = DIFFS[state.diff] || DIFFS.normal;
   const over = Math.max(0, state.machines.length - UPKEEP_FREE);
   if (!over) return 0;
-  return Math.round(UPKEEP_K * Math.pow(over, UPKEEP_E) * (D.upkeepMul ?? 1) * upkeepInfl());
+  return Math.round(UPKEEP_K * Math.pow(over, UPKEEP_E) * (D.upkeepMul ?? 1) * upkeepInfl() * (typeof dsUpkeepMul === "function" ? dsUpkeepMul() : 1));
 }
 /* 次に1シマ(10台)増やしたときの増分(拡大の判断材料として画面に出す) */
 function upkeepMarginal() {
   const D = DIFFS[state.diff] || DIFFS.normal;
   const n = state.machines.length;
-  const f = k => Math.max(0, k - UPKEEP_FREE) ? UPKEEP_K * Math.pow(k - UPKEEP_FREE, UPKEEP_E) * (D.upkeepMul ?? 1) * upkeepInfl() : 0;
+  const um = typeof dsUpkeepMul === "function" ? dsUpkeepMul() : 1;
+  const f = k => Math.max(0, k - UPKEEP_FREE) ? UPKEEP_K * Math.pow(k - UPKEEP_FREE, UPKEEP_E) * (D.upkeepMul ?? 1) * upkeepInfl() * um : 0;
   return Math.round(f(n + 1) - f(n));
 }
 /* ---------- 評判の自然減 ----------
@@ -2351,7 +2355,7 @@ function repDecay() {
 }
 /* simulateDay の外で毎日引く。REP_SOFT より下には落とさない。 */
 function repDay() {
-  const d = repDecay();
+  const d = repDecay() * (typeof dsRepDecayMul === "function" ? dsRepDecayMul() : 1);
   if (d > 0) state.rep = Math.max(REP_SOFT, state.rep - d);
   return d;
 }
@@ -2564,7 +2568,7 @@ function checkAchEx(ctx) {
   if (state.cleared && state.clearDay) {
     if (clearRank(state.clearDay) === "S") G("ex-clear-s");
     if (state.clearDay <= 60) G("ex-clear-60");
-    if (state.diff === "hard") G("ex-clear-h");
+    if (state.diff === "hard" || state.diff === "hardx") G("ex-clear-h");
   }
   // ---- 全国 ----
   if (state.ex && state.ex.rg) {
@@ -6102,28 +6106,30 @@ function bdPlayDay(sum, onDone) {
 function bdSkip() { if (bdRun && bdRun.finish) bdRun.finish(); }
 
 /* ==========================================================================
-   大事件 (修羅専用の「運」)
+   商機 (修羅・熟練 専用のデッキ)
    --------------------------------------------------------------------------
-   運を重要な要素にする。ただし理不尽にしない。守っている約束:
-     ・追い風と向かい風は同じ確率で来る(片側だけの罰にしない)
-     ・向かい風には必ず予兆(2営業日)と対策がある。対策すれば軽くなる
-     ・追い風の多くは「機会」で、資金や空き枠があって初めて拾える
-     ・誰が狙われるかは一様。儲かっている店・目立つ店を狙い撃ちしない
-     ・専用PRNG。リロードで引き直せない。ゲーム本体の乱数列には触れない
-     ・simulateDay には触れず、runDay の中で state を書き換えるだけ
-     ・保存は state.ex.ds の下。保護22キーは増やさない
-     ・難易度は DIFFS.calamMul(0 = 何も起きない)
-   ========================================================================== */
-const DS_VER = 2;
-const DS_START_DAY = 20;        // この営業日以降に抽選
-let DS_RATE = 0.035;            // 適格営業日ごとの確率(調整用に let)
-const DS_COOL = 10;             // 収束後、次の抽選までの停止営業日数
-const DS_OMEN = 2;              // 向かい風の予兆の営業日数
-let DS_INS_RATE = 0.0010;       // 保険料: 純資産の割合 / 日(下限 30,000)
-const DS_INS_MIN = 30000;
-const DS_LOG_MAX = 20;
+   熟練モードは地力(維持費・収益)が修羅より厳しい。その穴を埋めるのが30枚の商機で、
+   どれがいつ来るかは運。早く来れば楽、遅ければ苦しい。
 
-const dsMul = () => (DIFFS[state.diff] || DIFFS.normal).calamMul ?? 0;
+   守っている約束:
+     ・商機は何も奪わない。損をする札は1枚もない(腹の立つ札を作らない)
+     ・「贈り物」はその場で効く。「機会」は資金・空き枠・評判があって初めて拾える
+     ・同じ札は1プレイに1回。30枚のデッキから引く
+     ・専用PRNG。リロードで引き直せない。ゲーム本体の乱数列には触れない
+     ・simulateDay には触れず、runDay の中で state を書き換えるだけ。
+       家賃・光熱費・人件費・利息の「還付」は、保護ロジックと同じ式で計算した額を
+       現金に戻す形で実装している(式を変えない)
+     ・保存は state.ex.ds の下。保護22キーは増やさない
+     ・難易度は DIFFS.deckMul(0 = デッキなし)
+   ========================================================================== */
+const DS_VER = 3;
+const DS_START_DAY = 8;         // この営業日以降に引く
+let DS_RATE = 0.06;             // 適格営業日ごとに1枚引く確率(調整用に let)。0.10 だと枚数が多すぎて運が平均化され、0.06 で「3枚目がいつ来るか」がクリア日と相関 0.4〜0.5 になる
+const DS_COOL = 3;              // 1枚引いたあとの停止営業日数
+const DS_LOG_MAX = 40;
+const DS_UPKEEP_MIN = 0.6;      // 維持費の恒久割引の下限(合算で最大 −40%)
+
+const dsMul = () => (DIFFS[state.diff] || DIFFS.normal).deckMul ?? 0;
 const dsOn = () => !!state && dsMul() > 0;
 
 /* ---------- 専用PRNG ---------- */
@@ -6135,7 +6141,7 @@ function dsHash(a, b) {
 }
 let dsForcedSeed = null;        // テスト注入用
 let dsForcedRoll = null;        // 次の1回だけ乱数を固定
-let dsForcedId = null;          // 次に起こす事件を固定
+let dsForcedId = null;          // 次に引く札を固定
 function dsNewSeed() {
   if (dsForcedSeed !== null) return (Math.floor(dsForcedSeed) >>> 0) || 1;
   try {
@@ -6153,43 +6159,85 @@ function dsNext() {
   return dsHash(D.seed, D.ctr) / 4294967296;
 }
 
-/* ---------- 事件の定義 ----------
-   good: 追い風(予兆なし・その場で起きる、または期限つきの機会)
-   bad : 向かい風(予兆2日 → 発生。対策あり)
-   dur : 継続日数(0 = 一度で確定) */
+/* ---------- 30枚の定義 ----------
+   kind: gift  = その場で効く
+         effect= n日続く効果(eff に積む)
+         offer = 受けるか決める(費用や条件つき)。期限つき
+         window= 期間中だけ有利な条件(売買)
+   eff の種類(k): rentBack / utilBack / wageBack / intBack (各 v = 還付率)
+                  upkeep (v = 割引率、恒久) / inflBack (v = 巻き戻す日数、恒久)
+                  repHalf (評判の自然減 ×0.5) / regDay (常連 ×(1+v)/日) / repDay (評判 +v/日)
+                  popHold (全台の人気の枯れを戻す) / buyOff (購入価格 ×(1−v)) / saleUp (売却価格 ×v) */
 const DS_LIST = [
-  /* 向かい風 */
-  { id: "mega", good: false, name: "大型店の出店", dur: 14,
-    omen: "隣の区画で大規模な工事が始まった。看板の下地に、見覚えのあるチェーンの色…",
-    hit:  "の大型店が開業。客が根こそぎ流れている。",
-    tip:  "続く間、平均設定4.0以上で営業すれば流出を1/3に抑えられる。" },
-  { id: "ban", good: false, name: "撤去命令", dur: 7,
-    omen: "業界紙に「一部機種の検定切れ」の記事。組合から通達が回るらしい。",
-    hit:  "組合から撤去命令。7営業日以内に撤去しないと、期限後は二束三文で回収される。",
-    tip:  "対象の台は期限内に売却すれば通常価格。放置すると期限後に定価の20%(保険加入なら45%)で強制回収。" },
-  { id: "fire", good: false, name: "設備事故", dur: 0,
-    omen: "配電盤から焦げた匂い。業者は『早めに点検を』と言っている。",
-    hit:  "漏電で島の一角が焼けた。復旧費用がかかり、焼けた台は客が付かない。",
-    tip:  "予兆のうちに「点検」を頼めば被害は半分。保険は復旧費用の2/3を持つ。" },
-  /* 追い風 */
-  { id: "supply", good: true, name: "メーカーの優先納品", dur: 3,
-    hit:  "メーカー営業から「話題の新台を定価の6割で、最大3シマ優先納品する」と持ちかけられた。3営業日限り。",
-    tip:  "資金と空き枠があれば拾える。無ければ流れる。" },
-  { id: "tv", good: true, name: "テレビの街ブラ特集", dur: 0,
-    hit:  "テレビの街ブラ番組で店が大きく取り上げられた。評判が跳ね、常連も増えた。",
-    tip:  "純粋な追い風。高い評判は放っておくと落ちるので、出玉で押し返して維持する。" },
-  { id: "closure", good: true, name: "近隣の競合が閉店", dur: 14,
-    hit:  "が閉店した。行き場を失った客が流れてくる。",
-    tip:  "14営業日、常連と評判が伸び続ける。受け皿になれる規模があるほど得。" },
-  { id: "buyback", good: true, name: "中古台の高値買取", dur: 7,
-    hit:  "中古台業者が海外向けの大口買付で、7営業日限り売却価格1.8倍で引き取ると言ってきた。",
-    tip:  "枯れた台を高く手放して入れ替える好機。売るだけでは店が空くので、買い戻す資金も要る。" },
+  /* ── 維持費 (10) ── */
+  { id:"rent",    cat:"維持費", kind:"effect", n:30, k:"rentBack", v:0.25, name:"家賃交渉が通った",
+    msg:"大家との交渉がまとまり、30営業日のあいだ家賃の25%が戻ってくる。" },
+  { id:"power",   cat:"維持費", kind:"effect", n:30, k:"utilBack", v:0.50, name:"電力契約の見直し",
+    msg:"電力会社の法人プランに切り替えた。30営業日、光熱費の半分が戻る。" },
+  { id:"guard",   cat:"維持費", kind:"gift",   k:"upkeep", v:0.10, name:"警備会社の乗り換え",
+    msg:"同業者の紹介で警備会社を替えた。規模維持費が恒久に10%下がる。" },
+  { id:"maint",   cat:"維持費", kind:"gift",   k:"upkeep", v:0.10, name:"保守契約の一括値引き",
+    msg:"設備保守を一社にまとめて値引きを引き出した。規模維持費が恒久に10%下がる。" },
+  { id:"park",    cat:"維持費", kind:"effect", n:20, k:"rentBack", v:0.15, name:"駐車場の賃料改定",
+    msg:"隣地の地主が賃料を下げてくれた。20営業日、家賃の15%が戻る。" },
+  { id:"subsidy", cat:"維持費", kind:"gift",   k:"cashPct", v:0.02, cap:3000000, name:"商店街振興の補助金",
+    msg:"自治体の商店街振興補助が下りた。" },
+  { id:"clean",   cat:"維持費", kind:"effect", n:30, k:"upkeepTmp", v:0.20, name:"清掃業者の長期契約",
+    msg:"清掃業者と長期契約を結び、30営業日のあいだ規模維持費が20%軽くなる。" },
+  { id:"hr",      cat:"維持費", kind:"effect", n:20, k:"wageBack", v:0.50, name:"人材紹介の割引",
+    msg:"人材紹介会社のキャンペーンで、20営業日のあいだ人件費の半分が戻る。" },
+  { id:"union",   cat:"維持費", kind:"gift",   k:"cash", v:500000, name:"組合費の免除",
+    msg:"組合の新規加入特典で、今期の組合費が免除された。" },
+  { id:"lease",   cat:"維持費", kind:"gift",   k:"inflBack", v:12, name:"設備リースの見直し",
+    msg:"古いリース契約を組み直した。規模維持費の値上がりが12営業日ぶん巻き戻る。" },
+  /* ── 収益 (10) ── */
+  { id:"tieup",   cat:"収益", kind:"effect", n:14, k:"regDay", v:0.02, name:"メーカーのタイアップ",
+    msg:"メーカーのタイアップキャンペーン店に選ばれた。14営業日、常連が毎日2%ずつ増える。" },
+  { id:"mag",     cat:"収益", kind:"gift",   k:"rep", v:8, name:"雑誌の優良店特集",
+    msg:"攻略誌の「優良店特集」に載った。評判+8。" },
+  { id:"club",    cat:"収益", kind:"gift",   k:"regPct", v:0.15, name:"常連会の発足",
+    msg:"常連たちが自主的に「常連会」を作った。常連が15%増える。" },
+  { id:"group",   cat:"収益", kind:"gift",   k:"cashSales", v:0.30, name:"団体客の予約",
+    msg:"遠征打ちの団体から貸し切りに近い予約が入った。前日売上の30%が臨時収入になる。" },
+  { id:"reboom",  cat:"収益", kind:"gift",   k:"topPop", v:25, name:"看板機種の再ブーム",
+    msg:"看板機種が配信で再評価され、その機種の人気が+25。" },
+  { id:"fresh",   cat:"収益", kind:"gift",   k:"refresh", v:0, name:"新台の話題性が延長",
+    msg:"新台の評判が口コミで広がり、直近に入れた台の「新台効果」がもう5日続く。" },
+  { id:"tv",      cat:"収益", kind:"gift",   k:"rep", v:12, name:"テレビの街ブラ特集",
+    msg:"テレビの街ブラ番組で店が大きく取り上げられた。評判+12。" },
+  { id:"closure", cat:"収益", kind:"effect", n:14, k:"regDay", v:0.03, v2:0.6, name:"近隣の競合が閉店",
+    msg:"近隣の競合が閉店した。14営業日、常連が毎日3%増え評判も上がる。" },
+  { id:"sponsor", cat:"収益", kind:"offer",  n:5, cost:300000, k:"repReg", v:6, v2:0.08, name:"地域イベントの協賛",
+    msg:"駅前の祭りに協賛しないかと声がかかった。30万円で評判+6、常連+8%。5営業日限り。" },
+  { id:"review",  cat:"収益", kind:"effect", n:10, k:"repHalf", v:5, name:"口コミサイトの高評価",
+    msg:"口コミサイトで高評価が並んだ。評判+5、10営業日のあいだ評判の自然減が半分。" },
+  /* ── 資金 (5) ── */
+  { id:"rate",    cat:"資金", kind:"effect", n:30, k:"intBack", v:0.50, name:"金利の引き下げ",
+    msg:"銀行が金利を引き下げてくれた。30営業日、利息の半分が戻る。" },
+  { id:"invest",  cat:"資金", kind:"window", n:5, k:"buyOff", v:0.25, name:"設備投資の補助",
+    msg:"設備投資補助の対象になった。5営業日のあいだ、台の購入価格が25%引き。" },
+  { id:"tax",     cat:"資金", kind:"gift",   k:"cashPct", v:0.015, cap:5000000, name:"税の還付",
+    msg:"前期の税金が過払いだったと通知が来た。" },
+  { id:"buyback", cat:"資金", kind:"window", n:7, k:"saleUp", v:1.8, name:"中古台の高値買取",
+    msg:"中古台業者が海外向けの大口買付で、7営業日限り売却価格1.8倍で引き取る。" },
+  { id:"supply",  cat:"資金", kind:"offer",  n:3, k:"supply", v:0.60, name:"メーカーの優先納品",
+    msg:"話題の新台を定価の6割で、最大3シマまで優先納品するとの申し出。3営業日限り。" },
+  /* ── 台・人 (5) ── */
+  { id:"used",    cat:"台", kind:"window", n:5, k:"buyOff", v:0.30, name:"中古台の格安入荷",
+    msg:"良質な中古台がまとめて入った。5営業日のあいだ、台の購入価格が30%引き。" },
+  { id:"warranty",cat:"台", kind:"effect", n:20, k:"popHold", v:1, name:"メーカー保証の延長",
+    msg:"メーカーが無償で基板を更新してくれる。20営業日、台の人気が枯れない。" },
+  { id:"train",   cat:"人", kind:"effect", n:20, k:"repDay", v:0.5, name:"接客研修プログラム",
+    msg:"組合の接客研修に全員参加した。20営業日、評判が毎日+0.5。" },
+  { id:"service", cat:"台", kind:"gift",   k:"allPop", v:8, name:"業者の無料メンテ",
+    msg:"メーカーのサービスマンが全台を無料で整備してくれた。全台の人気+8。" },
+  { id:"word",    cat:"人", kind:"gift",   k:"regRep", v:10, v2:3, name:"常連の口コミ",
+    msg:"常連が友人を連れてきてくれた。常連+10、評判+3。" },
 ];
 const DS_BY_ID = {};
 for (const d of DS_LIST) DS_BY_ID[d.id] = d;
 const dsOf = id => DS_BY_ID[id] || null;
-const DS_GOOD = DS_LIST.filter(d => d.good).map(d => d.id);
-const DS_BAD = DS_LIST.filter(d => !d.good).map(d => d.id);
+const DS_IDS = DS_LIST.map(d => d.id);
 
 /* ---------- 状態 ---------- */
 const dsNum = (v, d, lo, hi) => { v = Number(v); if (!Number.isFinite(v)) v = d; return Math.max(lo, Math.min(hi, Math.floor(v))); };
@@ -6205,30 +6253,21 @@ function dsState() {
   D.init = D.init === 1 ? 1 : 0;
   D.last = dsNum(D.last, 0, 0, 1e6);
   D.cool = dsNum(D.cool, 0, 0, 99);
-  D.ins = D.ins === 1 ? 1 : 0;
-  D.insPaid = dsNum(D.insPaid, 0, 0, 1e13);
-  D.chk = D.chk === 1 ? 1 : 0;                    // 予兆中に点検したか
-  D.burn = (Array.isArray(D.burn) ? D.burn : []).map(u => dsNum(u, 0, 0, 1e9)).slice(0, MAX_CAP);   // 火災で全損した台
   D.n = dsNum(D.n, 0, 0, 999);
-  D.nGood = dsNum(D.nGood, 0, 0, 999);
-  if (D.omen && typeof D.omen === "object" && dsOf(D.omen.id)) {
-    D.omen = { id: D.omen.id, at: dsNum(D.omen.at, 0, 0, 1e6) };
-  } else D.omen = null;
+  D.done = (Array.isArray(D.done) ? D.done : []).filter(x => DS_BY_ID[x]).filter((x, i, a) => a.indexOf(x) === i).slice(0, 60);
+  D.up = Math.max(DS_UPKEEP_MIN, Math.min(1, Number(D.up) || 1));            // 維持費の恒久倍率
+  D.infl = dsNum(D.infl, 0, 0, 999);                                          // 維持費インフレの巻き戻し日数
   if (D.act && typeof D.act === "object" && dsOf(D.act.id)) {
-    D.act = {
-      id: D.act.id,
-      left: dsNum(D.act.left, 0, 0, 99),
-      from: dsNum(D.act.from, 0, 0, 1e6),
-      cat: typeof D.act.cat === "string" ? D.act.cat : "",
-      uids: (Array.isArray(D.act.uids) ? D.act.uids : []).map(u => dsNum(u, 0, 0, 1e9)).slice(0, MAX_CAP),
-      chain: typeof D.act.chain === "string" ? D.act.chain.slice(0, 20) : "",
-      cid: (typeof D.act.cid === "string" && CATALOG.some(c => c.id === D.act.cid)) ? D.act.cid : "",
-      took: dsNum(D.act.took, 0, 0, 9),
-    };
+    D.act = { id: D.act.id, left: dsNum(D.act.left, 0, 0, 99), took: dsNum(D.act.took, 0, 0, 9),
+              cid: (typeof D.act.cid === "string" && CATALOG.some(c => c.id === D.act.cid)) ? D.act.cid : "" };
   } else D.act = null;
+  D.eff = (Array.isArray(D.eff) ? D.eff : []).slice(0, 30)
+    .filter(f => f && DS_BY_ID[f.id])
+    .map(f => ({ id: f.id, n: dsNum(f.n, 0, 0, 999) }))
+    .filter(f => f.n > 0);
   D.hist = (Array.isArray(D.hist) ? D.hist : []).slice(0, DS_LOG_MAX)
-    .filter(h => h && dsOf(h.id))
-    .map(h => ({ id: h.id, d: dsNum(h.d, 0, 0, 1e6), sum: typeof h.sum === "string" ? h.sum.slice(0, 80) : "" }));
+    .filter(h => h && DS_BY_ID[h.id])
+    .map(h => ({ id: h.id, d: dsNum(h.d, 0, 0, 1e6) }));
   return D;
 }
 /* 旧セーブは初期化だけ。過去DAYぶんの抽選は遡らない。 */
@@ -6239,29 +6278,78 @@ function dsInit() {
   if (!D.last) D.last = Math.max(0, state.day - 1);
 }
 const dsRate = () => DS_RATE * dsMul();
+const dsDeck = () => DS_IDS.filter(id => dsState().done.indexOf(id) < 0);
+const dsEffOn = k => dsOn() && dsState().eff.some(f => { const d = dsOf(f.id); return d && d.k === k; });
+const dsEffVal = k => { if (!dsOn()) return 0; let v = 0; for (const f of dsState().eff) { const d = dsOf(f.id); if (d && d.k === k) v += d.v; } return v; };
 
-/* ---------- 保険・点検・機会 ---------- */
-function dsInsFee() { return Math.max(DS_INS_MIN, Math.round(Math.max(0, totalAssets()) * DS_INS_RATE)); }
-function dsInspectCost() { return Math.max(200000, Math.round(Math.max(0, totalAssets()) * 0.005)); }
-function dsToggleIns() {
-  if (!dsOn() || isDead()) return;
-  const D = dsState();
-  D.ins = D.ins === 1 ? 0 : 1;
-  save(); renderAll();
-  toast(D.ins ? "災害保険に加入した(保険料は毎営業日の天引き)" : "災害保険を解約した");
+/* ---------- 外から参照される倍率(ui-1 が呼ぶ) ---------- */
+/* 規模維持費: 恒久割引 × 一時割引 */
+function dsUpkeepMul() {
+  try { if (!dsOn()) return 1; return dsState().up * Math.max(0.5, 1 - dsEffVal("upkeepTmp")); } catch (e) { return 1; }
 }
-function dsInspect() {
-  if (!dsOn() || isDead()) return;
-  const D = dsState();
-  if (!D.omen || D.omen.id !== "fire" || D.chk === 1) return;
-  const c = dsInspectCost();
-  if (state.money < c) { toast("資金が足りません"); return; }
-  state.money -= c; D.chk = 1;
-  save(); renderAll();
-  toast("業者に点検を頼んだ。被害が出ても半分で済む");
+/* 維持費インフレの巻き戻し(日数) */
+function dsInflBack() { try { return dsOn() ? dsState().infl : 0; } catch (e) { return 0; } }
+/* 評判の自然減 */
+function dsRepDecayMul() { try { return dsEffOn("repHalf") ? 0.5 : 1; } catch (e) { return 1; } }
+/* 購入価格 */
+function dsBuyMul() {
+  try { if (!dsOn()) return 1; const A = dsState().act; const d = A ? dsOf(A.id) : null;
+        return (d && d.kind === "window" && d.k === "buyOff") ? 1 - d.v : 1; } catch (e) { return 1; }
 }
-/* 優先納品: 1シマぶん契約する(最大3回) */
+/* 売却価格 */
+function dsSaleMul() {
+  try { if (!dsOn()) return 1; const A = dsState().act; const d = A ? dsOf(A.id) : null;
+        return (d && d.kind === "window" && d.k === "saleUp") ? d.v : 1; } catch (e) { return 1; }
+}
+
+/* ---------- 保護ロジックと同じ式で日次経費を出す(還付の計算用。式は変えない) ---------- */
+function dsDailyCosts() {
+  const D = DIFFS[state.diff] || DIFFS.normal;
+  return {
+    rent: Math.round((30000 + state.cap * 2500) * D.rentMul),
+    wages: state.staff * 13000,
+    util: state.machines.length * 2500,
+    interest: Math.round(state.debt * 0.0025),
+  };
+}
+
+/* ---------- 札を引いたときの処理 ---------- */
 const dsSupplyPrice = c => Math.round(c.price * 0.60);
+function dsApply(id, rec) {
+  const D = dsState(), d = dsOf(id);
+  const notes = [];
+  const capReg = state.machines.length * 20 * 0.5;
+  const line = `🃏 商機「${d.name}」— ${d.msg}`;
+  if (d.kind === "gift") {
+    if (d.k === "upkeep") D.up = Math.max(DS_UPKEEP_MIN, D.up * (1 - d.v));
+    else if (d.k === "inflBack") D.infl += d.v;
+    else if (d.k === "cash") state.money += d.v;
+    else if (d.k === "cashPct") { const g = Math.min(d.cap, Math.round(Math.max(0, totalAssets()) * d.v)); state.money += g; notes.push(`${line} ${yen(g)}を受け取った。`); }
+    else if (d.k === "cashSales") { const g = Math.round((rec && rec.sales ? rec.sales : 0) * d.v); state.money += g; notes.push(`${line} ${yen(g)}。`); }
+    else if (d.k === "rep") state.rep = Math.min(100, state.rep + d.v);
+    else if (d.k === "regPct") state.regulars = Math.min(capReg, state.regulars * (1 + d.v));
+    else if (d.k === "regRep") { state.regulars = Math.min(capReg, state.regulars + d.v); state.rep = Math.min(100, state.rep + d.v2); }
+    else if (d.k === "topPop") { let best = null; for (const m of state.machines) if (!best || m.pop > best.pop) best = m;
+      if (best) for (const m of state.machines) if (m.cid === best.cid) m.pop = Math.min(300, m.pop + d.v); }
+    else if (d.k === "allPop") for (const m of state.machines) m.pop = Math.min(300, m.pop + d.v);
+    else if (d.k === "refresh") for (const m of state.machines) if (m.boughtDay !== null && state.day - m.boughtDay <= 5) m.boughtDay = state.day;
+    if (!notes.length) notes.push(line);
+  } else if (d.kind === "effect") {
+    D.eff.push({ id, n: d.n });
+    if (id === "review") state.rep = Math.min(100, state.rep + d.v);
+    notes.push(line);
+  } else if (d.kind === "offer" || d.kind === "window") {
+    const cid = d.k === "supply" ? CATALOG.slice().sort((a, b) => b.pop - a.pop)[0].id : "";
+    D.act = { id, left: d.n, took: 0, cid };
+    notes.push(`${line}${d.kind === "offer" ? " 経営画面で決められる。" : ""}`);
+  }
+  D.done.push(id); D.n++;
+  D.hist.unshift({ id, d: rec ? rec.day : state.day });
+  if (D.hist.length > DS_LOG_MAX) D.hist.pop();
+  return notes;
+}
+
+/* ---------- 機会を拾う ---------- */
 function dsSupplyTake() {
   if (!dsOn() || isDead()) return false;
   const D = dsState(), A = D.act;
@@ -6273,148 +6361,29 @@ function dsSupplyTake() {
   state.money -= price;
   const m = makeMachine(c.id); m.uid = ++state.uid; m.boughtDay = state.day; state.machines.push(m);
   A.took++;
+  if (A.took >= 3) { D.act = null; D.cool = DS_COOL; }
   save(); checkAchEx(); renderAll();
   toast(`${c.name} を優先納品で導入(${yen(price)})`);
   return true;
 }
-/* 高値買取の窓が開いているか(ui-1 の machineSale が参照する) */
-function dsSaleMul() {
-  try { if (!dsOn()) return 1; const A = dsState().act; return (A && A.id === "buyback") ? 1.8 : 1; }
-  catch (e) { return 1; }
+function dsAccept() {
+  if (!dsOn() || isDead()) return false;
+  const D = dsState(), A = D.act; const d = A ? dsOf(A.id) : null;
+  if (!d || d.kind !== "offer" || d.k !== "repReg") return false;
+  if (state.money < d.cost) { toast("資金が足りません"); return false; }
+  state.money -= d.cost;
+  state.rep = Math.min(100, state.rep + d.v);
+  state.regulars = Math.min(state.machines.length * 20 * 0.5, state.regulars * (1 + d.v2));
+  D.act = null; D.cool = DS_COOL;
+  save(); checkAchEx(); renderAll();
+  toast(`${d.name}に応じた`);
+  return true;
 }
-
-/* ---------- 対象の選び方 ---------- */
-/* いちばん多く並べているカテゴリ。全台が1カテゴリなら古い順に半分だけ対象にする */
-function dsBanTargets() {
-  const cnt = {};
-  for (const m of state.machines) { const k = mBoom(m.cid) || mType(m.cid); cnt[k] = (cnt[k] || 0) + 1; }
-  let top = "", n = 0;
-  for (const k in cnt) if (cnt[k] > n) { top = k; n = cnt[k]; }
-  let list = state.machines.filter(m => (mBoom(m.cid) || mType(m.cid)) === top);
-  if (list.length >= state.machines.length && list.length > 1) {
-    list = list.slice().sort((a, b) => (a.boughtDay ?? -1) - (b.boughtDay ?? -1)).slice(0, Math.ceil(list.length / 2));
-  }
-  return { cat: top, uids: list.map(m => m.uid) };
-}
-/* 優先納品の機種: 素の人気が最も高い機種 */
-function dsSupplyCid() {
-  return CATALOG.slice().sort((a, b) => b.pop - a.pop)[0].id;
-}
-const dsChain = () => (typeof RIV_CHAIN !== "undefined" && RIV_CHAIN.length)
-  ? RIV_CHAIN[Math.floor(dsNext() * RIV_CHAIN.length)] : "大手チェーン";
-
-/* ---------- 発生 ---------- */
-function dsStrike(id, playedDay) {
-  const D = dsState(), def = dsOf(id);
-  const notes = [], n = state.machines.length;
-  const assets = Math.max(0, totalAssets());
-  let sum = "";
-  if (id === "mega") {
-    const chain = dsChain();
-    D.act = { id, left: def.dur, from: playedDay, cat: "", uids: [], chain, cid: "", took: 0 };
-    notes.push(`🏗️ 「${chain}」${def.hit} ${def.tip}`);
-    sum = `${chain}が出店(${def.dur}日)`;
-  } else if (id === "ban") {
-    const t = dsBanTargets();
-    D.act = { id, left: def.dur, from: playedDay, cat: t.cat, uids: t.uids, chain: "", cid: "", took: 0 };
-    notes.push(`📜 ${def.hit} 対象は「${t.cat}」の${tai(t.uids.length)}台。${def.tip}`);
-    sum = `${t.cat} ${tai(t.uids.length)}台に撤去命令`;
-  } else if (id === "fire") {
-    const half = D.chk === 1;
-    const k = Math.max(1, Math.round(n * (half ? 0.15 : 0.30)));
-    const order = state.machines.slice().sort(() => dsNext() - 0.5).slice(0, k);
-    for (const m of order) m.pop = 15;
-    D.burn = order.map(m => m.uid);
-    let cost = Math.round(assets * (half ? 0.015 : 0.03));
-    if (D.ins === 1) cost = Math.round(cost / 3);
-    state.money -= cost;
-    state.rep = Math.max(1, state.rep - (half ? 3 : 6));
-    notes.push(`🔥 ${def.hit} ${tai(k)}台が全損、復旧費用 ${yen(cost)}${half ? "(点検済みで半減)" : ""}${D.ins ? "(保険で2/3を補填)" : ""}。`);
-    sum = `火災: ${tai(k)}台全損・${yen(cost)}`;
-  } else if (id === "supply") {
-    const cid = dsSupplyCid(), c = CATALOG.find(x => x.id === cid);
-    D.act = { id, left: def.dur, from: playedDay, cat: "", uids: [], chain: "", cid, took: 0 };
-    notes.push(`🎁 ${def.hit} 対象は「${c.name}」、1シマ ${yen(dsSupplyPrice(c))}(定価 ${yen(c.price)})。経営画面で契約できる。`);
-    sum = `優先納品の話: ${c.name}`;
-  } else if (id === "tv") {
-    state.rep = Math.min(100, state.rep + 12);
-    state.regulars = Math.min(state.machines.length * 20 * 0.5, state.regulars * 1.05 + 4);
-    notes.push(`📺 ${def.hit} 評判+12。`);
-    sum = "テレビ特集: 評判+12";
-  } else if (id === "closure") {
-    const chain = dsChain();
-    D.act = { id, left: def.dur, from: playedDay, cat: "", uids: [], chain, cid: "", took: 0 };
-    notes.push(`🏚️ 「${chain}」${def.hit} ${def.tip}`);
-    sum = `${chain}が閉店(${def.dur}日の追い風)`;
-  } else if (id === "buyback") {
-    D.act = { id, left: def.dur, from: playedDay, cat: "", uids: [], chain: "", cid: "", took: 0 };
-    notes.push(`💰 ${def.hit} ${def.tip}`);
-    sum = "中古台の高値買取(7日)";
-  }
-  D.n++;
-  if (def.good) D.nGood++;
-  D.hist.unshift({ id, d: playedDay, sum });
-  if (D.hist.length > DS_LOG_MAX) D.hist.pop();
-  D.chk = 0;
-  return notes;
-}
-
-/* 継続中の事件を1日ぶん進める */
-function dsTick(playedDay) {
-  const D = dsState(), A = D.act;
-  const notes = [];
-  if (!A) return notes;
-  if (A.id === "mega") {
-    const n = state.machines.length;
-    const avg = n ? state.machines.reduce((a, m) => a + m.setting, 0) / n : 3;
-    const held = avg >= 4.0;
-    state.regulars = Math.max(0, state.regulars * (held ? 0.985 : 0.955));
-    state.rep = Math.max(1, state.rep - (held ? 0.3 : 0.9));
-    A.left--;
-    if (A.left <= 0) { D.act = null; D.cool = DS_COOL; notes.push(`🏗️ 「${A.chain}」の開店景気が落ち着き、客足が戻り始めた。`); }
-    else if (!held) notes.push(`🏗️ 「${A.chain}」に客を取られている(残り${A.left}日)。平均設定4.0以上で流出を抑えられる。`);
-    else notes.push(`🏗️ 出し続けて客を引き留めている(残り${A.left}日)。`);
-  } else if (A.id === "ban") {
-    const set = new Set(A.uids);
-    const left = state.machines.filter(m => set.has(m.uid));
-    for (const m of left) m.pop = Math.max(15, m.pop * 0.85);
-    A.left--;
-    if (A.left <= 0) {
-      let got = 0;
-      const rate = D.ins === 1 ? 0.45 : 0.20;
-      state.machines = state.machines.filter(m => {
-        if (!set.has(m.uid)) return true;
-        got += Math.round(catalogOf(m).price * rate); return false;
-      });
-      state.money += got;
-      D.act = null; D.cool = DS_COOL;
-      if (left.length) notes.push(`📜 期限切れ。「${A.cat}」${tai(left.length)}台が強制回収された(${yen(got)}${D.ins ? "・保険の撤去補償込み" : ""})。`);
-      else notes.push(`📜 撤去期限。対象の台はすべて手放し済みだった。`);
-    } else if (left.length) {
-      notes.push(`📜 撤去対象「${A.cat}」が${tai(left.length)}台残っている(残り${A.left}日)。客が避けるので人気が落ち続ける。`);
-    } else {
-      D.act = null; D.cool = DS_COOL;
-      notes.push(`📜 撤去対象をすべて手放した。組合の件は片付いた。`);
-    }
-  } else if (A.id === "closure") {
-    const capReg = state.machines.length * 20 * 0.5;
-    state.regulars = Math.min(capReg, state.regulars * 1.03 + 1);
-    state.rep = Math.min(100, state.rep + 0.6);
-    A.left--;
-    if (A.left <= 0) { D.act = null; D.cool = DS_COOL; notes.push(`🏚️ 「${A.chain}」の客はあらかた落ち着き先を決めたようだ。`); }
-    else notes.push(`🏚️ 「${A.chain}」の客が流れてきている(残り${A.left}日)。`);
-  } else if (A.id === "supply") {
-    A.left--;
-    if (A.left <= 0) { D.act = null; D.cool = DS_COOL; notes.push(A.took ? `🎁 優先納品の話は終わった(${A.took}シマ導入)。` : `🎁 優先納品の話は流れた。`); }
-    else notes.push(`🎁 優先納品の話は残り${A.left}日(あと${3 - A.took}シマまで)。`);
-  } else if (A.id === "buyback") {
-    A.left--;
-    if (A.left <= 0) { D.act = null; D.cool = DS_COOL; notes.push(`💰 高値買取の窓が閉じた。`); }
-    else notes.push(`💰 中古台の高値買取は残り${A.left}日(売却価格1.8倍)。`);
-  } else {
-    D.act = null; D.cool = DS_COOL;
-  }
-  return notes;
+function dsDecline() {
+  if (!dsOn() || isDead()) return;
+  const D = dsState(); if (!D.act) return;
+  D.act = null; D.cool = DS_COOL;
+  save(); renderAll();
 }
 
 /* ---------- 1営業日 ---------- */
@@ -6423,47 +6392,55 @@ function dsDay(rec) {
   const D = dsState();
   const playedDay = rec.day;
   const notes = [];
-  const out = { notes, ins: 0, struck: null, omen: null };
+  const out = { notes, back: 0, drew: null };
   if (!dsOn()) return out;
-  if (D.ins === 1) {
-    const fee = dsInsFee();
-    state.money -= fee; D.insPaid += fee; out.ins = fee;
+
+  /* 1. 続いている効果を適用し、期限を進める */
+  const costs = dsDailyCosts();
+  const capReg = state.machines.length * 20 * 0.5;
+  let back = 0;
+  for (const f of D.eff) {
+    const d = dsOf(f.id); if (!d) continue;
+    if (d.k === "rentBack") back += Math.round(costs.rent * d.v);
+    else if (d.k === "utilBack") back += Math.round(costs.util * d.v);
+    else if (d.k === "wageBack") back += Math.round(costs.wages * d.v);
+    else if (d.k === "intBack") back += Math.round(costs.interest * d.v);
+    else if (d.k === "regDay") { state.regulars = Math.min(capReg, state.regulars * (1 + d.v) + 1); if (d.v2) state.rep = Math.min(100, state.rep + d.v2); }
+    else if (d.k === "repDay") state.rep = Math.min(100, state.rep + d.v);
+    else if (d.k === "popHold") for (const m of state.machines) m.pop = Math.min(300, m.pop + catalogOf(m).decay);
+    f.n--;
   }
-  if (D.act) { notes.push(...dsTick(playedDay)); return out; }
-  if (D.omen) {
-    if (playedDay >= D.omen.at) {
-      const id = D.omen.id; D.omen = null;
-      notes.push(...dsStrike(id, playedDay));
-      out.struck = id;
-      if (!D.act) D.cool = DS_COOL;
+  if (back > 0) { state.money += back; out.back = back; }
+  const ended = D.eff.filter(f => f.n <= 0).map(f => dsOf(f.id).name);
+  D.eff = D.eff.filter(f => f.n > 0);
+  if (ended.length) notes.push(`🃏 商機の効果が終わった: ${ended.join("、")}`);
+
+  /* 2. 機会の期限 */
+  if (D.act) {
+    const d = dsOf(D.act.id);
+    D.act.left--;
+    if (D.act.left <= 0) {
+      notes.push(d.kind === "window" ? `🃏 「${d.name}」の期間が終わった。` : `🃏 「${d.name}」の話は流れた。`);
+      D.act = null; D.cool = DS_COOL;
     } else {
-      const def = dsOf(D.omen.id);
-      notes.push(`👁️ ${def.omen}(あと${D.omen.at - playedDay}日)`);
+      notes.push(`🃏 「${d.name}」は残り${D.act.left}営業日。`);
     }
     return out;
   }
-  const canRoll = playedDay >= DS_START_DAY && D.cool <= 0 && D.last < playedDay && state.machines.length > 0;
+
+  /* 3. 次の札を引く */
+  const canRoll = playedDay >= DS_START_DAY && D.cool <= 0 && D.last < playedDay && state.machines.length > 0 && dsDeck().length > 0;
   if (D.cool > 0) D.cool--;
   if (!canRoll) return out;
   D.last = playedDay;
   const roll = dsNext();
   if (roll >= dsRate()) return out;
-  /* 追い風と向かい風は同じ確率。どちらも一様 */
-  const good = dsNext() < 0.5;
-  const pool = good ? DS_GOOD : DS_BAD;
-  let pick = pool[Math.floor(dsNext() * pool.length)];
-  if (dsForcedId && dsOf(dsForcedId)) { pick = dsForcedId; dsForcedId = null; }
-  const def = dsOf(pick);
-  if (def.good) {
-    notes.push(...dsStrike(pick, playedDay));
-    out.struck = pick;
-    if (!D.act) D.cool = DS_COOL;
-  } else {
-    D.omen = { id: pick, at: playedDay + DS_OMEN };
-    D.chk = 0;
-    notes.push(`👁️ ${def.omen}(あと${DS_OMEN}日)`);
-    out.omen = pick;
-  }
+  const deck = dsDeck();
+  let pick = deck[Math.floor(dsNext() * deck.length)];
+  if (dsForcedId && deck.indexOf(dsForcedId) >= 0) { pick = dsForcedId; dsForcedId = null; }
+  notes.push(...dsApply(pick, rec));
+  out.drew = pick;
+  if (!D.act) D.cool = DS_COOL;
   return out;
 }
 
@@ -6474,43 +6451,36 @@ function renderCalamity() {
   if (!dsOn()) { box.hidden = true; box.innerHTML = ""; return; }
   box.hidden = false;
   const D = dsState();
-  const omen = D.omen ? dsOf(D.omen.id) : null;
-  const act = D.act ? dsOf(D.act.id) : null;
+  const A = D.act, ad = A ? dsOf(A.id) : null;
   let body = "";
-  if (act) {
-    const A = D.act;
-    body = `<div class="ds-now ${act.good ? "good" : ""}">${ic(act.good ? "star" : "alert")}<b>${esc(act.name)}</b><span>${A.left ? `残り${A.left}営業日` : "進行中"}</span></div>
-      <p class="note">${esc(act.tip)}</p>`;
-    if (A.id === "ban" && A.uids.length) {
-      const left = state.machines.filter(m => A.uids.includes(m.uid)).length;
-      body += `<p class="note">対象: 「${esc(A.cat)}」${tai(left)}台がまだ店内にある。台の画面から売却できる。</p>`;
-    }
-    if (A.id === "supply") {
+  if (ad) {
+    body = `<div class="ds-now good">${ic("star")}<b>${esc(ad.name)}</b><span>残り${A.left}営業日</span></div>
+      <p class="note">${esc(ad.msg)}</p>`;
+    if (ad.k === "supply") {
       const c = CATALOG.find(x => x.id === A.cid);
       const can = c && A.took < 3 && state.machines.length < state.cap && state.money >= dsSupplyPrice(c) && !isDead();
       body += `<button class="btn sm wide ${can ? "gold" : ""}" data-ds="take" ${can ? "" : "disabled"}>「${esc(c ? c.name : "")}」を1シマ契約 (${yen(c ? dsSupplyPrice(c) : 0)}) ─ 残り${3 - A.took}</button>`;
+    } else if (ad.kind === "offer") {
+      const can = state.money >= ad.cost && !isDead();
+      body += `<div class="rowbtns"><button class="btn sm ${can ? "gold" : ""}" data-ds="accept" ${can ? "" : "disabled"}>応じる (${yen(ad.cost)})</button><button class="btn sm" data-ds="decline">見送る</button></div>`;
+    } else if (ad.kind === "window") {
+      body += `<p class="note">${ad.k === "buyOff" ? `いま台を買うと ${Math.round(ad.v * 100)}% 引き。` : `いま台を売ると ${ad.v} 倍。`}新台購入・台の画面から。</p>`;
     }
-  } else if (omen) {
-    body = `<div class="ds-now warn">${ic("alert")}<b>予兆: ${esc(omen.name)}</b><span>あと${Math.max(0, D.omen.at - state.day + 1)}営業日</span></div>
-      <p class="note">${esc(omen.omen)}</p>
-      <p class="note">${esc(omen.tip)}</p>
-      ${omen.id === "fire" ? `<button class="btn sm wide ${D.chk ? "" : "gold"}" data-ds="inspect" ${D.chk || isDead() ? "disabled" : ""}>${D.chk ? "点検済み" : `点検を頼む (${yen(dsInspectCost())})`}</button>` : ""}`;
   } else {
-    body = `<p class="note" style="margin:0 0 4px">追い風と向かい風は同じ確率で来る。向かい風には2営業日の予兆があり、備えれば軽くなる。追い風は資金と空き枠があるときだけ拾える。</p>`;
+    body = `<p class="note" style="margin:0 0 4px">商機は30枚。どれがいつ来るかは運で、早ければ楽、遅ければ苦しい。機会は資金と空き枠があるときだけ拾える。</p>`;
   }
-  const burnLeft = state.machines.filter(m => D.burn.includes(m.uid)).length;
-  const burnHtml = burnLeft ? `<p class="note" style="color:var(--neg)">火災で全損した台が${tai(burnLeft)}台残っている。客が付かないので売却して入れ替えを。</p>` : "";
-  const hist = D.hist.slice(0, 4).map(h => `<div class="ds-log"><span>${h.d}日目</span><b>${esc(h.sum)}</b></div>`).join("");
+  const effs = D.eff.map(f => { const d = dsOf(f.id); return `<div class="ce-eff"><b>${esc(d.name)}</b><span>${esc(d.cat)}</span><i>残り${f.n}営業日</i></div>`; }).join("");
+  const perm = [];
+  if (D.up < 1) perm.push(`規模維持費 −${Math.round((1 - D.up) * 100)}%`);
+  if (D.infl > 0) perm.push(`維持費の値上がり ${D.infl}日ぶん巻き戻し`);
+  const hist = D.hist.slice(0, 5).map(h => `<div class="ds-log"><span>${h.d}日目</span><b>${esc(dsOf(h.id).name)}</b></div>`).join("");
   box.innerHTML = `
-    <div class="gp-h">${ic("bolt")}<b>大事件</b><span class="r">追い風 ${D.nGood} ・ 向かい風 ${D.n - D.nGood}</span></div>
+    <div class="gp-h">${ic("bolt")}<b>商機</b><span class="r">引いた ${D.n} / ${DS_LIST.length}</span></div>
     <div class="gp-b">
-      ${body}${burnHtml}
-      <div class="ds-ins">
-        <span>災害保険 <small>${yen(dsInsFee())} / 日</small></span>
-        <button class="btn sm ${D.ins ? "" : "gold"}" data-ds="ins" ${isDead() ? "disabled" : ""}>${D.ins ? "解約する" : "加入する"}</button>
-      </div>
-      <p class="note">保険は復旧費用の2/3と撤去補償を持つ。評判や常連の損失は持たない。</p>
-      ${hist ? `<div class="ce-sec"><b>これまでの大事件</b>${hist}</div>` : ""}
+      ${body}
+      ${effs ? `<div class="ce-sec"><b>いま効いている商機</b>${effs}</div>` : ""}
+      ${perm.length ? `<div class="ce-sec"><b>恒久</b><p class="note" style="margin:0">${perm.join(" ・ ")}</p></div>` : ""}
+      ${hist ? `<div class="ce-sec"><b>これまでの商機</b>${hist}</div>` : ""}
     </div>`;
 }
 
@@ -6842,7 +6812,22 @@ function doReset() {
   showTutorial();
 }
 window.doReset = doReset;
-function startGame(diff) {
+/* 修羅は「腕」を自分で選ぶ。熟練は地力がさらに厳しく、30枚の商機がいつ来るかで難易度が揺れる */
+function showHardChoice() {
+  showModal(`${mh("fire", "修羅 — 腕を選ぶ", true)}
+    <div class="mb">
+      <p class="note" style="font-size:12px;color:var(--tx-2)">修羅は組合の目が厳しく(平均設定4未満で警戒)、プロも多い。ここからさらに、自分の腕で難しさを選べる。</p>
+      <div style="display:grid;gap:6px;margin-top:8px">
+        <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('hard','n')">
+          <span><b style="font-size:14px">ふつうの腕で挑む</b> <small style="color:var(--tx-3)">辿り着けるのは3人に1人</small></span></button>
+        <button class="btn wide gold" style="min-height:52px;justify-content:space-between" onclick="startGame('hardx','x')">
+          <span><b style="font-size:14px">熟練者として挑む</b> <small>客入りが半分以下・維持費は倍近い。ふつうの腕では潰れる。30枚の「商機」がいつ来るかは運</small></span></button>
+      </div>
+      <p class="note" style="margin-top:8px">熟練者向けは、知識だけでは足りない。商機が早く来れば楽に、遅ければ苦しくなる。</p>
+    </div>`);
+}
+function startGame(diff, sub) {
+  if (diff === "hard" && !sub) { showHardChoice(); return; }
   state = newGame(diff);
   save(true);
   closeModal();
@@ -6869,7 +6854,7 @@ function showTutorial() {
     <div class="mb">
       <p class="note" style="font-size:12px;color:var(--tx-2)">あなたは小さなパチンコホールの新米オーナー。<b>純資産1億円</b>の地域No.1ホールを目指そう!</p>
       <div style="margin-top:8px">
-        ${item("target", "平均設定のメリハリがすべて", "ホールは<b>1シマ=同一機種10台</b>の単位で動かす。渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。警戒される平均設定の線は難易度で違う(のんびり・標準は2.6、<b>修羅は4.0</b> ─ 修羅では渋り営業そのものが成立しない)。" + ((DIFFS.hard.calamMul || 0) > 0 ? "修羅ではさらに<b>災厄</b>(大型店の出店・撤去命令・設備事故・摘発・看板機種の失墜)が起きる。予兆が2営業日前に出るので、保険・点検・設定・売却で備えろ。" : "") + "出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出すシマ」と「回収するシマ」を作り分けろ!")}
+        ${item("target", "平均設定のメリハリがすべて", "ホールは<b>1シマ=同一機種10台</b>の単位で動かす。渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。警戒される平均設定の線は難易度で違う(のんびり・標準は2.6、<b>修羅は4.0</b> ─ 修羅では渋り営業そのものが成立しない)。" + ((DIFFS.hard.calamMul || 0) > 0 ? "修羅で<b>熟練者</b>を選ぶと、維持費と収益がさらに厳しくなる代わりに、30枚の<b>商機</b>(家賃交渉・補助金・タイアップ・優先納品など)が日程ランダムで来る。早く来れば楽、遅ければ苦しい。" : "") + "出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出すシマ」と「回収するシマ」を作り分けろ!")}
         ${item("fire", "7のつく日は特日 / 週替わりブーム / シマ効果", "特日は高設定で評判爆上げ。ブームは<b>機種カテゴリ単位</b>で来て、その機種の集客力1.4倍 — ただし弱い機種はブームでも強い機種に届かない。同一機種を並べればシマ効果。")}
         ${item("star", "評判は放っておくと落ちる", "客は前によかった店をいつまでも覚えていない。<b>評判が高いほど毎日の目減りは大きい</b>。上のほうを保つには出玉かスタッフの質で押し返し続けるしかない。")}
         ${item("bank", "拡張は罰ではなく投資", "クリア条件の「純資産」は <b>現金＋台の簿価＋店舗簿価−借金</b>。シマ増設費は消えず<b>6割が店舗簿価として残る</b>ので、拡張は計算できる投資だ。ただし現金は出るし、広げた席を埋められなければ規模維持費で溶ける。")}
@@ -6883,7 +6868,7 @@ function showTutorial() {
           <span><b style="font-size:14px">標準</b> <small>${LIMIT_DAYS.normal}日以内に1億 / 3割は間に合わない</small></span>
           <span class="num" style="font-size:14px;font-weight:900">${yen(DIFFS.normal.money)}</span></button>
         <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('hard')">
-          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">${LIMIT_DAYS.hard}日以内に1億 / ${(DIFFS.hard.calamMul || 0) > 0 ? "災厄が起きる・" : ""}辿り着けるのは3人に1人</small></span>
+          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">${LIMIT_DAYS.hard}日以内に1億 / 腕を選べる(ふつう・熟練)</small></span>
           <span class="num" style="font-size:14px;font-weight:900;color:var(--gold-hi)">${yen(DIFFS.hard.money)}</span></button>
       </div>
     </div>`);
@@ -6933,7 +6918,7 @@ document.addEventListener("click", e => {
     return;
   }
   if (d.lr !== undefined) { lrOpen(Number(d.lr)); return; }
-  if (d.ds) { if (d.ds === "ins") dsToggleIns(); else if (d.ds === "inspect") dsInspect(); else if (d.ds === "take") dsSupplyTake(); return; }
+  if (d.ds) { if (d.ds === "take") dsSupplyTake(); else if (d.ds === "accept") dsAccept(); else if (d.ds === "decline") dsDecline(); return; }
   if (d.rg) { openRegion(d.rg); return; }
   if (d.rgn || d.rgtp) {
     if (d.rgn) rgDraft.n = Number(d.rgn); else rgDraft.tp = d.rgtp;
