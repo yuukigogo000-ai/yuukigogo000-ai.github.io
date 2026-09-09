@@ -320,6 +320,11 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     await p.evaluate(() => setArea('map')); await p.waitForTimeout(200);
     ok('FN 全国マップへの到達', await p.evaluate(() => document.getElementById('panel-map').classList.contains('on')));
     ok('FN 5番目のナビ「全国」(解禁後)', await p.evaluate(() => !!document.querySelector('#nav [data-area="map"]')));
+    // 解禁演出の「全国マップを開く」はモーダルを閉じてからマップへ切り替える(2026-09-09 実機で不具合報告)
+    await p.evaluate(() => { setArea('hall'); rgShowUnlock(); }); await p.waitForTimeout(200);
+    await p.click('#modalBox button[data-area="map"]'); await p.waitForTimeout(300);
+    ok('FN 解禁演出の「全国マップを開く」でモーダルが閉じてマップに切り替わる', await p.evaluate(() =>
+      !document.getElementById('modalBg').classList.contains('show') && document.getElementById('panel-map').classList.contains('on')));
     ok('FN 15地方のタイルが描画される', await p.evaluate(() => document.querySelectorAll('#mapGrid .mt').length === 15));
     ok('FN 本店エリアが東海として表示される', await p.evaluate(() => {
       const t = document.querySelector('[data-rg="tka"]');
