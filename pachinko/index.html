@@ -3367,6 +3367,7 @@ function rgState() {
          : (b.tp === "P" ? "p2" : b.tp === "S" ? "s2" : "p2"),   // 旧セーブ(機種構成P/S/bal)からの移行
       pol: Math.floor(num(b.pol, 3, 1, 5)),
       mgr: b.mgr === true,
+      mo: Math.floor(num(b.mo, 0, 0, 1e6)),   // 店長を最後に外した日(0=未)。再雇用の間隔に使う
       rep: num(b.rep, 40, 0, 100),
       since: Math.floor(num(b.since, 1, 1, 1e6)),
       net: Math.round(num(b.net, 0, -1e11, 1e11)),
@@ -3422,6 +3423,7 @@ function rgMakeRivals(R) {
 
 /* その地方の客層を把握しているか。地元は最初から。他所は現地で営業して初めて分かる。 */
 const RG_LEARN_DAYS = 20;
+const RG_MGR_COOL = 7;    // 店長を外してから再雇用できるまでの日数
 const rgKnown = a => a === RG_HOME || rgState().known[a] === true;
 
 /* ---------- 解禁 ---------- */
@@ -3739,7 +3741,7 @@ function renderMap() {
         <span class="cs-l">${kn
           ? R.like.map(m => `<i class="up">${esc(midName(m))}</i>`).join("") + R.hate.map(m => `<i class="dn">${esc(midName(m))}</i>`).join("")
           : `<i class="q">未把握 — 現地で${RG_LEARN_DAYS}日営業すると分かる</i>`}</span>
-        ${cur ? `<span class="cs-c ${rgFit(cur, R) > 0 ? "ok" : rgFit(cur, R) < 0 ? "ng" : ""}">主力: ${esc(midName(cur))}${rgFit(cur, R) > 0 ? " ✓好評" : rgFit(cur, R) < 0 ? " ✕不評" : ""}</span>` : ""}
+        ${cur ? `<span class="cs-c ${kn && rgFit(cur, R) > 0 ? "ok" : kn && rgFit(cur, R) < 0 ? "ng" : ""}">主力: ${esc(midName(cur))}${!kn ? "" : rgFit(cur, R) > 0 ? " ✓好評" : rgFit(cur, R) < 0 ? " ✕不評" : ""}</span>` : ""}
       </button>`;
     }).join("");
   }
@@ -3834,8 +3836,9 @@ function openRegion(a) {
       <div class="bd">
         <span class="k">規模</span><span class="v">${tai(b.n)}台</span>
         <span class="k">主力機種</span><span class="v">${esc(midName(b.mid))}</span>
-        <span class="k s">客の反応</span><span class="v s ${rgFit(b.mid, R) > 0 ? "pos" : rgFit(b.mid, R) < 0 ? "neg" : ""}">${
-          rgFit(b.mid, R) > 0 ? "好評 (集客力 +12)" : rgFit(b.mid, R) < 0 ? "不評 (集客力 −10)" : "可もなく不可もなく (±0)"}</span>
+        <span class="k s">客の反応</span>${rgKnown(a)
+          ? `<span class="v s ${rgFit(b.mid, R) > 0 ? "pos" : rgFit(b.mid, R) < 0 ? "neg" : ""}">${rgFit(b.mid, R) > 0 ? "好評 (集客力 +12)" : rgFit(b.mid, R) < 0 ? "不評 (集客力 −10)" : "可もなく不可もなく (±0)"}</span>`
+          : `<span class="v s">様子見 (あと${Math.max(0, RG_LEARN_DAYS - (state.day - b.since))}日で分かる)</span>`}
         <span class="k">支店の評判</span><span class="v">${Math.round(b.rep)} / 100</span>
         <span class="k">前日損益</span>${b.since >= state.day ? '<span class="v">— (明日から営業)</span>' : `<span class="v ${net >= 0 ? "pos" : "neg"}">${sign(net)}</span>`}
         <span class="k">累計損益</span><span class="v ${b.cash >= 0 ? "pos" : "neg"}">${sign(b.cash)}</span>
@@ -3848,15 +3851,18 @@ function openRegion(a) {
       渋くすれば粗利率は上がるが、評判が落ちて客が減り、一番店も明け渡す。甘くすれば評判と集客は伸びるが粗利率が下がる。
       どちらに振り切っても利益は落ちる — エリアを取りにいくか、利益を取るかの選択。</p>
       <div class="btn-grid" style="margin-top:6px">
-        <button class="btn" data-rgmgr="${a}" ${b.mgr ? "disabled" : ""}>${b.mgr ? "店長 配属済み" : "敏腕店長を雇う"}</button>
+        ${(() => { const w = rgMgrWait(b); return `<button class="btn" data-rgmgr="${a}" ${!b.mgr && w > 0 ? "disabled" : ""}>${b.mgr ? "店長を外す" : w > 0 ? `再雇用まであと${w}日` : "敏腕店長を雇う"}</button>`; })()}
         <button class="btn" data-rgadd="${a}" ${canAdd ? "" : "disabled"}>${canAdd ? `+${tai(20)}台 増床 ${yenShort(addCost)}` : `${tai(60)}台(上限)`}</button>
       </div>
-      <p class="note">敏腕店長: 日給¥100,000。評判の立ち上がりが速くなり、集客力に+6。</p>
+      <p class="note">敏腕店長: 日給¥100,000。評判の立ち上がりが速くなり、集客力に+6。いつでも外せる(日給は止まる)が、再雇用は${RG_MGR_COOL}日あける。</p>
       ${(() => {
-        const top = rgTopRival(a), now = rgMyScore(a);
-        const tgt = rgProject(a, b.n, b.mid, b.pol, b.mgr);
+        // 客層を把握するまでは機種相性ぶんを除いた数字を出す(答えを先に見せない)
+        const kn = rgKnown(a), top = rgTopRival(a);
+        const now = kn ? rgMyScore(a) : Math.round((rgMyScore(a) - fitScore(rgFit(b.mid, R))) * 10) / 10;
+        const tgt = kn ? rgProject(a, b.n, b.mid, b.pol, b.mgr) : rgProjectBase(a, b.n, b.pol, b.mgr);
         const vn = rgVerdict(now, top), vt = rgVerdict(tgt, top);
         return `<h4 class="rg-h">${ic("target")}一番店に届くか</h4>
+        ${kn ? "" : `<p class="note">客層を把握するまでは、主力機種の当たり外れを除いた数字。実際の集客力はこれより上下しうる。</p>`}
         <div class="rg-proj">
           <div class="hd"><span></span><span>集客力</span><span>首位 ${top.toFixed(0)} との比較</span></div>
           <div><span>いまの実力</span><b>${now.toFixed(0)}</b><i class="${vn.c}">${vn.t}</i></div>
@@ -3970,9 +3976,18 @@ function rgAdd(a) {
   save(); checkAchEx(); renderAll(); openRegion(a);
   toast(`${R.name}支店を${tai(b.n)}台に増床`);
 }
+function rgMgrWait(b) { return b.mo > 0 ? Math.max(0, RG_MGR_COOL - (state.day - b.mo)) : 0; }
 function rgMgr(a) {
   if (isDead()) return;
-  const b = rgBranch(a); if (!b || b.mgr) return;
+  const b = rgBranch(a); if (!b) return;
+  if (b.mgr) {
+    // 外す: 日給10万円が止まる。乱用防止に再雇用は RG_MGR_COOL 日あける
+    b.mgr = false; b.mo = state.day; save(); renderAll(); openRegion(a);
+    toast(`店長を外した(再雇用は${RG_MGR_COOL}日後から)`);
+    return;
+  }
+  const w = rgMgrWait(b);
+  if (w > 0) { toast(`店長の再雇用はあと${w}日`); return; }
   b.mgr = true; save(); renderAll(); openRegion(a);
   toast("敏腕店長を配属した");
 }
