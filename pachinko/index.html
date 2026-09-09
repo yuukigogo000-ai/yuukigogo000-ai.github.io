@@ -1317,7 +1317,7 @@ svg{flex:0 0 auto}
               <button class="btn" id="btnFire" hidden>解雇する</button>
             </div>
             <p class="note">40台(4シマ)につきスタッフ1人が必要。<b>下回ると</b>その日の集客−15%・評判−2、常連も増えなくなる。日給 ¥13,000/人。<br>
-            <b>誰が来るかは完全にランダム。</b>採用した時点では名前しか分からず、<b>3営業日</b>働かせて初めてランクと特性が判明する。
+            <b>採用は1営業日に1人まで。誰が来るかは完全にランダム。</b>採用した時点では名前しか分からず、<b>3営業日</b>働かせて初めてランクと特性が判明する。
             勤続7日未満で解雇すると「すぐ人を切る店」と噂が立ち<b>評判−4</b>。</p>
           </div>
         </div>
@@ -1591,7 +1591,7 @@ const TRENDS = [
   { name:"高継続ブーム",     ids:["p5","p10","s3"] },
   { name:"Aタイプ回帰",      ids:["s6","s1"] },
   { name:"低純増ロング人気", ids:["s7","s8"] },
-  { name:"爆裂期",           ids:["s2","s4","s9","s10","s5"] },
+  { name:"爆裂機",           ids:["s2","s4","s9","s10","s5"] },
   { name:"ブームなし",       ids:[] },
 ];
 
@@ -2924,7 +2924,9 @@ function renderMgmt() {
                  : gap === 0 ? `${need}人 — ちょうど`
                  : `${need}人 — ${gap}人多い`;
   sn.className = "v " + (gap < 0 ? "neg" : gap === 0 ? "pos" : "");
-  $("btnHire").disabled = dead;
+  const hiredToday = stState().hd === state.day;
+  $("btnHire").disabled = dead || hiredToday;
+  $("btnHire").textContent = hiredToday ? "本日は採用済み" : "雇用する";
   $("btnFire").disabled = dead || state.staff <= 1;
 
   $("adButtons").innerHTML = ADS.map(a =>
@@ -3255,7 +3257,7 @@ const MBOOM = {
   "高継続ミドル":"高継続ブーム", "一種二種混合":"高継続ブーム", "継続率AT":"高継続ブーム",
   "ノーマルAタイプ":"Aタイプ回帰",
   "低純増AT":"低純増ロング人気", "天井付きAT":"低純増ロング人気",
-  "出玉トリガー系AT":"爆裂期", "一撃特化AT":"爆裂期", "高純増AT":"爆裂期", "スマスロ":"爆裂期",
+  "出玉トリガー系AT":"爆裂機", "一撃特化AT":"爆裂機", "高純増AT":"爆裂機", "スマスロ":"爆裂機",
 };
 const mBoom = id => MBOOM[mType(id)] || "";
 
@@ -5569,6 +5571,7 @@ function stState() {
       return o;
     });
   s.fired = Math.max(0, Math.floor(Number(s.fired) || 0));
+  s.hd = Math.max(0, Math.floor(Number(s.hd) || 0)); // 最後に採用した日(0=未採用)
   Object.defineProperty(s, "__ok", { value: true, enumerable: false, configurable: true });
   return stSync(s);
 }
@@ -5621,8 +5624,12 @@ function stFold(list, onlyKnown) {
 /* ---------- 採用・解雇 ---------- */
 function stHire() {
   if (isDead()) return;
+  const s = stState();
+  // 採用は1営業日に1人まで(hd = 最後に採用した日)
+  if (s.hd === state.day) { toast("採用は1日1人まで。次の営業日にどうぞ"); return; }
   const m = stMake(false);
-  stState().list.push(m);
+  s.list.push(m);
+  s.hd = state.day;
   state.staff++;
   save(); checkAchEx(); renderAll();
   toast(`${m.nm} を採用した(評価は${ST_REVEAL_DAYS}営業日後)`);

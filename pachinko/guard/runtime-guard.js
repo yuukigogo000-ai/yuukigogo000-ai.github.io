@@ -106,6 +106,8 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     const s0 = await p.evaluate(() => state.staff);
     await clickC('#btnHire'); await p.waitForTimeout(120);
     ok('FN スタッフ雇用', await p.evaluate(n => state.staff === n + 1, s0));
+    // 2人目: ボタンは無効化され、関数を直接呼んでも入らない
+    ok('FN 採用は1日1人まで(同じ日の2人目は入らない)', await p.evaluate(n => { stHire(); return state.staff === n + 1 && document.getElementById('btnHire').disabled; }, s0));
     // 解雇は名簿から個別に行う(旧#btnFireはP-30のためDOMには残すが非表示)
     const s1 = await p.evaluate(() => state.staff);
     await clickC('#staffList .stw:last-child .stw-x'); await p.waitForTimeout(200);
@@ -122,6 +124,7 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     ok('FN 名簿の人数が state.staff と一致する', await p.evaluate(() => stState().list.length === state.staff));
     ok('FN 採用直後はランクと特性が伏せられている', await p.evaluate(() => {
       const before = state.staff;
+      stState().hd = 0; // 検査用: 同日1人制限を外す
       stHire();
       const m = stState().list[stState().list.length - 1];
       return state.staff === before + 1 && m.k === false && m.d === 0 && typeof m.nm === 'string' && m.nm.length > 0;
