@@ -1107,6 +1107,21 @@ svg{flex:0 0 auto}
 #dayBox .lim.warn{color:var(--neg)}
 #dayBox .lim.over{color:var(--neg)}
 #dayBox .lim.ok{color:var(--pos)}
+
+/* ---------- 災厄(修羅専用) ---------- */
+.ds-now{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:2px;
+  background:linear-gradient(180deg,rgba(255,80,60,.14),rgba(255,80,60,.05));border:1px solid rgba(255,110,90,.45)}
+.ds-now.warn{background:linear-gradient(180deg,rgba(255,190,60,.14),rgba(255,190,60,.04));border-color:rgba(255,200,90,.45)}
+.ds-now svg{width:14px;height:14px;color:var(--neg);flex:0 0 auto}
+.ds-now.warn svg{color:var(--gold-hi)}
+.ds-now b{font-size:12px;font-weight:900;color:var(--tx)}
+.ds-now span{margin-left:auto;font-size:9.5px;color:var(--tx-2);white-space:nowrap}
+.ds-ins{display:flex;align-items:center;gap:8px;margin-top:8px;padding-top:6px;border-top:1px solid var(--line-w)}
+.ds-ins > span{font-size:11px;font-weight:800;color:var(--tx);flex:1}
+.ds-ins small{font-weight:500;color:var(--tx-3);margin-left:4px}
+.ds-log{display:flex;gap:8px;align-items:baseline;padding:3px 0;font-size:10.5px}
+.ds-log span{color:var(--tx-3);flex:0 0 auto;font-variant-numeric:tabular-nums}
+.ds-log b{color:var(--tx-2);font-weight:600}
 </style>
 </head>
 <body>
@@ -1278,6 +1293,8 @@ svg{flex:0 0 auto}
         <div class="gp" id="ceCard" style="margin-bottom:6px"></div>
 
         <div class="gp" id="lrCard" style="margin-bottom:6px"></div>
+
+        <div class="gp" id="dsCard" style="margin-bottom:6px" hidden></div>
 
         <div class="gp" style="margin-bottom:6px">
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-staff"/></svg><b>スタッフ管理</b></div>
@@ -1475,10 +1492,12 @@ const BUILD_BOOK = 0.60;
 const LIMIT_DAYS = { easy: 90, normal: 120, hard: 150 };
 
 // ---- 難易度 ----
+// branchMul = 支店の客入り(修羅だけ本店と同じ 0.66 で絞る)
+// calamMul  = 災厄の発生倍率。実装済みだが、修羅の位置づけ(3人に1人 / 上級者向け / 4段階目)が決まるまで全難易度 0 で眠らせている
 const DIFFS = {
-  easy:   { label:"のんびり", money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.84, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80 },
-  normal: { label:"標準",     money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.75, creditMul:0.65, expandMul:2.00, upkeepMul:1.45, rivalMul:1.30, repMul:1.00 },
-  hard:   { label:"修羅",     money:6750000,  rentMul:1.33, proMul:1.80, heatMul:1.80, fillMul:0.66, creditMul:0.60, expandMul:2.05, upkeepMul:1.60, rivalMul:1.75, repMul:1.00 },
+  easy:   { label:"のんびり", money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.84, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80, branchMul:1.00, calamMul:0 },
+  normal: { label:"標準",     money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.75, creditMul:0.65, expandMul:2.00, upkeepMul:1.45, rivalMul:1.30, repMul:1.00, branchMul:1.00, calamMul:0 },
+  hard:   { label:"修羅",     money:6750000,  rentMul:1.33, proMul:1.80, heatMul:1.80, fillMul:0.66, creditMul:0.60, expandMul:2.05, upkeepMul:1.60, rivalMul:1.75, repMul:1.00, branchMul:0.66, calamMul:0 },
 };
 
 // ---- 台カタログ(架空機種) ----
@@ -2852,6 +2871,7 @@ function renderMgmt() {
   const dead = isDead(), need = staffNeeded();
   try { renderChoiceEvents(); } catch (e) {}
   try { renderLocalRivals(); } catch (e) {}
+  try { renderCalamity(); } catch (e) {}
   $("staffCount").textContent = `${state.staff}人 (日給計 ${yen(state.staff * 13000)})`;
   renderStaff();
   const sn = $("staffNeed");
@@ -3455,7 +3475,10 @@ const rgSellBack = (R, b) => Math.round(rgOpenCost(R, b.n) * 0.4);
 function rgBranchNet(b) {
   const R = regionOf(b.a); if (!R) return 0;
   const fit = rgFit(b.mid, R);
-  const occ = (0.30 + (b.rep / 100) * 0.62) * R.pop * (fit > 0 ? 1.12 : fit < 0 ? 0.92 : 1);
+  /* branchMul: 修羅だけ本店と同じ比率で客入りを絞る(のんびり・標準は 1.0)。
+     これが無いと支店は難易度から独立し、修羅で本店を捨てて支店で稼ぐ迂回路になる。 */
+  const bm = (DIFFS[state.diff] || DIFFS.normal).branchMul ?? 1;
+  const occ = (0.30 + (b.rep / 100) * 0.62) * R.pop * (fit > 0 ? 1.12 : fit < 0 ? 0.92 : 1) * bm;
   const sales = b.n * 140000 * occ;
   const gross = sales * POL_MARGIN[b.pol];
   const cost = b.n * 4200 * R.rent + 120000 * R.rent + (b.mgr ? 100000 : 0);
@@ -6077,6 +6100,392 @@ function bdPlayDay(sum, onDone) {
 function bdSkip() { if (bdRun && bdRun.finish) bdRun.finish(); }
 
 /* ==========================================================================
+   災厄 (修羅専用の圧)
+   --------------------------------------------------------------------------
+   目立つ店ほど狙われる。評判が高いほど発生しやすく、規模が大きいほど被害が大きい。
+   熟練ほど評判を高く保つので、上手い人に強く・ふつうの腕に弱く効く。
+
+   作法は選択イベント(ui-7)と同じ:
+     ・専用PRNG。ゲーム本体の乱数列には触れない
+     ・simulateDay には触れず、runDay の中で state を書き換えるだけ
+     ・保存は state.ex.ds の下。保護22キーは増やさない
+     ・難易度は DIFFS.calamMul で決まる(のんびり・標準は 0 = 何も起きない)
+
+   予兆 → 2営業日 → 発生。予兆の間に対策(点検・保険・設定・売却)ができる。
+   対策で軽くはなるが、ゼロにはならない。
+   ========================================================================== */
+const DS_VER = 1;
+const DS_START_DAY = 20;        // この営業日以降に抽選
+let DS_RATE = 0.030;            // 適格営業日ごとの基礎確率。狙われやすさで 0.5〜1.0 倍(調整用に let)
+const DS_COOL = 12;             // 収束後、次の抽選までの停止営業日数
+const DS_OMEN = 2;              // 予兆の営業日数
+const DS_REP_LO = 80;           // 評判がこれ以下なら「目立つ」寄与ゼロ
+const DS_REP_HI = 97;           // 評判がこれ以上なら「目立つ」寄与 1.0
+let DS_PACE_LO = 1.00;          // 目標への進み具合(期限比)がこれ以下なら「儲かっている」寄与ゼロ
+let DS_PACE_HI = 1.40;          // これ以上なら寄与 1.0
+let DS_PULL_MIN = 0.5;          // 狙われやすさの下限(誰でもこれだけは狙われる)
+let DS_REP_W = 1.0;             // 「目立つ(評判)」の重み。0 なら儲かり具合だけで決まる
+let DS_INS_RATE = 0.0010;       // 保険料: 純資産の割合 / 日 (下限 30,000)。調整用に let
+const DS_INS_MIN = 30000;
+const DS_LOG_MAX = 20;
+
+const dsMul = () => (DIFFS[state.diff] || DIFFS.normal).calamMul ?? 0;
+const dsOn = () => !!state && dsMul() > 0;
+
+/* ---------- 専用PRNG ---------- */
+function dsHash(a, b) {
+  let x = (a ^ Math.imul(b + 0x7f4a7c15, 0x9e3779b1)) >>> 0;
+  x = Math.imul(x ^ (x >>> 15), 0x2c1b3c6d) >>> 0;
+  x = Math.imul(x ^ (x >>> 12), 0x297a2d39) >>> 0;
+  return (x ^ (x >>> 15)) >>> 0;
+}
+let dsForcedSeed = null;        // テスト注入用
+let dsForcedRoll = null;        // 次の1回だけ乱数を固定
+let dsForcedId = null;          // 次に起こす災厄を固定
+function dsNewSeed() {
+  if (dsForcedSeed !== null) return (Math.floor(dsForcedSeed) >>> 0) || 1;
+  try {
+    if (typeof crypto !== "undefined" && crypto && typeof crypto.getRandomValues === "function") {
+      const a = new Uint32Array(1); crypto.getRandomValues(a);
+      return a[0] >>> 0 || 1;
+    }
+  } catch (e) {}
+  return (dsHash(Date.now() >>> 0, (state && state.uid) || 0) >>> 0) || 1;
+}
+function dsNext() {
+  const D = dsState();
+  if (dsForcedRoll !== null) { const v = dsForcedRoll; dsForcedRoll = null; return v; }
+  D.ctr = (D.ctr + 1) >>> 0;
+  return dsHash(D.seed, D.ctr) / 4294967296;
+}
+
+/* ---------- 災厄の定義 ---------- */
+/* dur: 継続日数(0 = 発生時に一度で確定) */
+const DS_LIST = [
+  { id: "mega", name: "大型店の出店", dur: 14,
+    omen: "隣の区画で大規模な工事が始まった。看板の下地に、見覚えのあるチェーンの色…",
+    hit:  "の大型店が開業。客が根こそぎ流れている。",
+    tip:  "続く間、平均設定4.0以上で営業すれば流出を1/3に抑えられる。" },
+  { id: "ban", name: "撤去命令", dur: 7,
+    omen: "業界紙に「一部機種の検定切れ」の記事。組合から通達が回るらしい。",
+    hit:  "組合から撤去命令。7営業日以内に撤去しないと、期限後は二束三文で回収される。",
+    tip:  "対象の台は期限内に売却すれば通常価格。放置すると期限後に定価の20%(保険加入なら45%)で強制回収。" },
+  { id: "fire", name: "設備事故", dur: 0,
+    omen: "配電盤から焦げた匂い。業者は『早めに点検を』と言っている。",
+    hit:  "漏電で島の一角が焼けた。復旧費用がかかり、焼けた台は客が付かない。",
+    tip:  "予兆のうちに「点検」を頼めば被害は半分。保険は復旧費用の2/3を持つ。" },
+  { id: "raid", name: "摘発", dur: 0,
+    omen: "店の前で写真を撮っている見慣れない男たち。カウンターの応対も観察されている。",
+    hit:  "抜き打ち検査で店のクレームが公になった。評判が大きく落ち、常連が離れる。",
+    tip:  "警戒度ゼロ・直近7日の平均設定3.8以上なら被害は半分。保険は罰金だけを持つ。" },
+  { id: "crash", name: "看板機種の失墜", dur: 0,
+    omen: "看板機種のトラブルがSNSでじわじわ広がっている。メーカーは沈黙。",
+    hit:  "看板機種の欠陥が公表され、その機種の人気が崩れた。",
+    tip:  "対策は無い。島を1機種に寄せている店ほど被害が大きい。" },
+];
+const DS_BY_ID = {};
+for (const d of DS_LIST) DS_BY_ID[d.id] = d;
+const dsOf = id => DS_BY_ID[id] || null;
+
+/* ---------- 状態 ---------- */
+const dsNum = (v, d, lo, hi) => { v = Number(v); if (!Number.isFinite(v)) v = d; return Math.max(lo, Math.min(hi, Math.floor(v))); };
+function dsState() {
+  const ex = exState();
+  let D = ex.ds;
+  if (!D || typeof D !== "object" || Array.isArray(D)) D = ex.ds = {};
+  D.v = dsNum(D.v, DS_VER, 0, 99);
+  let sd = Math.floor(Number(D.seed));
+  if (!Number.isFinite(sd) || sd <= 0 || sd > 4294967295) sd = dsNewSeed();
+  D.seed = sd >>> 0;
+  D.ctr = dsNum(D.ctr, 0, 0, 2147483647);
+  D.init = D.init === 1 ? 1 : 0;
+  D.last = dsNum(D.last, 0, 0, 1e6);
+  D.cool = dsNum(D.cool, 0, 0, 99);
+  D.ins = D.ins === 1 ? 1 : 0;
+  D.insPaid = dsNum(D.insPaid, 0, 0, 1e13);
+  D.chk = D.chk === 1 ? 1 : 0;                    // 予兆中に点検したか
+  D.burn = (Array.isArray(D.burn) ? D.burn : []).map(u => dsNum(u, 0, 0, 1e9)).slice(0, MAX_CAP);   // 火災で全損した台
+  D.n = dsNum(D.n, 0, 0, 999);
+  /* 直近7営業日の平均設定(摘発の対策判定に使う) */
+  D.ma = (Array.isArray(D.ma) ? D.ma : []).slice(-7).map(x => Math.max(1, Math.min(6, Number(x) || 3)));
+  /* 予兆 */
+  if (D.omen && typeof D.omen === "object" && dsOf(D.omen.id)) {
+    D.omen = { id: D.omen.id, at: dsNum(D.omen.at, 0, 0, 1e6), seen: D.omen.seen === true };
+  } else D.omen = null;
+  /* 進行中 */
+  if (D.act && typeof D.act === "object" && dsOf(D.act.id)) {
+    D.act = {
+      id: D.act.id,
+      left: dsNum(D.act.left, 0, 0, 99),
+      from: dsNum(D.act.from, 0, 0, 1e6),
+      cat: typeof D.act.cat === "string" ? D.act.cat : "",
+      uids: (Array.isArray(D.act.uids) ? D.act.uids : []).map(u => dsNum(u, 0, 0, 1e9)).slice(0, MAX_CAP),
+      chain: typeof D.act.chain === "string" ? D.act.chain.slice(0, 20) : "",
+    };
+  } else D.act = null;
+  D.hist = (Array.isArray(D.hist) ? D.hist : []).slice(0, DS_LOG_MAX)
+    .filter(h => h && dsOf(h.id))
+    .map(h => ({ id: h.id, d: dsNum(h.d, 0, 0, 1e6), sum: typeof h.sum === "string" ? h.sum.slice(0, 80) : "" }));
+  return D;
+}
+/* 旧セーブは初期化だけ。過去DAYぶんの抽選は遡らない。 */
+function dsInit() {
+  const D = dsState();
+  if (D.init === 1) return;
+  D.init = 1;
+  if (!D.last) D.last = Math.max(0, state.day - 1);
+}
+
+/* ---------- 発生確率: 目立つ店ほど狙われる ---------- */
+/* 目立つ店(評判)と、儲かっている店(期限に対して純資産が先行している)は狙われる。
+   pace = 純資産 / (目標 × 経過日/期限)。1.0 = 期限ちょうどのペース、1.4 = 4割先行 */
+function dsPace() {
+  const lim = LIMIT_DAYS[state.diff] || LIMIT_DAYS.normal;
+  const par = GOAL_ASSETS * Math.max(1, state.day - 1) / lim;
+  return par > 0 ? Math.max(0, totalAssets()) / par : 0;
+}
+function dsPull() {
+  const repT = Math.max(0, Math.min(1, (state.rep - DS_REP_LO) / (DS_REP_HI - DS_REP_LO)));
+  const paceT = Math.max(0, Math.min(1, (dsPace() - DS_PACE_LO) / (DS_PACE_HI - DS_PACE_LO)));
+  return DS_PULL_MIN + (1 - DS_PULL_MIN) * Math.max(repT * DS_REP_W, paceT);
+}
+function dsRate() { return DS_RATE * dsMul() * dsPull(); }
+
+/* ---------- 保険・点検 ---------- */
+function dsInsFee() { return Math.max(DS_INS_MIN, Math.round(Math.max(0, totalAssets()) * DS_INS_RATE)); }
+function dsInspectCost() { return Math.max(200000, Math.round(Math.max(0, totalAssets()) * 0.005)); }
+function dsToggleIns() {
+  if (!dsOn() || isDead()) return;
+  const D = dsState();
+  D.ins = D.ins === 1 ? 0 : 1;
+  save(); renderAll();
+  toast(D.ins ? "災害保険に加入した(保険料は毎営業日の天引き)" : "災害保険を解約した");
+}
+function dsInspect() {
+  if (!dsOn() || isDead()) return;
+  const D = dsState();
+  if (!D.omen || D.omen.id !== "fire" || D.chk === 1) return;
+  const c = dsInspectCost();
+  if (state.money < c) { toast("資金が足りません"); return; }
+  state.money -= c; D.chk = 1;
+  save(); renderAll();
+  toast("業者に点検を頼んだ。被害が出ても半分で済む");
+}
+
+/* ---------- 対象の選び方 ---------- */
+/* いちばん多く並べているカテゴリ。全台が1カテゴリなら古い順に半分だけ対象にする */
+function dsBanTargets() {
+  const cnt = {};
+  for (const m of state.machines) { const k = mBoom(m.cid) || mType(m.cid); cnt[k] = (cnt[k] || 0) + 1; }
+  let top = "", n = 0;
+  for (const k in cnt) if (cnt[k] > n) { top = k; n = cnt[k]; }
+  let list = state.machines.filter(m => (mBoom(m.cid) || mType(m.cid)) === top);
+  if (list.length >= state.machines.length && list.length > 1) {
+    list = list.slice().sort((a, b) => (a.boughtDay ?? -1) - (b.boughtDay ?? -1)).slice(0, Math.ceil(list.length / 2));
+  }
+  return { cat: top, uids: list.map(m => m.uid) };
+}
+/* 人気がいちばん高い機種(cid) */
+function dsTopCid() {
+  let best = null, bp = -1;
+  for (const m of state.machines) if (m.pop > bp) { bp = m.pop; best = m.cid; }
+  return best;
+}
+
+/* ---------- 発生 ---------- */
+function dsStrike(id, playedDay) {
+  const D = dsState(), def = dsOf(id);
+  const notes = [], n = state.machines.length;
+  const assets = Math.max(0, totalAssets());
+  let sum = "";
+  if (id === "mega") {
+    const chain = (typeof RIV_CHAIN !== "undefined" && RIV_CHAIN.length)
+      ? RIV_CHAIN[Math.floor(dsNext() * RIV_CHAIN.length)] : "大手チェーン";
+    D.act = { id, left: def.dur, from: playedDay, cat: "", uids: [], chain };
+    notes.push(`🏗️ 「${chain}」${def.hit} ${def.tip}`);
+    sum = `${chain}が出店(${def.dur}日)`;
+  } else if (id === "ban") {
+    const t = dsBanTargets();
+    D.act = { id, left: def.dur, from: playedDay, cat: t.cat, uids: t.uids, chain: "" };
+    notes.push(`📜 ${def.hit} 対象は「${t.cat}」の${tai(t.uids.length)}台。${def.tip}`);
+    sum = `${t.cat} ${tai(t.uids.length)}台に撤去命令`;
+  } else if (id === "fire") {
+    const half = D.chk === 1;
+    const k = Math.max(1, Math.round(n * (half ? 0.15 : 0.30)));
+    const order = state.machines.slice().sort(() => dsNext() - 0.5).slice(0, k);
+    for (const m of order) m.pop = 15;
+    D.burn = order.map(m => m.uid);
+    let cost = Math.round(assets * (half ? 0.015 : 0.03));
+    if (D.ins === 1) cost = Math.round(cost / 3);
+    state.money -= cost;
+    state.rep = Math.max(1, state.rep - (half ? 3 : 6));
+    notes.push(`🔥 ${def.hit} ${tai(k)}台が全損、復旧費用 ${yen(cost)}${half ? "(点検済みで半減)" : ""}${D.ins ? "(保険で2/3を補填)" : ""}。`);
+    sum = `火災: ${tai(k)}台全損・${yen(cost)}`;
+  } else if (id === "raid") {
+    const ma = D.ma.length ? D.ma.reduce((a, b) => a + b, 0) / D.ma.length : 3;
+    const soft = state.heat <= 0 && ma >= 3.8;
+    const dRep = soft ? 10 : 22, mult = soft ? 0.85 : 0.70;
+    let fine = Math.round(assets * 0.01);
+    if (D.ins === 1) fine = 0;
+    state.rep = Math.max(1, state.rep - dRep);
+    state.regulars = Math.max(0, state.regulars * mult);
+    state.money -= fine;
+    notes.push(`🚨 ${def.hit} 評判−${dRep}、常連${Math.round((1 - mult) * 100)}%が離反${fine ? `、罰金 ${yen(fine)}` : "(罰金は保険が負担)"}${soft ? "。営業姿勢が認められ被害は半分" : ""}。`);
+    sum = `摘発: 評判−${dRep}`;
+  } else if (id === "crash") {
+    const cid = dsTopCid();
+    let k = 0;
+    for (const m of state.machines) if (m.cid === cid) { m.pop = Math.max(15, m.pop * 0.45); k++; }
+    state.regulars = Math.max(0, state.regulars * 0.90);
+    const c = CATALOG.find(x => x.id === cid);
+    notes.push(`📉 ${def.hit} 「${c ? c.name : ""}」${tai(k)}台の人気が半減、常連10%が離反。`);
+    sum = `看板機種の失墜: ${c ? c.name : ""}`;
+  }
+  D.n++;
+  D.hist.unshift({ id, d: playedDay, sum });
+  if (D.hist.length > DS_LOG_MAX) D.hist.pop();
+  D.chk = 0;
+  return notes;
+}
+
+/* 継続中の災厄を1日ぶん進める */
+function dsTick(playedDay) {
+  const D = dsState(), A = D.act;
+  const notes = [];
+  if (!A) return notes;
+  const def = dsOf(A.id);
+  if (A.id === "mega") {
+    const n = state.machines.length;
+    const avg = n ? state.machines.reduce((a, m) => a + m.setting, 0) / n : 3;
+    const held = avg >= 4.0;
+    state.regulars = Math.max(0, state.regulars * (held ? 0.985 : 0.955));
+    state.rep = Math.max(1, state.rep - (held ? 0.3 : 0.9));
+    A.left--;
+    if (A.left <= 0) { D.act = null; D.cool = DS_COOL; notes.push(`🏗️ 「${A.chain}」の開店景気が落ち着き、客足が戻り始めた。`); }
+    else if (!held) notes.push(`🏗️ 「${A.chain}」に客を取られている(残り${A.left}日)。平均設定4.0以上で流出を抑えられる。`);
+    else notes.push(`🏗️ 出し続けて客を引き留めている(残り${A.left}日)。`);
+  } else if (A.id === "ban") {
+    const set = new Set(A.uids);
+    const left = state.machines.filter(m => set.has(m.uid));
+    for (const m of left) m.pop = Math.max(15, m.pop * 0.85);
+    A.left--;
+    if (A.left <= 0) {
+      let got = 0;
+      const rate = D.ins === 1 ? 0.45 : 0.20;
+      state.machines = state.machines.filter(m => {
+        if (!set.has(m.uid)) return true;
+        got += Math.round(catalogOf(m).price * rate); return false;
+      });
+      state.money += got;
+      D.act = null; D.cool = DS_COOL;
+      if (left.length) notes.push(`📜 期限切れ。「${A.cat}」${tai(left.length)}台が強制回収された(${yen(got)}${D.ins ? "・保険の撤去補償込み" : ""})。`);
+      else notes.push(`📜 撤去期限。対象の台はすべて手放し済みだった。`);
+    } else if (left.length) {
+      notes.push(`📜 撤去対象「${A.cat}」が${tai(left.length)}台残っている(残り${A.left}日)。客が避けるので人気が落ち続ける。`);
+    } else {
+      D.act = null; D.cool = DS_COOL;
+      notes.push(`📜 撤去対象をすべて手放した。組合の件は片付いた。`);
+    }
+  } else {
+    D.act = null; D.cool = DS_COOL;
+  }
+  return notes;
+}
+
+/* ---------- 1営業日 ---------- */
+function dsDay(rec) {
+  dsInit();
+  const D = dsState();
+  const playedDay = rec.day;
+  const notes = [];
+  const out = { notes, ins: 0, struck: null, omen: null };
+  /* 平均設定の履歴(難易度に関係なく取る。摘発の判定用) */
+  {
+    const n = state.machines.length;
+    const avg = n ? state.machines.reduce((a, m) => a + m.setting, 0) / n : 3;
+    D.ma.push(Math.round(avg * 100) / 100);
+    if (D.ma.length > 7) D.ma.shift();
+  }
+  if (!dsOn()) return out;
+  /* 保険料 */
+  if (D.ins === 1) {
+    const fee = dsInsFee();
+    state.money -= fee; D.insPaid += fee; out.ins = fee;
+  }
+  /* 継続中 */
+  if (D.act) { notes.push(...dsTick(playedDay)); return out; }
+  /* 予兆 → 発生 */
+  if (D.omen) {
+    if (playedDay >= D.omen.at) {
+      const id = D.omen.id; D.omen = null;
+      notes.push(...dsStrike(id, playedDay));
+      out.struck = id;
+      if (!D.act) D.cool = DS_COOL;
+    } else {
+      const def = dsOf(D.omen.id);
+      notes.push(`👁️ ${def.omen}(あと${D.omen.at - playedDay}日)`);
+    }
+    return out;
+  }
+  /* 抽選 */
+  const canRoll = playedDay >= DS_START_DAY && D.cool <= 0 && D.last < playedDay && state.machines.length > 0;
+  if (D.cool > 0) D.cool--;
+  if (!canRoll) return out;
+  D.last = playedDay;
+  const roll = dsNext();
+  if (roll >= dsRate()) return out;
+  let pick = DS_LIST[Math.floor(dsNext() * DS_LIST.length)].id;
+  if (dsForcedId && dsOf(dsForcedId)) { pick = dsForcedId; dsForcedId = null; }
+  D.omen = { id: pick, at: playedDay + DS_OMEN, seen: false };
+  D.chk = 0;
+  const def = dsOf(pick);
+  notes.push(`👁️ ${def.omen}(あと${DS_OMEN}日)`);
+  out.omen = pick;
+  return out;
+}
+
+/* ---------- 表示 ---------- */
+function renderCalamity() {
+  const box = $("dsCard");
+  if (!box) return;
+  if (!dsOn()) { box.hidden = true; box.innerHTML = ""; return; }
+  box.hidden = false;
+  const D = dsState();
+  const pull = dsPull();
+  const risk = pull >= 0.85 ? "高" : pull >= 0.65 ? "中" : "低";
+  const omen = D.omen ? dsOf(D.omen.id) : null;
+  const act = D.act ? dsOf(D.act.id) : null;
+  let body = "";
+  if (act) {
+    const A = D.act;
+    body = `<div class="ds-now">${ic("alert")}<b>${esc(act.name)}</b><span>進行中${A.left ? ` — 残り${A.left}営業日` : ""}</span></div>
+      <p class="note">${esc(act.tip)}</p>
+      ${A.id === "ban" && A.uids.length ? `<p class="note">対象: 「${esc(A.cat)}」${tai(state.machines.filter(m => A.uids.includes(m.uid)).length)}台がまだ店内にある。台の画面から売却できる。</p>` : ""}`;
+  } else if (omen) {
+    body = `<div class="ds-now warn">${ic("alert")}<b>予兆: ${esc(omen.name)}</b><span>あと${Math.max(0, D.omen.at - state.day + 1)}営業日</span></div>
+      <p class="note">${esc(omen.omen)}</p>
+      <p class="note">${esc(omen.tip)}</p>
+      ${omen.id === "fire" ? `<button class="btn sm wide ${D.chk ? "" : "gold"}" data-ds="inspect" ${D.chk || isDead() ? "disabled" : ""}>${D.chk ? "点検済み" : `点検を頼む (${yen(dsInspectCost())})`}</button>` : ""}`;
+  } else {
+    body = `<p class="note" style="margin:0 0 4px">目立つ店・儲かっている店ほど狙われる。予兆が出たら2営業日のうちに手を打つ。</p>`;
+  }
+  const burnLeft = state.machines.filter(m => D.burn.includes(m.uid)).length;
+  const burnHtml = burnLeft ? `<p class="note" style="color:var(--neg)">火災で全損した台が${tai(burnLeft)}台残っている。客が付かないので売却して入れ替えを。</p>` : "";
+  const hist = D.hist.slice(0, 4).map(h => `<div class="ds-log"><span>${h.d}日目</span><b>${esc(h.sum)}</b></div>`).join("");
+  box.innerHTML = `
+    <div class="gp-h">${ic("skull")}<b>災厄</b><span class="r">狙われやすさ ${risk} ・ ${D.n}件</span></div>
+    <div class="gp-b">
+      ${body}${burnHtml}
+      <div class="ds-ins">
+        <span>災害保険 <small>${yen(dsInsFee())} / 日</small></span>
+        <button class="btn sm ${D.ins ? "" : "gold"}" data-ds="ins" ${isDead() ? "disabled" : ""}>${D.ins ? "解約する" : "加入する"}</button>
+      </div>
+      <p class="note">保険は復旧費用の2/3・撤去補償・罰金を持つ。評判や常連の損失は持たない。</p>
+      ${hist ? `<div class="ce-sec"><b>これまでの災厄</b>${hist}</div>` : ""}
+    </div>`;
+}
+
+/* ==========================================================================
    モーダル / 1営業日 / 当日結果 / 起動
    ========================================================================== */
 let pendingUnlock = false;
@@ -6201,6 +6610,11 @@ function runDay() {
       result.ce = ceDay(result.rec);
       if (result.ce && result.ce.notes.length) result.notes = result.notes.concat(result.ce.notes);
     } catch (e) { result.ce = null; }
+    /* 災厄(修羅専用)。営業結果と選択イベントの後、保存の前。 */
+    try {
+      result.ds = dsDay(result.rec);
+      if (result.ds && result.ds.notes.length) result.notes = result.notes.concat(result.ds.notes);
+    } catch (e) { result.ds = null; }
   } catch (e) {
     /* 計算が途中で落ちたら演出には入らない。busy を握ったままにしない */
     busy = false;
@@ -6405,6 +6819,7 @@ function startGame(diff) {
   closeModal();
   renderAll();
   try { lrBegin(); } catch (e) {}
+  try { dsInit(); } catch (e) {}
   toast(`難易度「${DIFFS[diff].label}」で開店!`);
 }
 window.startGame = startGame;
@@ -6425,7 +6840,7 @@ function showTutorial() {
     <div class="mb">
       <p class="note" style="font-size:12px;color:var(--tx-2)">あなたは小さなパチンコホールの新米オーナー。<b>純資産1億円</b>の地域No.1ホールを目指そう!</p>
       <div style="margin-top:8px">
-        ${item("target", "平均設定のメリハリがすべて", "ホールは<b>1シマ=同一機種10台</b>の単位で動かす。渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。警戒される平均設定の線は難易度で違う(のんびり・標準は2.6、<b>修羅は4.0</b> ─ 修羅では渋り営業そのものが成立しない)。出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出すシマ」と「回収するシマ」を作り分けろ!")}
+        ${item("target", "平均設定のメリハリがすべて", "ホールは<b>1シマ=同一機種10台</b>の単位で動かす。渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。警戒される平均設定の線は難易度で違う(のんびり・標準は2.6、<b>修羅は4.0</b> ─ 修羅では渋り営業そのものが成立しない)。" + ((DIFFS.hard.calamMul || 0) > 0 ? "修羅ではさらに<b>災厄</b>(大型店の出店・撤去命令・設備事故・摘発・看板機種の失墜)が起きる。予兆が2営業日前に出るので、保険・点検・設定・売却で備えろ。" : "") + "出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出すシマ」と「回収するシマ」を作り分けろ!")}
         ${item("fire", "7のつく日は特日 / 週替わりブーム / シマ効果", "特日は高設定で評判爆上げ。ブームは<b>機種カテゴリ単位</b>で来て、その機種の集客力1.4倍 — ただし弱い機種はブームでも強い機種に届かない。同一機種を並べればシマ効果。")}
         ${item("star", "評判は放っておくと落ちる", "客は前によかった店をいつまでも覚えていない。<b>評判が高いほど毎日の目減りは大きい</b>。上のほうを保つには出玉かスタッフの質で押し返し続けるしかない。")}
         ${item("bank", "拡張は罰ではなく投資", "クリア条件の「純資産」は <b>現金＋台の簿価＋店舗簿価−借金</b>。シマ増設費は消えず<b>6割が店舗簿価として残る</b>ので、拡張は計算できる投資だ。ただし現金は出るし、広げた席を埋められなければ規模維持費で溶ける。")}
@@ -6439,7 +6854,7 @@ function showTutorial() {
           <span><b style="font-size:14px">標準</b> <small>${LIMIT_DAYS.normal}日以内に1億 / 3割は間に合わない</small></span>
           <span class="num" style="font-size:14px;font-weight:900">${yen(DIFFS.normal.money)}</span></button>
         <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('hard')">
-          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">${LIMIT_DAYS.hard}日以内に1億 / 辿り着けるのは3人に1人</small></span>
+          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">${LIMIT_DAYS.hard}日以内に1億 / ${(DIFFS.hard.calamMul || 0) > 0 ? "災厄が起きる・" : ""}辿り着けるのは3人に1人</small></span>
           <span class="num" style="font-size:14px;font-weight:900;color:var(--gold-hi)">${yen(DIFFS.hard.money)}</span></button>
       </div>
     </div>`);
@@ -6465,7 +6880,7 @@ async function sellMachine(m) {
 }
 
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-area],[data-set],[data-sell],[data-buy],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode],[data-fire],[data-lr],[data-ce],[data-cec]");
+  const el = e.target.closest("[data-area],[data-set],[data-sell],[data-buy],[data-ad],[data-rate],[data-tile],[data-focus],[data-slsort],[data-setlist],[data-rg],[data-rgn],[data-rgtp],[data-rgpol],[data-rgopen],[data-rgclose],[data-rgadd],[data-rgmgr],[data-rgmid],[data-rgmode],[data-fire],[data-lr],[data-ce],[data-cec],[data-ds]");
   if (!el) return;
   const d = el.dataset;
 
@@ -6489,6 +6904,7 @@ document.addEventListener("click", e => {
     return;
   }
   if (d.lr !== undefined) { lrOpen(Number(d.lr)); return; }
+  if (d.ds) { if (d.ds === "ins") dsToggleIns(); else if (d.ds === "inspect") dsInspect(); return; }
   if (d.rg) { openRegion(d.rg); return; }
   if (d.rgn || d.rgtp) {
     if (d.rgn) rgDraft.n = Number(d.rgn); else rgDraft.tp = d.rgtp;
@@ -6633,6 +7049,7 @@ if (loaded && Array.isArray(loaded.machines)) {
   renderAll();
   try { lrBegin(); } catch (e) {}
   try { ceInit(); ceClaimPending(); } catch (e) {}
+  try { dsInit(); } catch (e) {}
   if (isDead()) showEndModal();
 } else {
   state = newGame("normal");
