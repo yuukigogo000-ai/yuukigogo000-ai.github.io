@@ -416,8 +416,25 @@ const ok = (n, c, d='') => { if (c) { pass++; console.log('  PASS  ' + n); } els
     }));
     await p.evaluate(() => document.querySelector('[data-rgpol="hrk:5"]').click()); await p.waitForTimeout(200);
     ok('FN 支店の出玉方針の変更', await p.evaluate(() => rgState().br[0].pol === 5));
+    ok('FN 把握前は支店の「客の反応」と試算に機種相性が出ない', await p.evaluate(() => {
+      const a = 'hrk', R = regionOf(a), g = rgState(), b = g.br[0];
+      const wasKnown = g.known[a] === true; delete g.known[a];
+      const orig = b.mid;
+      b.mid = R.like[0]; openRegion(a);
+      const m1 = document.getElementById('modalBox').textContent, p1 = document.querySelector('.rg-proj').textContent;
+      b.mid = R.hate[0]; openRegion(a);
+      const p2 = document.querySelector('.rg-proj').textContent;
+      b.mid = orig; if (wasKnown) g.known[a] = true; openRegion(a);
+      return p1 === p2 && /様子見/.test(m1) && !/好評|不評/.test(m1);
+    }));
     await p.evaluate(() => document.querySelector('[data-rgmgr="hrk"]').click()); await p.waitForTimeout(200);
     ok('FN 敏腕店長の配属', await p.evaluate(() => rgState().br[0].mgr === true));
+    await p.evaluate(() => document.querySelector('[data-rgmgr="hrk"]').click()); await p.waitForTimeout(200);
+    ok('FN 店長を外せる', await p.evaluate(() => rgState().br[0].mgr === false && rgState().br[0].mo === state.day));
+    await p.evaluate(() => rgMgr('hrk')); await p.waitForTimeout(100);
+    ok('FN 外した直後は再雇用できない(7日あける)', await p.evaluate(() => rgState().br[0].mgr === false && document.querySelector('[data-rgmgr="hrk"]').disabled));
+    await p.evaluate(() => { rgState().br[0].mo = state.day - 7; renderAll(); openRegion('hrk'); document.querySelector('[data-rgmgr="hrk"]').click(); }); await p.waitForTimeout(200);
+    ok('FN 7日あければ再雇用できる', await p.evaluate(() => rgState().br[0].mgr === true));
     await p.evaluate(() => document.querySelector('[data-rgadd="hrk"]').click()); await p.waitForTimeout(200);
     ok('FN 支店の増床', await p.evaluate(() => rgState().br[0].n === 60));
     await p.evaluate(() => { const b = rgState().br[0]; state.money += 1e9; window.ask = () => Promise.resolve(true); document.querySelector('[data-rgmid="hrk:s1"]').click(); }); await p.waitForTimeout(200);
