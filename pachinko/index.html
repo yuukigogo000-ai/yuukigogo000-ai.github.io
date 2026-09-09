@@ -6974,7 +6974,13 @@ document.addEventListener("click", e => {
 
   if (d.setlist !== undefined) { openSetList(); return; }
   if (d.slsort) { setListSort = d.slsort; renderSetList(); return; }
-  if (d.area) { setArea(d.area); return; }
+  if (d.area) {
+    // モーダルの中の画面切替ボタン(解禁演出の「全国マップを開く」など)は、
+    // 先にモーダルを閉じないと切り替わった画面がモーダルの下に隠れたままになる
+    if (el.closest("#modalBox")) closeModal();
+    setArea(d.area);
+    return;
+  }
   if (d.focus !== undefined) {
     const i = Number(d.focus);
     if (state.machines[i]) { focusIdx = i; renderHall(); }
