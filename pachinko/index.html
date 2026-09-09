@@ -1124,6 +1124,12 @@ svg{flex:0 0 auto}
 .ds-log b{color:var(--tx-2);font-weight:600}
 .ds-now.good{background:linear-gradient(180deg,rgba(90,200,120,.14),rgba(90,200,120,.04));border-color:rgba(120,210,150,.45)}
 .ds-now.good svg{color:var(--pos)}
+
+/* 台の荒さバッジ */
+.volb{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.06em;padding:0 5px;border-radius:2px;border:1px solid;vertical-align:1px;margin-left:4px}
+.volb.v0{color:var(--pos);border-color:rgba(120,210,150,.5)}
+.volb.v1{color:var(--tx-2);border-color:var(--line-w)}
+.volb.v2{color:var(--neg);border-color:rgba(255,110,90,.5)}
 </style>
 </head>
 <body>
@@ -1498,9 +1504,9 @@ const LIMIT_DAYS = { easy: 90, normal: 120, hard: 150, hardx: 150 };
 // hardx は「修羅」を選んだあと「熟練者として挑む」を選んだときの難易度。地力が修羅より厳しく、
 // その穴を30枚の商機で埋める。どの商機がいつ来るかは運。
 const DIFFS = {
-  easy:   { label:"のんびり",   money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.84, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80, branchMul:1.00, deckMul:0 },
-  normal: { label:"標準",       money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.75, creditMul:0.65, expandMul:2.00, upkeepMul:1.45, rivalMul:1.30, repMul:1.00, branchMul:1.00, deckMul:0 },
-  hard:   { label:"修羅",       money:6750000,  rentMul:1.33, proMul:1.80, heatMul:1.80, fillMul:0.66, creditMul:0.60, expandMul:2.05, upkeepMul:1.60, rivalMul:1.75, repMul:1.00, branchMul:0.66, deckMul:0 },
+  easy:   { label:"のんびり",   money:10000000, rentMul:1.00, proMul:0.45, heatMul:0.65, fillMul:0.88, creditMul:1.20, expandMul:1.10, upkeepMul:0.80, rivalMul:0.85, repMul:0.80, branchMul:1.00, deckMul:0 },
+  normal: { label:"標準",       money:6900000,  rentMul:1.30, proMul:1.00, heatMul:1.10, fillMul:0.76, creditMul:0.65, expandMul:2.00, upkeepMul:1.45, rivalMul:1.30, repMul:1.00, branchMul:1.00, deckMul:0 },
+  hard:   { label:"修羅",       money:6750000,  rentMul:1.33, proMul:1.80, heatMul:1.80, fillMul:0.64, creditMul:0.60, expandMul:2.05, upkeepMul:1.60, rivalMul:1.75, repMul:1.00, branchMul:0.66, deckMul:0 },
   hardx:  { label:"修羅・熟練", money:6750000,  rentMul:1.45, proMul:1.80, heatMul:1.80, fillMul:0.42, creditMul:0.60, expandMul:2.05, upkeepMul:1.85, rivalMul:1.75, repMul:1.00, branchMul:0.60, deckMul:1 },
 };
 
@@ -1819,6 +1825,14 @@ function makeMachine(catalogId) {
 }
 
 function catalogOf(m) { return CATALOG.find(c => c.id === m.cid); }
+/* 台の荒さ 0〜1。スペックの当たりの重さから決める(それまで表示専用だった数値をここで使う)。
+   パチンコは大当たり確率 1/79→0 … 1/349→1、スロットはBIG確率 1/273→0 … 1/450→1。
+   甘デジ・ノーマルAタイプは安定、ミドル・爆裂・スマスロは荒い。 */
+function machineVol(c) {
+  const sp = c.spec || {};
+  const v = c.type === "P" ? ((sp.denom ?? 200) - 79) / (349 - 79) : ((sp.big1 ?? 350) - 273) / (450 - 273);
+  return Math.max(0, Math.min(1, v));
+}
 function machineValue(m) { return Math.round(catalogOf(m).price * 0.45); }
 function machineAssets() { return state.machines.reduce((s, m) => s + machineValue(m), 0); }
 /* 店舗(内装・設備)の簿価。増設費は消えるのではなく資産として残る。
@@ -1977,6 +1991,19 @@ function simulateDay() {
   // --- 台ごとの売上・粗利 ---
   const highW = s.machines.reduce((sum, m) => sum + effectivePop(m) * proWeight(m), 0) || 1;
   const rateBonus = s.rate === "low" ? 0.025 : 0;
+  // --- 台の荒さと荒れ日 ---
+  // 店の荒さ = 客がついている台の荒さの平均(客数で重みづけ)。荒い台が多い店ほど
+  // 「店全体の出玉が同じ方向に振れる日」が多く、振れ幅も大きい。期待値は MARGIN のまま
+  // (上下は同じ確率)で、分散だけが機種選びで決まる。甘デジ店 ≈ 月1回 ±12pt、爆裂店 ≈ 週1回 ±40pt。
+  const avgVol = s.machines.reduce((a, m) => a + machineVol(catalogOf(m)) * effectivePop(m), 0) / totalW;
+  let swing = 0;
+  if (n && Math.random() < 0.02 + 0.08 * avgVol) {
+    const amp = 0.12 + 0.28 * avgVol;
+    swing = (Math.random() < 0.5 ? -1 : 1) * amp * rand(0.6, 1.0);
+    notes.push(swing < 0
+      ? `🎰 荒れた一日。台が噴き、出玉が大きく持っていかれた…(店の荒さ ${Math.round(avgVol * 100)})`
+      : `🎰 荒れた一日。台が沈黙し、店側の取り分が大きく膨らんだ(店の荒さ ${Math.round(avgVol * 100)})`);
+  }
   let sales = 0, gross = 0;
   // 特日に渋い店では客が期待外れと悟って早帰り→打ち込みが浅くなる
   const tokubiGap = (tokubi && avgSet < 3.5) ? 0.7 : 1;
@@ -1989,7 +2016,9 @@ function simulateDay() {
     // 台の鮮度: 人気が枯れた台は座られても打ち込まれない
     const qual = 0.75 + 0.25 * Math.min(1, m.pop / 80);
     const spend = (c.type === "P" ? 30000 : 36000) * qual * tokubiGap * rand(0.8, 1.2);
-    const margin = MARGIN[m.setting] + rateBonus + marginDelta + rand(-0.09, 0.09);
+    // 台ごとの日次ノイズは荒さに比例(安定機 ±0.045 … 荒い機 ±0.135)。荒れ日の振れは荒い台ほど大きく受ける
+    const vol = machineVol(c);
+    const margin = MARGIN[m.setting] + rateBonus + marginDelta + rand(-0.09, 0.09) * (0.5 + vol) + swing * (0.5 + 0.5 * vol);
     const mSales = nCas * spend + nReg * spend * 1.35 + nPro * 45000;
     const mGross = (nCas * spend + nReg * spend * 1.35) * margin + nPro * 45000 * (margin - 0.16);
     sales += mSales;
@@ -2061,6 +2090,7 @@ function simulateDay() {
     sales: Math.round(sales), payout: Math.round(payout),
     exp: Math.round(expenses), net: Math.round(net), interest,
     note: tokubi ? "特日" : (weekend ? "週末" : ""),
+    swing: Math.round(swing * 100) / 100,
   };
   s.history.unshift(rec);
   if (s.history.length > 60) s.history.pop();
@@ -2089,9 +2119,9 @@ function simulateDay() {
    単一の閾値だと のんびり=常にS / 修羅=常にC になって機能しない。
    各値は最適プレイと熟練プレイの実測分布から決めてある。 */
 const RANK_DAYS = {
-  easy:   { s:  72, a:  84, b:  88 },
-  normal: { s:  90, a: 110, b: 118 },
-  hard:   { s: 125, a: 140, b: 148 },
+  easy:   { s:  68, a:  82, b:  87 },
+  normal: { s:  85, a: 110, b: 118 },
+  hard:   { s: 118, a: 135, b: 146 },
   hardx:  { s: 132, a: 141, b: 147 },
 };
 function clearRank(d) {
@@ -2233,6 +2263,7 @@ function sanitizeState(s) {
       net: Math.round(num(r.net, 0, -1e13, 1e13)),
       interest: Math.round(num(r.interest, 0, 0, 1e12)),
       note: (r.note === "特日" || r.note === "週末") ? r.note : "",
+      swing: Math.round(num(r.swing, 0, -1, 1) * 100) / 100,   // 荒れ日の振れ幅(表示用)
     }));
   return s;
 }
@@ -2290,6 +2321,11 @@ const artOf = cid => "./art/" + (MART[cid] || "m_normal") + ".jpg";
    1台単位で管理する店は現実にないし、最大10台のホールも存在しないため。 */
 const TAI_PER_SHIMA = 10;
 const tai = u => Math.round(u * TAI_PER_SHIMA);
+
+/* ---------- 台の荒さ(表示) ----------
+   machineVol(保護ロジック)を3段に丸めて見せる。安定=収支がぶれない / 荒い=客は来るが荒れ日が来る */
+const volBand = c => { const v = machineVol(c); return v < 0.34 ? 0 : v < 0.67 ? 1 : 2; };
+const volLabel = c => ["安定", "ふつう", "荒い"][volBand(c)];
 
 /* ---------- 中古相場 ----------
    ブーム中のカテゴリは、新品も中古も相場が上がる。人気機種は高く売れるし、
@@ -2790,7 +2826,7 @@ function renderHall() {
       <div class="fc-photo"><img src="${artOf(c.id)}" alt="" decoding="async"><i></i></div>
       <div class="fc-id">
         <div class="fc-nm">${esc(c.name)}</div>
-        <div class="fc-sp">${esc(c.spec.label)}</div>
+        <div class="fc-sp">${esc(c.spec.label)} <span class="volb v${volBand(c)}">${volLabel(c)}</span></div>
         ${tags ? `<div class="fc-tags">${tags}</div>` : ""}
       </div>
       <div class="fc-net">
@@ -2845,7 +2881,7 @@ function renderShop() {
         <div class="thumb"><img src="${artOf(c.id)}" alt="" decoding="async" loading="lazy"><i class="lip"></i></div>
         <div class="id">
           <div class="nm">${esc(c.name)}</div>
-          <div class="sp">${esc(c.spec.label)}</div>
+          <div class="sp">${esc(c.spec.label)} <span class="volb v${volBand(c)}">${volLabel(c)}</span></div>
           <div class="tags">
             <span class="tag cat">${esc(mType(c.id))}</span>
             ${boom ? `<span class="tag boom">${esc(state.trend.name)}</span>` : ""}
@@ -6715,7 +6751,7 @@ function showDayResult(result) {
         <span class="k s">一般 / 常連 / プロ</span><span class="v s">${rec.cas} / ${rec.reg} / ${rec.pro}人</span>
         <span class="hr"></span>
         <span class="k">総売上(打ち込み)</span><span class="v">${yen(rec.sales)}</span>
-        <span class="k">出玉払出</span><span class="v neg">−${yen(rec.payout)}</span>
+        <span class="k">出玉払出${rec.swing ? ` <small class="${rec.swing < 0 ? "neg" : "pos"}">荒れ日 ${rec.swing < 0 ? "" : "+"}${Math.round(rec.swing * 100)}pt</small>` : ""}</span><span class="v neg">−${yen(rec.payout)}</span>
         <span class="k">経費${rec.interest ? " (利息 " + yen(rec.interest) + " 含む)" : ""}</span><span class="v neg">−${yen(rec.exp)}</span>
         ${result.upkeep ? `<span class="k">規模維持費 (${tai(state.machines.length)}台)</span><span class="v neg">−${yen(result.upkeep)}</span>` : ""}
         <span class="hr"></span>
@@ -6855,7 +6891,7 @@ function showTutorial() {
       <p class="note" style="font-size:12px;color:var(--tx-2)">あなたは小さなパチンコホールの新米オーナー。<b>純資産1億円</b>の地域No.1ホールを目指そう!</p>
       <div style="margin-top:8px">
         ${item("target", "平均設定のメリハリがすべて", "ホールは<b>1シマ=同一機種10台</b>の単位で動かす。渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。警戒される平均設定の線は難易度で違う(のんびり・標準は2.6、<b>修羅は4.0</b> ─ 修羅では渋り営業そのものが成立しない)。" + ((DIFFS.hard.calamMul || 0) > 0 ? "修羅で<b>熟練者</b>を選ぶと、維持費と収益がさらに厳しくなる代わりに、30枚の<b>商機</b>(家賃交渉・補助金・タイアップ・優先納品など)が日程ランダムで来る。早く来れば楽、遅ければ苦しい。" : "") + "出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出すシマ」と「回収するシマ」を作り分けろ!")}
-        ${item("fire", "7のつく日は特日 / 週替わりブーム / シマ効果", "特日は高設定で評判爆上げ。ブームは<b>機種カテゴリ単位</b>で来て、その機種の集客力1.4倍 — ただし弱い機種はブームでも強い機種に届かない。同一機種を並べればシマ効果。")}
+        ${item("fire", "7のつく日は特日 / 週替わりブーム / シマ効果", "特日は高設定で評判爆上げ。ブームは<b>機種カテゴリ単位</b>で来て、その機種の集客力1.4倍 — ただし弱い機種はブームでも強い機種に届かない。同一機種を並べればシマ効果。機種には<b>荒さ</b>がある: 甘デジ・Aタイプは収支が安定、ミドル・爆裂・スマスロは客を呼ぶが<b>荒れ日</b>(店全体の出玉が大きく振れる日)が来る。")}
         ${item("star", "評判は放っておくと落ちる", "客は前によかった店をいつまでも覚えていない。<b>評判が高いほど毎日の目減りは大きい</b>。上のほうを保つには出玉かスタッフの質で押し返し続けるしかない。")}
         ${item("bank", "拡張は罰ではなく投資", "クリア条件の「純資産」は <b>現金＋台の簿価＋店舗簿価−借金</b>。シマ増設費は消えず<b>6割が店舗簿価として残る</b>ので、拡張は計算できる投資だ。ただし現金は出るし、広げた席を埋められなければ規模維持費で溶ける。")}
       </div>

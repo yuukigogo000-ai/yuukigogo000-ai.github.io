@@ -39,6 +39,7 @@
   "newGame",
   "makeMachine",
   "catalogOf",
+  "machineVol",
   "machineValue",
   "machineAssets",
   "expandBase",
