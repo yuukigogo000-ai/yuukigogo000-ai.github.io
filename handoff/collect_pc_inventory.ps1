@@ -11,7 +11,8 @@
 
 $ErrorActionPreference = 'Continue'
 $stamp  = Get-Date -Format 'yyyyMMdd'
-$home_  = $env:USERPROFILE
+$home_  = if ($env:USERPROFILE) { $env:USERPROFILE } else { $HOME }
+$local_ = if ($env:LOCALAPPDATA) { $env:LOCALAPPDATA } else { Join-Path $home_ '.local' }
 $out    = Join-Path $home_ ("Desktop\pc_inventory_" + $stamp)
 New-Item -ItemType Directory -Force -Path $out | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $out '11_memory') | Out-Null
@@ -101,8 +102,8 @@ $candidates = @(
   (Join-Path $home_ 'AI_WORKSPACE'),
   (Join-Path $home_ 'ui-workbench'),
   (Join-Path $home_ 'tools\jan'),
-  (Join-Path $env:LOCALAPPDATA 'Temp\claude'),
-  (Join-Path $env:LOCALAPPDATA 'Temp\hbk')
+  (Join-Path $local_ 'Temp\claude'),
+  (Join-Path $local_ 'Temp\hbk')
 )
 # リポジトリ配下の AI_WORKSPACE / ui-workbench も探す(このスクリプトの2つ上=リポジトリ直下)
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSCommandPath)
@@ -135,8 +136,11 @@ $roots = @($home_, (Join-Path $home_ 'Documents'), (Join-Path $home_ 'Desktop'),
 $seen = @{}
 foreach ($r in $roots) {
   if (-not (Test-Path $r)) { continue }
-  Get-ChildItem -Path $r -Directory -Recurse -Depth 3 -Force -ErrorAction SilentlyContinue |
-    Where-Object { $_.Name -eq '.git' -and $_.FullName -notmatch '\\node_modules\\' } | ForEach-Object {
+  # AppData / node_modules / .cache は走査しない(遅い上に成果物は無い)
+  Get-ChildItem -Path $r -Directory -Force -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -notin @('AppData','node_modules','.cache','.nuget','.vscode','.gradle') } |
+    ForEach-Object { @($_) + @(Get-ChildItem -Path $_.FullName -Directory -Recurse -Depth 2 -Force -ErrorAction SilentlyContinue) } |
+    Where-Object { $_.Name -eq '.git' -and $_.FullName -notmatch '\\(node_modules|AppData)\\' } | ForEach-Object {
       $repo = $_.Parent.FullName
       if ($seen.ContainsKey($repo)) { return }
       $seen[$repo] = $true
@@ -165,7 +169,7 @@ foreach ($cmd in @('node --version','npm --version','python --version','git --ve
   try { $v = (Invoke-Expression $cmd 2>&1 | Out-String).Trim(); $env_.Add($cmd + " -> " + $v) }
   catch { $env_.Add($cmd + " -> NOT_FOUND") }
 }
-$env_.Add("OS -> " + (Get-CimInstance Win32_OperatingSystem).Caption)
+try { $env_.Add("OS -> " + (Get-CimInstance Win32_OperatingSystem -ErrorAction Stop).Caption) } catch { $env_.Add("OS -> " + [System.Environment]::OSVersion.VersionString) }
 $env_ | Set-Content -Encoding UTF8 (Join-Path $out '40_env.txt')
 
 # ===== 5. サマリ =====
