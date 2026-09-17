@@ -922,8 +922,6 @@ svg{flex:0 0 auto}
   padding:6px 4px 7px;border-radius:3px;text-align:center;
   border:1px solid rgba(255,212,59,.20);
   background:linear-gradient(180deg,rgba(255,232,170,.05),transparent 45%),linear-gradient(180deg,#161922,#0a0b10)}
-.lr-tile.boss{border-color:rgba(255,212,59,.55);
-  box-shadow:inset 0 0 14px rgba(255,180,40,.12),0 0 10px rgba(255,196,60,.18)}
 .lr-tile:active{transform:translateY(1px)}
 .lr-nm{font-size:10.5px;font-weight:900;color:var(--tx);line-height:1.25;
   display:flex;align-items:center;gap:3px;flex-wrap:wrap;justify-content:center}
@@ -933,8 +931,6 @@ svg{flex:0 0 auto}
 .lr-sc{font-size:8.5px;color:var(--tx-3)}
 .lr-sc b{font-family:var(--f-num);font-size:11px;color:var(--tx-2)}
 .lr-sc i{font-style:normal;color:var(--gold-lo)}
-.lr-boss{font-size:7.5px;font-weight:900;letter-spacing:.06em;padding:0 3px;border-radius:2px;
-  color:#2a1a02;background:linear-gradient(180deg,#ffe9a8,#d9a52a);white-space:nowrap}
 
 /* 人物画像。画像が出せなかったときだけ裏のモノグラムへ落ちる */
 .lr-pic{position:relative;display:block;width:76px;height:76px;flex:0 0 auto;border-radius:3px;
@@ -960,13 +956,6 @@ svg{flex:0 0 auto}
 .lr-pic.big{width:150px;height:150px}
 .lr-pic.intro{width:56px;height:56px}
 .lr-pic.intro .lr-fb b{font-size:20px}
-/* 強敵フレーム。R09は白金・紫、R10は黒・赤紫(人物の色をそのまま枠に使う) */
-/* 強敵フレームは人物の2色で組む。R09は白金(--lc)と紫(--lc2)、R10は黒と赤紫。 */
-.lr-pic.boss{border-width:2px;border-color:var(--lc2);
-  box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--lc) 85%,transparent),
-             inset 0 0 0 3px rgba(0,0,0,.55),
-             0 0 14px color-mix(in srgb,var(--lc2) 60%,transparent),
-             0 2px 12px rgba(0,0,0,.7)}
 /* 紋章 */
 .lr-em{position:relative;display:block;width:30px;height:30px;border-radius:3px;overflow:hidden;
   border:1px solid color-mix(in srgb,var(--lc2) 45%,transparent);background:#0a0b10}
@@ -981,7 +970,6 @@ svg{flex:0 0 auto}
   border:1px solid color-mix(in srgb,var(--lc2) 40%,transparent);
   background:linear-gradient(120deg,color-mix(in srgb,var(--lc) 26%,transparent),transparent 70%),
              linear-gradient(180deg,#14171f,#0a0b10)}
-.lr-head.boss{border-color:var(--gold);box-shadow:0 0 14px rgba(255,196,60,.2)}
 .lr-head .lr-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;
   opacity:.30;filter:saturate(.85) brightness(.7)}
 .lr-head::before{content:"";position:absolute;inset:0;pointer-events:none;
@@ -1015,7 +1003,6 @@ svg{flex:0 0 auto}
 .lr-log i{font-style:normal;font-family:var(--f-num);font-weight:800;color:var(--tx-3)}
 .lr-log i.pos{color:var(--pos)} .lr-log i.neg{color:var(--neg)}
 .lr-introwrap{position:relative;border-radius:3px;overflow:hidden;border:1px solid var(--line-w)}
-.lr-introwrap.boss{border-color:rgba(255,212,59,.5);box-shadow:0 0 14px rgba(255,196,60,.2)}
 .lr-introwrap .lr-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
   object-position:center;opacity:.34;filter:saturate(.9) brightness(.72)}
 .lr-introwrap::before{content:"";position:absolute;inset:0;pointer-events:none;
@@ -2933,9 +2920,9 @@ function renderMgmt() {
     `<button class="btn ${state.ad === a.id ? "gold" : ""}" data-ad="${a.id}" ${dead ? "disabled" : ""}>
       ${esc(a.name)}${a.cost ? `<small style="opacity:.8;font-weight:700"> ${yenShort(a.cost)}</small>` : ""}</button>`).join("");
   const cur = ADS.find(a => a.id === state.ad);
-  $("adCurrent").innerHTML = cur.id === "none"
-    ? "広告は未設定。設定すると次の営業日の客数が増える(固定分+店舗規模に比例する分。費用はその日の経費に計上)。"
-    : `本日の広告: <b>${esc(cur.name)}</b> → 客数 +${cur.flat}人 + 集客率${Math.round(cur.pct * 100)}%ブースト`;
+  // 効果は段階だけ見せる。人数・倍率は表示せず、計算用のADSには触れない。
+  const adHint = { none:["→", "変化なし"], flyer:["↑", "小"], sns:["↑↑", "中"], tv:["↑↑↑", "大"] }[cur.id];
+  $("adCurrent").innerHTML = `本日の広告: <b>${esc(cur.name)}</b> ・ 集客 <b role="img" aria-label="集客効果 ${adHint[1]}">${adHint[0]}</b>`;
 
   const recentBuy = state.machines.some(m => m.boughtDay !== null && state.day - m.boughtDay <= 1);
   const cdLeft = 5 - (state.day - state.lastGrand);
@@ -4538,7 +4525,7 @@ function lrPreloadFirst() {
     lrFetch(lrImg(p, "normal")); lrFetch(lrImg(p, "emblem"));
   }
   lrFetch(lrShared("reveal"));
-  lrFetch(lrShared(lrHasBoss() ? "boss" : "three"));
+  lrFetch(lrShared("three"));
 }
 /* カードを出したあとに、選ばれた3人ぶんの表情と行動画像を遅延で足す */
 function lrPreloadFaces() {
@@ -4576,7 +4563,7 @@ function lrBindImgs(root) {
 
 /* 人物の顔。画像 + 失敗時のモノグラム(常に裏に置いておく) */
 function lrFace(p, variant, cls) {
-  return `<span class="lr-pic ${cls || ""}${p.boss ? " boss" : ""}" style="--lc:${p.col};--lc2:${p.col2}" aria-hidden="true">
+  return `<span class="lr-pic ${cls || ""}" style="--lc:${p.col};--lc2:${p.col2}" aria-hidden="true">
     <img src="${lrImg(p, variant)}" alt="" decoding="async">
     <span class="lr-fb"><b>${esc(p.ini)}</b></span>
   </span>`;
@@ -4584,7 +4571,8 @@ function lrFace(p, variant, cls) {
 /* 紋章 */
 const lrEmblem = (p, cls) => `<span class="lr-em ${cls || ""}" style="--lc2:${p.col2}" aria-hidden="true">
   <img src="${lrImg(p, "emblem")}" alt="" decoding="async"><span class="lr-fb"><b>${esc(p.ini)}</b></span></span>`;
-const lrBossBadge = p => p.boss ? `<span class="lr-boss">強敵</span>` : "";
+// 強さの種別は伏せ、営業スタイルだけを表示する。プロフィールと成長値は変えない。
+const lrTypeLabel = p => p.id === "R09" ? "精密型" : p.tp;
 
 /* 地元での自店順位(1始まり)。まだ順位が出ていなければ0 */
 function lrMyPos() {
@@ -4615,19 +4603,19 @@ function renderLocalRivals() {
   const list = g.riv[RG_HOME] || [];
   const open = rgUnlocked();
   const pos = lrMyPos(), n = rgRanking(RG_HOME).length;
-  const th = lrTopThreat(), big = lrLastBig();
+  const big = lrLastBig();
   const mul = rivalMul();
 
   const tiles = [0, 1, 2].map(i => {
     const p = lrAt(i); if (!p) return "";
     const r = list[i];
     const sc = r ? Math.round(r.sc * mul * 10) / 10 : 0;
-    return `<button class="lr-tile${p.boss ? " boss" : ""}" data-lr="${i}"
+    return `<button class="lr-tile" data-lr="${i}"
       aria-label="${esc(p.nm)} ${esc(p.shop)} の詳細">
       ${lrFace(p, lrFaceVariant(i), "tile")}
-      <span class="lr-nm">${esc(p.nm)}${lrBossBadge(p)}</span>
+      <span class="lr-nm">${esc(p.nm)}</span>
       <span class="lr-shop">${esc(p.shop)}</span>
-      <span class="lr-tp">${esc(p.tp)}</span>
+      <span class="lr-tp">${esc(lrTypeLabel(p))}</span>
       <span class="lr-sc">${open ? `集客力 <b>${sc}</b>` : `<i>勢力調査中</i>`}</span>
     </button>`;
   }).join("");
@@ -4639,12 +4627,9 @@ function renderLocalRivals() {
       <div class="row"><span class="k">地元での自店</span>
         <span class="v ${pos === 1 ? "pos" : pos >= 3 ? "neg" : ""}">${pos ? `${pos}位 / ${n}店` : "―"}</span></div>
       <div class="lr-grid">${tiles}</div>
-      ${th ? `<div class="row"><span class="k">最も警戒すべき相手</span>
-        <span class="v">${esc(th.p ? th.p.nm : "―")}</span></div>` : ""}
       ${big && open ? `<div class="row"><span class="k">直近の動き</span>
         <span class="v" style="font-size:11px">${esc(lrProf(big.r) ? lrProf(big.r).nm : "")}「${esc(lrProf(big.r) ? lrProf(big.r).acts[big.a] : "")}」</span></div>` : ""}
-      <p class="note" style="margin-top:5px">10人の候補から、このプレイでは<b>3人</b>が選ばれている。
-      顔ぶれはやり直すまで変わらない。${open ? "" : "<br>集客力と点差は<b>全国進出が解禁</b>されると見えるようになる。"}</p>
+      ${open ? "" : '<p class="note" style="margin-top:5px">集客力と点差は<b>全国進出が解禁</b>されると見えるようになる。</p>'}
     </div>`;
   lrBindImgs(box);
   if (lrStarted) { lrPreloadFirst(); lrPreloadFaces(); }
@@ -4668,13 +4653,13 @@ function lrOpen(i) {
 
   showModal(`${mh("flag", "地元のライバル", true)}
     <div class="mb">
-      <div class="lr-head${p.boss ? " boss" : ""}" style="--lc:${p.col};--lc2:${p.col2}">
+      <div class="lr-head" style="--lc:${p.col};--lc2:${p.col2}">
         <img class="lr-bg" src="${lrImg(p, "interior")}" alt="" decoding="async">
         ${lrFace(p, lrFaceVariant(i), "big")}
         <div class="lr-hid">
-          <b>${esc(p.nm)}${lrBossBadge(p)}</b>
+          <b>${esc(p.nm)}</b>
           <span>${esc(p.shop)}</span>
-          <span class="lr-tp">${esc(p.tp)} ・ 紋章: ${esc(p.crest)}</span>
+          <span class="lr-tp">${esc(lrTypeLabel(p))} ・ 紋章: ${esc(p.crest)}</span>
         </div>
         ${lrEmblem(p, "corner")}
       </div>
@@ -4703,15 +4688,15 @@ function lrIntroHtml() {
   let L; try { L = lrState(); } catch (e) { return ""; }
   const rows = [0, 1, 2].map(i => {
     const p = lrAt(i); if (!p) return "";
-    return `<div>${lrFace(p, "action", "intro")}<b>${esc(p.nm)}${lrBossBadge(p)}</b>
-      <span>${esc(p.shop)} ・ ${esc(p.tp)}<br>「${esc(p.cred)}」</span></div>`;
+    return `<div>${lrFace(p, "action", "intro")}<b>${esc(p.nm)}</b>
+      <span>${esc(p.shop)} ・ ${esc(lrTypeLabel(p))}<br>「${esc(p.cred)}」</span></div>`;
   }).join("");
   if (!rows) return "";
   L.intro = true;
-  /* 強敵が1人でもいれば boss-warning、いなければ three-challengers */
-  const bg = lrHasBoss() ? "boss" : "three";
+  /* 顔ぶれの強さを背景で明かさない。全員同じ紹介演出。 */
+  const bg = "three";
   return `<p class="note" style="margin:10px 0 4px;color:var(--gold-hi)">今回の地元ライバル(3人)</p>
-    <div class="lr-introwrap${lrHasBoss() ? " boss" : ""}">
+    <div class="lr-introwrap">
       <img class="lr-bg" src="${lrShared(bg)}" alt="" decoding="async">
       <div class="rg-unlock lr-intro">${rows}</div>
     </div>`;
@@ -7009,6 +6994,7 @@ document.addEventListener("click", e => {
     return;
   }
   if (d.tile) {
+    if (d.tile === "closemodal") { closeModal(); return; }
     if (d.tile === "shopjump") { closeModal(); setArea("shop"); return; }
     if (d.tile === "set") { openSetList(); return; }
     if (d.tile === "__legacy_set") { setArea("hall"); const t = $("hallList"); if (t) t.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); return; }
