@@ -1,0 +1,12 @@
+# 取引コスト(仕様 §37)と流動性(仕様 §38)
+round_trip_cost_bp:
+  primary: 50
+  stress: 75
+  extreme: 100
+position_size_jpy:
+  primary: 1000000
+  sensitivity: [500000, 3000000]
+adv_window_trading_days: 20
+capacity:
+  warn_fraction_of_adv20: 0.005   # 超過 = CAPACITY_FAIL
+  hard_fraction_of_adv20: 0.01    # 超過 = HARD_FAIL
