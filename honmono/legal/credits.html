@@ -17,18 +17,18 @@
 </style>
 </head>
 <body>
-<header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO<small>実在性証明プロジェクト</small></a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
+<header class="site-header"><div class="wrap header-row">
+  <a class="brand" href="../" data-capability-id="F011">HONMONO<small>透かすと、見える。</small></a>
+  <nav class="nav" aria-label="主要ツール">
+    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">来歴</a>
+    <a href="../badge/" aria-label="実在証明バッジ" data-capability-id="F011">証明</a>
+    <a href="../aicheck/" aria-label="AIアカウント鑑定" data-capability-id="F011">鑑定</a>
+    <a href="../creators/" aria-label="実在クリエイター名鑑" data-capability-id="F011">名鑑</a>
+    <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
 
-<main class="wrap">
+<main class="wrap"><div class="notice" style="margin:20px 0"><b>学習データと利用範囲について</b><p>出典のライセンス表示、取得方法、モデルの配布条件を区別して確認しています。過去の自動取得には未確認事項がありますが、それだけでモデルや本サイトの利用禁止が確定したものではありません。全用途の権利保証は行っていません。<a href="../design/DATA_RIGHTS_REVIEW_20260917.md">確認範囲と説明の訂正</a></p></div>
   <h1>クレジット・ライセンス</h1>
   <p class="lead">本サイトは、他の人が公開してくれたソフトウェアとデータの上に成り立っています。
   使わせてもらっているものを、条件とあわせて全部書きます。</p>
@@ -59,7 +59,7 @@
 
   <h2>2. AI判定モデルの学習に使ったデータ</h2>
   <div class="card">
-    <p style="margin-top:0">方針は<b>「商用利用が明示的に許諾されたデータのみを使う。条件が不明なものは使わない」</b>です。
+    <p style="margin-top:0">方針は<b>「出典・取得経路・許諾範囲を別々に確認する」</b>です。
     条件が未記載・非商用・研究目的限定だった<b>22件のデータセットは、性能が上がると分かっていても除外しました</b>。
     学習に使った画像そのものは配布していません(配布する権利を持たないため)。</p>
     <p style="margin-bottom:0"><b>出典の一覧と、除外したデータセット・その理由は
@@ -71,7 +71,7 @@
     <tr><td>AI生成画像</td><td>bitmind/nano-banana、ehristoforu/dalle-3-images、ehristoforu/midjourney-images、julienlucas/…、javi22/this-person-does-not-exist-10k</td><td>MIT</td></tr>
     <tr><td>実写画像</td><td>Open Images V7(bitmind/open-images-v7-subset 経由)</td><td><a href="https://storage.googleapis.com/openimages/web/factsfigures_v7.html" target="_blank" rel="noopener">CC BY 2.0</a></td></tr>
     <tr><td>実写画像</td><td><a href="https://unsplash.com/" target="_blank" rel="noopener">Unsplash</a></td><td><a href="https://unsplash.com/license" target="_blank" rel="noopener">Unsplash License</a>(商用利用可)</td></tr>
-    <tr><td>実写画像(選択用・顔ベンチマーク)</td><td><a href="https://www.pexels.com/" target="_blank" rel="noopener">Pexels</a></td><td><a href="https://www.pexels.com/license/" target="_blank" rel="noopener">Pexels License</a>(商用利用可)</td></tr>
+    <tr><td>実写画像(選択用・顔の追加診断・学習用の顔切り出し)</td><td><a href="https://www.pexels.com/" target="_blank" rel="noopener">Pexels</a></td><td><a href="https://www.pexels.com/license/" target="_blank" rel="noopener">Pexels License</a>(商用利用可)</td></tr>
   </table></div>
   <p class="note">Open Images V7 の写真は、Flickr の利用者が CC BY 2.0 で公開したものです。数万点にのぼるため個々の撮影者名を列挙できませんが、
   出典元をたどれる形で記載しています。撮影者ご本人から掲載・利用についてご連絡をいただいた場合は、個別に対応します。</p>
@@ -96,7 +96,7 @@
   <p class="rev">最終更新: 2026-08-20 / HONMONO プロジェクト</p>
 </main>
 
-<footer class="site-foot"><div class="wrap">
+<footer class="footer"><div class="wrap">
   <a href="../">HONMONO</a> ·
   <a href="../docs/">説明書</a> ·
   <a href="../report/">実測レポート</a> ·

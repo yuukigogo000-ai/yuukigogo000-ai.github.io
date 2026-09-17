@@ -5,11 +5,11 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>法人・開発者向け — HONMONO</title>
-<meta name="description" content="端末内で動くAI画像判定モデルのライセンス提供。商用利用可のデータだけで学習し、実測値と弱点を全て公開しています。マッチング・フリマ・ファンプラットフォーム等での組込のご相談を承ります。">
+<meta name="description" content="HONMONOの実測と導入条件。実測値・限界・モデルの利用条件を確認し、導入用途を個別にご相談いただけます。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
 <meta property="og:type" content="website">
 <meta property="og:title" content="法人・開発者向け — HONMONO">
-<meta property="og:description" content="画像を自社サーバーに送らずに済む、端末内で動くAI画像判定モデル。学習データは全て商用利用可。実測値と弱点を公開しています。">
+<meta property="og:description" content="実測値と制約を公開。端末内AI画像判定の用途と導入条件をご案内します。">
 <meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/business/">
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -26,33 +26,33 @@
 </style>
 </head>
 <body>
-<header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO<small>実在性証明プロジェクト</small></a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
+<header class="site-header"><div class="wrap header-row">
+  <a class="brand" href="../" data-capability-id="F011">HONMONO<small>透かすと、見える。</small></a>
+  <nav class="nav" aria-label="主要ツール">
+    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">来歴</a>
+    <a href="../badge/" aria-label="実在証明バッジ" data-capability-id="F011">証明</a>
+    <a href="../aicheck/" aria-label="AIアカウント鑑定" data-capability-id="F011">鑑定</a>
+    <a href="../creators/" aria-label="実在クリエイター名鑑" data-capability-id="F011">名鑑</a>
+    <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
 
 <main class="wrap">
-  <h1>法人・開発者向けのご案内</h1>
+  <h1>法人・開発者向けのご案内</h1><div class="notice" style="margin:20px 0"><b>学習データと利用範囲について</b><p>出典のライセンス表示、取得方法、モデルの配布条件を区別して確認しています。過去の自動取得には未確認事項がありますが、それだけでモデルや本サイトの利用禁止が確定したものではありません。全用途の権利保証は行っていません。<a href="../design/DATA_RIGHTS_REVIEW_20260917.md">確認範囲と説明の訂正</a></p></div>
   <p class="lead"><b>画像を自社サーバーに送らずに、AI生成かどうかを判定したい</b>——
-  そのための判定モデルを、ライセンス提供しています。
+  そのための判定モデルを開発しています。商用組込み・モデル提供は、用途と条件を個別に確認する相談窓口を設けています。
   <a href="../checker/">来歴チェッカー</a>で動いているものと同じモデルです。今すぐ無料でお試しいただけます。</p>
 
   <div class="kpi">
     <div><b>1.1%</b><span>実在の人の顔を<br>AIと誤判定する割合</span></div>
     <div><b>92.2%</b><span>AI生成の顔を<br>検出する割合</span></div>
     <div><b>90MB</b><span>端末内で動く<br>int8 ONNX</span></div>
-    <div><b>100%</b><span>学習データが<br>商用利用可</span></div>
+    <div><b>個別相談</b><span>用途・実測条件・<br>モデル利用条件</span></div>
   </div>
-  <p class="note">顔だけを独立に測ったベンチマーク615枚での実測。一般的な写真を含む545枚では、誤判定 1.8% / AI検出 70.0%。
+  <p class="note">顔615枚の過去の診断値(選択用dev由来のため独立ではありません)。一般的な写真を含む545枚では、誤判定 1.8% / AI検出 70.0%。
   <b>数字の出どころ、測り方、外れた場面は<a href="../report/">実測レポート</a>に全部書いています。</b></p>
 
-  <h2>1. こういう場面で使われます</h2>
+  <h2>1. 想定用途(導入実績ではありません)</h2>
   <div class="card">
     <ul style="margin:0; padding-left:1.3em">
       <li><b>マッチング・婚活サービス</b> — プロフィール写真がAI生成でないかの一次スクリーニング</li>
@@ -63,24 +63,22 @@
     </ul>
   </div>
 
-  <h2>2. なぜ他ではなくこれなのか</h2>
+  <h2>2. 実装の特徴と確認状況</h2>
   <div class="card">
     <h3 style="margin-top:0">① 画像を外に出さずに済む</h3>
     <p style="margin:4px 0 14px">端末内(ブラウザ・アプリ内)で完結します。クラウドAPI型の検出サービスと違い、
     <b>利用者の画像を自社サーバーにも第三者にも送る必要がありません。</b>
     個人情報を預かりたくない事業では、これ自体が要件になります。</p>
 
-    <h3>② 学習データがすべて商用利用可</h3>
+    <h3>② 出典・取得方法・モデル配布を分けて確認</h3>
     <p style="margin:4px 0 14px">条件が未記載・非商用・研究目的限定のデータセットは<b>22件を意図的に除外</b>しました。
     性能が上がると分かっていても外しています(実際、顔データセットを外したせいで一度精度が落ち、作り直しました)。
-    <b>法務審査で止まらないことを最初から設計に入れています。</b>
+    <b>一般的な利用ライセンスだけで、すべての取得方法や用途を保証することはできません。著作権上の情報解析と、配布元の利用契約を分けて扱います。</b>
     <a href="../report/#data">出典と除外理由の全リスト</a></p>
 
-    <h3>③ 公開されている判定モデルは、ほとんど使い物にならない</h3>
-    <p style="margin:4px 0">同一条件で公開モデル9本を測ったところ、<b>8本は実写を10〜88%の割合でAIと誤判定</b>しました。
-    唯一まともだった1本はライセンス未記載で商用利用の可否が判断できません。
-    「自前で作ればいい」と考える場合、この31データセットのライセンス確認・7.5万枚の収集・汚染チェック・学習の反復を、
-    そちらでやり直すことになります。<a href="../report/#public">9本の実測結果</a></p>
+    <h3>③ 過去の比較条件と測定結果を公開</h3>
+    <p style="margin:4px 0">同一条件で公開モデル9本を測ったところ、<b>8本は評価セットの実写を11.4〜81.6%の割合でAIと誤判定</b>しました。
+    2026-08-17時点で選んだモデルと当時の実装による比較であり、現在公開されているすべての検出器の性能を示すものではありません。<a href="../report/#public">9本の実測結果</a></p>
   </div>
 
   <h2>3. 先に弱点をお伝えします</h2>
@@ -88,29 +86,21 @@
     <ul style="margin:0; padding-left:1.3em">
       <li><b>2025年世代の生成器は4割近く見逃します</b>(Seedream 4・Gemini 2.5・FLUX Pro 等で検出 62.6%)</li>
       <li><b>「AIではない」ことの証明には使えません。</b>検出しなかった=人間、ではありません</li>
-      <li>生成器は毎月新しくなります。<b>更新しなければ、この数字は放っておけば下がり続けます</b></li>
+      <li>生成器は毎月新しくなります。<b>未評価の生成器・画像加工での精度は保証できません</b></li>
       <li>この数字は私たち自身が測ったものです。第三者による再測定は行われていません(だからこそ、測り方を公開しています)</li>
     </ul>
   </div>
-  <p class="note">3つ目が、継続的なご契約をおすすめしている理由です。買って終わりにすると、1年で陳腐化します。</p>
+  <p class="note">導入判断には用途に合う独立評価が必要です。相談の受付は、提供可否・価格・納期の確約や契約成立を意味しません。</p>
 
-  <h2>4. 提供の形</h2>
-  <div class="scroll"><table>
-    <tr><th>形態</th><th>内容</th><th>価格の目安</th></tr>
-    <tr><td><b>評価・検証</b></td><td>モデルを実際に落として、御社のデータで測っていただく</td><td><b>無料</b>(<a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/vendor/models/LICENSE.md" target="_blank" rel="noopener">モデルライセンス</a>の範囲内)</td></tr>
-    <tr><td><b>買い切りライセンス</b></td><td>重み + 推論コード + 実測レポート + 1年間の更新</td><td>30〜100万円</td></tr>
-    <tr><td><b>年間ライセンス</b></td><td>上記 + 新しい生成器への追随(定期更新)+ 技術サポート</td><td>月額 5〜20万円</td></tr>
-    <tr><td><b>API 従量</b></td><td>サーバー側で判定。御社での実装が不要な形</td><td>ご相談</td></tr>
-    <tr><td><b>導入支援・追加学習</b></td><td>組込作業、御社のデータでの再学習・しきい値調整</td><td>ご相談</td></tr>
-  </table></div>
-  <p class="note">用途・規模・提供形態で条件が変わるため、確定価格ではなく目安を記載しています。
-  <b>まずは無料で測っていただき、御社のデータで実用に足るかを確かめてからのご相談で構いません。</b></p>
+  <h2>4. 提供条件のご相談</h2>
+  <div class="notice"><p>公開チェッカーは無料で利用できます。製品への組込み、モデル再配布、API提供などは、既存ライセンスに従って用途・提供範囲・契約条件を個別に確認します。決済・契約を自動で行う機能はありません。</p>
+  <p>価格・提供形態・納期は未確定です。既存の利用許諾を遡って取り消すものではありません。<a href="../vendor/models/LICENSE.md">モデルの利用条件</a></p></div>
 
   <h2>5. お問い合わせ</h2>
   <div class="card">
     <p style="margin-top:0">現在、お問い合わせは GitHub Issue で受け付けています。</p>
     <p style="margin:0 0 12px">
-      <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%5B%E6%B3%95%E4%BA%BA%5D%20HONMONO%20%E5%88%A4%E5%AE%9A%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E3%81%94%E7%9B%B8%E8%AB%87&body=%E4%BC%9A%E7%A4%BE%E5%90%8D%3A%0A%E3%81%94%E6%8B%85%E5%BD%93%E8%80%85%E5%90%8D%3A%0A%E3%81%94%E9%80%A3%E7%B5%A1%E5%85%88%3A%0A%0A%E7%94%A8%E9%80%94%28%E3%81%A9%E3%81%AE%E5%A0%B4%E9%9D%A2%E3%81%A7%E4%BD%BF%E3%81%84%E3%81%9F%E3%81%84%E3%81%8B%29%3A%0A%E6%83%B3%E5%AE%9A%E3%81%99%E3%82%8B%E5%88%A4%E5%AE%9A%E4%BB%B6%E6%95%B0%2F%E6%9C%88%3A%0A%E7%AB%AF%E6%9C%AB%E5%86%85%E3%81%A7%E5%8B%95%E3%81%8B%E3%81%99%E5%BF%85%E8%A6%81%E3%81%8C%E3%81%82%E3%82%8B%E3%81%8B%3A%0A%E5%B8%8C%E6%9C%9B%E3%81%AE%E6%8F%90%E4%BE%9B%E5%BD%A2%E6%85%8B%3A" target="_blank" rel="noopener"><b>お問い合わせフォーム(GitHub Issue)を開く →</b></a>
+      <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%5B%E6%B3%95%E4%BA%BA%5D+HONMONO+%E5%88%A4%E5%AE%9A%E3%83%A2%E3%83%87%E3%83%AB%E3%81%AE%E3%81%94%E7%9B%B8%E8%AB%87&amp;body=%E7%94%A8%E9%80%94%E3%81%AE%E6%A6%82%E8%A6%81%EF%BC%88%E5%80%8B%E4%BA%BA%E6%83%85%E5%A0%B1%E3%83%BB%E6%A9%9F%E5%AF%86%E6%83%85%E5%A0%B1%E3%81%AF%E8%A8%98%E8%BC%89%E3%81%97%E3%81%AA%E3%81%84%E3%81%A7%E3%81%8F%E3%81%A0%E3%81%95%E3%81%84%EF%BC%89%3A%0A%0A%E6%A6%82%E7%AE%97%E3%81%AE%E4%BB%B6%E6%95%B0%E3%83%BB%E5%AE%9F%E8%A1%8C%E7%92%B0%E5%A2%83%3A%0A%0A%E5%B8%8C%E6%9C%9B%E3%81%99%E3%82%8B%E6%8F%90%E4%BE%9B%E5%BD%A2%E6%85%8B%3A%0A" target="_blank" rel="noopener"><b>お問い合わせフォーム(GitHub Issue)を開く →</b></a>
     </p>
     <p class="note" style="margin:0"><b>ご注意:</b> GitHub Issue の内容は<b>公開されます</b>。
     社外に出せない情報を含む場合は、その旨だけを書いてご連絡ください。非公開の連絡手段をお伝えします。</p>
@@ -128,12 +118,12 @@
     </ul>
   </div>
 
-  <p class="rev">最終更新: 2026-08-20 / HONMONO プロジェクト ·
+  <p class="rev">最終更新: 2026-09-17 / HONMONO プロジェクト ·
   <a href="../legal/terms.html">利用規約</a> ·
   <a href="../legal/privacy.html">プライバシーポリシー</a></p>
 </main>
 
-<footer class="site-foot"><div class="wrap">
+<footer class="footer"><div class="wrap">
   <a href="../">HONMONO</a> ·
   <a href="../docs/">説明書</a> ·
   <a href="../report/">実測レポート</a> ·

@@ -10,7 +10,7 @@ const http = require('http');
 // (以前は特定セッションの一時ディレクトリを直書きしていて、そのフォルダが消えた時点で
 //  この検査器は実行不能になっていた。SITE_ROOT で差し替えられるようにした)
 const REPO = path.resolve(process.env.SITE_ROOT || path.join(__dirname, '..', '..'));
-const PORT = 8771;
+let PORT = 0;
 
 function findBrowser() {
   const cands = [
@@ -39,7 +39,7 @@ function serve() {
       rep.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' });
       fs.createReadStream(f).pipe(rep);
     });
-    s.listen(PORT, () => res(s));
+    s.listen(0, '127.0.0.1', () => { PORT = s.address().port; res(s); });
   });
 }
 
@@ -53,7 +53,7 @@ const PAGES = [
   ['/honmono/creators/',           ['掲載カードの見本 ①', 'まだ0件', '見本']],
   ['/honmono/docs/',               ['故意または重大な過失', 'オフラインでは開けません']],
   ['/honmono/report/',             ['CDLA-Permissive-2.0', '訂正の履歴', '4割近く見逃します']],
-  ['/honmono/business/',           ['30〜100万円', '4割近く見逃します', 'お引き受けしないこと']],
+  ['/honmono/business/',           ['提供条件のご相談', '4割近く見逃します', 'お引き受けしないこと']],
   ['/honmono/legal/privacy.html',  ['Cache Storage', 'shields.io']],
   ['/honmono/legal/terms.html',    ['第8条(免責)', '故意または重大な過失']],
   ['/honmono/legal/credits.html',  ['Copyright (c) Microsoft Corporation', 'Copyright 2021 Adobe', 'CC BY 2.0']],

@@ -10,6 +10,7 @@
     name: '',            // 表示用モデル名
     version: '',
     parts: [],           // 分割モデルのURL配列(相対可)
+    sha256: '',          // Optional pinned digest; verify before creating a session.
     totalBytes: 0,       // 進捗表示用(省略可)
     ortScript: '../vendor/ort/ort.min.js',
     ortWasmDir: '../vendor/ort/',
@@ -70,9 +71,18 @@
       const total = parts.reduce((s, a) => s + a.length, 0);
       const model = new Uint8Array(total); let p = 0;
       for (const a of parts) { model.set(a, p); p += a.length; }
-      const eps = [];
-      if (navigator.gpu) eps.push('webgpu');
-      eps.push('wasm');
+      // v3.1 int8: WebGPU produced 0/40 AI detections in our 80-image
+      // paired test on 2026-09-17; native CPU matched saved outputs 80/80.
+      // Use the validated WASM provider, not capability detection as an accuracy test.
+      if (cfg.sha256) {
+        const digest = await crypto.subtle.digest('SHA-256', model);
+        const actual = Array.from(new Uint8Array(digest), v => v.toString(16).padStart(2, '0')).join('');
+        if (actual !== cfg.sha256) {
+          try { const cache = await caches.open(cfg.cacheName); for (const u of cfg.parts) await cache.delete(new URL(u, location.href).href); } catch {}
+          throw new Error('モデルの整合性を確認できません。キャッシュを破棄しました。再試行してください。');
+        }
+      }
+      const eps = ['wasm'];
       for (const ep of eps) {
         try {
           session = await ort.InferenceSession.create(model, { executionProviders: [ep], graphOptimizationLevel: 'all' });
@@ -104,16 +114,24 @@
     return new ort.Tensor('float32', out, [1, 3, S, S]);
   }
 
-  async function predict(file, onProgress) {
+  async function predictOne(file, onProgress) {
     const sess = await load(onProgress);
     const t0 = performance.now();
     const x = await preprocess(file);
     const out = await sess.run({ [cfg.inputName]: x });
     const logits = out[Object.keys(out)[0]].data;
+    if (logits.length !== 2 || !Array.from(logits).every(Number.isFinite)) throw new Error('モデルが有効な数値を返しませんでした');
     let m = -Infinity; for (const v of logits) m = Math.max(m, v);
     let s = 0; const e = []; for (const v of logits) { const t = Math.exp(v - m); e.push(t); s += t; }
     const probs = e.map(v => v / s);
     return { pAI: probs[cfg.aiIndex], probs, backend, ms: Math.round(performance.now() - t0) };
+  }
+
+  let inferenceQueue = Promise.resolve();
+  function predict(file, onProgress) {
+    const next = inferenceQueue.then(() => predictOne(file, onProgress));
+    inferenceQueue = next.catch(() => {});
+    return next;
   }
 
   window.HonmonoPixel = { cfg, available: () => !!(cfg.enabled && cfg.parts.length), load, predict, get backend() { return backend; } };

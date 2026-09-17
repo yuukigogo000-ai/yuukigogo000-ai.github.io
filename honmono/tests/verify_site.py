@@ -58,6 +58,9 @@ ALLOWED_EXTERNAL_HOSTS = {
 
 # 出てはいけない表現(過去の虚偽・断定)
 FORBIDDEN = [
+    ("学習データがすべて商用利用可", "取得許諾の未確認を無視した断定"),
+    ("法務審査で止まらない", "法務保証はしていない"),
+    ("この輪を偽造できません", "断定: 相互リンクは破られうる"),
     ("オフラインでも動作します", "虚偽: Service Worker が無い"),
     ("なぜ偽造できない", "断定: 相互リンクは破られうる"),
     ("いかなる損害についても、運営者は責任を負いません", "無効条項: 消費者契約法8条"),
@@ -75,7 +78,7 @@ REQUIRED = {
     "honmono/legal/terms.html":    ["故意または重大な過失", "名誉毀損"],
     "honmono/legal/privacy.html":  ["Cache Storage", "shields.io"],
     "honmono/report/index.html":   ["CDLA-Permissive-2.0", "CC BY 2.0", "Unsplash License", "Pexels License"],
-    "honmono/business/index.html": ["4割近く見逃します"],
+    "honmono/business/index.html": ["4割近く見逃します", "提供条件のご相談", "全用途の権利保証は行っていません"],
     "honmono/aicheck/index.html":  ["名誉毀損"],
 }
 
@@ -88,6 +91,8 @@ def check(site):
             if f.endswith(".html"):
                 pages.append(os.path.join(root, f))
 
+    if len(pages) != 11:
+        problems.append("Expected 11 public HTML pages; found %d" % len(pages))
     for path in sorted(pages):
         rel = os.path.relpath(path, site).replace("\\", "/")
         src = open(path, encoding="utf-8").read()
@@ -152,7 +157,7 @@ def check(site):
     return problems, len(pages)
 
 def main():
-    site = r"C:\Users\gogyo\AppData\Local\Temp\hbk\site"
+    site = os.path.abspath(os.environ.get("SITE_ROOT") or os.path.join(os.path.dirname(__file__), "..", ".."))
     if "--selftest" in sys.argv:
         # 写しを作ってわざと壊し、検査器が本当に落ちるか確かめる
         tmp = tempfile.mkdtemp(prefix="honmono_selftest_")

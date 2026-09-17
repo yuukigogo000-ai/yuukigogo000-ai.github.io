@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <title>実在クリエイター名鑑 — HONMONO</title>
 <meta name="description" content="「AI不使用・実在証明済み」を掲げるクリエイターのディレクトリ。本物の人間に仕事を頼みたい企業・ファンのための検索台帳。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
@@ -14,72 +15,71 @@
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="../honmono.css">
-<style>
-  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin: 14px 0; }
-  .filters button { margin: 0; padding: 7px 16px; font-size: .85rem; border-radius: 999px;
-    background: var(--card); color: var(--fg); border: 1px solid var(--line); }
-  .filters button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .creator { position: relative; }
-  .creator .vbadge { display: inline-block; font-size: .7rem; font-weight: 800; color: #fff;
-    background: var(--accent); border-radius: 999px; padding: 2px 10px; letter-spacing: .04em; }
-  .creator .sample { position: absolute; top: 12px; right: 14px; font-size: .7rem; font-weight: 700;
-    color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 2px 10px; }
-  .creator h3 { margin: 8px 0 2px; font-size: 1.05rem; }
-  .creator .cat { font-size: .8rem; color: var(--muted); margin: 0 0 8px; }
-  .creator .desc { font-size: .87rem; margin: 0 0 10px; }
-  .creator .links { font-size: .82rem; display: flex; gap: 12px; flex-wrap: wrap; }
-  .promise { font-size: .8rem; color: var(--muted); border-top: 1px dashed var(--line); margin-top: 10px; padding-top: 8px; }
-  .promise b { color: var(--ok); }
-  #empty { text-align: center; color: var(--muted); padding: 30px 0; display: none; }
-</style>
 </head>
-<body>
-<header class="site-head"><div class="wrap">
-  <a class="brand" href="../">HONMONO</a>
-  <nav>
-    <a href="../checker/">来歴チェッカー</a>
-    <a href="../badge/">実在証明バッジ</a>
-    <a href="../aicheck/">AIアカウント鑑定</a>
-    <a href="../creators/" aria-current="page">実在クリエイター名鑑</a>
-    <a href="../docs/">説明書</a>
+<body data-screen="screen-creators">
+<header class="site-header"><div class="wrap header-row">
+  <a class="brand" href="../" data-capability-id="F011">HONMONO<small>透かすと、見える。</small></a>
+  <nav class="nav" aria-label="主要ツール">
+    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">来歴</a>
+    <a href="../badge/" aria-label="実在証明バッジ" data-capability-id="F011">証明</a>
+    <a href="../aicheck/" aria-label="AIアカウント鑑定" data-capability-id="F011">鑑定</a>
+    <a href="../creators/" aria-current="page" aria-label="実在クリエイター名鑑" data-capability-id="F011">名鑑</a>
+    <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
 
-<main class="wrap">
-  <h1>🌟 実在クリエイター名鑑</h1>
-  <p class="lead">「実在する人間であること」を証明ページ付きで宣言したクリエイターの台帳です。
-  AI量産コンテンツではなく<b>本物の人間</b>に仕事を頼みたい企業・本物を応援したいファンのための検索ディレクトリを目指しています。</p>
+<section class="page-hero"><div class="wrap"><div>
+  <div class="eyebrow">Creator directory</div>
+  <h1>証明の輪から、探す。</h1>
+  <p class="lede">「掲載されているから本物」ではなく、公開された相互リンクを自分で辿れる名鑑です。</p>
+</div></div></section>
 
-  <div class="card" style="background:var(--accent-soft); border-color:var(--accent)">
-    <b>📣 掲載クリエイター募集中(無料)</b>
-    <p style="font-size:.88rem; margin:6px 0 0">
-      掲載条件は「<a href="../badge/">実在証明バッジ</a>で証明ページを公開し、SNSとの相互リンクを完成させていること」。
-      準備ができたら
-      <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%E5%90%8D%E9%91%91%E6%8E%B2%E8%BC%89%E7%94%B3%E8%AB%8B&body=%E6%B4%BB%E5%8B%95%E5%90%8D%3A%0A%E3%82%B8%E3%83%A3%E3%83%B3%E3%83%AB%3A%0A%E8%A8%BC%E6%98%8E%E3%83%9A%E3%83%BC%E3%82%B8URL%3A%0A%E4%B8%BB%E3%81%AASNS%3A%0A%E7%B4%B9%E4%BB%8B%E6%96%87%28100%E5%AD%97%E4%BB%A5%E5%86%85%29%3A"
-      target="_blank" rel="noopener">掲載申請フォーム(GitHub Issue)</a>からご連絡ください。
-      相互リンクを確認のうえ掲載します。
-    </p>
-  </div>
+<main><div class="wrap"><div class="app-creators">
 
-  <div class="notice" style="margin-top:20px">
+  <section class="section">
+    <div class="notice">
     <b>実在のクリエイターの掲載は、まだ0件です。</b>
     下に並んでいるのは<b>カードの見本</b>で、どんな項目が載るかを示すためだけのものです。実在の人物ではありません。
     <b>実在を売りにする名鑑で架空の人物をでっち上げるのは筋が通らない</b>ので、人名は載せていません。
     掲載申請を受け付け次第、見本は順次差し替えます。
   </div>
+  </section>
 
-  <label for="q" style="margin-top:20px">キーワード検索</label>
-  <input type="text" id="q" placeholder="名前・ジャンル・キーワードで絞り込み">
-  <div class="filters" id="filters"></div>
+  <section class="section">
+    <div class="search-tools" id="cap-F009">
+      <div>
+        <label for="q">キーワード検索</label>
+        <input type="text" id="q" class="search-input" placeholder="名前・ジャンル・キーワードで絞り込み" data-capability-id="F009">
+      </div>
+      <div class="chip-row" id="filters"></div>
+    </div>
 
-  <div class="grid" id="list"></div>
-  <div id="empty">該当するクリエイターが見つかりませんでした。</div>
+    <div class="creator-list" id="list"></div>
+    <div class="empty-state" id="empty">該当するクリエイターが見つかりませんでした。</div>
+  </section>
+
+  <section class="section" data-capability-id="F010">
+    <div class="soft-panel">
+      <div class="eyebrow">Listing</div>
+      <h2 style="margin:5px 0 8px">掲載クリエイター募集中(無料)</h2>
+      <p class="micro">
+        掲載条件は「実在証明バッジで証明ページを公開し、SNSとの相互リンクを完成させていること」。
+        相互リンクを確認のうえ掲載します。
+      </p>
+      <div class="button-row">
+        <a class="btn secondary" href="../badge/" data-capability-id="F011">先に証明ページをつくる</a>
+        <a class="btn" href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues/new?title=%E5%90%8D%E9%91%91%E6%8E%B2%E8%BC%89%E7%94%B3%E8%AB%8B&body=%E6%B4%BB%E5%8B%95%E5%90%8D%3A%0A%E3%82%B8%E3%83%A3%E3%83%B3%E3%83%AB%3A%0A%E8%A8%BC%E6%98%8E%E3%83%9A%E3%83%BC%E3%82%B8URL%3A%0A%E4%B8%BB%E3%81%AASNS%3A%0A%E7%B4%B9%E4%BB%8B%E6%96%87%28100%E5%AD%97%E4%BB%A5%E5%86%85%29%3A"
+           target="_blank" rel="noopener" data-capability-id="F010">掲載申請フォーム(GitHub Issue) ↗</a>
+      </div>
+    </div>
+  </section>
 
   <p class="note">掲載は実在を保証する審査ではなく、<b>相互リンク証明の輪が閉じていることの確認</b>に基づくものです。
   掲載料・審査料・優先表示料は一切いただきません(<a href="../legal/terms.html">利用規約</a>第6条)。</p>
-</main>
+</div></div></main>
 
-<footer class="site-foot"><div class="wrap">
+<footer class="footer"><div class="wrap">
+
   <div style="margin-bottom:6px">
   <a href="../">HONMONO</a> ·
   <a href="../docs/">説明書</a> ·
@@ -142,7 +142,7 @@ let activeCat = 'すべて';
 function initFilters() {
   const cats = ['すべて', ...new Set(CREATORS.map(c => c.category))];
   $('filters').innerHTML = cats.map(c =>
-    `<button data-cat="${esc(c)}" class="${c === activeCat ? 'active' : ''}">${esc(c)}</button>`).join('');
+    `<button type="button" class="chip ${c === activeCat ? 'active' : ''}" data-cat="${esc(c)}" data-capability-id="F009" aria-pressed="${c === activeCat ? 'true' : 'false'}">${esc(c)}</button>`).join('');
 }
 
 function render() {
@@ -153,18 +153,21 @@ function render() {
     return (c.name + c.category + c.desc + c.promise).toLowerCase().includes(q);
   });
   $('list').innerHTML = shown.map(c =>
-    `<div class="card creator">` +
+    `<article class="creator" data-capability-id="F008">` +
+    `<div class="creator-head"><div>` +
     (c.sample ? '<span class="sample">見本</span>' : '') +
-    `<span class="vbadge">✓ 実在証明ページあり</span>` +
     `<h3>${esc(c.name)}</h3>` +
-    `<p class="cat">${esc(c.category)}</p>` +
-    `<p class="desc">${esc(c.desc)}</p>` +
-    `<div class="links">` +
-    Object.entries(c.links).map(([label, url]) =>
-      `<a href="${esc(url)}" ${url === '#' ? '' : 'target="_blank" rel="noopener"'}>${esc(label)}</a>`).join('') +
+    `<div class="creator-meta">✓ 実在証明ページあり · ${esc(c.category)}</div>` +
     `</div>` +
-    `<div class="promise">約束: <b>${esc(c.promise)}</b></div>` +
-    `</div>`).join('');
+    (c.sample ? '<span class="sample-flag">サンプル</span>' : '') +
+    `</div>` +
+    `<p>${esc(c.desc)}</p>` +
+    `<div class="promise">約束: ${esc(c.promise)}</div>` +
+    `<div class="creator-links">` +
+    Object.entries(c.links).map(([label, url]) =>
+      `<a href="${esc(url)}" ${url === '#' ? '' : 'target="_blank" rel="noopener"'} data-capability-id="F008">${esc(label)}</a>`).join('') +
+    `</div>` +
+    `</article>`).join('');
   $('empty').style.display = shown.length ? 'none' : 'block';
 }
 
@@ -172,7 +175,11 @@ $('filters').addEventListener('click', e => {
   const btn = e.target.closest('button[data-cat]');
   if (!btn) return;
   activeCat = btn.dataset.cat;
-  document.querySelectorAll('#filters button').forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('#filters button').forEach(b => {
+    const on = b === btn;
+    b.classList.toggle('active', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });
   render();
 });
 $('q').addEventListener('input', render);

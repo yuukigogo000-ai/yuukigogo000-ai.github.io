@@ -1,14 +1,14 @@
 // 新規ページがスマホ幅で横に溢れていないかだけを機械的に見る(見た目の良し悪しは判定しない)。
 const { chromium } = require('playwright-core');
 const fs = require('fs'); const path = require('path'); const http = require('http');
-const REPO = path.resolve('C:/Users/gogyo/AppData/Local/Temp/hbk/site');
-const PORT = 8772;
+const REPO = path.resolve(process.env.SITE_ROOT || path.join(__dirname, '..', '..'));
+let PORT = 0;
 const MIME = { '.html':'text/html; charset=utf-8', '.css':'text/css; charset=utf-8', '.js':'text/javascript; charset=utf-8', '.json':'application/json; charset=utf-8', '.png':'image/png', '.svg':'image/svg+xml' };
 function findBrowser(){ for (const c of ['C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe','C:/Program Files/Microsoft/Edge/Application/msedge.exe','C:/Program Files/Google/Chrome/Application/chrome.exe']) if (fs.existsSync(c)) return c; throw new Error('no browser'); }
-function serve(){ return new Promise(res=>{ const s=http.createServer((q,p)=>{ let u=decodeURIComponent(q.url.split('?')[0]); if(u.endsWith('/'))u+='index.html'; const f=path.join(REPO,u); if(!f.startsWith(REPO)||!fs.existsSync(f)||fs.statSync(f).isDirectory()){p.writeHead(404);p.end();return;} p.writeHead(200,{'Content-Type':MIME[path.extname(f)]||'application/octet-stream'}); fs.createReadStream(f).pipe(p); }); s.listen(PORT,()=>res(s)); }); }
+function serve(){ return new Promise(res=>{ const s=http.createServer((q,p)=>{ let u=decodeURIComponent(q.url.split('?')[0]); if(u.endsWith('/'))u+='index.html'; const f=path.join(REPO,u); if(!f.startsWith(REPO)||!fs.existsSync(f)||fs.statSync(f).isDirectory()){p.writeHead(404);p.end();return;} p.writeHead(200,{'Content-Type':MIME[path.extname(f)]||'application/octet-stream'}); fs.createReadStream(f).pipe(p); }); s.listen(0,'127.0.0.1',()=>{PORT=s.address().port;res(s);}); }); }
 
-const URLS = ['/honmono/','/honmono/report/','/honmono/business/','/honmono/legal/privacy.html','/honmono/legal/terms.html','/honmono/legal/credits.html','/honmono/creators/','/honmono/docs/','/honmono/aicheck/'];
-const SIZES = [[360,800],[390,844]];
+const URLS = ['/honmono/','/honmono/checker/','/honmono/badge/','/honmono/report/','/honmono/business/','/honmono/legal/privacy.html','/honmono/legal/terms.html','/honmono/legal/credits.html','/honmono/creators/','/honmono/docs/','/honmono/aicheck/'];
+const SIZES = [[360,800],[390,844],[430,932],[1280,900]];
 
 (async () => {
   const server = await serve();
@@ -40,5 +40,5 @@ const SIZES = [[360,800],[390,844]];
   }
   await browser.close(); server.close();
   if (bad.length) { console.log('横溢れ '+bad.length+'件:'); bad.forEach(b=>console.log('  - '+b)); process.exit(1); }
-  console.log('OVERFLOW PASS — 360/390px とも横スクロールなし ('+URLS.length*SIZES.length+'通り)');
+  console.log('OVERFLOW PASS — 360/390/430/1280px とも横スクロールなし ('+URLS.length*SIZES.length+'通り)');
 })();

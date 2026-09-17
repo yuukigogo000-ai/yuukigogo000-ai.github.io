@@ -26,8 +26,8 @@
 
 ## 3. 保証しないこと(重要)
 
-このモデルは**確率を出す道具であって、真偽の判定装置ではありません。**
-公開されている実測値(学習に一切使っていない外部545枚・顔615枚)は次のとおりです。
+このモデルは**未較正のスコアを出す道具であって、真偽の判定装置ではありません。**
+過去の実測値は次のとおりです。545枚はしきい値選択に参照し、顔615枚は選択用dev由来の追加診断です。独立した性能保証ではありません。
 
 | 測定 | 値 |
 |---|---|
@@ -44,11 +44,11 @@
 
 ## 4. 学習データについて
 
-学習には、**商用利用が明示的に許諾されたデータのみ**を使用しています。
+当時はデータのライセンス表示を確認して選定しました。ただし、取得方法の契約上の論点と、情報解析・モデル配布の法的評価は別です。過去の自動取得には未確認事項があり、すべての権利・用途を保証するものではありません。
 ライセンスが未記載・非商用・研究目的限定のデータセットは、22件を明示的に除外しました。
 内訳と除外理由は [学習データの出典](https://yuukigogo000-ai.github.io/honmono/report/#data) に公開しています。
 
-学習に使った画像そのものは配布していません(配布権を持たないため)。
+学習に使った画像そのものは、本モデルの配布物に含めていません。
 
 ---
 
@@ -63,11 +63,18 @@ redistribution in any form (as-is, modified, retrained or distilled); offering i
 (API/SaaS/analysis-for-hire); using the HONMONO name or its published figures in marketing.
 Contact: https://yuukigogo000-ai.github.io/honmono/business/
 
-**No warranty.** This model outputs a probability, not a verdict. It misses roughly 40% of images from
+**No warranty.** This model outputs an uncalibrated score, not a probability or a verdict. It misses roughly 40% of images from
 2025-generation generators and cannot be used to prove that something is *not* AI-generated.
 Do not make adverse decisions about an identifiable person based on this model alone.
 Except in cases of wilful misconduct or gross negligence, the HONMONO project accepts no liability.
 
-**Training data:** only datasets whose terms explicitly permit commercial use. 22 datasets with
+**Training data:** source license labels were checked, but questions about automated/bulk acquisition remain distinct from the legal analysis of information analysis and model distribution. No comprehensive rights clearance is warranted. 22 datasets with
 missing, non-commercial or research-only terms were excluded. The training images themselves are
 not redistributed.
+
+
+## 2026-09-17 clarification / 補足
+
+この補足は上記の既存の利用許諾を遡って取り消すものではありません。新たな商用組込み・再配布は、上記第2節に従い用途と契約範囲を個別に確認します。個別許諾書取得や全面再学習を一律の前提とはしません。545枚はしきい値選択に参照し、顔615枚は選択用dev由来でした。完全な独立評価という説明を訂正します。出力スコアは個別画像の真偽確率ではありません。
+
+This notice does not retroactively revoke the existing grant. New commercial-embedding or redistribution arrangements are considered individually under section 2. A blanket permission-letter or full-retraining prerequisite does not apply; this is not a comprehensive legal warranty. The 545-image set informed threshold selection, and the 615 face crops derive from selection-dev sources; neither is presented as a fully blind test.
