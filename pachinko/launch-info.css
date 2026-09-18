@@ -1,0 +1,65 @@
+/* Dedicated launch information pages; artwork is reused from the supplied sheets. */
+.pachi-info{--pi-gold:#ffe19a;--pi-line:rgba(230,185,82,.34);--pi-text:#f7eddd;--pi-muted:#c7bca8;position:absolute;inset:0;z-index:25;display:flex;flex-direction:column;color:var(--pi-text);background:linear-gradient(rgba(8,7,5,.94),rgba(6,6,5,.97)),url("./art/launch-exact/title-hall.webp") center/cover;font-family:PachiUI,"Yu Gothic",sans-serif;text-align:left}
+.pachi-info[hidden]{display:none!important}
+.pi-head{position:relative;z-index:1;transform:translateZ(0);flex:none;display:grid;grid-template-columns:72px minmax(0,1fr) 42px;gap:8px;align-items:center;padding:calc(var(--sat) + 17px) 16px 18px;border-bottom:1px solid var(--pi-line);background:rgba(10,9,6,.92)}
+.pi-head h2{margin:4px 0 0;font:800 25px/1.35 PachiMincho,serif;color:var(--pi-gold);letter-spacing:.03em}
+.pi-head img{width:42px;height:auto;object-fit:contain}
+.pachi-info .pi-eyebrow{display:block;margin:0;font:600 8px/1.5 Georgia,serif;letter-spacing:.15em;color:#d6b873}
+.pi-back{display:flex;align-items:center;justify-content:center;gap:5px;min-height:44px;padding:0 9px;border:1px solid var(--pi-line);border-radius:6px;background:#15130e;color:var(--pi-gold);font:700 13px PachiUI,sans-serif}
+.pi-back span{font:26px/1 Arial}
+.pi-tabs{flex:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:12px 16px;background:rgba(10,9,6,.96);border-bottom:1px solid var(--pi-line)}
+.pi-tabs button{min-height:44px;padding:8px 4px;border:1px solid transparent;border-radius:6px;background:transparent;color:var(--pi-muted);font:700 13px PachiUI,sans-serif}
+.pi-tabs button[aria-selected="true"]{color:#241704;border-color:#ffe8a0;background:linear-gradient(135deg,#fff0aa,#d6a636);box-shadow:0 3px 12px #0005}
+.pi-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:20px 16px calc(var(--sab) + 28px);scroll-padding:16px;scrollbar-width:thin;scrollbar-color:#9b7b3b #0a0906}
+.pachi-info p{font-size:13px;line-height:1.8;margin:8px 0 0;color:var(--pi-muted);overflow-wrap:anywhere}
+.pi-lead{padding:2px 2px 20px}
+.pi-lead h3{font:800 21px/1.55 PachiMincho,serif;color:var(--pi-gold);margin:6px 0}
+.pi-goal{padding:22px 18px;margin-bottom:22px;border:1px solid var(--pi-line);border-radius:10px;background:linear-gradient(110deg,rgba(8,7,5,.68),rgba(8,7,5,.89)),url("./art/launch-exact/panel-marble.webp") center/100% 100%;box-shadow:inset 0 1px #ffe69b15}
+.pi-goal h3{margin:10px 0 0;font:700 18px/1.5 PachiMincho,serif;color:#f4dfaf}
+.pi-goal strong{display:block;font:800 43px/1.35 PachiMincho,serif;color:#ffe9a4;letter-spacing:.04em}
+.pi-goal p{font-size:12px}
+.pi-card{min-width:0;margin:0 0 18px;padding:18px 16px;border:1px solid var(--pi-line);border-radius:10px;background:linear-gradient(145deg,#211c12cc,#0e0e0ce6);box-shadow:inset 0 1px #ffe69b0c}
+.pi-card>h3,.pi-field legend{font:700 16px/1.5 PachiUI,sans-serif;color:var(--pi-gold);margin:0 0 14px}
+.pi-steps{padding:0;margin:0;list-style:none}
+.pi-steps li{display:flex;gap:13px;align-items:flex-start}
+.pi-steps li+li{margin-top:20px;padding-top:18px;border-top:1px solid #d6b8731f}
+.pi-step-no{flex:none;display:grid;place-items:center;width:32px;height:32px;margin-top:2px;border:1px solid #d6b87366;border-radius:6px;background:#e2bd5e12;color:var(--pi-gold);font:700 14px Georgia,serif}
+.pi-steps h3{font:700 14px/1.5 PachiUI,sans-serif;margin:0;color:#f6eddd}
+.pi-steps p{margin-top:5px}
+.pi-map{margin:0}
+.pi-map>div{display:grid;grid-template-columns:70px minmax(0,1fr);gap:12px;padding:11px 0;border-top:1px solid #d6b8731f}
+.pi-map>div:first-child{border:0;padding-top:0}
+.pi-map dt{font-size:13px;font-weight:700;color:var(--pi-gold)}
+.pi-map dd{margin:0;font-size:13px;line-height:1.75;color:var(--pi-muted)}
+.pi-list{padding-left:18px;margin:0;font-size:13px;line-height:1.85;color:var(--pi-muted)}
+.pi-list li+li{margin-top:10px}
+.pi-list strong{color:var(--pi-text)}
+.pi-tip{margin:0 0 12px;border:1px solid var(--pi-line);border-radius:10px;background:#15130fcc}
+.pi-tip summary{cursor:pointer;min-height:54px;padding:16px 13px;color:var(--pi-gold);font:700 14px/1.6 PachiUI,sans-serif;list-style-position:inside}
+.pi-tip p{margin:0;padding:0 17px 18px}
+.pi-diff{padding:18px 16px;margin:0 0 14px;border:1px solid #e5bc5666;border-radius:10px;background:linear-gradient(110deg,#10100de8,#10100dbb),url("./art/launch-exact/difficulty-normal.webp") center/cover}
+.pi-diff.easy{border-color:#58b88888;background-image:linear-gradient(110deg,#10100de8,#10100dbb),url("./art/launch-exact/difficulty-easy.webp")}
+.pi-diff.hard,.pi-diff.hardx{border-color:#db6c6288;background-image:linear-gradient(110deg,#10100de8,#10100dbb),url("./art/launch-exact/difficulty-hard.webp")}
+.pi-diff h3{margin:0 0 14px;font:800 24px PachiMincho,serif;color:var(--pi-gold)}
+.pi-diff dl{display:grid;grid-template-columns:1.5fr 1fr;gap:12px;margin:0}
+.pi-diff dt{font-size:11px;color:var(--pi-muted)}.pi-diff dd{margin:4px 0 0;font-size:19px;font-weight:700;color:var(--pi-text);font-variant-numeric:tabular-nums}
+.pi-bottom{padding:8px 0 0}.pi-bottom .launch-mini{width:100%;min-height:54px;display:flex;justify-content:space-between;align-items:center;padding:0 18px}
+.pachi-info .pi-note{font-size:11px;line-height:1.8;color:#bcaf98;margin-top:12px}
+.pi-field{padding-top:12px}.pi-field legend{padding:0 7px;margin:0 0 0 -7px}
+.pi-field .pi-description{margin:0 0 12px;font-size:12px}
+.pi-choice{display:flex;align-items:center;gap:12px;padding:13px 12px;min-height:68px;margin-top:9px;border:1px solid #d6b87330;border-radius:6px;background:#09090866;cursor:pointer}
+.pi-choice:has(input:checked){background:#c4962820;border-color:#e4c46f}
+.pi-choice input{appearance:auto;-webkit-appearance:radio;flex:none;width:20px;height:20px;margin:0;accent-color:#ebc969}
+.pi-choice strong{display:block;font-size:14px;color:var(--pi-text);line-height:1.5}
+.pi-choice small{display:block;margin-top:4px;font-size:11px;line-height:1.75;color:var(--pi-muted)}
+.pachi-info .pi-status{min-height:40px;margin:0 2px 16px;font-size:12px;color:var(--pi-gold)}
+.pi-save-state{display:flex;gap:9px;align-items:flex-start;font-size:13px;line-height:1.7}
+.pi-dot{flex:none;width:7px;height:7px;border-radius:50%;background:#847a67;margin-top:7px}.pi-dot.available{background:#79d79e;box-shadow:0 0 9px #79d79e44}
+.pi-wide{width:100%;margin-top:16px}
+.pi-reset{width:100%;min-height:48px;padding:10px;border:1px solid var(--pi-line);border-radius:6px;background:transparent;color:var(--pi-gold);font:700 13px PachiUI,sans-serif}
+.pachi-info :is(button,input,summary,[tabindex]):focus-visible{outline:2px solid #fff0b5;outline-offset:3px}
+html.pachi-reduce-motion *,html.pachi-reduce-motion *::before,html.pachi-reduce-motion *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+@media(max-width:370px){.pi-head{padding-left:12px;padding-right:12px;grid-template-columns:64px minmax(0,1fr) 32px}.pi-head img{width:32px}.pi-head h2{font-size:23px}.pi-scroll{padding-left:12px;padding-right:12px}.pi-tabs{padding-left:12px;padding-right:12px}.pi-eyebrow{font-size:7px}.pi-card{padding-left:14px;padding-right:14px}}
+
+/* Honor OS motion preferences in CSS even before a media change event is delivered. */
+@media(prefers-reduced-motion:reduce){html *,html *::before,html *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
