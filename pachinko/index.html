@@ -1326,6 +1326,17 @@ svg{flex:0 0 auto}
     <section class="panel" id="panel-mgmt" aria-label="経営">
       <div class="sec">
         <div class="sec-h"><i class="bar"></i><h2>店長室</h2><span class="sub">OWNER ROOM</span></div>
+        <div class="gp" id="saveDataCard" style="margin-bottom:6px">
+          <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-save"/></svg><b>データ</b></div>
+          <div class="gp-b">
+            <div class="btn-grid">
+              <button class="btn" id="btnSave">セーブ</button>
+              <button class="btn red" id="btnReset">やり直す</button>
+            </div>
+            <p class="note">営業終了ごとに自動セーブもされます(このブラウザ内)。</p>
+          </div>
+        </div>
+
         <div id="acts"></div>
 
         <div class="gp" id="ceCard" style="margin-bottom:6px"></div>
@@ -1430,16 +1441,6 @@ svg{flex:0 0 auto}
           </div>
         </div>
 
-        <div class="gp">
-          <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-save"/></svg><b>データ</b></div>
-          <div class="gp-b">
-            <div class="btn-grid">
-              <button class="btn" id="btnSave">セーブ</button>
-              <button class="btn red" id="btnReset">やり直す</button>
-            </div>
-            <p class="note">営業終了ごとに自動セーブもされます(このブラウザ内)。</p>
-          </div>
-        </div>
       </div>
     </section>
 
@@ -3014,8 +3015,8 @@ function renderMgmt() {
   $("heatNote").textContent = state.heat > 8
     ? "危険!いつ行政指導(罰金50万+評判-8)が入ってもおかしくない。数日設定を開けて沈静化を。"
     : state.heat > 5
-    ? "警戒レベル。渋い営業(平均設定2.6未満)を続けると警戒度が上がっていく。"
-    : "平常。平均設定2.6未満の営業を続けると警戒度が上昇し、指導リスクが高まる。";
+    ? "警戒レベル。平均設定が渋い営業を続けると警戒度が上がっていく。"
+    : "平常。平均設定が渋い営業を続けると警戒度が上昇し、指導リスクが高まる。";
   $("btnReset").disabled = false;
 }
 
