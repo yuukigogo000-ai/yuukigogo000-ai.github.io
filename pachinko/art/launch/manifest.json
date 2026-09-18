@@ -1,0 +1,38 @@
+{
+  "diff-easy.webp": {
+    "bytes": 17060,
+    "sha256": "f0cdd9cc4d58b2041bb692ed80f6d3fe18d691e08b7f95cde0754fff1bea3d0e"
+  },
+  "diff-hard.webp": {
+    "bytes": 14816,
+    "sha256": "e2e28adad93ce13421b34fe28bcedbcec0c126e8e2faefc8e1aef3d0de1e2c4c"
+  },
+  "diff-normal.webp": {
+    "bytes": 17358,
+    "sha256": "420e7de836b47bb299bc40bbd738d30d0530b9cef94f5f714d26a439b8a7ec21"
+  },
+  "kaisei-decol-bold-subset.woff2": {
+    "bytes": 170580,
+    "sha256": "d82a630bc1431eb046908649e10f23101ef8fef74cc49118d8772310161b01f8"
+  },
+  "OFL-kaisei-decol.txt": {
+    "bytes": 4475,
+    "sha256": "2270d983e0e7f440ecf899711485d211119a23a1ac9a5ccbcd7a481e98e48fa1"
+  },
+  "OFL-zen-kaku-gothic-new.txt": {
+    "bytes": 4494,
+    "sha256": "0ddc9b100bb908c51808310de2e067ff15d49f9f4a8621db9c11475fcff991af"
+  },
+  "title-bg.webp": {
+    "bytes": 47006,
+    "sha256": "191f8649492d50335a6c8ce21c49017e53703ae68fd271a8784be2b322136a44"
+  },
+  "zen-kaku-bold-subset.woff2": {
+    "bytes": 60748,
+    "sha256": "6a4287ec4c205204fd94eec6c786cacbb99e06a20c9dd58fea9ea2bbd0e92553"
+  },
+  "zen-kaku-regular-subset.woff2": {
+    "bytes": 61520,
+    "sha256": "e058fe8cdbd4db6da7fc8820d12ff5a67fb2a608e8b8374b78242e57c2e7f8f5"
+  }
+}

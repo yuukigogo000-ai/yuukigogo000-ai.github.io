@@ -1119,6 +1119,7 @@ svg{flex:0 0 auto}
 .volb.v1{color:var(--tx-2);border-color:var(--line-w)}
 .volb.v2{color:var(--neg);border-color:rgba(255,110,90,.5)}
 </style>
+<link rel="stylesheet" href="./start-ui.css">
 </head>
 <body>
 <svg class="sr-only" aria-hidden="true"><defs>
@@ -1472,6 +1473,7 @@ svg{flex:0 0 auto}
 <div id="curtain"><div class="fl"></div><div class="tx">開店</div></div>
 <div id="toasts" aria-live="polite"></div>
 
+<script src="./start-ui.js"></script>
 <script>
 /* ==========================================================================
    GAME LOGIC CORE — Function Freeze 保護対象
@@ -6533,6 +6535,7 @@ function renderCalamity() {
    ========================================================================== */
 let pendingUnlock = false;
 function showModal(html) {
+  peLeaveVisual();
   $("modalBox").innerHTML = html;
   $("modalBg").classList.add("show");
   $("modalBg").scrollTop = 0;
@@ -6540,11 +6543,12 @@ function showModal(html) {
 function closeModal() {
   // 倒産後はモーダルを閉じられない(リセットのみ)。doResetはstateを先に差し替えるので通る
   if (isDead()) { showEndModal(); return; }
+  peLeaveVisual();
   $("modalBg").classList.remove("show");
   renderAll();
   if (pendingUnlock) { pendingUnlock = false; rgShowUnlock(); }
 }
-$("modalBg").addEventListener("click", e => { if (e.target === $("modalBg")) closeModal(); });
+$("modalBg").addEventListener("click", e => { if (e.target === $("modalBg") && !$("modalBg").classList.contains("entry-mode")) closeModal(); });
 window.closeModal = closeModal;
 
 /* ---------- 確認ダイアログ ----------
@@ -6882,41 +6886,7 @@ function startGame(diff, sub) {
 }
 window.startGame = startGame;
 
-function showTutorial() {
-  const item = (icon, title, body) =>
-    `<div class="ev" style="align-items:flex-start"><span style="color:var(--gold)">${ic(icon)}</span>
-      <span><b style="display:block;color:var(--gold-hi);font-size:12px;margin-bottom:2px">${title}</b>${body}</span></div>`;
-  showModal(`
-    <div class="res-hero">
-      <img class="res-art" src="./art/hall_crowd.jpg" alt="" decoding="async">
-      <div role="img" aria-label="パチンコ店経営シミュレーション 〜目指せ、純資産1億円〜">
-        <div aria-hidden="true" style="font-size:clamp(19px,6.2vw,25px);font-weight:900;letter-spacing:.04em;line-height:1.2;
-          background:linear-gradient(180deg,#fff6d0,#ffd43b 46%,#a8720f);-webkit-background-clip:text;background-clip:text;color:transparent">パチンコ店経営<br>シミュレーション</div>
-        <div aria-hidden="true" style="font-size:clamp(9.5px,3vw,11.5px);letter-spacing:.04em;color:var(--gold-lo);margin-top:5px;font-weight:700">〜目指せ、純資産1億円〜</div>
-      </div>
-    </div>
-    <div class="mb">
-      <p class="note" style="font-size:12px;color:var(--tx-2)">あなたは小さなパチンコホールの新米オーナー。<b>純資産1億円</b>の地域No.1ホールを目指そう!</p>
-      <div style="margin-top:8px">
-        ${item("target", "平均設定のメリハリがすべて", "ホールは<b>1シマ=同一機種10台</b>の単位で動かす。渋れば儲かるが評判が下がり<b>行政指導</b>のリスク。警戒される平均設定の線は難易度で違う(のんびり・標準は2.6、<b>修羅は4.0</b> ─ 修羅では渋り営業そのものが成立しない)。" + ((DIFFS.hard.calamMul || 0) > 0 ? "修羅で<b>熟練者</b>を選ぶと、維持費と収益がさらに厳しくなる代わりに、30枚の<b>商機</b>(家賃交渉・補助金・タイアップ・優先納品など)が日程ランダムで来る。早く来れば楽、遅ければ苦しい。" : "") + "出せば<b>常連</b>が育つが<b>プロ</b>に狙われる。「出すシマ」と「回収するシマ」を作り分けろ!")}
-        ${item("fire", "7のつく日は特日 / 週替わりブーム / シマ効果", "特日は高設定で評判爆上げ。ブームは<b>機種カテゴリ単位</b>で来て、その機種の集客力1.4倍 — ただし弱い機種はブームでも強い機種に届かない。同一機種を並べればシマ効果。機種には<b>荒さ</b>がある: 甘デジ・Aタイプは収支が安定、ミドル・爆裂・スマスロは客を呼ぶが<b>荒れ日</b>(店全体の出玉が大きく振れる日)が来る。")}
-        ${item("star", "評判は放っておくと落ちる", "客は前によかった店をいつまでも覚えていない。<b>評判が高いほど毎日の目減りは大きい</b>。上のほうを保つには出玉かスタッフの質で押し返し続けるしかない。")}
-        ${item("bank", "拡張は罰ではなく投資", "クリア条件の「純資産」は <b>現金＋台の簿価＋店舗簿価−借金</b>。シマ増設費は消えず<b>6割が店舗簿価として残る</b>ので、拡張は計算できる投資だ。ただし現金は出るし、広げた席を埋められなければ規模維持費で溶ける。")}
-      </div>
-      <p class="note" style="margin-top:10px;color:var(--gold-hi);font-weight:800">難易度を選んで開店:</p>
-      <div style="display:grid;gap:5px;margin-top:6px">
-        <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('easy')">
-          <span><b style="font-size:14px;color:var(--pos)">のんびり</b> <small style="color:var(--tx-3)">${LIMIT_DAYS.easy}日以内に1億 / まず潰れない・じっくり学べる</small></span>
-          <span class="num" style="font-size:14px;font-weight:900;color:var(--gold-hi)">${yen(DIFFS.easy.money)}</span></button>
-        <button class="btn wide gold" style="min-height:52px;justify-content:space-between" onclick="startGame('normal')">
-          <span><b style="font-size:14px">標準</b> <small>${LIMIT_DAYS.normal}日以内に1億 / 3割は間に合わない</small></span>
-          <span class="num" style="font-size:14px;font-weight:900">${yen(DIFFS.normal.money)}</span></button>
-        <button class="btn wide" style="min-height:52px;justify-content:space-between" onclick="startGame('hard')">
-          <span><b style="font-size:14px;color:var(--neg)">修羅</b> <small style="color:var(--tx-3)">${LIMIT_DAYS.hard}日以内に1億 / 腕を選べる(ふつう・熟練)</small></span>
-          <span class="num" style="font-size:14px;font-weight:900;color:var(--gold-hi)">${yen(DIFFS.hard.money)}</span></button>
-      </div>
-    </div>`);
-}
+function showTutorial() { peOpenTitle(); }
 
 /* ==========================================================================
    操作の結線
@@ -7107,20 +7077,11 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
   navigator.serviceWorker.register("./sw.js").catch(() => {});
 }
 
-/* ---- 起動 ---- */
+/* ---- 起動: セーブは読み込むだけ。再開時に既存の開始処理を実行する。 ---- */
 const loaded = load();
-if (loaded && Array.isArray(loaded.machines)) {
-  state = loaded;
-  renderAll();
-  try { lrBegin(); } catch (e) {}
-  try { ceInit(); ceClaimPending(); } catch (e) {}
-  try { dsInit(); } catch (e) {}
-  if (isDead()) showEndModal();
-} else {
-  state = newGame("normal");
-  renderAll();
-  showTutorial();
-}
+state = loaded && Array.isArray(loaded.machines) ? loaded : newGame("normal");
+renderAll();
+showTutorial();
 /* 起動後の空き時間に、営業演出の背景と代表素材だけ先に読んでおく */
 try { bdPreload(); } catch (e) {}
 </script>

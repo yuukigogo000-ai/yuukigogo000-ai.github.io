@@ -95,6 +95,8 @@ def exercise(browser, url, width, evidence, label):
     page.locator('#modalBox .rowbtns button').last.tap()
     snapshot = page.evaluate("({day:state.day,money:state.money,ad:state.ad,ids:lrState().ids})")
     page.reload(wait_until='load')
+    check(f"{label}: reload shows launch title", page.locator("#launchTitle.on").is_visible())
+    page.locator("#launchContinue").tap()
     check(f"{label}: reload preserves player progress", snapshot == page.evaluate("({day:state.day,money:state.money,ad:state.ad,ids:lrState().ids})"))
     page.evaluate("state.day=LIMIT_DAYS[state.diff]+1;ceShowResult(ceOf('evt11'),'min',{tx:'test'})")
     page.locator('[data-tile="closemodal"]').tap()
