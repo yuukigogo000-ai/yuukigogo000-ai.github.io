@@ -31,13 +31,18 @@ body.launch-open{overflow:hidden}
 .launch-footer strong{font:600 9px/1.3 Georgia,serif;letter-spacing:.30em}
 .launch-footer small{display:block;margin-top:3px;font:500 5.8px/1 Georgia,serif;letter-spacing:.22em}
 .launch-version{position:absolute;z-index:4;right:18px;bottom:calc(var(--sab) + 13px);font-size:8px;color:#d9c69a;opacity:.68}
-.launch-difficulty{background:linear-gradient(rgba(4,3,2,.72),rgba(3,2,1,.92)),url("./art/launch-v2/difficulty-bg.webp") center/cover no-repeat}
+.launch-difficulty{background:linear-gradient(180deg,rgba(2,2,1,.44),rgba(3,2,1,.83) 44%,rgba(3,2,1,.94)),url("./art/launch-v2/title-hall.webp") center 42%/cover no-repeat}
 .launch-difficulty:after{content:"";position:absolute;inset:0;background:url("./art/launch-v2/particles-01.png") center/cover;opacity:.07;pointer-events:none}
-.launch-diff-head{position:absolute;z-index:6;top:0;left:0;right:0;height:calc(var(--sat) + 61px);padding-top:var(--sat);display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg,rgba(5,4,2,.98),rgba(5,4,2,.90) 76%,rgba(5,4,2,0));border-bottom:1px solid rgba(224,174,56,.24)}
-.launch-back{position:absolute;left:12px;bottom:6px;height:46px;min-width:72px;display:flex;align-items:center;gap:4px;border:0;background:transparent;color:#fff0bd;font:700 15px PachiUI}
-.launch-back:before{content:"‹";font:300 34px/1 Arial}
-.launch-diff-head h2{margin:0 0 2px;font:800 24px/1 PachiMincho,serif;letter-spacing:.08em;color:#ffe9a4;text-shadow:0 0 12px rgba(255,195,55,.30)}
-.launch-diff-scroll{position:absolute;z-index:3;inset:0;overflow-y:auto;overscroll-behavior:contain;padding:calc(var(--sat) + 67px) 13px calc(var(--sab) + 94px);scrollbar-width:none}
+.launch-diff-head{position:absolute;z-index:6;top:0;left:0;right:0;height:calc(var(--sat) + 126px);padding-top:var(--sat);background:linear-gradient(180deg,rgba(5,4,2,.90),rgba(5,4,2,.63) 78%,rgba(5,4,2,0));border-bottom:1px solid rgba(224,174,56,.18)}
+.launch-back{position:absolute;left:12px;top:calc(var(--sat) + 18px);height:44px;min-width:82px;padding:0 14px 0 10px;display:flex;align-items:center;justify-content:center;gap:4px;border:1px solid #d8a739;background:rgba(7,6,3,.76);color:#fff0bd;font:700 15px PachiUI;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 50%,100% 100%,10px 100%,0 50%);box-shadow:0 0 12px rgba(255,190,55,.15)}
+.launch-back:before{content:"‹";font:300 32px/1 Arial}
+.launch-diff-brand{position:absolute;left:94px;right:18px;top:calc(var(--sat) + 8px);text-align:center;color:#f4d77c;text-shadow:0 2px 7px #000}
+.launch-diff-crown{display:block;width:52px;height:43px;margin:0 auto -3px;fill:#f4bd43;stroke:#fff0a5;stroke-width:.8;filter:drop-shadow(0 0 7px rgba(255,192,47,.25))}
+.launch-diff-brand:before,.launch-diff-brand:after{content:"";position:absolute;top:31px;width:24%;height:1px;background:linear-gradient(90deg,transparent,#e6b746)}
+.launch-diff-brand:before{left:0}.launch-diff-brand:after{right:0;transform:scaleX(-1)}
+.launch-diff-head h2{margin:0;font:800 31px/1 PachiMincho,serif;letter-spacing:.07em;color:#ffe9a4;text-shadow:0 0 12px rgba(255,195,55,.30)}
+.launch-diff-brand>div{margin-top:6px;font:600 8px/1 Georgia,serif;letter-spacing:.32em;color:#e7c26b}
+.launch-diff-scroll{position:absolute;z-index:3;inset:0;overflow-y:auto;overscroll-behavior:contain;padding:calc(var(--sat) + 133px) 13px calc(var(--sab) + 98px);scrollbar-width:none}
 .launch-diff-scroll::-webkit-scrollbar{display:none}
 .launch-rule-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .launch-rule{position:relative;overflow:hidden;min-height:143px;border:1px solid rgba(237,190,68,.76);border-radius:6px;background:#0b0906;box-shadow:inset 0 0 0 1px rgba(255,238,168,.035),0 5px 14px rgba(0,0,0,.30);isolation:isolate}
@@ -56,7 +61,7 @@ body.launch-open{overflow:hidden}
 .launch-diff-label:before,.launch-diff-label:after{content:"";height:1px;flex:1;background:linear-gradient(90deg,transparent,#e9ba4d)}
 .launch-diff-label:after{background:linear-gradient(90deg,#e9ba4d,transparent)}
 .launch-diff-options{display:grid;gap:8px}
-.launch-diff-card{position:relative;overflow:hidden;min-height:80px;border:1px solid var(--card);border-radius:7px;background:#070706;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;padding:9px 13px;text-align:left;color:#fff;isolation:isolate}
+.launch-diff-card{position:relative;overflow:hidden;min-height:92px;border:1px solid var(--card);border-radius:7px;background:#070706;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;padding:9px 13px;text-align:left;color:#fff;isolation:isolate}
 .launch-diff-card:before{content:"";position:absolute;inset:0;z-index:-2;background-position:center;background-size:cover;opacity:.72}
 .launch-diff-card:after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(2,3,3,.93) 0 31%,rgba(2,3,3,.45) 61%,rgba(2,3,3,.76))}
 .launch-diff-card.easy{--card:#35e98c}.launch-diff-card.easy:before{background-image:url("./art/launch-v2/difficulty-easy.webp")}
@@ -70,7 +75,7 @@ body.launch-open{overflow:hidden}
 .launch-price{display:flex;align-items:center;gap:7px;font:700 16px/1 PachiUI,sans-serif;color:#fff8e7;text-shadow:0 1px 5px #000;white-space:nowrap}
 .launch-price:after{content:"›";font:300 28px/1 Arial}
 .launch-diff-cta-wrap{position:absolute;z-index:7;left:0;right:0;bottom:0;padding:10px 13px calc(var(--sab) + 10px);background:linear-gradient(180deg,rgba(4,3,2,0),rgba(4,3,2,.97) 32%)}
-.launch-cta{width:100%;min-height:63px;border:1px solid #fff0a5;border-radius:7px;background:linear-gradient(180deg,#fff1a4,#f0c34e 48%,#b9790d);color:#171006;font:800 20px/1 PachiUI;box-shadow:inset 0 1px #fffbd5,0 0 20px rgba(255,190,45,.30)}
+.launch-cta{width:100%;min-height:67px;border:1px solid #fff0a5;border-radius:7px;background:linear-gradient(180deg,#fff1a4,#f0c34e 48%,#b9790d);color:#171006;font:800 20px/1 PachiUI;box-shadow:inset 0 1px #fffbd5,0 0 20px rgba(255,190,45,.30)}
 .launch-drawer[hidden]{display:none!important}
 .launch-drawer{position:absolute;z-index:20;inset:0;display:flex;align-items:flex-end}
 .launch-drawer-bg{position:absolute;inset:0;border:0;background:rgba(0,0,0,.76);backdrop-filter:blur(5px)}
