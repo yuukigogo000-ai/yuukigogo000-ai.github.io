@@ -845,27 +845,27 @@ body:not([data-screen]) main pre { background:#071521; border:1px solid var(--ed
  *,*:before,*:after { scroll-behavior:auto!important; animation:none!important; transition:none!important; }
 }
 
-body[data-page="home"] { --scene: url("assets/mint-marble/bg-home.webp"); --hero-art: url("assets/mint-marble/hero-home.webp"); --function-icon: url("assets/mint-marble/parts/icon-image-mint.svg"); }
+body[data-page="home"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-image-mint.svg"); }
 
-body[data-page="checker"] { --scene: url("assets/mint-marble/bg-checker.webp"); --hero-art: url("assets/mint-marble/hero-checker.webp"); --function-icon: url("assets/mint-marble/parts/icon-search-ice.svg"); }
+body[data-page="checker"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-search-ice.svg"); }
 
-body[data-page="badge"] { --scene: url("assets/mint-marble/bg-badge.webp"); --hero-art: url("assets/mint-marble/hero-badge.webp"); --function-icon: url("assets/mint-marble/parts/icon-link-mint.svg"); }
+body[data-page="badge"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-link-mint.svg"); }
 
-body[data-page="aicheck"] { --scene: url("assets/mint-marble/bg-aicheck.webp"); --hero-art: url("assets/mint-marble/hero-aicheck.webp"); --function-icon: url("assets/mint-marble/parts/icon-person-ice.svg"); }
+body[data-page="aicheck"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-person-ice.svg"); }
 
-body[data-page="creators"] { --scene: url("assets/mint-marble/bg-creators.webp"); --hero-art: url("assets/mint-marble/hero-creators.webp"); --function-icon: url("assets/mint-marble/parts/icon-person-mint.svg"); }
+body[data-page="creators"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-person-mint.svg"); }
 
-body[data-page="docs"] { --scene: url("assets/mint-marble/bg-docs.webp"); --hero-art: url("assets/mint-marble/hero-docs.webp"); --function-icon: url("assets/mint-marble/parts/icon-book-ice.svg"); }
+body[data-page="docs"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-book-ice.svg"); }
 
-body[data-page="report"] { --scene: url("assets/mint-marble/bg-report.webp"); --hero-art: url("assets/mint-marble/hero-report.webp"); --function-icon: url("assets/mint-marble/parts/icon-chart-ice.svg"); }
+body[data-page="report"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-chart-ice.svg"); }
 
-body[data-page="business"] { --scene: url("assets/mint-marble/bg-business.webp"); --hero-art: url("assets/mint-marble/hero-business.webp"); --function-icon: url("assets/mint-marble/parts/icon-code-mint.svg"); }
+body[data-page="business"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-code-mint.svg"); }
 
-body[data-page="privacy"] { --scene: url("assets/mint-marble/bg-privacy.webp"); --hero-art: url("assets/mint-marble/hero-privacy.webp"); --function-icon: url("assets/mint-marble/parts/icon-lock-mint.svg"); }
+body[data-page="privacy"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-lock-mint.svg"); }
 
-body[data-page="terms"] { --scene: url("assets/mint-marble/bg-terms.webp"); --hero-art: url("assets/mint-marble/hero-terms.webp"); --function-icon: url("assets/mint-marble/parts/icon-document-ice.svg"); }
+body[data-page="terms"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-document-ice.svg"); }
 
-body[data-page="credits"] { --scene: url("assets/mint-marble/bg-credits.webp"); --hero-art: url("assets/mint-marble/hero-credits.webp"); --function-icon: url("assets/mint-marble/parts/icon-spark-mint.svg"); }
+body[data-page="credits"] { --scene: none; --hero-art: none; --function-icon: url("assets/mint-marble/parts/icon-spark-mint.svg"); }
 
 /* Cinematic depth: ambience / sharp art / live content / foreground light.
    All art is the existing page-specific mint-marble set. No moving atmosphere. */

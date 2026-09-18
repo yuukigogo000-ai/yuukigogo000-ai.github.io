@@ -8,7 +8,9 @@
 <title>クレジット — HONMONO</title>
 <meta name="description" content="HONMONOが利用しているオープンソースソフトウェアと、AI判定モデルの学習に使ったデータセットの出典・ライセンス一覧。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
-<link rel="stylesheet" href="../honmono.css?v=20260918-cinematic-depth">
+<link rel="preload" href="../assets/fonts/honmono-text-regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/honmono-text-bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../honmono.css?v=20260918-layered-hero">
 <style>
   h2 { font-size: 1.05rem; margin-top: 26px; }
   main p, main li { font-size: .9rem; }
@@ -16,6 +18,7 @@
   .rev { font-size: .82rem; color: var(--muted); }
   .scroll { overflow-x: auto; }
 </style>
+<link rel="stylesheet" href="../hero.css?v=20260918-layered-hero">
 </head>
 <body data-page="credits">
 <header class="site-header"><div class="wrap header-row">
@@ -28,7 +31,16 @@
     <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
-<section class="page-hero"><div class="wrap"><div><div class="eyebrow">ライセンス・出典</div><h1>クレジット</h1></div></div></section>
+<section class="page-hero">
+  <div class="hero-art" aria-hidden="true">
+    <span class="hero-far-bg"></span>
+    <span class="hero-ambient-detail"></span>
+    <picture class="hero-object">
+      <source media="(max-width: 620px)" srcset="../assets/hero/credits/object-mobile.webp 1080w" sizes="(max-width: 360px) 80vw, 306px">
+      <img src="../assets/hero/credits/object-desktop.webp" srcset="../assets/hero/credits/object-desktop.webp 1254w" sizes="(max-width: 900px) 44vw, 530px" width="1254" height="1254" alt="" decoding="async" fetchpriority="high">
+    </picture>
+    <span class="hero-foreground"></span>
+  </div><div class="wrap"><div><div class="eyebrow">ライセンス・出典</div><h1>クレジット</h1></div></div></section>
 
 
 <main class="wrap"><div class="notice" style="margin:20px 0"><b>学習データと利用範囲について</b><p>出典のライセンス表示、取得方法、モデルの配布条件を区別して確認しています。過去の自動取得には未確認事項がありますが、それだけでモデルや本サイトの利用禁止が確定したものではありません。全用途の権利保証は行っていません。<a href="../design/DATA_RIGHTS_REVIEW_20260917.md">確認範囲と説明の訂正</a></p></div>

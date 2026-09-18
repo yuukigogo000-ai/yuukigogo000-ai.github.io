@@ -1,0 +1,671 @@
+{
+  "version": "layered-hero-20260918",
+  "baseline_native_object_pixels": [
+    320,
+    320
+  ],
+  "pages": [
+    {
+      "page": "badge",
+      "object_source": "exec-2059a65d-70ee-4e74-b090-f70f3784ab6a.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    },
+    {
+      "page": "checker",
+      "object_source": "exec-80328d83-fb13-42be-9331-1fa4227eb7b3.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    },
+    {
+      "page": "home",
+      "object_source": "exec-71c667d2-76d9-455a-b563-7b849845564b.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    },
+    {
+      "page": "aicheck",
+      "object_source": "exec-8c40e4dd-a921-4ce2-a755-16525f7cc85e.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    },
+    {
+      "page": "creators",
+      "object_source": "exec-8965a9cd-8ac6-47bd-9ed7-a08aebe61b37.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    },
+    {
+      "page": "docs",
+      "object_source": "exec-041bed72-ac90-4a49-a1aa-912f4627e481.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    },
+    {
+      "page": "report",
+      "object_source": "exec-c723cb2b-1dfa-4209-b7db-914ab83c23d7.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    },
+    {
+      "page": "business",
+      "object_source": "exec-8e33d7f2-ed9e-4030-9329-a0869dffa22b.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    },
+    {
+      "page": "privacy",
+      "object_source": "exec-065c85e7-2120-4730-9a51-bfeccd79f4e3.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    },
+    {
+      "page": "terms",
+      "object_source": "exec-f61ca90d-a63b-412b-a870-a68eaf61a0ed.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    },
+    {
+      "page": "credits",
+      "object_source": "exec-0c9f0824-fabe-4b09-8d4e-665c7c604893.png",
+      "native_pixels": [
+        1254,
+        1254
+      ],
+      "mobile_pixels": [
+        1080,
+        1080
+      ],
+      "desktop_pixels": [
+        1254,
+        1254
+      ],
+      "alpha": true,
+      "object_encoding": "lossless WebP",
+      "background_encoding": "quality-100 WebP; procedurally rendered at native dimensions",
+      "background_mobile": [
+        1800,
+        1800
+      ],
+      "background_desktop": [
+        3200,
+        1800
+      ],
+      "object_upscaled": false,
+      "text_in_artwork": false,
+      "foreground": "resolution-independent SVG"
+    }
+  ],
+  "assets": [
+    {
+      "path": "aicheck/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "41aa203806b2d44bc04050c1091bb1017bedaf4906b4d2cfd2688b413ddf6c31"
+    },
+    {
+      "path": "aicheck/bg-desktop.webp",
+      "bytes": 61910,
+      "sha256": "0f73b0f76ed5bede84028bdf64205084023387b8eef4c0931d691bcfd0e5852a"
+    },
+    {
+      "path": "aicheck/bg-mobile.webp",
+      "bytes": 38902,
+      "sha256": "e8bf0c70d56baab8e6264d614dff8d7a2006ddba725843d2cc7d99e73fed0c0b"
+    },
+    {
+      "path": "aicheck/foreground.svg",
+      "bytes": 660,
+      "sha256": "6417068192e801d7381052213599ce7e119148a711fde1ba69d9661c645c9022"
+    },
+    {
+      "path": "aicheck/object-desktop.webp",
+      "bytes": 960452,
+      "sha256": "6f3b059f1ebf6c4db8f5396c0ca71056c869c1514d335944a6a8168e8d16060c"
+    },
+    {
+      "path": "aicheck/object-mobile.webp",
+      "bytes": 767180,
+      "sha256": "8e58d7843ecf9699e28c070bb3a48358bf967126b6193fd5ccee49982cf0f8b8"
+    },
+    {
+      "path": "badge/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "5faa5bc12b15e5191fa4b87cbfa0e90fcff3540ca149d8b221130cd4116d4568"
+    },
+    {
+      "path": "badge/bg-desktop.webp",
+      "bytes": 60230,
+      "sha256": "e01204fe2a4ccca6d96ab70e21e90719f171161aaed6074ac4cff3935abb5f37"
+    },
+    {
+      "path": "badge/bg-mobile.webp",
+      "bytes": 36690,
+      "sha256": "83c60cb8b4acd02c07bcf52210d262ebb154a4d2ac1f3b563671474503e6060f"
+    },
+    {
+      "path": "badge/foreground.svg",
+      "bytes": 660,
+      "sha256": "1276bf47530bcccc9ebfa1d90e87beb171e45264bcb7b444340bbeb2b71d5cd2"
+    },
+    {
+      "path": "badge/object-desktop.webp",
+      "bytes": 863428,
+      "sha256": "9eb5ce2ce43a22a1ce71b867c5b77789977b725a690a928af7e3499d484eb483"
+    },
+    {
+      "path": "badge/object-mobile.webp",
+      "bytes": 689684,
+      "sha256": "a732455877bae2b8a86f172ecc95b51a3058fd16447e8e7e34d16599153711ad"
+    },
+    {
+      "path": "business/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "41aa203806b2d44bc04050c1091bb1017bedaf4906b4d2cfd2688b413ddf6c31"
+    },
+    {
+      "path": "business/bg-desktop.webp",
+      "bytes": 53872,
+      "sha256": "98601dc906f902d8407d940b240c9cde4488817727f28e09c9283a30e79dd0a8"
+    },
+    {
+      "path": "business/bg-mobile.webp",
+      "bytes": 32448,
+      "sha256": "ed4c1e771484a19f0b97c9d738cc08c240fa4d7dadd8815ecaf5d97d8fbb73c1"
+    },
+    {
+      "path": "business/foreground.svg",
+      "bytes": 660,
+      "sha256": "e19277f0f6b2f9ab38a873bd8f0bcbb563503033fe3202d92a7ef658f68d3d12"
+    },
+    {
+      "path": "business/object-desktop.webp",
+      "bytes": 778960,
+      "sha256": "b5e747dfb8f691a22d284cb53d737affd4eddaa29f56fe2b0a1a28bc9165585e"
+    },
+    {
+      "path": "business/object-mobile.webp",
+      "bytes": 620092,
+      "sha256": "a12b21ca7558bdf76e8c3bed0418d6c2140d956911ac2fbdfde702a413167eb4"
+    },
+    {
+      "path": "checker/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "41aa203806b2d44bc04050c1091bb1017bedaf4906b4d2cfd2688b413ddf6c31"
+    },
+    {
+      "path": "checker/bg-desktop.webp",
+      "bytes": 61598,
+      "sha256": "6dd5bcd05fe995a514fadb72feb52778e0a944e2ba4064973d08182196102c04"
+    },
+    {
+      "path": "checker/bg-mobile.webp",
+      "bytes": 38070,
+      "sha256": "37300d4274056613ac61f6dae1cdd5b6e54227179e0eb891eb43f9a20963d571"
+    },
+    {
+      "path": "checker/foreground.svg",
+      "bytes": 660,
+      "sha256": "b43ae0ec403e0e5c8abd695b7b12fba59c01bdda17176274650e8c270575811f"
+    },
+    {
+      "path": "checker/object-desktop.webp",
+      "bytes": 664716,
+      "sha256": "75853f565e2390523ffbc37b6a6525d116ffb6d50e2c77021d251ba8a9dc7323"
+    },
+    {
+      "path": "checker/object-mobile.webp",
+      "bytes": 525336,
+      "sha256": "1eeba0a29a19852b8f17afced29e6c1f9b82f3d2b102c2d4d8b1b1369a2d02f8"
+    },
+    {
+      "path": "creators/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "5faa5bc12b15e5191fa4b87cbfa0e90fcff3540ca149d8b221130cd4116d4568"
+    },
+    {
+      "path": "creators/bg-desktop.webp",
+      "bytes": 58830,
+      "sha256": "bbb4e5ae98ce857d345710a40685e707554210a9ed7cd34d2b96eec22afe6d1e"
+    },
+    {
+      "path": "creators/bg-mobile.webp",
+      "bytes": 35878,
+      "sha256": "83340f290633de99aa3b061733d4d9739b99c4aeff5b845c182daf48cf836e53"
+    },
+    {
+      "path": "creators/foreground.svg",
+      "bytes": 660,
+      "sha256": "929f7b3854243bf65738ae26122aa39f237325477d28b4c82ad098cb496c21ec"
+    },
+    {
+      "path": "creators/object-desktop.webp",
+      "bytes": 809438,
+      "sha256": "dd37581ecc2df59e493f3f53c350d3051aa3b08344667d1b7e16a8b766a3b485"
+    },
+    {
+      "path": "creators/object-mobile.webp",
+      "bytes": 647608,
+      "sha256": "a1ae694b8181b01634f267d020edc241046054945b75797fb1d2fed6764908a2"
+    },
+    {
+      "path": "credits/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "5faa5bc12b15e5191fa4b87cbfa0e90fcff3540ca149d8b221130cd4116d4568"
+    },
+    {
+      "path": "credits/bg-desktop.webp",
+      "bytes": 53162,
+      "sha256": "09f75ada9fd879e4a294619ddcc023a095903384d21d9fd552ab4085c7f52c79"
+    },
+    {
+      "path": "credits/bg-mobile.webp",
+      "bytes": 31808,
+      "sha256": "991485e0ecd28df2723955dcdc1105189158243bd15d8069564d79356923ca63"
+    },
+    {
+      "path": "credits/foreground.svg",
+      "bytes": 660,
+      "sha256": "d26590f4a6dbd6babefd74a42f4c8c01a52cb85b4e9a83c5942373ba2a541af7"
+    },
+    {
+      "path": "credits/object-desktop.webp",
+      "bytes": 1201744,
+      "sha256": "95135b8ab1f7138f824398e7dd071aa97c29cb5d41989933cd948a6a2ed05efd"
+    },
+    {
+      "path": "credits/object-mobile.webp",
+      "bytes": 948170,
+      "sha256": "6233f409216acb256ecc79b9b2295ee74b8b0a98f2f9ec1a840225c4bc0c7890"
+    },
+    {
+      "path": "docs/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "41aa203806b2d44bc04050c1091bb1017bedaf4906b4d2cfd2688b413ddf6c31"
+    },
+    {
+      "path": "docs/bg-desktop.webp",
+      "bytes": 52966,
+      "sha256": "ab82572ab68109fe459ba2bd2e9a197909c505105d224f7bb228a29f17b18d4d"
+    },
+    {
+      "path": "docs/bg-mobile.webp",
+      "bytes": 31638,
+      "sha256": "e69be95eba262ea5812c2848c362c09458818c2502facf18734a17097bf2993f"
+    },
+    {
+      "path": "docs/foreground.svg",
+      "bytes": 660,
+      "sha256": "de52c800f1194432119f9020a622bbe364d28766684992c022b793251d720f25"
+    },
+    {
+      "path": "docs/object-desktop.webp",
+      "bytes": 590310,
+      "sha256": "aaf972fc54a23d4720f19d1d1b09a540080b438cb527f1b1bf87647980da952e"
+    },
+    {
+      "path": "docs/object-mobile.webp",
+      "bytes": 468760,
+      "sha256": "854b0232fa3e634eadc1a4a1f86f7a8a7498995e429bb1bf537b58d15f89bdf1"
+    },
+    {
+      "path": "home/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "41aa203806b2d44bc04050c1091bb1017bedaf4906b4d2cfd2688b413ddf6c31"
+    },
+    {
+      "path": "home/bg-desktop.webp",
+      "bytes": 60032,
+      "sha256": "a37bbb52ab71d487c9e098bccdf97eb9984932f18e6071827eaa41757e26464c"
+    },
+    {
+      "path": "home/bg-mobile.webp",
+      "bytes": 36350,
+      "sha256": "99e3655d01832d35f7a59353898d8029153f5aa09f62007385ca86f81098125e"
+    },
+    {
+      "path": "home/foreground.svg",
+      "bytes": 660,
+      "sha256": "ee1a1af5b03f5064572b10609265e083e94a38c8ef643fdd01c9f256e44791fe"
+    },
+    {
+      "path": "home/object-desktop.webp",
+      "bytes": 1046610,
+      "sha256": "2d8a199abb6b31432842f33406e52ac4ca709241dccdd3699682b881f5f406f0"
+    },
+    {
+      "path": "home/object-mobile.webp",
+      "bytes": 834890,
+      "sha256": "cba73618f663291c1b380952d03b36b2a12f7ef98452ef4cc87024fc3bfdb307"
+    },
+    {
+      "path": "privacy/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "5faa5bc12b15e5191fa4b87cbfa0e90fcff3540ca149d8b221130cd4116d4568"
+    },
+    {
+      "path": "privacy/bg-desktop.webp",
+      "bytes": 53162,
+      "sha256": "09f75ada9fd879e4a294619ddcc023a095903384d21d9fd552ab4085c7f52c79"
+    },
+    {
+      "path": "privacy/bg-mobile.webp",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "privacy/foreground.svg",
+      "bytes": 660,
+      "sha256": "d26590f4a6dbd6babefd74a42f4c8c01a52cb85b4e9a83c5942373ba2a541af7"
+    },
+    {
+      "path": "privacy/object-desktop.webp",
+      "bytes": 743066,
+      "sha256": "7d8fb07b0aa621d2bde6cd48a00a6aa3b50e54425d6e12863ef25d736fbf3ed8"
+    },
+    {
+      "path": "privacy/object-mobile.webp",
+      "bytes": 590104,
+      "sha256": "878e70e34a0e7f716a902339bb39821f126ff21a1db6c4a7eaf5fd98a462a798"
+    },
+    {
+      "path": "report/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "41aa203806b2d44bc04050c1091bb1017bedaf4906b4d2cfd2688b413ddf6c31"
+    },
+    {
+      "path": "report/bg-desktop.webp",
+      "bytes": 54872,
+      "sha256": "253259d512ea4db1ac4f1e878033551de620912ba78eca7d83bbc027dca71c39"
+    },
+    {
+      "path": "report/bg-mobile.webp",
+      "bytes": 32762,
+      "sha256": "18eda34f01a391f31131a70c989c80f9eae80b8767a0ecdb8a2344117c52783a"
+    },
+    {
+      "path": "report/foreground.svg",
+      "bytes": 660,
+      "sha256": "bf9481ddb8f0d7b1cc5147c8522681eff2ae1b6915575505c76484bab3c2ac33"
+    },
+    {
+      "path": "report/object-desktop.webp",
+      "bytes": 662850,
+      "sha256": "ddf6cf0413acbe2504c296b511bf604b07520a869db12d936c057d589b45dc1d"
+    },
+    {
+      "path": "report/object-mobile.webp",
+      "bytes": 528004,
+      "sha256": "c04fdda09ad79f53202f2e56fca353cfae1c980ec4a0cfbdafd9b8a88bd5a8fb"
+    },
+    {
+      "path": "terms/ambient-detail.svg",
+      "bytes": 433,
+      "sha256": "41aa203806b2d44bc04050c1091bb1017bedaf4906b4d2cfd2688b413ddf6c31"
+    },
+    {
+      "path": "terms/bg-desktop.webp",
+      "bytes": 54674,
+      "sha256": "d890e1381eac80ca6d5d58975aa1feff63e2c4b53340bd37051cb52062eec521"
+    },
+    {
+      "path": "terms/bg-mobile.webp",
+      "bytes": 33276,
+      "sha256": "66d3f61ab65b02daa3b0e190bc2f31a422ef846fd746dab6018e6dc045c6092b"
+    },
+    {
+      "path": "terms/foreground.svg",
+      "bytes": 660,
+      "sha256": "73c24ed36286dccaeb0b35360e4ef01f0a4d7f1ee745d4afd1bcbc3449378013"
+    },
+    {
+      "path": "terms/object-desktop.webp",
+      "bytes": 552904,
+      "sha256": "edd93128259ca17a525cda035a316e33532edf64102a930a7155d1059c8d7e32"
+    },
+    {
+      "path": "terms/object-mobile.webp",
+      "bytes": 443610,
+      "sha256": "0f23af3fdc7e152e74333a03c20c5a9324564613e4cfb793528f0c7fdcc1eb69"
+    }
+  ]
+}

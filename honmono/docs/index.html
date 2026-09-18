@@ -14,7 +14,10 @@
 <meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/docs/">
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="../honmono.css?v=20260918-cinematic-depth">
+<link rel="preload" href="../assets/fonts/honmono-text-regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/honmono-text-bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../honmono.css?v=20260918-layered-hero">
+<link rel="stylesheet" href="../hero.css?v=20260918-layered-hero">
 </head>
 <body data-screen="screen-guide" data-page="docs">
 <header class="site-header"><div class="wrap header-row">
@@ -28,7 +31,16 @@
   </nav>
 </div></header>
 
-<section class="page-hero"><div class="wrap"><div>
+<section class="page-hero">
+  <div class="hero-art" aria-hidden="true">
+    <span class="hero-far-bg"></span>
+    <span class="hero-ambient-detail"></span>
+    <picture class="hero-object">
+      <source media="(max-width: 620px)" srcset="../assets/hero/docs/object-mobile.webp 1080w" sizes="(max-width: 360px) 80vw, 306px">
+      <img src="../assets/hero/docs/object-desktop.webp" srcset="../assets/hero/docs/object-desktop.webp 1254w" sizes="(max-width: 900px) 44vw, 530px" width="1254" height="1254" alt="" decoding="async" fetchpriority="high">
+    </picture>
+    <span class="hero-foreground"></span>
+  </div><div class="wrap"><div>
   <div class="eyebrow">操作方法・判定の限界</div>
   <h1>使い方ガイド</h1>
   <p class="lede">使うツール、判定の意味、限界、プライバシーを一つの文書で確認できます。</p>

@@ -14,7 +14,9 @@
 <meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/report/">
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="../honmono.css?v=20260918-cinematic-depth">
+<link rel="preload" href="../assets/fonts/honmono-text-regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/honmono-text-bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../honmono.css?v=20260918-layered-hero">
 <style>
   .toc { font-size: .9rem; }
   .toc a { display: inline-block; margin: 2px 10px 2px 0; }
@@ -26,6 +28,7 @@
   .srclist { font-size: .82rem; line-height: 1.75; }
   .srclist code { font-size: .95em; }
 </style>
+<link rel="stylesheet" href="../hero.css?v=20260918-layered-hero">
 </head>
 <body data-page="report">
 <header class="site-header"><div class="wrap header-row">
@@ -38,7 +41,16 @@
     <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
-<section class="page-hero"><div class="wrap"><div><div class="eyebrow">モデル評価レポート</div><h1>判定精度と実測結果</h1></div></div></section>
+<section class="page-hero">
+  <div class="hero-art" aria-hidden="true">
+    <span class="hero-far-bg"></span>
+    <span class="hero-ambient-detail"></span>
+    <picture class="hero-object">
+      <source media="(max-width: 620px)" srcset="../assets/hero/report/object-mobile.webp 1080w" sizes="(max-width: 360px) 80vw, 306px">
+      <img src="../assets/hero/report/object-desktop.webp" srcset="../assets/hero/report/object-desktop.webp 1254w" sizes="(max-width: 900px) 44vw, 530px" width="1254" height="1254" alt="" decoding="async" fetchpriority="high">
+    </picture>
+    <span class="hero-foreground"></span>
+  </div><div class="wrap"><div><div class="eyebrow">モデル評価レポート</div><h1>判定精度と実測結果</h1></div></div></section>
 
 
 <main class="wrap">

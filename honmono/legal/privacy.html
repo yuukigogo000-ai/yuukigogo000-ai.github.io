@@ -8,12 +8,15 @@
 <title>プライバシー — HONMONO</title>
 <meta name="description" content="HONMONOのプライバシーポリシー。画像・入力内容はサーバーに送信されません。端末に保存されるもの、外部に伝わる情報を正確に記載しています。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
-<link rel="stylesheet" href="../honmono.css?v=20260918-cinematic-depth">
+<link rel="preload" href="../assets/fonts/honmono-text-regular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="../assets/fonts/honmono-text-bold.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="../honmono.css?v=20260918-layered-hero">
 <style>
   h2 { font-size: 1.05rem; margin-top: 26px; }
   main p, main li { font-size: .9rem; }
   .rev { font-size: .82rem; color: var(--muted); }
 </style>
+<link rel="stylesheet" href="../hero.css?v=20260918-layered-hero">
 </head>
 <body data-page="privacy">
 <header class="site-header"><div class="wrap header-row">
@@ -26,7 +29,16 @@
     <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
-<section class="page-hero"><div class="wrap"><div><div class="eyebrow">情報の取り扱い</div><h1>プライバシー</h1></div></div></section>
+<section class="page-hero">
+  <div class="hero-art" aria-hidden="true">
+    <span class="hero-far-bg"></span>
+    <span class="hero-ambient-detail"></span>
+    <picture class="hero-object">
+      <source media="(max-width: 620px)" srcset="../assets/hero/privacy/object-mobile.webp 1080w" sizes="(max-width: 360px) 80vw, 306px">
+      <img src="../assets/hero/privacy/object-desktop.webp" srcset="../assets/hero/privacy/object-desktop.webp 1254w" sizes="(max-width: 900px) 44vw, 530px" width="1254" height="1254" alt="" decoding="async" fetchpriority="high">
+    </picture>
+    <span class="hero-foreground"></span>
+  </div><div class="wrap"><div><div class="eyebrow">情報の取り扱い</div><h1>プライバシー</h1></div></div></section>
 
 
 <main class="wrap">
