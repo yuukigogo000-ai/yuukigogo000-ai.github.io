@@ -1,0 +1,134 @@
+{
+  "banner-01.webp": {
+    "bytes": 21342,
+    "sha256": "b9a279f8507d4eb5168a1c3267cfe79b1ddeebe7991f49cad86e07c8996d3c29"
+  },
+  "banner-02.webp": {
+    "bytes": 17804,
+    "sha256": "7069efb2804b6cf6bbce412714030c746e181cc9ea1fc8bc30e1b776b840a158"
+  },
+  "banner-03.webp": {
+    "bytes": 15362,
+    "sha256": "0bdfe5869c420f5b0b6316d5fee02166062bb6e541711dbe304046ca91c8a06d"
+  },
+  "banner-04.webp": {
+    "bytes": 21122,
+    "sha256": "24b58ddc6f241e0fccd377752dc2a2ebc1b6c0e4578537bf234fe9ea473414b2"
+  },
+  "bokeh-01.png": {
+    "bytes": 476995,
+    "sha256": "cca38cf7af34f2f3c318b3eefd3124c04f76d7e94e93156cdc664869427417fb"
+  },
+  "bokeh-02.png": {
+    "bytes": 509835,
+    "sha256": "92ce8074eb23f6c3e5ff5a78a307d4b454bfaf572c267d39ecc98241f6dd3dc8"
+  },
+  "difficulty-bg.webp": {
+    "bytes": 49598,
+    "sha256": "c897dbf08126e4f063fe1df96116088c6b7bfe0b28637ecfad8c1b12588d95e7"
+  },
+  "difficulty-easy.webp": {
+    "bytes": 23958,
+    "sha256": "b876c692c89b1973c6ffa6c41b7381a4c0ee606ba933035adc543058be39ffcf"
+  },
+  "difficulty-hard.webp": {
+    "bytes": 18214,
+    "sha256": "3cc4bcb4ca959838c39ad6e327eac6a8726afe60e2a72badb5aae4ed49a3f1d0"
+  },
+  "difficulty-normal.webp": {
+    "bytes": 24062,
+    "sha256": "f0ba5f2cddad1e908ae49efccaf15ff810ded5ee60a6bceb82cdcf510377c911"
+  },
+  "flare-01.png": {
+    "bytes": 22277,
+    "sha256": "8736118c2b8ebc11dc65fbbd8238de05045fe828697ee039ec4c08566d9a6918"
+  },
+  "flare-02.png": {
+    "bytes": 22277,
+    "sha256": "8736118c2b8ebc11dc65fbbd8238de05045fe828697ee039ec4c08566d9a6918"
+  },
+  "marble-black.webp": {
+    "bytes": 16746,
+    "sha256": "5f3f9c42195b3d68040b829826f92c478e3819ec27547f845766e16fc41b5649"
+  },
+  "marble-subtle.webp": {
+    "bytes": 9872,
+    "sha256": "509bc17da873957a27a754f9f2dc0b55c6b72e4921b0e927ac9021b941357ded"
+  },
+  "noto-serif-jp-subset.woff2": {
+    "bytes": 289820,
+    "sha256": "8debaad0332f18bd7267e8f18a9c37c3e41db70344fcd8e2cc093783eafb294d"
+  },
+  "OFL-noto-serif-jp.txt": {
+    "bytes": 4350,
+    "sha256": "5e0da210fb04058a8c0087985d2d456b931c2579811a49655721d3cf0c36b6d6"
+  },
+  "OFL-zen-kaku-gothic-new.txt": {
+    "bytes": 4401,
+    "sha256": "0fac78a235c98d640cb06332eb5362c211d86fa03c011df438c35005d22ad2c7"
+  },
+  "panel-01.webp": {
+    "bytes": 15058,
+    "sha256": "2429d98c7e2c080ac1594025751002548f4e4862a28bec18017474799988b465"
+  },
+  "panel-02.webp": {
+    "bytes": 7362,
+    "sha256": "dd8a78e8e4690ec1baf9f5a560d534baf249b97a675235dab34571c9fca51124"
+  },
+  "panel-03.webp": {
+    "bytes": 12258,
+    "sha256": "f851268559fa229227ccf123cf9bcce88b250deb779b9b2caa3136767f8e70eb"
+  },
+  "panel-04.webp": {
+    "bytes": 7934,
+    "sha256": "569c49bbdd221b788a8cec11bf742894d1efe3f1bdb45fac8ef735b935e281d6"
+  },
+  "particles-01.png": {
+    "bytes": 11419,
+    "sha256": "c7f87fe773edecfc5ec61cb4ae6aca96a036575835b906efd67e2bca9efedc60"
+  },
+  "particles-02.png": {
+    "bytes": 11404,
+    "sha256": "961481cbbb1f9bcfd85a1f00b413037dab92956c1cdf7fea9c140f0830cd8c63"
+  },
+  "rule-balance.webp": {
+    "bytes": 26940,
+    "sha256": "7f428563ee315ff7a9321db29fb137a509d13c8ee93d8fb6d8afe847a0199daa"
+  },
+  "rule-expand.webp": {
+    "bytes": 25340,
+    "sha256": "e0af6909b76bb3806f1665814057ccfab6f680fd8214c7477ac31987cdbe12b2"
+  },
+  "rule-reputation.webp": {
+    "bytes": 22760,
+    "sha256": "927a84296216b78bc39c62c1d277f495133af51160d7719026f0f0df6599ea02"
+  },
+  "rule-special.webp": {
+    "bytes": 23220,
+    "sha256": "45be782b50cbc93bd5f7b2dba215f9600efbd82099033fee352d866d87e9c84c"
+  },
+  "streaks-01.png": {
+    "bytes": 132588,
+    "sha256": "eeae90474e3c8a7e0470bbbf1fbd90d02119f8c4a2c9509f274835fefae524d5"
+  },
+  "streaks-02.png": {
+    "bytes": 89141,
+    "sha256": "7b97114e97597dc5b63c780010d85526374a50eae1fc403cc808b980594c546c"
+  },
+  "title-hall-soft.webp": {
+    "bytes": 81238,
+    "sha256": "ab30da3ffc6a81cb056244d70be70e3456415f28e4a1cf99ad84eafeb1893e57"
+  },
+  "title-hall.webp": {
+    "bytes": 99950,
+    "sha256": "a1921ff7f112adc1cebee6ba6d6a601bbb723bf49472d4bf30c637ae6bfb3cce"
+  },
+  "zen-kaku-bold-subset.woff2": {
+    "bytes": 62548,
+    "sha256": "3f9ab10a0ed6c288b2cf0808e1a2746cf2655cd179b91408c85d4d7a2b5b33e0"
+  },
+  "zen-kaku-regular-subset.woff2": {
+    "bytes": 63424,
+    "sha256": "89c6c800ab2df37116c64810f2f6d01499056e5d1bd7be77dcae628f0eb88640"
+  }
+}
