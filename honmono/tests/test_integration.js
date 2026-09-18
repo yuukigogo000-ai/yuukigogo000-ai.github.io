@@ -62,12 +62,23 @@ async function main(){
  function chunk(type,b){const tag=Buffer.from(type),len=Buffer.alloc(4),crc=Buffer.alloc(4);len.writeUInt32BE(b.length);crc.writeUInt32BE(crc32(Buffer.concat([tag,b])));return Buffer.concat([len,tag,b,crc]);}
  const ihdr=Buffer.alloc(13);ihdr.writeUInt32BE(1,0);ihdr.writeUInt32BE(1,4);ihdr[8]=8;ihdr[9]=6;
  const png=Buffer.concat([Buffer.from([137,80,78,71,13,10,26,10]),chunk('IHDR',ihdr),chunk('tEXt',Buffer.from('parameters\0<img src=x onerror=window.__xss=1>')),chunk('IDAT',require('zlib').deflateSync(Buffer.from([0,22,40,60,255]))),chunk('IEND',Buffer.alloc(0))]);
+ const autoCtx=await browser.newContext({viewport:{width:393,height:852},isMobile:true,hasTouch:true});
+ const autoPage=await autoCtx.newPage();watch(autoPage);await autoPage.goto(base+'/honmono/checker/',{waitUntil:'networkidle'});
+ await autoPage.locator('#file').setInputFiles({name:'mobile.png',mimeType:'image/png',buffer:png});
+ await autoPage.waitForFunction(()=>document.getElementById('pixelQuick').style.display==='flex'&&document.getElementById('pixelAuto').checked===true);
+ const quickBox=await autoPage.locator('#pixelQuick').boundingBox();check('first image defaults to automatic AI judgement',await autoPage.locator('#pixelAuto').isChecked());
+ check('mobile AI judgement status is immediately visible',!!quickBox&&quickBox.y>=0&&quickBox.y<852,JSON.stringify(quickBox));
+ await autoPage.waitForFunction(()=>document.getElementById('pixelResult').style.display==='block',null,{timeout:180000});
+ check('automatic AI judgement completes without a second tap',(await autoPage.locator('#pixelQuickText').innerText()).includes('/ 100'));
+ check('automatic setting can be disabled after result',await autoPage.locator('#pixelControls').isVisible()&&await autoPage.locator('#pixelAuto').isChecked());
+ await autoCtx.close();
+ await page.evaluate(()=>localStorage.setItem('honmono_pixel_auto','0'));
  await page.locator('#file').setInputFiles({name:'<script>alert(1)</script>.png',mimeType:'image/png',buffer:png});await page.waitForFunction(()=>document.getElementById('fileMeta').textContent.includes('PNG'));
  check('AI metadata recognized',(await page.locator('#verdict').innerText()).includes('AI生成'));
  check('metadata injection escaped',await page.evaluate(()=>!window.__xss&&document.querySelectorAll('#findings img,#findings script').length===0));
  check('pixel card visible for valid image',await page.locator('#pixelCard').isVisible());
  await page.locator('#file').setInputFiles({name:'unsupported.txt',mimeType:'application/octet-stream',buffer:Buffer.from('not an image')});await page.waitForFunction(()=>document.getElementById('fileMeta').textContent.includes('不明'));
- check('unsupported file clears pixel state',!(await page.locator('#pixelCard').isVisible()));
+ check('unsupported file clears pixel state',!(await page.locator('#pixelCard').isVisible())&&!(await page.locator('#pixelQuick').isVisible()));
  const oversized=await page.evaluate(async()=>{await handle({name:'oversized.jpg',size:301*1024*1024});return document.getElementById('fileMeta').textContent.includes('大きすぎ')&&document.getElementById('pixelCard').style.display==='none';});
  check('oversized file rejected before decoding',oversized);
  const race=await page.evaluate(async()=>{

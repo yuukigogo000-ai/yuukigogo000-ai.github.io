@@ -8,7 +8,7 @@ function findBrowser(){ for (const c of ['C:/Program Files (x86)/Microsoft/Edge/
 function serve(){ return new Promise(res=>{ const s=http.createServer((q,p)=>{ let u=decodeURIComponent(q.url.split('?')[0]); if(u.endsWith('/'))u+='index.html'; const f=path.join(REPO,u); if(!f.startsWith(REPO)||!fs.existsSync(f)||fs.statSync(f).isDirectory()){p.writeHead(404);p.end();return;} p.writeHead(200,{'Content-Type':MIME[path.extname(f)]||'application/octet-stream'}); fs.createReadStream(f).pipe(p); }); s.listen(0,'127.0.0.1',()=>{PORT=s.address().port;res(s);}); }); }
 
 const URLS = ['/honmono/','/honmono/checker/','/honmono/badge/','/honmono/report/','/honmono/business/','/honmono/legal/privacy.html','/honmono/legal/terms.html','/honmono/legal/credits.html','/honmono/creators/','/honmono/docs/','/honmono/aicheck/'];
-const SIZES = [[360,800],[390,844],[430,932],[1280,900]];
+const SIZES = [[360,800],[390,844],[430,932],[768,1024],[1280,900],[1440,1000]];
 
 (async () => {
   const server = await serve();
@@ -40,5 +40,5 @@ const SIZES = [[360,800],[390,844],[430,932],[1280,900]];
   }
   await browser.close(); server.close();
   if (bad.length) { console.log('横溢れ '+bad.length+'件:'); bad.forEach(b=>console.log('  - '+b)); process.exit(1); }
-  console.log('OVERFLOW PASS — 360/390/430/1280px とも横スクロールなし ('+URLS.length*SIZES.length+'通り)');
+  console.log('OVERFLOW PASS — 360/390/430/768/1280/1440px とも横スクロールなし ('+URLS.length*SIZES.length+'通り)');
 })();

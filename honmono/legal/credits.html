@@ -2,12 +2,13 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="dark">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>クレジット・ライセンス — HONMONO</title>
+<title>クレジット — HONMONO</title>
 <meta name="description" content="HONMONOが利用しているオープンソースソフトウェアと、AI判定モデルの学習に使ったデータセットの出典・ライセンス一覧。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
-<link rel="stylesheet" href="../honmono.css">
+<link rel="stylesheet" href="../honmono.css?v=20260918-mint-marble">
 <style>
   h2 { font-size: 1.05rem; margin-top: 26px; }
   main p, main li { font-size: .9rem; }
@@ -16,20 +17,22 @@
   .scroll { overflow-x: auto; }
 </style>
 </head>
-<body>
+<body data-page="credits">
 <header class="site-header"><div class="wrap header-row">
-  <a class="brand" href="../" data-capability-id="F011">HONMONO<small>透かすと、見える。</small></a>
+  <a class="brand" href="../" data-capability-id="F011">HONMONO</a>
   <nav class="nav" aria-label="主要ツール">
-    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">来歴</a>
+    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">画像</a>
     <a href="../badge/" aria-label="実在証明バッジ" data-capability-id="F011">証明</a>
-    <a href="../aicheck/" aria-label="AIアカウント鑑定" data-capability-id="F011">鑑定</a>
+    <a href="../aicheck/" aria-label="アカウント確認" data-capability-id="F011">アカウント</a>
     <a href="../creators/" aria-label="実在クリエイター名鑑" data-capability-id="F011">名鑑</a>
     <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
+<section class="page-hero"><div class="wrap"><div><div class="eyebrow">ライセンス・出典</div><h1>クレジット</h1></div></div></section>
+
 
 <main class="wrap"><div class="notice" style="margin:20px 0"><b>学習データと利用範囲について</b><p>出典のライセンス表示、取得方法、モデルの配布条件を区別して確認しています。過去の自動取得には未確認事項がありますが、それだけでモデルや本サイトの利用禁止が確定したものではありません。全用途の権利保証は行っていません。<a href="../design/DATA_RIGHTS_REVIEW_20260917.md">確認範囲と説明の訂正</a></p></div>
-  <h1>クレジット・ライセンス</h1>
+
   <p class="lead">本サイトは、他の人が公開してくれたソフトウェアとデータの上に成り立っています。
   使わせてもらっているものを、条件とあわせて全部書きます。</p>
 
@@ -94,6 +97,12 @@
   </div>
 
   <p class="rev">最終更新: 2026-08-20 / HONMONO プロジェクト</p>
+
+  <section class="card" id="fonts"><h2>ローカルフォント</h2>
+  <p>日本語は Zen Kaku Gothic New、英字は Space Grotesk を原書体とする軽量な表示用フォントを、このサイトから読み込みます。外部フォントCDNは使用しません。</p>
+  <p>Copyright 2022 The Zen Kaku Gothic Project Authors (https://github.com/googlefonts/zen-kakugothic)<br>Copyright 2020 The Space Grotesk Project Authors (https://github.com/floriankarsten/space-grotesk)</p>
+  <p>SIL Open Font License 1.1：<a href="../assets/fonts/zenkakugothicnew-OFL.txt">Zen Kaku Gothic New ライセンス全文</a> · <a href="../assets/fonts/spacegrotesk-OFL.txt">Space Grotesk ライセンス全文</a>。原書体の著作権表示を保持しています。表示用の派生フォントは名称を変更しています。</p></section>
+<p>表示用フォントは、Zen Kaku Gothic New と Space Grotesk をもとに、必要な文字の収録・WOFF2変換・名称変更を行った Honmono Text / Honmono Display です。未収録の入力文字には端末のフォントを使用します。フォントの著作権表記と SIL Open Font License 1.1 は各ライセンスファイルに保持しています。</p>
 </main>
 
 <footer class="footer"><div class="wrap">

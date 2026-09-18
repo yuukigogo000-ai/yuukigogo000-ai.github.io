@@ -4,25 +4,25 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
-<title>HONMONO — 実在性を証明するツール群</title>
-<meta name="description" content="AI生成コンテンツが溢れる時代に「本物の人間であること」を価値に変える無料ツール群。画像来歴チェッカー、実在証明バッジ、AIアカウント鑑定、実在クリエイター名鑑。">
+<meta name="color-scheme" content="dark">
+<title>画像のAI判定と来歴確認 — HONMONO</title>
+<meta name="description" content="画像のAI判定と来歴確認、相互リンクの証明ページ作成、アカウント確認をブラウザ内で行う無料ツール。判定は参考情報です。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
 <meta property="og:type" content="website">
-<meta property="og:title" content="HONMONO — 実在性を証明するツール群">
-<meta property="og:description" content="AIが「美女」を無限に作る時代、いちばん希少なのは本物の人間。実在を証明し、見分け、価値に変える無料ツール群。">
+<meta property="og:title" content="画像のAI判定と来歴確認 — HONMONO">
+<meta property="og:description" content="画像のAI判定と来歴確認、相互リンクの証明ページ作成、アカウント確認をブラウザ内で行う無料ツール。判定は参考情報です。">
 <meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/">
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="honmono.css">
+<link rel="stylesheet" href="honmono.css?v=20260918-mint-marble">
 </head>
-<body data-screen="screen-home">
+<body data-screen="screen-home" data-page="home">
 <header class="site-header"><div class="wrap header-row">
-  <a class="brand" href="./" data-capability-id="F011">HONMONO<small>透かすと、見える。</small></a>
+  <a class="brand" href="./" data-capability-id="F011">HONMONO</a>
   <nav class="nav" aria-label="主要ツール">
-    <a href="checker/" aria-label="来歴チェッカー" data-capability-id="F011">来歴</a>
+    <a href="checker/" aria-label="来歴チェッカー" data-capability-id="F011">画像</a>
     <a href="badge/" aria-label="実在証明バッジ" data-capability-id="F011">証明</a>
-    <a href="aicheck/" aria-label="AIアカウント鑑定" data-capability-id="F011">鑑定</a>
+    <a href="aicheck/" aria-label="アカウント確認" data-capability-id="F011">アカウント</a>
     <a href="creators/" aria-label="実在クリエイター名鑑" data-capability-id="F011">名鑑</a>
     <a href="docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
@@ -30,18 +30,19 @@
 
 <section class="home-hero" id="cap-F015"><div class="wrap">
   <div class="home-hero-copy">
-    <div class="eyebrow">HONMONO / SUKASHI LIGHT</div>
-    <h1>透かすと、<br>見える。</h1>
-    <div class="hook">疑う前に、見えにくいものを少し見やすく。</div>
-    <p>AI生成・なりすましが混ざるネットで、証明する・見分ける・束ねるための無料ツール群です。すべてブラウザ内で動作し、選んだ画像やフォーム入力は外部へ送信されません。</p>
+    <div class="eyebrow">画像のAI判定・来歴確認</div>
+    <h1>画像のAI判定と来歴確認</h1>
+    <div class="hook">画像解析・証明ページ・アカウント確認</div>
+    <p>画像のAI判定・来歴確認、証明ページの作成、アカウントの確認を行えます。画像や入力内容はブラウザ内で処理します。</p>
+    <div class="button-row hero-actions"><a class="btn" href="checker/">画像をチェック <span aria-hidden="true">↗</span></a><a class="btn secondary" href="docs/">使い方ガイド</a></div>
   </div>
 </div></section>
 
 <main><div class="wrap">
 
   <section class="section">
-    <div class="eyebrow">Choose a path</div>
-    <h2>いま確かめたいことから。</h2>
+    <div class="eyebrow">ツール一覧</div>
+    <h2>目的に合わせて選ぶ</h2>
     <div class="route-list">
       <a class="route" href="checker/" data-capability-id="F011">
         <span class="num">01</span>
@@ -68,9 +69,9 @@
 
   <section class="section" data-capability-id="F015">
     <div class="pillars">
-      <div class="pillar"><b>① 証明する</b><p>自分が管理する複数の公開先を、相互リンクで結びます。</p></div>
-      <div class="pillar"><b>② 見分ける</b><p>ファイルの来歴と、アカウント上の注意信号を別々に確かめます。</p></div>
-      <div class="pillar"><b>③ 束ねる</b><p>公開された証明ページを手掛かりに、人間のクリエイターを探せます。</p></div>
+      <div class="pillar"><b>① 証明ページを作る</b><p>自分が管理する複数の公開先を、相互リンクで結びます。</p></div>
+      <div class="pillar"><b>② 画像・アカウントを確認</b><p>ファイルの来歴と、アカウント上の注意信号を別々に確かめます。</p></div>
+      <div class="pillar"><b>③ クリエイターを探す</b><p>公開された証明ページを手掛かりに、人間のクリエイターを探せます。</p></div>
     </div>
   </section>
 

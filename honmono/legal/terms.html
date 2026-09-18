@@ -2,37 +2,40 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="dark">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>利用規約 — HONMONO</title>
 <meta name="description" content="HONMONOの利用規約。判定結果の位置づけ、禁止事項(他人をAI・詐欺と断定して公表しないこと)、責任の範囲を定めています。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
-<link rel="stylesheet" href="../honmono.css">
+<link rel="stylesheet" href="../honmono.css?v=20260918-mint-marble">
 <style>
   h2 { font-size: 1.05rem; margin-top: 26px; }
   main p, main li, main dd { font-size: .9rem; }
   .rev { font-size: .82rem; color: var(--muted); }
 </style>
 </head>
-<body>
+<body data-page="terms">
 <header class="site-header"><div class="wrap header-row">
-  <a class="brand" href="../" data-capability-id="F011">HONMONO<small>透かすと、見える。</small></a>
+  <a class="brand" href="../" data-capability-id="F011">HONMONO</a>
   <nav class="nav" aria-label="主要ツール">
-    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">来歴</a>
+    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">画像</a>
     <a href="../badge/" aria-label="実在証明バッジ" data-capability-id="F011">証明</a>
-    <a href="../aicheck/" aria-label="AIアカウント鑑定" data-capability-id="F011">鑑定</a>
+    <a href="../aicheck/" aria-label="アカウント確認" data-capability-id="F011">アカウント</a>
     <a href="../creators/" aria-label="実在クリエイター名鑑" data-capability-id="F011">名鑑</a>
     <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
+<section class="page-hero"><div class="wrap"><div><div class="eyebrow">利用条件</div><h1>利用規約</h1></div></div></section>
+
 
 <main class="wrap">
-  <h1>利用規約</h1>
+
   <p class="lead">HONMONO(以下「本サイト」)のツール群をお使いになる方に、守っていただきたいことと、
   本サイトが引き受けられる責任の範囲を定めます。</p>
 
   <div class="notice">
-    <b>いちばん大事なこと:</b> 本サイトの判定はすべて<b>確率と手がかりであって、真偽の断定ではありません。</b>
+    <b>いちばん大事なこと:</b> 本サイトの判定はすべて<b>参考スコアと手がかりであって、真偽の断定ではありません。</b>
     <b>実在する誰かを「AIだ」「偽物だ」「詐欺だ」と決めつけて公表する目的で使わないでください。</b>
     この道具は、実在する人が疑われずに済むために作られたものです。逆の使い方をされるのが、いちばん困ります。
   </div>
@@ -50,7 +53,7 @@
     <ul style="margin:0; padding-left:1.3em">
       <li>本サイトの出力は<b>参考情報</b>であり、真正性・実在性・違法性を法的に保証するものではありません</li>
       <li>メタデータは追加・編集・削除できます。「AIの痕跡なし」は人間である証明にならず、「カメラ情報あり」も偽装できます</li>
-      <li>画素からのAI判定は確率を出す道具です。<b>2025年世代の生成器は4割近く見逃します。</b>実測値と弱点は<a href="../report/">実測レポート</a>に全て公開しています</li>
+      <li>画素からのAI判定は参考スコアを返す道具です。このスコアは、個別の画像がAIである確率ではありません。<b>2025年世代の生成器は4割近く見逃します。</b>実測値と弱点は<a href="../report/">実測レポート</a>に全て公開しています</li>
       <li>AIアカウント鑑定のスコアは「典型的な特徴への一致度」であって、その人物の評価ではありません</li>
       <li>C2PA署名の検証は改ざんの有無を確認するもので、署名した発行者が信頼できる組織かの照合(トラストリスト)は行っていません</li>
     </ul>

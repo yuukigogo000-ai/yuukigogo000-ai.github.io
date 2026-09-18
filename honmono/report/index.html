@@ -2,18 +2,19 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
+<meta name="color-scheme" content="dark">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>実測レポート — HONMONO</title>
+<title>判定精度と実測結果 — HONMONO</title>
 <meta name="description" content="AI画像判定モデルの実測比較。公開モデル9本のうち8本が評価セットの実写を11.4〜81.6%誤判定した測定結果と、HONMONO自前モデルの数値・弱点・学習データの出典を全て公開しています。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
 <meta property="og:type" content="article">
-<meta property="og:title" content="実測レポート — AI画像判定の測定条件・結果・訂正">
+<meta property="og:title" content="判定精度と実測結果 — HONMONO">
 <meta property="og:description" content="同じ545枚で公開モデル9本を測定。実写の誤判定率はモデルにより大きく異なる。自前モデルの数値と弱点、学習データの出典も全部公開します。">
 <meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/report/">
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="../honmono.css">
+<link rel="stylesheet" href="../honmono.css?v=20260918-mint-marble">
 <style>
   .toc { font-size: .9rem; }
   .toc a { display: inline-block; margin: 2px 10px 2px 0; }
@@ -26,20 +27,22 @@
   .srclist code { font-size: .95em; }
 </style>
 </head>
-<body>
+<body data-page="report">
 <header class="site-header"><div class="wrap header-row">
-  <a class="brand" href="../" data-capability-id="F011">HONMONO<small>透かすと、見える。</small></a>
+  <a class="brand" href="../" data-capability-id="F011">HONMONO</a>
   <nav class="nav" aria-label="主要ツール">
-    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">来歴</a>
+    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">画像</a>
     <a href="../badge/" aria-label="実在証明バッジ" data-capability-id="F011">証明</a>
-    <a href="../aicheck/" aria-label="AIアカウント鑑定" data-capability-id="F011">鑑定</a>
+    <a href="../aicheck/" aria-label="アカウント確認" data-capability-id="F011">アカウント</a>
     <a href="../creators/" aria-label="実在クリエイター名鑑" data-capability-id="F011">名鑑</a>
     <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
+<section class="page-hero"><div class="wrap"><div><div class="eyebrow">モデル評価レポート</div><h1>判定精度と実測結果</h1></div></div></section>
+
 
 <main class="wrap">
-  <h1>📊 実測レポート</h1>
+
   <p class="lead">「このモデルはAI画像を見分けられます」と言うだけなら誰でもできます。
   このページは、<b>実際に測った数字と、外れた場面</b>を全部出すためのものです。都合の悪い数字も消していません。</p>
 

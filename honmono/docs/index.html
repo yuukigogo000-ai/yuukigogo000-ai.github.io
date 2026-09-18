@@ -4,33 +4,33 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
-<title>説明書 — HONMONO</title>
+<meta name="color-scheme" content="dark">
+<title>使い方ガイド — HONMONO</title>
 <meta name="description" content="HONMONOプロジェクトの目的・各ツールの使い方・制限事項・プライバシーについての公式説明書。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
 <meta property="og:type" content="website">
-<meta property="og:title" content="説明書 — HONMONO">
+<meta property="og:title" content="使い方ガイド — HONMONO">
 <meta property="og:description" content="HONMONOの目的・各ツールの使い方・制限事項・プライバシーをまとめた公式ドキュメント。">
 <meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/docs/">
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="../honmono.css">
+<link rel="stylesheet" href="../honmono.css?v=20260918-mint-marble">
 </head>
-<body data-screen="screen-guide">
+<body data-screen="screen-guide" data-page="docs">
 <header class="site-header"><div class="wrap header-row">
-  <a class="brand" href="../" data-capability-id="F011">HONMONO<small>透かすと、見える。</small></a>
+  <a class="brand" href="../" data-capability-id="F011">HONMONO</a>
   <nav class="nav" aria-label="主要ツール">
-    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">来歴</a>
+    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">画像</a>
     <a href="../badge/" aria-label="実在証明バッジ" data-capability-id="F011">証明</a>
-    <a href="../aicheck/" aria-label="AIアカウント鑑定" data-capability-id="F011">鑑定</a>
+    <a href="../aicheck/" aria-label="アカウント確認" data-capability-id="F011">アカウント</a>
     <a href="../creators/" aria-label="実在クリエイター名鑑" data-capability-id="F011">名鑑</a>
     <a href="./" aria-current="page" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
 
 <section class="page-hero"><div class="wrap"><div>
-  <div class="eyebrow">Manual</div>
-  <h1>迷ったら、ここへ戻る。</h1>
+  <div class="eyebrow">操作方法・判定の限界</div>
+  <h1>使い方ガイド</h1>
   <p class="lede">使うツール、判定の意味、限界、プライバシーを一つの文書で確認できます。</p>
 </div></div></section>
 
@@ -157,7 +157,7 @@
       <dt>AIで作った画像なのに「痕跡なし」になった。バグ?</dt>
       <dd>バグではありません。メタデータを削除してから配布されたAI画像は、メタデータ検査では検出できません(これはあらゆる検査ツール共通の限界です)。そこで、画素そのものからAIらしさを推定する<b>自前学習モデル(HONMONO v3.1)</b>を「🧪実験: 画素からのAI判定(参考値)」として搭載しました(2026-08-19)。しきい値選択にも参照した従来評価545枚での実測は、実写をAIと誤判定 1.8%・AI画像の検出 70%。人物の顔615枚(選択用dev由来で独立ではありません)の過去の測定では、<b>実在の人の顔を誤判定する割合は1.1%、AI生成の顔の検出は92%</b>です。ただし2025年世代の生成器(Seedream 4・Gemini 2.5・FLUX Pro 等)は4割見逃し、古いGAN風に切り取られた顔では誤判定が5%まで上がるので、「AIではない」証明には使えません。データの取得方法とモデルの利用条件は、実測レポートとクレジットに説明しています。公開されている判定モデル9本も実測しましたが、8本は評価セットの実写を11.4〜81.6%の割合でAIと誤判定するため不採用でした。評価の詳細は <a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/blob/main/honmono/design/AI_DETECTOR_EVAL.md" target="_blank" rel="noopener">実測レポート</a> を公開しています。</dd>
       <dt>画像をアップロードして大丈夫?</dt>
-      <dd>画像はサーバーに送信されません。解析はすべてあなたのブラウザの中で行われ、ページを閉じれば何も残りません。ただし<b>ページそのものの読み込みには通信が必要です</b>(オフラインでは開けません。またC2PAの署名検証エンジンはオフラインでは動作しません)。端末に保存されるもの・外部に伝わりうるものは<a href="../legal/privacy.html">プライバシーポリシー</a>に全て書いています。</dd>
+      <dd>画像はサーバーに送信されません。解析はすべてあなたのブラウザの中で行われます。選択した画像の内容については、ページを閉じれば何も残りません。判定モデルのキャッシュや設定は、端末に保持される場合があります。ただし<b>ページそのものの読み込みには通信が必要です</b>(オフラインでは開けません。またC2PAの署名検証エンジンはオフラインでは動作しません)。端末に保存されるもの・外部に伝わりうるものは<a href="../legal/privacy.html">プライバシーポリシー</a>に全て書いています。</dd>
       <dt>鑑定スコアが「高」だったら、その人は偽物?</dt>
       <dd>断定ではなく「典型的な特徴への一致度」です。実在の人でも当てはまる項目はあります。ただし金銭・投資の話が出ている場合は、スコアに関係なく詐欺を最優先で疑ってください。</dd>
       <dt>実在証明バッジは審査があるの?</dt>

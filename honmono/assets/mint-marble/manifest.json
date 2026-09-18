@@ -1,0 +1,534 @@
+{
+  "version": "mint-marble-20260918",
+  "source": "Fresh image-generation still-life atlases, each containing six distinct text-free compositions, cropped into page-specific marble OR mint-candy scenes. Local compositing/size variants and original standalone SVG UI ornament components. No human photos, leaves, logos, UI text or source training photos.",
+  "text_baked_into_controls": false,
+  "pages": [
+    {
+      "page": "home",
+      "material": "mint",
+      "atlas_tile": 0,
+      "hero": "hero-home.webp",
+      "background": "bg-home.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    },
+    {
+      "page": "badge",
+      "material": "mint",
+      "atlas_tile": 1,
+      "hero": "hero-badge.webp",
+      "background": "bg-badge.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    },
+    {
+      "page": "creators",
+      "material": "mint",
+      "atlas_tile": 2,
+      "hero": "hero-creators.webp",
+      "background": "bg-creators.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    },
+    {
+      "page": "business",
+      "material": "mint",
+      "atlas_tile": 3,
+      "hero": "hero-business.webp",
+      "background": "bg-business.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    },
+    {
+      "page": "privacy",
+      "material": "mint",
+      "atlas_tile": 4,
+      "hero": "hero-privacy.webp",
+      "background": "bg-privacy.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    },
+    {
+      "page": "credits",
+      "material": "mint",
+      "atlas_tile": 5,
+      "hero": "hero-credits.webp",
+      "background": "bg-credits.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    },
+    {
+      "page": "aicheck",
+      "material": "marble",
+      "atlas_tile": 0,
+      "hero": "hero-aicheck.webp",
+      "background": "bg-aicheck.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    },
+    {
+      "page": "checker",
+      "material": "marble",
+      "atlas_tile": 1,
+      "hero": "hero-checker.webp",
+      "background": "bg-checker.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    },
+    {
+      "page": "docs",
+      "material": "marble",
+      "atlas_tile": 3,
+      "hero": "hero-docs.webp",
+      "background": "bg-docs.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    },
+    {
+      "page": "report",
+      "material": "marble",
+      "atlas_tile": 4,
+      "hero": "hero-report.webp",
+      "background": "bg-report.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    },
+    {
+      "page": "terms",
+      "material": "marble",
+      "atlas_tile": 5,
+      "hero": "hero-terms.webp",
+      "background": "bg-terms.webp",
+      "native_scene_pixels": [
+        320,
+        320
+      ],
+      "export_pixels": [
+        1440,
+        900
+      ]
+    }
+  ],
+  "assets": [
+    {
+      "path": "bg-aicheck.webp",
+      "bytes": 6808,
+      "sha256": "610be2bc7ad32b5df471481157a1bec97dbf71f7b260682309fa0df1b3299ed1"
+    },
+    {
+      "path": "bg-badge.webp",
+      "bytes": 9114,
+      "sha256": "894d4d18ad5aba3c377fb7ae00671b4d4e19249164c85993ec2f9e3bfe543a8c"
+    },
+    {
+      "path": "bg-business.webp",
+      "bytes": 7556,
+      "sha256": "8eabc2f9f15c674ca137d428149413fc915ae53d6b4f026e438868bf7daf6b4e"
+    },
+    {
+      "path": "bg-checker.webp",
+      "bytes": 5878,
+      "sha256": "10c7b609241c915b9e6bd1be24a2946d1b65419505e9aba187c7343e4703dfe5"
+    },
+    {
+      "path": "bg-creators.webp",
+      "bytes": 8210,
+      "sha256": "378cdb9d7eea86e576be056e691dd6189e66bd3b3ac9f885c11ed1fdd7d5ecc4"
+    },
+    {
+      "path": "bg-credits.webp",
+      "bytes": 9948,
+      "sha256": "5105c85de97b4858344b3ed605c1aa80b2c53b59cb992a8e237c94932a4b6cca"
+    },
+    {
+      "path": "bg-docs.webp",
+      "bytes": 6494,
+      "sha256": "4262bb8946747c0f8e8da3262d3c0343b766dfc17f277efec7e1727c79d6115f"
+    },
+    {
+      "path": "bg-home.webp",
+      "bytes": 6788,
+      "sha256": "dfc9c6959db6004d8a0b2834e44484ed0c8eec2649c2b9481b83f266fa0ff7a3"
+    },
+    {
+      "path": "bg-privacy.webp",
+      "bytes": 10600,
+      "sha256": "d294957ebcd8fd1808ccfcc3d97437f0667dad9f333f90e8e7de16e06716fe02"
+    },
+    {
+      "path": "bg-report.webp",
+      "bytes": 7068,
+      "sha256": "a4c2ffb97fb8bf6670ec1360c290638ababa034c29926644b257d8b06153a0e6"
+    },
+    {
+      "path": "bg-terms.webp",
+      "bytes": 8978,
+      "sha256": "263c56f6b857ceaf89857102842f59b9414d3a68a2fcf9314d2f66391a2d476f"
+    },
+    {
+      "path": "hero-aicheck.webp",
+      "bytes": 28240,
+      "sha256": "4a60452fc41cebff93fb6c10e47fad0d68262ae3c8958bec97483ec2ca56738e"
+    },
+    {
+      "path": "hero-badge.webp",
+      "bytes": 42810,
+      "sha256": "82d8ee9d25d4521ad04b0aec1bb1efae75992b8f5ee908609aeb5529e98910a9"
+    },
+    {
+      "path": "hero-business.webp",
+      "bytes": 32488,
+      "sha256": "b35794f6b9c52524be5c73962614ffac79204f842173ff26c17d7ebc5edea7ff"
+    },
+    {
+      "path": "hero-checker.webp",
+      "bytes": 23900,
+      "sha256": "3b380eece5fdd88273706753321b88efd727678dc0443fe82a3fd1304513bead"
+    },
+    {
+      "path": "hero-creators.webp",
+      "bytes": 32620,
+      "sha256": "9e2fc40639bdf2b981c48141f13f627c4bbf2eb2790f6415df156015fa0817f3"
+    },
+    {
+      "path": "hero-credits.webp",
+      "bytes": 41798,
+      "sha256": "ce416b17ce412b212d058a8ec3c49104f86de6a4784ff1c5fb2e9560dd664b47"
+    },
+    {
+      "path": "hero-docs.webp",
+      "bytes": 29036,
+      "sha256": "6f947198f9d148be011543fda645b8fd5b4055235c259da5ed150c28be9f8e15"
+    },
+    {
+      "path": "hero-home.webp",
+      "bytes": 28528,
+      "sha256": "8758cf430bd7b1b0c4dd6caa4dcdc46e52c62db17e9b7d950a6eda23af0a9e67"
+    },
+    {
+      "path": "hero-privacy.webp",
+      "bytes": 47026,
+      "sha256": "7d317116642c9072e13eff3b30eabdfda6daa8681bace02d12419aaf37042a12"
+    },
+    {
+      "path": "hero-report.webp",
+      "bytes": 26260,
+      "sha256": "16e8232332c1a68998147f2223d73c6d624e8dc473ddcca0a13556d98511e737"
+    },
+    {
+      "path": "hero-terms.webp",
+      "bytes": 37260,
+      "sha256": "6c13c3a990df3f8cf89a26f167a24fdef6ba054afcbe569277ddf90f98d527dc"
+    },
+    {
+      "path": "parts/icon-arrow-ice.svg",
+      "bytes": 472,
+      "sha256": "8efd99fe127c9448f3f53943179db74ffd717b5e194359d8d77c20f9e5edd5e1"
+    },
+    {
+      "path": "parts/icon-arrow-mint.svg",
+      "bytes": 472,
+      "sha256": "493ece17e29ff5bf66fbdbd8f1a8c4c4dff04520bb3e1ba716d5d2289f29f7e2"
+    },
+    {
+      "path": "parts/icon-book-ice.svg",
+      "bytes": 521,
+      "sha256": "2dbaf9859629863b36badde9bc47cc5d7aa99300161e6c44552173eb332c1eb7"
+    },
+    {
+      "path": "parts/icon-book-mint.svg",
+      "bytes": 521,
+      "sha256": "1005ce08367029dce39a139272b2a22caff0ec7a84facb70ac5ce39e3b48b253"
+    },
+    {
+      "path": "parts/icon-chart-ice.svg",
+      "bytes": 490,
+      "sha256": "2cf11f0f749899ca09e54d3f604e14acdbabf1f6dbb4d1a057f94f3d60b74557"
+    },
+    {
+      "path": "parts/icon-chart-mint.svg",
+      "bytes": 490,
+      "sha256": "09eb6427d57d66fc4cfa6a1a39615f59c7e626099a7bb6f8a04ab685a398d5b6"
+    },
+    {
+      "path": "parts/icon-check-ice.svg",
+      "bytes": 463,
+      "sha256": "0c8c3029a4c1e82e1113eba96d48abac7d378a6b42a33b6ec722d2d16a2eec62"
+    },
+    {
+      "path": "parts/icon-check-mint.svg",
+      "bytes": 463,
+      "sha256": "47bfb9380f8cb47ea905cc034bf69dfced20b5b9d0348b841982bd3ccab9eaea"
+    },
+    {
+      "path": "parts/icon-clock-ice.svg",
+      "bytes": 491,
+      "sha256": "1da773c1b994f7f63c5a10a3bede196fd8fa90702868d9d0f2444aaf0c44cafa"
+    },
+    {
+      "path": "parts/icon-clock-mint.svg",
+      "bytes": 491,
+      "sha256": "b1934e5bd74603c8f17bee24a28e823c3e99ecb8f53530d3d286ce697efd3ed1"
+    },
+    {
+      "path": "parts/icon-close-ice.svg",
+      "bytes": 468,
+      "sha256": "58d09b95deb4c0a1899d3e24447496d330dfbd5c1963db8aa3c90566603fd82a"
+    },
+    {
+      "path": "parts/icon-close-mint.svg",
+      "bytes": 468,
+      "sha256": "87b9b43224744f40a6fdf291e68025980cff5c6da450ccd9c2143ea843a898a8"
+    },
+    {
+      "path": "parts/icon-code-ice.svg",
+      "bytes": 493,
+      "sha256": "c1061914708cbb1d859336dc10cdc951300c9deede0d9ba30a3c4db79ff33f38"
+    },
+    {
+      "path": "parts/icon-code-mint.svg",
+      "bytes": 493,
+      "sha256": "b95a1b738768f3c3f7c68d0e2c28803e7dd9c34152193c79771fb38e1c926209"
+    },
+    {
+      "path": "parts/icon-document-ice.svg",
+      "bytes": 506,
+      "sha256": "d0910397f62989d4948923a37da952d1deee4d94512c29d57f5655f655b73caa"
+    },
+    {
+      "path": "parts/icon-document-mint.svg",
+      "bytes": 506,
+      "sha256": "d771b2eca7eb74e58a690cf41c29a16b23fef8bb6b9423b71c30e1cf5d349ec2"
+    },
+    {
+      "path": "parts/icon-image-ice.svg",
+      "bytes": 555,
+      "sha256": "d6150bf6ef51ff7756c298e0b98ece21aa39a50db98304677ec0fbd4cbf7077f"
+    },
+    {
+      "path": "parts/icon-image-mint.svg",
+      "bytes": 555,
+      "sha256": "ae81902e3d4ce569a52ebcacb88fa63d90d355b8124d4987ddc1608cf73a3b42"
+    },
+    {
+      "path": "parts/icon-link-ice.svg",
+      "bytes": 557,
+      "sha256": "242aecf8c5ab3bcc04a1f541abfae4403347cbba459358cd49e31dc429e3d52a"
+    },
+    {
+      "path": "parts/icon-link-mint.svg",
+      "bytes": 557,
+      "sha256": "05c24a57bc65b5f1e0d7924b1c351582d914170f65ab892f63915873de914514"
+    },
+    {
+      "path": "parts/icon-lock-ice.svg",
+      "bytes": 576,
+      "sha256": "8addeb8afe853e4868d2a707819eb17597a4e4687a2de5568903cfa887fd7702"
+    },
+    {
+      "path": "parts/icon-lock-mint.svg",
+      "bytes": 576,
+      "sha256": "3c80649336fd6bb0b47b59384bf18ca558fffdd8272ca3fdbf3dbe12e4c5e163"
+    },
+    {
+      "path": "parts/icon-person-ice.svg",
+      "bytes": 512,
+      "sha256": "f6ebed11fe8ff49a31756eab57aece60452836b509dea8e6b225b440bbb65e61"
+    },
+    {
+      "path": "parts/icon-person-mint.svg",
+      "bytes": 512,
+      "sha256": "d6db002b991c90c3248ab576feb308c886f79ded0f8e00b39ee71515379ba7f4"
+    },
+    {
+      "path": "parts/icon-search-ice.svg",
+      "bytes": 489,
+      "sha256": "7548a1d49afed12bcaf261f32d09ac43f3d94186cd623fcc5cb016b69d1ed7d6"
+    },
+    {
+      "path": "parts/icon-search-mint.svg",
+      "bytes": 489,
+      "sha256": "d45614632823312d8e014e60de4e45de88823a561acfe346713253a952196be2"
+    },
+    {
+      "path": "parts/icon-shield-ice.svg",
+      "bytes": 527,
+      "sha256": "f50d3b900d0309bc376853472f127fc9643f0bc9a7624575e73f462be2c3fbf1"
+    },
+    {
+      "path": "parts/icon-shield-mint.svg",
+      "bytes": 527,
+      "sha256": "8042dcf830e377742c3ec27b912996d4018a38261d04e4039a8f48b734c87cb9"
+    },
+    {
+      "path": "parts/icon-spark-ice.svg",
+      "bytes": 487,
+      "sha256": "16d8b9986758220c811a5c9c1e30cc210e0b3f8cc933ba75fdf7777fde1adc2e"
+    },
+    {
+      "path": "parts/icon-spark-mint.svg",
+      "bytes": 487,
+      "sha256": "413b39192d66bdd8585135a8ba7492ff1ffbc2b130a47f0dacffddde3b4e17fd"
+    },
+    {
+      "path": "parts/icon-upload-ice.svg",
+      "bytes": 488,
+      "sha256": "ff2aa6705422e04a7d00e028abb308cd1451dc43f8d45779cbddb711ebce4a97"
+    },
+    {
+      "path": "parts/icon-upload-mint.svg",
+      "bytes": 488,
+      "sha256": "b969520325873928bf0c1f55cea145667bcc6ad0cfe9ddb31a1ef96ec301566f"
+    },
+    {
+      "path": "parts/light-flare-01.svg",
+      "bytes": 369,
+      "sha256": "821ee41f5673d837f89ae9eb1c8304910dac9bf5a34d31486d140239da603e73"
+    },
+    {
+      "path": "parts/light-flare-02.svg",
+      "bytes": 369,
+      "sha256": "2d815ae011be852f08dc08189bb0bc180592ed43d3f11f62705a96b859a307cc"
+    },
+    {
+      "path": "parts/light-flare-03.svg",
+      "bytes": 369,
+      "sha256": "0f968aaa314ef370bb8ea221196eb5223bb7c89ac904ed4a935c158610d84d58"
+    },
+    {
+      "path": "parts/light-flare-04.svg",
+      "bytes": 369,
+      "sha256": "5f4e100820e2c85de4f4c64ef6a1fc1acdaab25210f3b13ef63bb4f8a883e57c"
+    },
+    {
+      "path": "parts/light-flare-05.svg",
+      "bytes": 369,
+      "sha256": "3364a6e4a5356e97609120a4b3ca63f2563144cd240dfce8977722431d4880a5"
+    },
+    {
+      "path": "parts/light-flare-06.svg",
+      "bytes": 369,
+      "sha256": "e1b23a9b6d09eff8fa20c1885f3a1a738205cfd0172e99bb2ffa1af8a1690ea7"
+    },
+    {
+      "path": "parts/light-flare-07.svg",
+      "bytes": 370,
+      "sha256": "b2b85a711e2bc3cfc3c564b14df5f2d764a92af0c1a114e8454fcb5927821609"
+    },
+    {
+      "path": "parts/light-flare-08.svg",
+      "bytes": 370,
+      "sha256": "c74dd3978b15a72f88a48a258493a82569db9f981b05c20fc1e0e0bcd43a8cbe"
+    },
+    {
+      "path": "parts/panel-skin-01.svg",
+      "bytes": 656,
+      "sha256": "0d9843a21930564963d569efe0f75f02fe0ba8d2215aee47ce0fcb996009cd01"
+    },
+    {
+      "path": "parts/panel-skin-02.svg",
+      "bytes": 656,
+      "sha256": "aee244269ed656fa8d999f85a7e8a18367dce87200d6d893c4a03b9d5072e95b"
+    },
+    {
+      "path": "parts/panel-skin-03.svg",
+      "bytes": 656,
+      "sha256": "efe5e6954ee59c18f3f3d2c81e726ffa9abbc810ece8c24f9316e3bb1e2709a1"
+    },
+    {
+      "path": "parts/panel-skin-04.svg",
+      "bytes": 656,
+      "sha256": "e25b58fbf879098fe6d10a8ec695242408624e9d6600021a861cc260623e5c15"
+    },
+    {
+      "path": "parts/panel-skin-05.svg",
+      "bytes": 656,
+      "sha256": "d9732ce53817baef98bd98348d8bcf734b0d7b1e4097c287a0f502fbf8f69c5a"
+    },
+    {
+      "path": "parts/panel-skin-06.svg",
+      "bytes": 656,
+      "sha256": "12961c282c5825ce59c3233fe6685aaca17e2de5c3f935fa15cb3433126e96a9"
+    },
+    {
+      "path": "parts/panel-skin-07.svg",
+      "bytes": 656,
+      "sha256": "14b4cccc3af4ad809b7795b562bc4fc9ba15854e3dc5c1e95f69b9a6a4e69cdd"
+    },
+    {
+      "path": "parts/panel-skin-08.svg",
+      "bytes": 656,
+      "sha256": "970f56f376b5180c48a1dc9e6ba861a1a64ecc563c6ada9ec2027514a7b44a01"
+    }
+  ],
+  "generated_atlases": {
+    "mint": {
+      "generation_id": "1275e4ac-f62b-490b-bb8d-41b6d32908b4",
+      "transfer_sha256": "3e6f285ee2f26a271b3a280fc6912e9d97884d0796bea4ea5dd43650a17cc8b5"
+    },
+    "marble": {
+      "generation_id": "5e9110c9-e818-4973-aff8-d7894bd97b22",
+      "transfer_sha256": "ba2da0dbc1093d09ba286e749493a7234588e67c2991d4a939d68e3638b9d10c"
+    }
+  }
+}

@@ -1,0 +1,43 @@
+{
+  "fonts": [
+    {
+      "file": "honmono-text-regular.woff2",
+      "family": "Honmono Text",
+      "style": "Regular",
+      "bytes": 131504,
+      "sha256": "4177054c87d920122d04177247a22c7ffbf655c49b1f742a62ed63f0784c4e94",
+      "original_kit_relative": "fonts/zenkakugothicnew/ZenKakuGothicNew-Regular.ttf",
+      "original_sha256": "b840cd07a67d89cacca44249ae49aa99ee7640eb5ce623be8d8983d6aabac801",
+      "modifications": "Subset of app strings plus kana/ASCII; primary family names changed; WOFF2 conversion. Original copyright/license metadata retained; unchanged complete OFL text bundled.",
+      "license": "SIL Open Font License 1.1"
+    },
+    {
+      "file": "honmono-text-bold.woff2",
+      "family": "Honmono Text",
+      "style": "Bold",
+      "bytes": 132744,
+      "sha256": "35c3bc2119ac3abc10289729ae1e7be8b9651d7dee89ebf3389692fd1056c719",
+      "original_kit_relative": "fonts/zenkakugothicnew/ZenKakuGothicNew-Bold.ttf",
+      "original_sha256": "0081cedabc4921982fcd061f845a005664ac7fb642af2dd34b4007bc63ccd235",
+      "modifications": "Subset of app strings plus kana/ASCII; primary family names changed; WOFF2 conversion. Original copyright/license metadata retained; unchanged complete OFL text bundled.",
+      "license": "SIL Open Font License 1.1"
+    },
+    {
+      "file": "honmono-display.woff2",
+      "family": "Honmono Display",
+      "style": "Regular",
+      "bytes": 33028,
+      "sha256": "7214aed2406b63a2c00aa687962708b305503c2f767e5994bab10e9e0e84747d",
+      "original_kit_relative": "fonts/spacegrotesk/SpaceGrotesk[wght].ttf",
+      "original_sha256": "acad6de1fc93436f5c0f1f4137751ef04f1aea3063e7036535970ffcfbd79f72",
+      "modifications": "Subset of app strings plus kana/ASCII; primary family names changed; WOFF2 conversion. Original copyright/license metadata retained; unchanged complete OFL text bundled.",
+      "license": "SIL Open Font License 1.1"
+    }
+  ],
+  "fonts_not_sold_separately": true,
+  "original_kit_retained": true,
+  "upstream_families": [
+    "Zen Kaku Gothic New",
+    "Space Grotesk"
+  ]
+}

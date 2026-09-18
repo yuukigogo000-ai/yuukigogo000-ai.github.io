@@ -176,8 +176,8 @@ def main():
             ("リンク切れ",     "honmono/index.html",        'href="report/"',            'href="repooort/"'),
             ("禁止表現の復活", "honmono/docs/index.html",   "ページを閉じれば何も残りません", "ページを閉じれば何も残りません(オフラインでも動作します)"),
             ("必須記載の欠落", "honmono/legal/terms.html",  "故意または重大な過失",       "ぜんぶ"),
-            ("外部読み込み",   "honmono/index.html",        '<link rel="stylesheet" href="honmono.css">',
-                                                            '<link rel="stylesheet" href="honmono.css"><script src="https://evil.example.com/x.js"></script>'),
+            ("外部読み込み",   "honmono/index.html",        '</head>',
+                                                            '<script src="https://evil.example.com/x.js"></script></head>'),
             ("タグ崩れ",       "honmono/business/index.html", "</main>",                 "</main></div>"),
             ("架空の人名",     "honmono/creators/creators.json", "掲載カードの見本 ①",   "(サンプル)葉山みお"),
         ]

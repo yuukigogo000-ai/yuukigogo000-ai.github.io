@@ -4,33 +4,33 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
-<title>AIアカウント鑑定 — HONMONO</title>
+<meta name="color-scheme" content="dark">
+<title>アカウントを確認 — HONMONO</title>
 <meta name="description" content="SNS・マッチングアプリのアカウントがAI製・なりすましでないかをチェックリストでリスク診断。ロマンス詐欺対策にも。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
 <meta property="og:type" content="website">
-<meta property="og:title" content="AIアカウント鑑定 — HONMONO">
+<meta property="og:title" content="アカウントを確認 — HONMONO">
 <meta property="og:description" content="そのアカウント、実在する人間ですか? AI製・なりすまし・ロマンス詐欺のリスクを無料でチェックリスト診断。">
 <meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/aicheck/">
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="../honmono.css">
+<link rel="stylesheet" href="../honmono.css?v=20260918-mint-marble">
 </head>
-<body data-screen="screen-assess">
+<body data-screen="screen-assess" data-page="aicheck">
 <header class="site-header"><div class="wrap header-row">
-  <a class="brand" href="../" data-capability-id="F011">HONMONO<small>透かすと、見える。</small></a>
+  <a class="brand" href="../" data-capability-id="F011">HONMONO</a>
   <nav class="nav" aria-label="主要ツール">
-    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">来歴</a>
+    <a href="../checker/" aria-label="来歴チェッカー" data-capability-id="F011">画像</a>
     <a href="../badge/" aria-label="実在証明バッジ" data-capability-id="F011">証明</a>
-    <a href="../aicheck/" aria-current="page" aria-label="AIアカウント鑑定" data-capability-id="F011">鑑定</a>
+    <a href="../aicheck/" aria-current="page" aria-label="アカウント確認" data-capability-id="F011">アカウント</a>
     <a href="../creators/" aria-label="実在クリエイター名鑑" data-capability-id="F011">名鑑</a>
     <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
 
 <section class="page-hero"><div class="wrap"><div>
-  <div class="eyebrow">Account risk check</div>
-  <h1>不安を、項目に分ける。</h1>
+  <div class="eyebrow">アカウント確認チェックリスト</div>
+  <h1>アカウントを確認</h1>
   <p class="lede">直感で断定せず、観察した注意信号と裏付けを分けて記録し、次に取る行動へつなげます。</p>
 </div></div></section>
 
@@ -53,6 +53,7 @@
     </div>
   </section>
 
+  <p class="assessment-jump"><a class="btn secondary" href="#resultArea">診断結果を見る ↓</a></p>
   <div id="checklists"></div>
 
   <section class="section">
@@ -80,6 +81,7 @@
         通報するなら、公開の場ではなく<b>プラットフォームの通報窓口や警察(#9110)へ</b>。
       </p>
     <div class="assess-actions">
+      <a class="btn secondary" href="#checklists">チェック項目に戻る ↑</a>
       <button class="btn secondary" id="copyResult" data-capability-id="F013">診断結果をコピー</button>
       <button class="btn secondary" id="saveImage" data-capability-id="F012">結果画像を保存</button>
       <span id="copied" class="copy-confirm" hidden>コピーしました ✓</span>

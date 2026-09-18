@@ -4,38 +4,42 @@
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:; frame-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
-<title>画像来歴チェッカー — HONMONO</title>
+<meta name="color-scheme" content="dark">
+<title>画像をチェック — HONMONO</title>
 <meta name="description" content="画像のC2PA(コンテンツ来歴)・EXIF・XMP・生成AIツールの痕跡をブラウザ内で解析。AI生成画像かカメラ撮影かの判定材料を提示します。">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230e7490'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='white'>✓</text></svg>">
 <meta property="og:type" content="website">
-<meta property="og:title" content="画像来歴チェッカー — HONMONO">
+<meta property="og:title" content="画像をチェック — HONMONO">
 <meta property="og:description" content="画像をドロップするだけで、AI生成の痕跡・C2PA来歴・カメラEXIFをブラウザ内で解析。アップロード不要・無料。">
 <meta property="og:url" content="https://yuukigogo000-ai.github.io/honmono/checker/">
 <meta property="og:image" content="https://yuukigogo000-ai.github.io/honmono/og.png">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="../honmono.css">
+<link rel="stylesheet" href="../honmono.css?v=20260918-mint-marble">
 <style>
   #result { display: none; }
+  .pixel-quick { margin-top:12px; padding:12px 14px; border:1px solid var(--line); border-radius:12px; background:var(--card); align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .pixel-quick b { display:block; margin-bottom:3px; }
+  .pixel-quick span { display:block; font-size:.84rem; color:var(--muted); line-height:1.55; }
+  .pixel-quick .btn { margin:0; min-height:44px; }
   .usecase-list { font-size: 12px; color: var(--fiber-2); padding-left: 1.4em; margin: 0; }
   .usecase-list li { margin-bottom: 6px; }
 </style>
 </head>
-<body data-screen="screen-inspect">
+<body data-screen="screen-inspect" data-page="checker">
 <header class="site-header"><div class="wrap header-row">
-  <a class="brand" href="../" data-capability-id="F011">HONMONO<small>透かすと、見える。</small></a>
+  <a class="brand" href="../" data-capability-id="F011">HONMONO</a>
   <nav class="nav" aria-label="主要ツール">
-    <a href="../checker/" aria-current="page" aria-label="来歴チェッカー" data-capability-id="F011">来歴</a>
+    <a href="../checker/" aria-current="page" aria-label="来歴チェッカー" data-capability-id="F011">画像</a>
     <a href="../badge/" aria-label="実在証明バッジ" data-capability-id="F011">証明</a>
-    <a href="../aicheck/" aria-label="AIアカウント鑑定" data-capability-id="F011">鑑定</a>
+    <a href="../aicheck/" aria-label="アカウント確認" data-capability-id="F011">アカウント</a>
     <a href="../creators/" aria-label="実在クリエイター名鑑" data-capability-id="F011">名鑑</a>
     <a href="../docs/" aria-label="説明書" data-capability-id="F011">説明書</a>
   </nav>
 </div></header>
 
 <section class="page-hero"><div class="wrap"><div>
-  <div class="eyebrow">画像来歴チェッカー / Provenance inspection</div>
-  <h1>来歴を、静かに読む。</h1>
+  <div class="eyebrow">画像来歴チェッカー</div>
+  <h1>画像をチェック</h1>
   <p class="lede">画像・動画の中に残った来歴の手掛かりを、断定ではなく根拠として並べます。</p>
 </div></div></section>
 
@@ -53,7 +57,7 @@
     <div id="drop" class="drop-zone" tabindex="0" role="button" aria-label="画像・動画を選択" data-capability-id="F003">
       <input type="file" id="file" accept=".jpg,.jpeg,.png,.webp,.heic,.heif,.avif,.mp4,.mov,.m4v,image/jpeg,image/png,image/webp,image/heic,image/heif,image/avif,video/mp4,video/quicktime" hidden data-capability-id="F003">
       <div>
-        <div class="icon-disc" style="margin:0 auto 10px">＋</div>
+        <img class="upload-icon" src="../assets/mint-marble/parts/icon-upload-ice.svg" width="44" height="44" alt="" aria-hidden="true">
         <strong>画像・動画をここへ</strong>
         <span class="muted micro">ドロップ / タップして選択 / Enter・Space</span>
       </div>
@@ -73,6 +77,10 @@
           </div>
         </div>
         <div id="verdict" data-capability-id="F023"></div>
+        <div id="pixelQuick" class="pixel-quick" style="display:none" aria-live="polite">
+          <div><b id="pixelQuickTitle">AI画素判定</b><span id="pixelQuickText">画像そのものからAIらしさを確認します。</span></div>
+          <button id="pixelQuickRun" class="btn secondary" type="button">AI画像判定を開始</button>
+        </div>
       </div>
     </div>
 
@@ -82,7 +90,7 @@
         初回はモデル(<span id="pixelSize">約90MB</span>)を読み込みます(2回目以降は端末内キャッシュ)。PC推奨。</p>
       <div id="pixelControls">
         <button id="pixelRun" class="btn secondary" style="margin-top:0">画素判定を実行する</button>
-        <label style="display:inline-block; margin:0 0 0 12px; font-weight:400; font-size:.85rem"><input type="checkbox" id="pixelAuto"> 次回から自動で実行</label>
+        <label style="display:inline-block; margin:0 0 0 12px; font-weight:400; font-size:.85rem"><input type="checkbox" id="pixelAuto"> 画像を選んだら自動で実行</label>
       </div>
       <div id="pixelProgress" class="note" style="display:none"></div>
       <div id="pixelResult" style="display:none">
@@ -1008,8 +1016,8 @@ const VERDICTS = {
              body: '素材サイトで配布されている画像の痕跡があります。実在アカウントの「本人写真」としては不自然で、流用または架空人物の疑いがあります。AI生成かどうかは素材サイト上の「生成AI」ラベルや、下の実験的な画素判定も参考にしてください。' },
   weak:    { cls: 'warn', icon: '🟡', title: 'AI生成を疑う手がかりがあります(弱)',
              body: '決定的な証拠はありませんが、注意すべき特徴が見つかりました。詳細は下のシグナル一覧を確認し、逆画像検索や元データの入手で追加検証してください。' },
-  unknown: { cls: 'warn', icon: '❓', title: '判定材料がありません',
-             body: 'メタデータが見つかりませんでした。SNS経由のファイルはメタデータが消えるため、可能なら元データで再チェックを。下の「経緯(推定)」も参考にしてください。' },
+  unknown: { cls: 'warn', icon: '❓', title: '来歴情報だけでは判定できません',
+             body: 'メタデータが見つかりませんでした。画像ファイルは続けてAI画素判定も使えます。SNS経由ではメタデータが消えるため、可能なら元データも試してください。' },
 };
 
 /* ========== 実験: 画素判定のUI ========== */
@@ -1018,8 +1026,9 @@ let analysisSequence = 0;
 function setupPixel(file, res) {
   const P = window.HonmonoPixel;
   const card = $('pixelCard');
+  const quick = $('pixelQuick');
   const isVideoFile = (file.type && file.type.startsWith('video/')) || /[.](mp4|mov|m4v)$/i.test(file.name);
-  if (!P || !P.available() || isVideoFile || res.format === '不明') { card.style.display = 'none'; return; }
+  if (!P || !P.available() || isVideoFile || res.format === '不明') { card.style.display = 'none'; quick.style.display = 'none'; return; }
   pixelCurrentFile = file;
   card.style.display = 'block';
   $('pixelResult').style.display = 'none';
@@ -1027,10 +1036,19 @@ function setupPixel(file, res) {
   $('pixelControls').style.display = '';
   if (P.cfg.totalBytes) $('pixelSize').textContent = '約' + Math.round(P.cfg.totalBytes / 1e6) + 'MB';
   $('pixelEval').textContent = P.cfg.evalNote || '';
-  let auto = false;
-  try { auto = localStorage.getItem('honmono_pixel_auto') === '1'; } catch {}
+  let stored = null;
+  try { stored = localStorage.getItem('honmono_pixel_auto'); } catch {}
+  const auto = stored === null ? true : stored === '1';
   $('pixelAuto').checked = auto;
-  if (auto) runPixel();
+  quick.style.display = 'flex';
+  $('pixelQuickTitle').textContent = auto ? 'AI画素判定を開始します' : 'AI画素判定';
+  $('pixelQuickText').textContent = auto ? '画像そのものを判定中です。初回だけ約90MBのモデルを読み込みます。' : '画像そのものから判定できます。初回だけ約90MBのモデルを読み込みます。';
+  $('pixelQuickRun').style.display = auto ? 'none' : '';
+  $('pixelQuickRun').textContent = 'AI画像判定を開始';
+  if (auto) {
+    runPixel();
+    if (window.matchMedia && window.matchMedia('(max-width: 600px)').matches) quick.scrollIntoView({ behavior: 'auto', block: 'center' });
+  }
 }
 async function runPixel() {
   const P = window.HonmonoPixel;
@@ -1038,14 +1056,20 @@ async function runPixel() {
   const sequence = analysisSequence;
   if (!P || !file) return;
   $('pixelControls').style.display = 'none';
+  $('pixelQuick').style.display = 'flex';
+  $('pixelQuickTitle').textContent = 'AI画素判定中';
+  $('pixelQuickText').textContent = 'モデルを読み込み中… 初回は約90MBです。';
+  $('pixelQuickRun').style.display = 'none';
   $('pixelProgress').style.display = 'block';
   $('pixelProgress').textContent = 'モデルを読み込み中…';
   try {
     const r = await P.predict(file, (got, total) => {
       if (sequence !== analysisSequence || file !== pixelCurrentFile) return;
-      $('pixelProgress').textContent = total
+      const progressText = total
         ? `モデルを読み込み中… ${Math.round(got / 1e6)} / ${Math.round(total / 1e6)} MB`
         : `モデルを読み込み中… ${Math.round(got / 1e6)} MB`;
+      $('pixelProgress').textContent = progressText;
+      $('pixelQuickText').textContent = progressText;
     });
     if (sequence !== analysisSequence || file !== pixelCurrentFile) return; // 別ファイルに切り替わっていたら捨てる
     const pct = Math.round(r.pAI * 100);
@@ -1064,14 +1088,28 @@ async function runPixel() {
     $('pixelNote').textContent = note;
     $('pixelProgress').style.display = 'none';
     $('pixelResult').style.display = 'block';
+    $('pixelControls').style.display = '';
+    $('pixelQuickTitle').textContent = 'AI画素判定';
+    $('pixelQuickText').textContent = `${pct} / 100 — ${label}（確率ではありません）`;
+    $('pixelQuickRun').textContent = '詳しい結果を見る';
+    $('pixelQuickRun').style.display = '';
   } catch (e) {
     if (sequence !== analysisSequence || file !== pixelCurrentFile) return;
-    $('pixelProgress').textContent = '画素判定を実行できませんでした: ' + (e && e.message || e);
+    const msg = '画素判定を実行できませんでした: ' + (e && e.message || e);
+    $('pixelProgress').textContent = msg;
+    $('pixelQuickTitle').textContent = 'AI画素判定を実行できませんでした';
+    $('pixelQuickText').textContent = msg;
+    $('pixelQuickRun').textContent = '再試行';
+    $('pixelQuickRun').style.display = '';
     $('pixelControls').style.display = '';
   }
 }
 document.addEventListener('DOMContentLoaded', () => {
   const b = $('pixelRun'); if (b) b.addEventListener('click', runPixel);
+  const q = $('pixelQuickRun'); if (q) q.addEventListener('click', () => {
+    if ($('pixelResult').style.display === 'block') $('pixelCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    else runPixel();
+  });
   const a = $('pixelAuto'); if (a) a.addEventListener('change', () => { try { localStorage.setItem('honmono_pixel_auto', a.checked ? '1' : '0'); } catch {} });
 });
 
@@ -1079,6 +1117,7 @@ async function handle(file) {
   const sequence = ++analysisSequence;
   pixelCurrentFile = null;
   $('pixelCard').style.display = 'none';
+  $('pixelQuick').style.display = 'none';
   $('pixelResult').style.display = 'none';
   $('pixelProgress').style.display = 'none';
   for (const el of [$('preview'), $('previewVid')]) {
