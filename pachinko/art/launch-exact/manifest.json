@@ -1,0 +1,226 @@
+{
+  "method": "Integer crop and lossless WebP; decorative crown/gear/divider have black backing removed using alpha only. No regeneration, recoloring or upscaling. All UI text and controls remain HTML/CSS.",
+  "sources": {
+    "background": {
+      "name": "E41B59E2-E3EF-40FF-9185-5AB4BDCC48DC.jpeg",
+      "sha256": "e7cfc2c0f91f9ef7a1bf969966f0e212065213cead1d1409efbe263165fe3299"
+    },
+    "asset": {
+      "name": "6FD6A23C-02A7-4E46-9E51-75F974DF6E0B.jpeg",
+      "sha256": "8885984614a1232b77cbb75e9075c34c977242e971356075b1e6d6a82d60d022"
+    },
+    "component": {
+      "name": "81305BCB-B908-420B-A26E-EA9FC7A14054.jpeg",
+      "sha256": "db99a5601cf0314d8fc082e3b9e596833fa2e61e22f21fd11eb94f7b0d6ac116"
+    }
+  },
+  "assets": [
+    {
+      "file": "title-hall.webp",
+      "source": "background",
+      "box": [
+        20,
+        42,
+        541,
+        753
+      ],
+      "size": [
+        521,
+        711
+      ],
+      "decoded_pixels_sha256": "5cfa3bda095799f66ae02adc1786aaa4afd213cfb33d700c0d3227bae5da673a",
+      "sha256": "175fe2a154200a8d81c51fb7bb1eae7320166caf1943c650a6ad2857f559a73c",
+      "bytes": 580062
+    },
+    {
+      "file": "difficulty-easy.webp",
+      "source": "background",
+      "box": [
+        576,
+        67,
+        1024,
+        202
+      ],
+      "size": [
+        448,
+        135
+      ],
+      "decoded_pixels_sha256": "55b6c45549955660ba93e5404465748fb1ea220f461d5f2865191855c9c26998",
+      "sha256": "8c0df27a06ec3bcc55c0ffcca970fbfc133b82767801c047a70224ba124ed38f",
+      "bytes": 99944
+    },
+    {
+      "file": "difficulty-normal.webp",
+      "source": "background",
+      "box": [
+        576,
+        254,
+        1024,
+        390
+      ],
+      "size": [
+        448,
+        136
+      ],
+      "decoded_pixels_sha256": "03e8e0703afc60ca7fce3d05b47974a206ce1cee5f1ddbc3b31c8fad9b4fab1b",
+      "sha256": "1a91302908c2f5c7898570471ca3e0b0fcb153c1eb66804093409b6003f942b9",
+      "bytes": 100902
+    },
+    {
+      "file": "difficulty-hard.webp",
+      "source": "background",
+      "box": [
+        576,
+        442,
+        1024,
+        582
+      ],
+      "size": [
+        448,
+        140
+      ],
+      "decoded_pixels_sha256": "8eb37088c7bd701dfdc3b247584dcbc4e8f8c72822ca56f8b12d5aaf437b106f",
+      "sha256": "b2e8e20683b2a32c008e4e725235752f253e700f5f73119f4b653283e4ccb783",
+      "bytes": 102838
+    },
+    {
+      "file": "marble.webp",
+      "source": "background",
+      "box": [
+        1058,
+        46,
+        1246,
+        164
+      ],
+      "size": [
+        188,
+        118
+      ],
+      "decoded_pixels_sha256": "f0af675d585b51539e0e890204a2f367f4330e7af23e808596ab64303227b98a",
+      "sha256": "2a0525b38fea66e928208a5835b96012f72e8bb9037d3592209d8f6c0be4bd1e",
+      "bytes": 29210
+    },
+    {
+      "file": "panel-marble.webp",
+      "source": "background",
+      "box": [
+        780,
+        721,
+        1095,
+        836
+      ],
+      "size": [
+        315,
+        115
+      ],
+      "decoded_pixels_sha256": "6879a7c8572141fff64e5d85c2688c49982740452dbb38490b2f03a60e584022",
+      "sha256": "3757f93214617ad8a13098315838df09c90f32b1ba57d10730ea5041324d1707",
+      "bytes": 45212
+    },
+    {
+      "file": "panel-gloss.webp",
+      "source": "background",
+      "box": [
+        1109,
+        721,
+        1420,
+        836
+      ],
+      "size": [
+        311,
+        115
+      ],
+      "decoded_pixels_sha256": "6f8c74dfb3535f291e93fc80d856cd691b88511a56c76dba02b808c2d8a002ac",
+      "sha256": "c637bcd0f33155d01e2c53873afd91d8641a70c29ee665d41c9fd8eb0995ca03",
+      "bytes": 24700
+    },
+    {
+      "file": "crown.webp",
+      "source": "asset",
+      "box": [
+        19,
+        91,
+        154,
+        190
+      ],
+      "size": [
+        135,
+        99
+      ],
+      "decoded_pixels_sha256": "56a333bf444e50de6cfda58b32ce5dbfd04eaadfa8c46eb06936c36bf5376fbe",
+      "sha256": "0f07c8fcdb1009966dfc769a33fb85d597d26a82a41e44782512c26df99a6c9c",
+      "bytes": 18070,
+      "alpha_extraction": "Black sheet backing removed with alpha only; RGB artwork retained."
+    },
+    {
+      "file": "divider.webp",
+      "source": "asset",
+      "box": [
+        774,
+        173,
+        1107,
+        196
+      ],
+      "size": [
+        333,
+        23
+      ],
+      "decoded_pixels_sha256": "cda989cd691c51f76c253c9f20274b5f66c29d694ef4555ec87fdd1d05766c80",
+      "sha256": "06f2127c60f19a20849bab956e0b8dd8945b4fceb8f56d6c65dc6b19eefe65dc",
+      "bytes": 6552,
+      "alpha_extraction": "Black sheet backing removed with alpha only; RGB artwork retained."
+    },
+    {
+      "file": "logo-ornament.webp",
+      "source": "asset",
+      "box": [
+        773,
+        88,
+        1106,
+        136
+      ],
+      "size": [
+        333,
+        48
+      ],
+      "decoded_pixels_sha256": "4daa541225426f58628f934b1fed4426e9c80a3372ac7bcfb9c8de6644e80192",
+      "sha256": "1a0c4c5ca6d225c21295a129c67fc0036ea870ad4caa8824e1ffa95394f3c249",
+      "bytes": 10990
+    },
+    {
+      "file": "gear.webp",
+      "source": "component",
+      "box": [
+        571,
+        190,
+        639,
+        258
+      ],
+      "size": [
+        68,
+        68
+      ],
+      "decoded_pixels_sha256": "24e705a840c14e3af4e81a07eb6940fccc218923067a89ff749b3a322f0d287c",
+      "sha256": "fa4f7684f98d73a42f4c664ae751c239982762f9b468f6b5d8fe989163c58f7e",
+      "bytes": 7932,
+      "alpha_extraction": "Black sheet backing removed with alpha only; RGB artwork retained."
+    },
+    {
+      "file": "panel-dark.webp",
+      "source": "component",
+      "box": [
+        1192,
+        297,
+        1419,
+        379
+      ],
+      "size": [
+        227,
+        82
+      ],
+      "decoded_pixels_sha256": "fd5ac4a4ad4af10292501e960d133eaade8c8ea4fb37e05e718ae24198f783a5",
+      "sha256": "1fe4166623a0cc9b45e7c4f792d0399f59edc8f081ff2905fc701840b2364eac",
+      "bytes": 13610
+    }
+  ]
+}
