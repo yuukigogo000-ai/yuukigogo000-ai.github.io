@@ -130,7 +130,7 @@
       </div>
       <section class="reaction-panel" id="reactionPanel" hidden aria-labelledby="reactionTitle">
         <h3 id="reactionTitle">この画像の、どこに反応した？</h3>
-        <p class="note">画像の一部を単色にする・粗くする、2通りの加工でスコアを比べます。変化があった場所と実測値を表示します。</p>
+        <p class="note">画像の一部を単色にする・粗くする、2通りの加工でスコアを比べます。場所ごとのスコアの変化を表示します。</p>
         <div class="reaction-actions">
           <button type="button" class="btn secondary" id="reactionRun">反応した場所を調べる</button>
           <button type="button" class="btn secondary" id="reactionCancel" hidden>中止する</button>
@@ -146,7 +146,7 @@
           </div>
           <p class="note">番号を押すと測定値を確認できます。↓は加工後にAIスコアが下がった区画、↑は上がった区画、・は小さな変化または不一致です。</p>
           <p id="reactionSelected" class="note" aria-live="polite"></p>
-          <p class="note"><strong>これは「加工すると判定が変わる場所」です。AIで作られた場所を示すものではありません。</strong>加工そのものの影響も含まれます。「指が変」「服がおかしい」といった理由までは、この解析から分かりません。</p>
+          <p class="note"><strong>これは、部分的に加工したときのスコアの反応です。AIで作られた場所を示すものではありません。</strong>加工そのものの影響も含まれます。「指が変」「服がおかしい」といった理由までは、この解析から分かりません。</p>
           <details class="note">
             <summary>全9区画の数値と、比較方法を見る</summary>
             <table class="reaction-table"><caption>AIスコアの比較（0〜100点）</caption><thead><tr><th scope="col">区画</th><th scope="col">加工前</th><th scope="col">単色に</th><th scope="col">粗く</th></tr></thead><tbody id="reactionRows"></tbody></table>

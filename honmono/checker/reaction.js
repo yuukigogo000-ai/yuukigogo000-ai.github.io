@@ -89,6 +89,7 @@
       }
       regions.push(summarize(baseline, scores[0], scores[1], index));
     }
+    checkAbort(signal);
     return { baseline, primaryScore, regions, ms: Math.round(performance.now() - start), evaluations: done, displayDelta: DISPLAY_DELTA, inputSize: size, grid: GRID };
   }
   const api = { analyze, rect, altered, summarize, labels: LABELS, displayDelta: DISPLAY_DELTA };
@@ -121,7 +122,7 @@
   }
   function interpretation(region, base) {
     const measured = `「${region.label}」を単色にすると${point(base)}→${point(region.flat)}点、粗くすると${point(base)}→${point(region.coarse)}点でした。`;
-    if (region.direction === 'down') return measured + ' どちらの加工でもAIスコアが下がりました。この区画の情報を変えると、モデルのAI判定が弱まることを確認できました。';
+    if (region.direction === 'down') return measured + ' どちらの加工でもAIスコアが下がりました。この区画の情報を変えると、モデルのAIらしさの反応が弱まることを確認できました。';
     if (region.direction === 'up') return measured + ' どちらの加工でもAIスコアが上がりました。この区画をAI判定の根拠とは説明できません。';
     return measured + ' 変化が小さい、または加工方法によって反応が異なります。この区画を判定の根拠とは特定できません。';
   }
@@ -158,8 +159,8 @@
     get('reactionRange').textContent = `加工前は${point(result.baseline)}点。18通りの加工後は${point(Math.min(...variants))}〜${point(Math.max(...variants))}点でした。AI判定の基準（${point(threshold)}点）以上になったのは18通り中${above}通りです。`;
     const unchanged = result.primaryScore >= threshold ? above : 18 - above;
     get('reactionStability').textContent = (unchanged === 18
-      ? '18通りすべてで、加工前と同じ判定でした。'
-      : `18通り中${18 - unchanged}通りで、加工前と判定が変わりました。加工の影響を受けています。`)
+      ? (result.primaryScore >= threshold ? '18通りすべてで、AI判定の基準以上でした。' : '18通りすべてで、AI判定の基準未満でした。低いスコアでも人が作った証拠にはなりません。')
+      : `18通り中${18 - unchanged}通りで、AI判定の基準に達するかどうかが加工前から変わりました。加工の影響を受けています。`)
       + ' ただし、18枚は同じ画像の加工版です。独立した18個の証拠でも、判定が正しい保証でもありません。';
     get('reactionStatus').textContent = positives.length
       ? `追加解析が完了しました。2通りの加工でAIスコアが下がった区画は${positives.length}か所です。最も変化がそろって大きかった「${selected.label}」を選択しています。`
@@ -183,7 +184,8 @@
         get('reactionProgress').max = total; get('reactionProgress').value = done;
         get('reactionStatus').textContent = done === 0 ? '元のスコアを確認しています。' : `画像の反応を比較中… ${done} / ${total}。元の判定結果は変わりません。`;
       }});
-      if (token !== generation || active.signal.aborted) return;
+      if (token !== generation) return;
+      checkAbort(active.signal);
       render(result, target.file);
       get('reactionRun').textContent = '追加解析をやり直す';
     } catch (error) {

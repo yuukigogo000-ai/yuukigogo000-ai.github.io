@@ -18,11 +18,12 @@ async function origin(){
 function watch(page){page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>requests.push({url:r.url(),method:r.method(),body:!!r.postData()}));}
 async function fixture(page){return Buffer.from(await page.evaluate(()=>{const c=document.createElement('canvas');c.width=256;c.height=256;const g=c.getContext('2d');const d=g.createImageData(256,256);for(let i=0;i<d.data.length;i+=4){d.data[i]=(i/4)%256;d.data[i+1]=Math.floor(i/1024);d.data[i+2]=(i*7)%256;d.data[i+3]=255;}g.putImageData(d,0,0);return c.toDataURL('image/png').split(',')[1];}),'base64');}
 async function stub(page){await page.evaluate(()=>{
- window.__calls=0;window.__maskCalls=0;window.__mode='normal';window.__delay=0;
+ window.__calls=0;window.__maskCalls=0;window.__mode='normal';window.__delay=0;window.__cancelFinal=false;
  HonmonoPixel.predict=async file=>{window.__calls++;if(file instanceof File)return {pAI:.95,ms:1,backend:'fixture'};
  const n=window.__maskCalls++;await new Promise(r=>setTimeout(r,window.__delay));
+ if(window.__cancelFinal&&n===18)setTimeout(()=>document.getElementById('reactionCancel').click(),0);
  if(window.__mode==='error'&&n===1)throw Error('fixture inference failure');
- const p=window.__mode==='mismatch'&&n===0?.2:n===0?.95:window.__mode==='flat'?.95:([.60,.65,.99,.999,.80,.99][n-1]??.945);
+ const p=window.__mode==='mismatch'&&n===0?.2:n===0?.95:window.__mode==='flat'?.95:window.__mode==='lower'?.9:([.60,.65,.99,.999,.80,.99][n-1]??.945);
  return {pAI:p,ms:1,backend:'fixture'};};
 });}
 async function select(page,buffer,name='fixture.png'){await page.locator('#file').setInputFiles({name,mimeType:'image/png',buffer});await page.waitForFunction(()=>document.getElementById('pixelResult').style.display==='block');}
@@ -54,10 +55,13 @@ async function snapshot(page){return page.evaluate(()=>({score:document.getEleme
    const original=HonmonoPixel.predict;HonmonoPixel.predict=async()=>({pAI:.801});let blocked=false;
    try{await HonmonoReaction.analyze(file,.799);}catch(e){blocked=e.message.includes('元のスコア');}
    HonmonoPixel.predict=async()=>({pAI:.95});const r=await HonmonoReaction.analyze(file,.95);
-   HonmonoPixel.predict=original;return {blocked,evaluations:r.evaluations};
+   const ac=new AbortController();let finalAbort=false;
+   try {await HonmonoReaction.analyze(file,.95,{signal:ac.signal,onProgress(done){if(done===19)setTimeout(()=>ac.abort(),0);}});}catch(e){finalAbort=e.name==='AbortError';}
+   HonmonoPixel.predict=original;return {blocked,evaluations:r.evaluations,finalAbort};
  },bytes.toString('base64'));
  check(engine+'/roundtrip-cannot-cross-threshold',roundtrip.blocked,roundtrip);
  check(engine+'/count-without-progress-callback',roundtrip.evaluations===19,roundtrip);
+ check(engine+'/cancel-during-final-yield',roundtrip.finalAbort,roundtrip);
  await select(page,bytes);
  check(engine+'/optional-analysis-does-not-run-automatically',await page.evaluate(()=>__maskCalls===0&&document.getElementById('reactionPanel').hidden===false));
  check(engine+'/metadata-separated',(await page.locator('[data-capability-id="F022"]').first().innerText()).includes('別の検査'));
@@ -73,6 +77,11 @@ async function snapshot(page){return page.evaluate(()=>({score:document.getEleme
  await page.setViewportSize({width:390,height:844});
  await page.evaluate(()=>{__mode='flat';__maskCalls=0;});await start(page);await done(page);
  check(engine+'/no-location-does-not-invent-reason',(await page.locator('#reactionStatus').innerText()).includes('特定できません')&&(await page.locator('#reactionStability').innerText()).includes('独立した18個の証拠でも'));
+ await page.evaluate(()=>{__mode='lower';__maskCalls=0;});await start(page);await done(page);
+ check(engine+'/score-change-is-not-decision-change',(await page.locator('#reactionStability').innerText()).includes('18通りすべてで、AI判定の基準以上')&&(await page.locator('#reactionResults').innerText()).includes('スコアの反応')&&!(await page.locator('#reactionResults').innerText()).includes('加工すると判定が変わる場所'));
+ await page.evaluate(()=>{__mode='flat';__maskCalls=0;__cancelFinal=true;});await start(page);await done(page,'canceled');
+ check(engine+'/final-cancel-finishes-ui',(await page.locator('#reactionStatus').innerText()).includes('中止しました')&&await page.locator('#reactionRun').isEnabled()&&(await page.locator('#pixelScore').innerText())==='95 / 100');
+ await page.evaluate(()=>__cancelFinal=false);
  await page.evaluate(()=>{__mode='mismatch';__maskCalls=0;});await start(page);await done(page,'error');
  check(engine+'/baseline-mismatch-blocked',await page.evaluate(()=>__maskCalls===1&&document.getElementById('reactionResults').hidden&&document.getElementById('pixelScore').textContent==='95 / 100'));
  await page.evaluate(()=>{__mode='error';__maskCalls=0;});await start(page);await done(page,'error');
