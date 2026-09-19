@@ -25,6 +25,21 @@
   .pixel-quick .btn { margin:0; min-height:44px; }
   .pixel-explanation dt { font-weight:700; margin-top:1em; }
   .pixel-explanation dd { margin-inline-start:0; }
+  .reaction-panel { border-top:1px solid var(--line); margin-top:var(--s4, 16px); padding-top:var(--s4, 16px); }
+  .reaction-panel [hidden], .reaction-panel[hidden] { display:none !important; }
+  .reaction-panel h3 { margin-top:0; }
+  .reaction-actions { display:flex; flex-wrap:wrap; gap:var(--s2, 8px); }
+  .reaction-actions .btn { min-height:48px; white-space:normal; }
+  .reaction-panel progress { display:block; width:100%; margin:var(--s3, 12px) 0; accent-color:var(--warn); }
+  .reaction-stage { position:relative; max-width:420px; aspect-ratio:1; margin:var(--s4, 16px) auto; }
+  .reaction-stage img { display:block; width:100%; height:100%; object-fit:fill; }
+  .reaction-grid { position:absolute; inset:0; display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr); }
+  .reaction-cell { min-width:0; min-height:44px; background:transparent; border:1px solid var(--line); display:flex; align-items:flex-end; justify-content:flex-start; padding:var(--s2, 8px); cursor:pointer; color:var(--text); }
+  .reaction-cell span { background:var(--card); border:1px solid var(--line); padding:var(--s1, 4px) var(--s2, 8px); font-weight:700; }
+  .reaction-cell[data-direction="down"] span { color:var(--warn); }
+  .reaction-cell[aria-pressed="true"], .reaction-cell:focus-visible { outline:3px solid var(--warn); outline-offset:-3px; }
+  .reaction-table { font-size:inherit; width:100%; table-layout:fixed; }
+  .reaction-table th, .reaction-table td { padding:var(--s2, 8px) var(--s1, 4px); overflow-wrap:anywhere; }
   .usecase-list { font-size: 12px; color: var(--fiber-2); padding-left: 1.4em; margin: 0; }
   .usecase-list li { margin-bottom: 6px; }
 </style>
@@ -113,6 +128,34 @@
         <p class="note" id="pixelNote"></p>
         <p class="note">結果は自動では消えません。次の画像を選ぶまで確認できます。</p>
       </div>
+      <section class="reaction-panel" id="reactionPanel" hidden aria-labelledby="reactionTitle">
+        <h3 id="reactionTitle">この画像の、どこに反応した？</h3>
+        <p class="note">画像の一部を単色にする・粗くする、2通りの加工でスコアを比べます。変化があった場所と実測値を表示します。</p>
+        <div class="reaction-actions">
+          <button type="button" class="btn secondary" id="reactionRun">反応した場所を調べる</button>
+          <button type="button" class="btn secondary" id="reactionCancel" hidden>中止する</button>
+        </div>
+        <p class="note" id="reactionStatus" role="status" aria-live="polite"></p>
+        <progress id="reactionProgress" max="19" value="0" aria-label="反応場所の追加解析" hidden></progress>
+        <div id="reactionResults" hidden>
+          <p id="reactionRange" class="note"></p>
+          <p id="reactionStability" class="note"></p>
+          <div class="reaction-stage">
+            <img id="reactionImage" alt="9区画に分けた解析画像。番号を選ぶとスコア変化を確認できます。">
+            <div class="reaction-grid" id="reactionGrid" role="group" aria-label="区画ごとの反応を見る"></div>
+          </div>
+          <p class="note">番号を押すと測定値を確認できます。↓は加工後にAIスコアが下がった区画、↑は上がった区画、・は小さな変化または不一致です。</p>
+          <p id="reactionSelected" class="note" aria-live="polite"></p>
+          <p class="note"><strong>これは「加工すると判定が変わる場所」です。AIで作られた場所を示すものではありません。</strong>加工そのものの影響も含まれます。「指が変」「服がおかしい」といった理由までは、この解析から分かりません。</p>
+          <details class="note">
+            <summary>全9区画の数値と、比較方法を見る</summary>
+            <table class="reaction-table"><caption>AIスコアの比較（0〜100点）</caption><thead><tr><th scope="col">区画</th><th scope="col">加工前</th><th scope="col">単色に</th><th scope="col">粗く</th></tr></thead><tbody id="reactionRows"></tbody></table>
+            <p>判定時と同じ256×256の正方形画像を使い、1区画ずつ加工します。単色化は区画内の平均色、粗くする加工は8×8ピクセルごとの平均色です。加工前の比較用画像で元のスコアを再現できることも確認します。</p>
+            <p>2通りとも同じ方向に2点以上動いた区画に矢印を付けます。2点は小さな変化を強調しないための表示基準で、証拠の強さや統計的な有意差を保証する基準ではありません。区画間の相互作用や、加工方法による影響は分離できません。</p>
+          </details>
+        </div>
+        <p class="note">追加解析には通常の判定より時間がかかります。画像は端末内で処理し、送信・保存しません。途中で中止しても元の結果は残ります。</p>
+      </section>
       <details class="note pixel-explanation" id="pixelExplanation">
         <summary>判定の根拠と限界を見る</summary>
         <dl>
@@ -125,7 +168,7 @@
           <dt>イラストや加工画像にも同じ成績を当てはめられますか？</dt>
           <dd>当てはめられません。公開している成績はAI画像と実写を比べた評価です。人が描いた絵とAIイラストを区別する専用評価は示していません。評価に含まれない生成器や加工への性能も未確認です。</dd>
           <dt>どの部分が根拠になったのですか？</dt>
-          <dd>現行モデルはスコアだけを返し、判断に影響した部位は示しません。「目が不自然」「輪郭がおかしい」などを、この判定の根拠として特定することはできません。</dd>
+          <dd>現行モデルはスコアだけを返し、判断に影響した部位は示しません。上の追加解析では、画像を部分的に加工したときのスコア変化を実測できます。ただし「目が不自然」「輪郭がおかしい」といった意味上の理由や、AIで作られた場所を特定するものではありません。</dd>
           <dt>どの程度、見逃しや誤判定がありますか？</dt>
           <dd>従来評価ではAI273枚中191枚を検出し、82枚を見逃しました。実写272枚中5枚をAIと誤判定しました。この545枚は判定基準の選択にも参照しており、完全な独立評価ではありません。成績は画像の構成に依存し、今回の画像の確率や未知画像の正解率を保証しません。</dd>
           <dt>次に何を確認するとよいですか？</dt>
@@ -148,8 +191,9 @@
     </div>
 
     <div class="section" data-capability-id="F022">
-      <div class="eyebrow">Evidence</div>
-      <h2>検出されたシグナル</h2>
+      <div class="eyebrow">File information</div>
+      <h2>ファイル情報の手掛かり</h2>
+      <p class="note"><strong>上のAIスコアとは別の検査です。</strong>ここに並ぶ手掛かりの件数・画像サイズ・撮影情報の有無を、AIスコアに加点する仕組みではありません。</p>
       <div class="finding-list" id="findings"></div>
     </div>
 
@@ -163,7 +207,7 @@
     </div>
 
     <div class="section metadata-section" id="metaCard" data-capability-id="F014">
-      <div class="eyebrow">Primary evidence</div>
+      <div class="eyebrow">Metadata</div>
       <h2>抽出メタデータ</h2>
       <div style="overflow-x:auto"><div id="metaTable"></div></div>
       <details id="xmpDetails" style="display:none" data-capability-id="F014">
@@ -236,6 +280,7 @@ window.HONMONO_PIXEL_CONFIG = {
 };
 </script>
 <script src="pixel.js?v=20260917-wasm"></script>
+<script src="reaction.js?v=20260919-reaction"></script>
 <script>
 'use strict';
 
@@ -874,7 +919,7 @@ async function analyze(file) {
       findings.push({
         level: 'warn',
         title: '生成AIでよく使われる画像サイズです',
-        detail: `${dims.w}×${dims.h} は Stable Diffusion 等の定番出力サイズです。単独では弱い手がかりですが、撮影情報が皆無であることと合わせると注意に値します。`,
+        detail: `${dims.w}×${dims.h} は生成AIでも使われるサイズですが、写真の切り抜きや書き出しでも指定できます。サイズと撮影情報の有無だけでは、AI生成とは判断できません。この情報はAIスコアの計算には使っていません。`,
       });
     }
   }
@@ -1106,6 +1151,7 @@ async function runPixel() {
   const file = pixelCurrentFile;
   const sequence = analysisSequence;
   if (!P || !file) return;
+  if (window.HonmonoReaction) window.HonmonoReaction.reset();
   $('pixelControls').style.display = 'none';
   $('pixelQuick').style.display = 'flex';
   $('pixelQuickTitle').textContent = 'AI画素判定中';
@@ -1151,6 +1197,7 @@ async function runPixel() {
     $('pixelProgress').style.display = 'none';
     $('pixelResult').style.display = 'block';
     $('pixelControls').style.display = '';
+    if (window.HonmonoReaction) window.HonmonoReaction.setResult(file, r);
     $('pixelQuickTitle').textContent = '画像そのもののAI判定：完了';
     $('pixelQuickText').textContent = `${pct} / 100 — ${label}（確率ではありません）`;
     $('pixelQuickRun').textContent = '詳しい結果を見る';
@@ -1178,6 +1225,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function handle(file) {
   const sequence = ++analysisSequence;
+  if (window.HonmonoReaction) window.HonmonoReaction.reset();
   pixelCurrentFile = null;
   $('pixelCard').style.display = 'none';
   $('pixelQuick').style.display = 'none';
