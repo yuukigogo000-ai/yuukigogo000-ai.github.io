@@ -23,6 +23,8 @@
   .pixel-quick b { display:block; margin-bottom:3px; }
   .pixel-quick span { display:block; font-size:.84rem; color:var(--muted); line-height:1.55; }
   .pixel-quick .btn { margin:0; min-height:44px; }
+  .pixel-explanation dt { font-weight:700; margin-top:1em; }
+  .pixel-explanation dd { margin-inline-start:0; }
   .usecase-list { font-size: 12px; color: var(--fiber-2); padding-left: 1.4em; margin: 0; }
   .usecase-list li { margin-bottom: 6px; }
 </style>
@@ -90,14 +92,14 @@
         </div>
         <div id="verdict" data-capability-id="F023"></div>
         <div id="pixelQuick" class="pixel-quick" style="display:none" aria-live="polite">
-          <div><b id="pixelQuickTitle">AI画素判定</b><span id="pixelQuickText">画像そのものからAIらしさを確認します。</span></div>
+          <div><b id="pixelQuickTitle">画像そのもののAI判定</b><span id="pixelQuickText">画像そのものからAIらしさを確認します。</span></div>
           <button id="pixelQuickRun" class="btn secondary" type="button">AI画像判定を開始</button>
         </div>
       </div>
     </div>
 
     <div class="section soft-panel" id="pixelCard" style="display:none; border-color: var(--warn)">
-      <h2 style="margin-top:0">実験: 画素からのAI判定(参考値)</h2>
+      <h2 style="margin-top:0">画像そのもののAI判定（参考）</h2>
       <div id="pixelResult" style="display:none">
         <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:8px">
           <span id="pixelScore" style="font-size:2rem; font-weight:800"></span>
@@ -107,9 +109,29 @@
         <div style="height:12px; border-radius:999px; background:var(--line); overflow:hidden; margin:8px 0">
           <div id="pixelBar" style="height:100%; width:0%; background:var(--warn); transition:width .4s"></div>
         </div>
+        <p class="note" id="pixelBasis"></p>
         <p class="note" id="pixelNote"></p>
         <p class="note">結果は自動では消えません。次の画像を選ぶまで確認できます。</p>
       </div>
+      <details class="note pixel-explanation" id="pixelExplanation">
+        <summary>判定の根拠と限界を見る</summary>
+        <dl>
+          <dt>何を検査したのですか？</dt>
+          <dd>画像全体を256×256ピクセルに変換し、学習済みモデルへ入力しています。モデルが実写／AI画像の学習で得た特徴からスコアを出します。機種名・撮影日時などのメタデータは、このスコアの計算には使いません。</dd>
+          <dt>1/100なら、AIの確率は1%ですか？</dt>
+          <dd>違います。これはモデルの反応の強さで、真偽の確率ではありません。AI判定の基準は<span id="pixelThreshold">80</span>/100以上です。表示は四捨五入していますが、判定には丸める前の数値を使います。低い数値でも人が作った証拠にはなりません。</dd>
+          <dt>ファイル内の記録とは一致していますか？</dt>
+          <dd id="pixelProvenance"></dd>
+          <dt>イラストや加工画像にも同じ成績を当てはめられますか？</dt>
+          <dd>当てはめられません。公開している成績はAI画像と実写を比べた評価です。人が描いた絵とAIイラストを区別する専用評価は示していません。評価に含まれない生成器や加工への性能も未確認です。</dd>
+          <dt>どの部分が根拠になったのですか？</dt>
+          <dd>現行モデルはスコアだけを返し、判断に影響した部位は示しません。「目が不自然」「輪郭がおかしい」などを、この判定の根拠として特定することはできません。</dd>
+          <dt>どの程度、見逃しや誤判定がありますか？</dt>
+          <dd>従来評価ではAI273枚中191枚を検出し、82枚を見逃しました。実写272枚中5枚をAIと誤判定しました。この545枚は判定基準の選択にも参照しており、完全な独立評価ではありません。成績は画像の構成に依存し、今回の画像の確率や未知画像の正解率を保証しません。</dd>
+          <dt>次に何を確認するとよいですか？</dt>
+          <dd>スクリーンショットではなく生成元・撮影元のファイルを確認し、制作過程や生成履歴、署名付きの来歴など別の証拠と照合してください。低スコアを理由にAI生成を否定したり、高スコアだけでAI使用を断定したりはできません。</dd>
+        </dl>
+      </details>
       <p class="note" id="pixelIntro">メタデータではなく<b>画像そのもの</b>を学習済みモデルで判定します。ブラウザ内で動作し、画像は送信されません。
         初回はモデル(<span id="pixelSize">約90MB</span>)を読み込みます(2回目以降は端末内キャッシュ)。PC推奨。</p>
       <div id="pixelControls">
@@ -828,7 +850,7 @@ async function analyze(file) {
       level: 'ok',
       title: 'カメラ撮影のメタデータが残っています',
       detail: [exif['メーカー (Make)'], exif['機種 (Model)'], exif['撮影日時 (DateTimeOriginal)'] && `撮影: ${exif['撮影日時 (DateTimeOriginal)']}`]
-        .filter(Boolean).join(' / ') + '。実写の可能性を高める材料ですが、EXIFは偽装可能な点に注意。',
+        .filter(Boolean).join(' / ') + '。これはファイル内の撮影記録です。記録は書き換えられるため、画像全体が実写であることや、AI未使用の証明にはなりません。',
     });
   }
 
@@ -1023,14 +1045,14 @@ const VERDICTS = {
              body: '生成AIツールの記録・申告がこの画像に埋め込まれています。詳細は下のシグナル一覧をご覧ください。' },
   c2pa:    { cls: 'info', icon: '📜', title: 'コンテンツ来歴(C2PA)付きの画像です',
              body: '来歴データが埋め込まれています。編集履歴・作成ツールの詳細は公式の検証ツールで確認できます。' },
-  camera:  { cls: 'ok',   icon: '📷', title: 'カメラ撮影の痕跡があります',
-             body: 'カメラ機種や撮影日時のメタデータが残っており、実写である可能性を高めます(偽装可能な点には注意)。' },
+  camera:  { cls: 'info', icon: '📷', title: '撮影情報が記録されています',
+             body: 'ファイル内に機種名や撮影日時の記録があります。記録は書き換えられるため、画像全体が実写、AI未使用という証明にはなりません。下の画素判定とは別の検査です。' },
   stock:   { cls: 'warn', icon: '🗂️', title: 'ストック素材サイト由来の画像です',
              body: '素材サイトで配布されている画像の痕跡があります。実在アカウントの「本人写真」としては不自然で、流用または架空人物の疑いがあります。AI生成かどうかは素材サイト上の「生成AI」ラベルや、下の実験的な画素判定も参考にしてください。' },
   weak:    { cls: 'warn', icon: '🟡', title: 'AI生成を疑う手がかりがあります(弱)',
              body: '決定的な証拠はありませんが、注意すべき特徴が見つかりました。詳細は下のシグナル一覧を確認し、逆画像検索や元データの入手で追加検証してください。' },
   unknown: { cls: 'warn', icon: '❓', title: '来歴情報だけでは判定できません',
-             body: 'メタデータが見つかりませんでした。画像ファイルは続けてAI画素判定も使えます。SNS経由ではメタデータが消えるため、可能なら元データも試してください。' },
+             body: '生成元を確認できる来歴の手がかりは見つかりませんでした。対応画像は、来歴情報がなくても画素判定できます。実行状況と結果は下の「画像そのもののAI判定」に表示します。' },
 };
 
 /* ========== 実験: 画素判定のUI ========== */
@@ -1043,6 +1065,17 @@ function setupPixel(file, res) {
   const isVideoFile = (file.type && file.type.startsWith('video/')) || /[.](mp4|mov|m4v)$/i.test(file.name);
   if (!P || !P.available() || isVideoFile || res.format === '不明') { card.style.display = 'none'; quick.style.display = 'none'; return; }
   pixelCurrentFile = file;
+  $('pixelExplanation').open = false;
+  $('pixelThreshold').textContent = String(P.cfg.threshold * 100);
+  const provenance = {
+    ai: 'ファイル内にAIツールの記録・申告があります。画素スコアが低くても、この記録が否定されるわけではありません。記録は編集でき、AI使用の範囲までは断定できません。',
+    camera: 'ファイル内に撮影情報があります。記録は編集できるため、画像全体が実写、AI未使用という証明にはなりません。画素スコアとは別の手がかりです。',
+    c2pa: '来歴データがあります。署名の検証結果は下の来歴欄に表示します。来歴があるだけでAI生成とも実写とも決まりません。',
+    stock: '素材サイトの記録があります。配布元の記載を確認してください。素材サイト由来という情報だけでは、AI生成かどうかは分かりません。',
+    weak: '生成AIでも使われる画像サイズに一致しました。同じサイズは人も指定できるため、サイズだけではAI生成の証拠になりません。',
+    unknown: '生成元を確認できる来歴の手がかりは見つかりませんでした。記録がないことは、AI生成の証拠にも人が作った証拠にもなりません。'
+  };
+  $('pixelProvenance').textContent = provenance[res.verdict] || provenance.unknown;
   card.style.display = 'block';
   $('pixelResult').style.display = 'none';
   $('pixelProgress').style.display = 'none';
@@ -1092,10 +1125,20 @@ async function runPixel() {
     if (sequence !== analysisSequence || file !== pixelCurrentFile) return; // 別ファイルに切り替わっていたら捨てる
     const pct = Math.round(r.pAI * 100);
     const thr = P.cfg.threshold;
-    let label, cls, note;
-    if (r.pAI >= thr) { label = 'AI生成の可能性が高い'; cls = 'var(--bad)'; note = '従来の545枚では、陽性196枚のうちAI画像は191枚でした。この割合は評価画像の構成に依存し、今回の画像がAIである確率ではありません。本物の誤判定もあります。他の根拠と合わせて判断してください。'; }
-    else if (r.pAI >= 0.5) { label = 'AI生成の疑いあり(弱)'; cls = 'var(--warn)'; note = '判定が割れる領域です。単独では根拠になりません。'; }
-    else { label = 'AI生成の兆候は薄い'; cls = 'var(--ok)'; note = '注意: このモデルはAI画像の約3割(2025年世代の生成器は約4割)を見逃します。「AIではない」証明にはなりません。'; }
+    let label, cls, note, basis;
+    if (r.pAI >= thr) {
+      label = 'AI生成の可能性が高い'; cls = 'var(--bad)';
+      basis = '検査は完了しています。モデルの反応がAI判定の基準に達しました。AI使用の断定はできません。';
+      note = '従来評価では、AIと判定した196枚中191枚がAI画像で、5枚は実写の誤判定でした。今回の画像がAIである確率ではありません。';
+    } else if (r.pAI >= 0.5) {
+      label = 'AI寄りの反応（基準未満）'; cls = 'var(--warn)';
+      basis = '検査は完了しています。モデルにAI寄りの反応はありますが、AI判定の基準には達していません。';
+      note = 'この数値だけでAI生成とも、人が作ったとも判断できません。来歴情報や制作過程など、別の証拠と照合してください。';
+    } else {
+      label = 'AIの強い反応なし（真偽不明）'; cls = 'var(--warn)';
+      basis = '検査は完了しています。このモデルでは、AIを示す強い反応を捉えられませんでした。';
+      note = '人が作った証拠にはなりません。従来評価でもAI273枚中82枚を見逃しています。元画像がAI生成と分かっている場合は、このモデルの見逃しです。';
+    }
     $('pixelScore').textContent = pct + ' / 100';
     $('pixelScore').style.color = cls;
     $('pixelLabel').textContent = label;
@@ -1103,11 +1146,12 @@ async function runPixel() {
     $('pixelBar').style.width = pct + '%';
     $('pixelBar').style.background = cls;
     $('pixelMeta').textContent = `AIらしさスコア（確率ではありません） / ${r.backend === 'webgpu' ? 'GPU' : 'CPU'} ${r.ms}ms / ${P.cfg.name}${P.cfg.version ? ' ' + P.cfg.version : ''}`;
+    $('pixelBasis').textContent = basis;
     $('pixelNote').textContent = note;
     $('pixelProgress').style.display = 'none';
     $('pixelResult').style.display = 'block';
     $('pixelControls').style.display = '';
-    $('pixelQuickTitle').textContent = 'AI画素判定';
+    $('pixelQuickTitle').textContent = '画像そのもののAI判定：完了';
     $('pixelQuickText').textContent = `${pct} / 100 — ${label}（確率ではありません）`;
     $('pixelQuickRun').textContent = '詳しい結果を見る';
     $('pixelQuickRun').style.display = '';
@@ -1192,7 +1236,7 @@ async function handle(file) {
     `<h2>${v.icon} ${esc(v.title)}</h2><p>${esc(v.body)}</p></div>`;
 
   $('findings').innerHTML = res.findings.map(f => {
-    const label = { bad: 'AI痕跡', ok: '実写材料', warn: '注意', info: '情報' }[f.level] || '情報';
+    const label = { bad: 'AI痕跡', ok: '撮影記録', warn: '注意', info: '情報' }[f.level] || '情報';
     return `<div class="finding" data-capability-id="F022"><span class="tag ${f.level}">${label}</span>` +
       `<div><b>${esc(f.title)}</b><span class="detail">${esc(f.detail)}</span></div></div>`;
   }).join('');
