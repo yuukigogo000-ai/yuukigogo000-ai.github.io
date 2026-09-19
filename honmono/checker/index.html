@@ -98,13 +98,6 @@
 
     <div class="section soft-panel" id="pixelCard" style="display:none; border-color: var(--warn)">
       <h2 style="margin-top:0">実験: 画素からのAI判定(参考値)</h2>
-      <p class="note" id="pixelIntro">メタデータではなく<b>画像そのもの</b>を学習済みモデルで判定します。ブラウザ内で動作し、画像は送信されません。
-        初回はモデル(<span id="pixelSize">約90MB</span>)を読み込みます(2回目以降は端末内キャッシュ)。PC推奨。</p>
-      <div id="pixelControls">
-        <button id="pixelRun" class="btn secondary" style="margin-top:0">画素判定を実行する</button>
-        <label style="display:inline-block; margin:0 0 0 12px; font-weight:400; font-size:.85rem"><input type="checkbox" id="pixelAuto"> 画像を選んだら自動で実行</label>
-      </div>
-      <div id="pixelProgress" class="note" style="display:none"></div>
       <div id="pixelResult" style="display:none">
         <div style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; margin-top:8px">
           <span id="pixelScore" style="font-size:2rem; font-weight:800"></span>
@@ -115,7 +108,15 @@
           <div id="pixelBar" style="height:100%; width:0%; background:var(--warn); transition:width .4s"></div>
         </div>
         <p class="note" id="pixelNote"></p>
+        <p class="note">結果は自動では消えません。次の画像を選ぶまで確認できます。</p>
       </div>
+      <p class="note" id="pixelIntro">メタデータではなく<b>画像そのもの</b>を学習済みモデルで判定します。ブラウザ内で動作し、画像は送信されません。
+        初回はモデル(<span id="pixelSize">約90MB</span>)を読み込みます(2回目以降は端末内キャッシュ)。PC推奨。</p>
+      <div id="pixelControls">
+        <button id="pixelRun" class="btn secondary" style="margin-top:0">画素判定を実行する</button>
+        <label style="display:inline-block; margin:0 0 0 12px; font-weight:400; font-size:.85rem"><input type="checkbox" id="pixelAuto"> 画像を選んだら自動で実行</label>
+      </div>
+      <div id="pixelProgress" class="note" style="display:none"></div>
       <p class="note" id="pixelEval"></p>
       <p class="note" style="margin-bottom:0">
         <a href="../report/">測り方・外れた場面・学習データの出典を全部見る →</a>
@@ -1062,6 +1063,11 @@ function setupPixel(file, res) {
     if (window.matchMedia && window.matchMedia('(max-width: 600px)').matches) quick.scrollIntoView({ behavior: 'auto', block: 'center' });
   }
 }
+function showPixelResult() {
+  if ($('pixelResult').style.display === 'block') {
+    $('pixelResult').scrollIntoView({ behavior: 'auto', block: 'center' });
+  }
+}
 async function runPixel() {
   const P = window.HonmonoPixel;
   const file = pixelCurrentFile;
@@ -1105,6 +1111,7 @@ async function runPixel() {
     $('pixelQuickText').textContent = `${pct} / 100 — ${label}（確率ではありません）`;
     $('pixelQuickRun').textContent = '詳しい結果を見る';
     $('pixelQuickRun').style.display = '';
+    if (window.matchMedia && window.matchMedia('(max-width: 600px)').matches) showPixelResult();
   } catch (e) {
     if (sequence !== analysisSequence || file !== pixelCurrentFile) return;
     const msg = '画素判定を実行できませんでした: ' + (e && e.message || e);
@@ -1119,7 +1126,7 @@ async function runPixel() {
 document.addEventListener('DOMContentLoaded', () => {
   const b = $('pixelRun'); if (b) b.addEventListener('click', runPixel);
   const q = $('pixelQuickRun'); if (q) q.addEventListener('click', () => {
-    if ($('pixelResult').style.display === 'block') $('pixelCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if ($('pixelResult').style.display === 'block') showPixelResult();
     else runPixel();
   });
   const a = $('pixelAuto'); if (a) a.addEventListener('change', () => { try { localStorage.setItem('honmono_pixel_auto', a.checked ? '1' : '0'); } catch {} });
