@@ -1,0 +1,7 @@
+node_modules/
+www/
+.evidence/
+android/.gradle/
+android/app/build/
+android/build/
+android/capacitor-cordova-android-plugins/build/

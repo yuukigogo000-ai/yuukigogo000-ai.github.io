@@ -1,0 +1,12 @@
+{
+  "appId": "com.yuukigogo000.pachiteikoku",
+  "appName": "パチスロ帝国",
+  "webDir": "www",
+  "server": {
+    "hostname": "localhost",
+    "androidScheme": "https",
+    "cleartext": false
+  },
+  "android": { "allowMixedContent": false },
+  "plugins": { "CapacitorHttp": { "enabled": false } }
+}

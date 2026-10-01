@@ -1,0 +1,30 @@
+# Manual runs only. Do not enable billing or purchase credits.
+# This workflow compiles the current Pachislot launch candidate on a cloud Mac
+# without signing or uploading to App Store Connect.
+workflows:
+  pachislot-ios-simulator:
+    name: Pachislot Empire iOS simulator compile
+    instance_type: mac_mini_m2
+    max_build_duration: 30
+    environment:
+      node: 24
+      xcode: "26.4.1"
+    scripts:
+      - name: Install, sync and verify source
+        script: |
+          set -euo pipefail
+          cd pachinko/mobile
+          npm ci --ignore-scripts --no-fund --no-audit
+          npm run ios:sync
+          npm test
+          python3 scripts/verify-ios.py --synced --report .evidence/ios-preflight.json
+      - name: Compile simulator app and verify packaged runtime
+        script: |
+          set -euo pipefail
+          cd pachinko/mobile
+          xcodebuild -project ios/App/App.xcodeproj -scheme App -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath build/ios-simulator CODE_SIGNING_ALLOWED=NO build
+          python3 scripts/verify-ios.py --app build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app --report .evidence/ios-simulator-bundle.json
+          ditto -c -k --sequesterRsrc --keepParent build/ios-simulator/Build/Products/Debug-iphonesimulator/App.app build/PachislotEmpire-simulator.zip
+    artifacts:
+      - pachinko/mobile/build/PachislotEmpire-simulator.zip
+      - pachinko/mobile/.evidence/ios-*.json

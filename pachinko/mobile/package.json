@@ -1,0 +1,28 @@
+{
+  "name": "pachislot-teikoku-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "sync": "npm run build && cap sync android",
+    "test": "node --test tests/*.test.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "android:rc": "npm run sync && node scripts/android-rc.mjs && python scripts/verify-android-rc.py",
+    "ios:sync": "npm run build && cap sync ios",
+    "ios:verify": "python scripts/verify-ios.py --synced --report .evidence/ios-preflight.json"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2",
+    "esbuild": "0.28.2"
+  }
+}
