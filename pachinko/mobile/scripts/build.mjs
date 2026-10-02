@@ -32,6 +32,9 @@ for (const name of runtimeFiles) {
   copied.push(name);
 }
 
+await cp(path.join(mobile, 'THIRD-PARTY-NOTICES.md'), path.join(out, 'THIRD-PARTY-NOTICES.md'));
+copied.push('THIRD-PARTY-NOTICES.md');
+
 let html = await readFile(path.join(source, 'index.html'), 'utf8');
 html = html.replaceAll('\r\n', '\n');
 const serviceWorkerBlock = `/* ---- PWA: Service Worker登録 (http(s)配信時のみ。file://やElectronでは何もしない) ---- */
