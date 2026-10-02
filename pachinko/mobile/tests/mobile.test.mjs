@@ -26,3 +26,20 @@ test('source save contract and removed trial remain unchanged', async () => {
   assert.match(html, /pachi-teikoku-save-v1/);
   assert.doesNotMatch(html, /function slotDenom\(|function openTrial\(/);
 });
+
+
+test('packaged page includes every local linked script and stylesheet', async () => {
+  const { execFileSync } = await import('node:child_process');
+  execFileSync(process.execPath, [path.join(mobile, 'scripts/build.mjs')]);
+  const out = path.join(mobile, 'www');
+  const html = await readFile(path.join(out, 'index.html'), 'utf8');
+  const manifest = JSON.parse(await readFile(path.join(out, 'build-manifest.json'), 'utf8')).files;
+  const refs = [...html.matchAll(/<(?:script|link)\b[^>]*?\b(?:src|href)=["']([^"']+)["']/g)].map(m => m[1]);
+  for (const ref of refs) {
+    if (!ref.startsWith('./')) continue;
+    const name = ref.slice(2).split(/[?#]/)[0];
+    assert.ok(manifest[name], `Missing native runtime dependency: ${name}`);
+    const bundled = await readFile(path.join(out, name));
+    if (name !== 'native-entry.js') assert.deepEqual(bundled, await readFile(path.join(source, name)), name);
+  }
+});

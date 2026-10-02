@@ -8,7 +8,7 @@ const mobile = fileURLToPath(new URL('../', import.meta.url));
 const source = path.resolve(mobile, '..');
 const out = path.join(mobile, 'www');
 const runtimeRoots = ['art'];
-const runtimeFiles = ['icon-192.png', 'icon-512.png', 'manifest.webmanifest'];
+const runtimeFiles = ['icon-192.png', 'icon-512.png', 'manifest.webmanifest', 'launch-v2.css', 'launch-info.css', 'launch-info.js'];
 const copied = [];
 
 async function copyTree(relative) {
