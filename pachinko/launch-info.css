@@ -63,3 +63,13 @@ html.pachi-reduce-motion *,html.pachi-reduce-motion *::before,html.pachi-reduce-
 
 /* Honor OS motion preferences in CSS even before a media change event is delivered. */
 @media(prefers-reduced-motion:reduce){html *,html *::before,html *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* Information and settings use the same readable scale as the game. */
+.pachi-info{--pi-text:#f4f3ef;--pi-muted:#d1d1ce;background:#10141b}
+.pachi-info p,.pi-map dt,.pi-map dd,.pi-list,.pi-save-state{font-size:15px;line-height:1.85}
+.pachi-info .pi-note,.pi-field .pi-description,.pi-choice small,.pachi-info .pi-status{font-size:14px;color:var(--pi-muted);line-height:1.8}
+.pi-diff dt{font-size:13px}
+.pi-steps h3,.pi-choice strong,.pi-tip summary{font-size:16px;line-height:1.6}
+.pi-tabs button,.pi-back,.pi-reset{font-size:14px}
+.pachi-info .pi-eyebrow{font-size:12px;letter-spacing:.08em}
+.pi-card,.pi-goal,.pi-tip{background:#191f29}

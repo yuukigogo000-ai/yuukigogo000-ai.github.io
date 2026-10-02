@@ -190,3 +190,25 @@ body.launch-open{overflow:hidden}
 .launch-rule.r1:before,.launch-rule.r2:before,.launch-rule.r3:before,.launch-rule.r4:before{background-image:url("./art/launch-exact/panel-dark.webp")}
 .launch-rule:after{background:rgba(0,0,0,.13)}
 .launch-crown,.launch-diff-crown,.launch-gear img,.launch-title-lockup:before{mix-blend-mode:normal}
+
+/* Reading comfort: retain the supplied artwork, give the copy its own quiet surface. */
+.launch-rule-grid{grid-template-columns:1fr;gap:12px}
+.launch-rule{min-height:0;border:1px solid #9e824a66;background:#151a22}
+.launch-rule:before,.launch-rule:after{display:none}
+.launch-rule-inner{padding:16px}
+.launch-rule h3{font-size:16px;line-height:1.6;min-height:0;margin-bottom:10px;text-shadow:none}
+.launch-rule p{font-size:15px;line-height:1.8;color:#e0e1e4;text-shadow:none}
+.launch-rule-icon{width:28px;height:28px;margin-right:10px}
+.launch-diff-copy small{font-size:14px;line-height:1.6;color:#f1f1ef;font-weight:400}
+.launch-diff-card{grid-template-columns:minmax(0,1fr);padding:16px;gap:12px}
+.launch-diff-card:after{background:linear-gradient(90deg,#06090cf0,#06090cbb)}
+.launch-price{justify-content:flex-end;font-size:18px}
+.launch-diff-head{background:#0c0e12f5}
+.launch-diff-head h2{background:none;color:#ffe4a0;filter:none;font-size:30px}
+.launch-diff-brand>div,.launch-title-lockup .en{font-size:12px;letter-spacing:.18em}
+.launch-diff-label{font-size:22px;margin:24px 0 14px}
+.launch-drawer-panel p{font-size:15px;line-height:1.8}
+.launch-toast{font-size:14px;line-height:1.6;width:max-content;max-width:90%;border-radius:8px}
+.launch-title-lockup h1{background:none;color:#fff1c2;filter:drop-shadow(0 2px 5px #000);letter-spacing:-.03em}
+.launch-version{font-size:12px;color:#e0e1e4}
+@media(min-width:520px){.launch-rule-grid{grid-template-columns:1fr 1fr}}
