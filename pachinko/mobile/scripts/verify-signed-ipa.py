@@ -1,10 +1,17 @@
-"""Verify a signed, internal-TestFlight-only IPA on macOS without uploading."""
+"""Verify a signed IPA for the explicitly selected distribution route without uploading."""
 from pathlib import Path
 import argparse, datetime, hashlib, json, plistlib, subprocess, tempfile, zipfile
+
+def verify_export_options(options, distribution):
+    expected_internal = distribution == "internal"
+    assert options.get("testFlightInternalTestingOnly") is expected_internal
+    assert options.get("method") in ("app-store", "app-store-connect")
+    return expected_internal
 
 MOBILE = Path(__file__).resolve().parents[1]
 parser = argparse.ArgumentParser()
 parser.add_argument("ipa", type=Path)
+parser.add_argument("--distribution", choices=["internal", "app-store"], default="internal")
 args = parser.parse_args()
 ipa = args.ipa.resolve()
 subprocess.run(["python3", str(MOBILE / "scripts/verify-ios.py"), "--ipa", str(ipa),
@@ -36,10 +43,10 @@ with tempfile.TemporaryDirectory(prefix="pachinko-ipa-") as temp:
     assert actual["application-identifier"] == ent["application-identifier"]
     assert actual.get("get-task-allow") is not True
     options = plistlib.loads((Path.home() / "export_options.plist").read_bytes())
-    assert options.get("testFlightInternalTestingOnly") is True
+    expected_internal = verify_export_options(options, args.distribution)
     report = {"ok": True, "bundle_id": info["CFBundleIdentifier"], "version": info["CFBundleShortVersionString"],
               "build": info["CFBundleVersion"], "ipa_sha256": hashlib.sha256(ipa.read_bytes()).hexdigest(),
-              "ipa_bytes": ipa.stat().st_size, "signature_verified": True, "internal_testflight_only": True,
+              "ipa_bytes": ipa.stat().st_size, "signature_verified": True, "internal_testflight_only": expected_internal,
               "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=MOBILE, text=True).strip(),
               "profile_name": profile["Name"], "profile_expiration": profile["ExpirationDate"].isoformat(),
               "real_device_verified": False, "testflight_uploaded": False, "public_release": False}

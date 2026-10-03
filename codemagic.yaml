@@ -1,6 +1,6 @@
 # Manual runs only. Do not enable billing or purchase credits.
 # This workflow compiles the current Pachislot launch candidate on a cloud Mac
-# The simulator workflow is unsigned; the signed candidate workflow never uploads.
+# The simulator is unsigned; App Store candidate build never uploads or publishes.
 workflows:
   pachislot-ios-simulator:
     name: Pachislot Empire iOS simulator compile
@@ -29,8 +29,8 @@ workflows:
       - pachinko/mobile/build/PachislotEmpire-simulator.zip
       - pachinko/mobile/.evidence/ios-*.json
 
-  pachinko-ios-signed-candidate:
-    name: Pachinko iOS signed internal TestFlight candidate
+  pachinko-ios-store-candidate:
+    name: Pachinko iOS App Store candidate - no upload
     instance_type: mac_mini_m2
     max_build_duration: 20
     integrations:
@@ -56,9 +56,9 @@ workflows:
         script: |
           set -euo pipefail
           cd pachinko/mobile
-          xcode-project use-profiles --custom-export-options='{"testFlightInternalTestingOnly":true}'
+          xcode-project use-profiles --custom-export-options='{"testFlightInternalTestingOnly":false}'
           xcode-project build-ipa --project ios/App/App.xcodeproj --scheme App
-          python3 scripts/verify-signed-ipa.py build/ios/ipa/*.ipa
+          python3 scripts/verify-signed-ipa.py --distribution app-store build/ios/ipa/*.ipa
     artifacts:
       - pachinko/mobile/build/ios/ipa/*.ipa
       - pachinko/mobile/.evidence/ios-*.json
