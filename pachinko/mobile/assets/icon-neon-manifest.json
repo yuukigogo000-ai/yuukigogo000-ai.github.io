@@ -1,0 +1,296 @@
+{
+  "source": "pachinko/mobile/assets/icon-neon-source.png",
+  "source_sha256": "a7763cb01e2f09adb955e35f596b3e1d411aeb1b0e5b63d0aba578a93735afb8",
+  "selection": "Owner selected concept 8, neon hall, 2026-10-04",
+  "artwork_changed": false,
+  "outputs": [
+    {
+      "path": "pachinko/icon-192.png",
+      "size": [
+        192,
+        192
+      ],
+      "mode": "RGB",
+      "sha256": "98955c96d201b6a4edfd5041cab413a01572396c4112d6127b731db29594c072"
+    },
+    {
+      "path": "pachinko/icon-512.png",
+      "size": [
+        512,
+        512
+      ],
+      "mode": "RGB",
+      "sha256": "ebee8ff69237abf5e403edd978f04d19b31ed41a0ffda2e1c5f2099554a5890e"
+    },
+    {
+      "path": "pachinko/mobile/ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "mode": "RGB",
+      "sha256": "77b98c78d84ec787a47496c641c5db20c85a35539f79b402c985ca723c5d3e47"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "size": [
+        48,
+        48
+      ],
+      "mode": "RGB",
+      "sha256": "25d885e13335d5ef72f213e72a9a545119ef6bfe62c1b2c2e51cc789dbb706e9"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
+      "size": [
+        108,
+        108
+      ],
+      "mode": "RGB",
+      "sha256": "d3b4090fc40bd5a84eae12f4e97c2926055fbd7e00ce7c7dd7cc2ef93a9fa21c"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "size": [
+        48,
+        48
+      ],
+      "mode": "RGBA",
+      "sha256": "43390e0c4d95ef8dfcdb9f9dcdacebf2075d0f8ec31e438e1ce87353f10515b7"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGB",
+      "sha256": "1ae3b341a27c463964d0cad445406401ca65b8cb8cbb7be9b683c9af9d07d1d7"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
+      "size": [
+        162,
+        162
+      ],
+      "mode": "RGB",
+      "sha256": "d2341263b3b3d97cc955709d4398b32ef8b64c3565a3ea1b4dd4292dc41a3288"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "size": [
+        72,
+        72
+      ],
+      "mode": "RGBA",
+      "sha256": "3732232bf47af429f2bd7af54724a57978f9be0713c8c7f966d0658b1f169da5"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "size": [
+        96,
+        96
+      ],
+      "mode": "RGB",
+      "sha256": "19da9f83f75b5cd9bedc378fcd86ef0a4c04243e2404dacad0d411d5baea16f5"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
+      "size": [
+        216,
+        216
+      ],
+      "mode": "RGB",
+      "sha256": "8da48542f4d69a4549293790c118de4463c9fae3cb2b1cc13282ad5a2f8a5a2d"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "size": [
+        96,
+        96
+      ],
+      "mode": "RGBA",
+      "sha256": "cfaf3f927cad8100b49a857f8aac3d16b6f6e663ed76f0a7ba5db98ab074fa93"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "size": [
+        144,
+        144
+      ],
+      "mode": "RGB",
+      "sha256": "9df576c3a5bf7110a10dea4d4d8c0c08a7d926257740ff8f443939bc05e72e51"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
+      "size": [
+        324,
+        324
+      ],
+      "mode": "RGB",
+      "sha256": "19cde422112adb81f405c5cd23317ae7e68cb23ce120e489eb35db987acfcd3f"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "size": [
+        144,
+        144
+      ],
+      "mode": "RGBA",
+      "sha256": "964e3aa60388389b06bdcb4446466cca089ae3fed46501761da96a73c6206ce2"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "size": [
+        192,
+        192
+      ],
+      "mode": "RGB",
+      "sha256": "98955c96d201b6a4edfd5041cab413a01572396c4112d6127b731db29594c072"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+      "size": [
+        432,
+        432
+      ],
+      "mode": "RGB",
+      "sha256": "8bbc943e31ac00dcb72f83a0547b238d91650e554f463a16a9752ed6899dbaee"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "size": [
+        192,
+        192
+      ],
+      "mode": "RGBA",
+      "sha256": "1767875f36f44032ac172b6ee03ad959cb4b5a709b28a5f227724dedf02b75f6"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable/splash.png",
+      "size": [
+        480,
+        320
+      ],
+      "mode": "RGB",
+      "sha256": "1f8c216b6abac6944b0a513c0ccb882e71dd0cebcc1e471e42eeb1acc9909225"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable-land-hdpi/splash.png",
+      "size": [
+        800,
+        480
+      ],
+      "mode": "RGB",
+      "sha256": "d8271a53748fb0c2208e9c199364db8e14f40019699c9aefe7782c2b89c22de6"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable-land-mdpi/splash.png",
+      "size": [
+        480,
+        320
+      ],
+      "mode": "RGB",
+      "sha256": "1f8c216b6abac6944b0a513c0ccb882e71dd0cebcc1e471e42eeb1acc9909225"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable-land-xhdpi/splash.png",
+      "size": [
+        1280,
+        720
+      ],
+      "mode": "RGB",
+      "sha256": "68fc5ffdcf4a300a2e320a28d26380fa967638c852a4d0db8f8a69ebc41f7ea1"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable-land-xxhdpi/splash.png",
+      "size": [
+        1600,
+        960
+      ],
+      "mode": "RGB",
+      "sha256": "531335fd8a0c6f9b1b020250b57c1b838d8a3d84a1da37ce3fc6b53150d4d272"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable-land-xxxhdpi/splash.png",
+      "size": [
+        1920,
+        1280
+      ],
+      "mode": "RGB",
+      "sha256": "03d75034eefbc95ef2e1fd93673aeacbe713c4a3b201ac3929c4bc7e9cf81f91"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable-port-hdpi/splash.png",
+      "size": [
+        480,
+        800
+      ],
+      "mode": "RGB",
+      "sha256": "df1582af14e7d556d93746a74b040fb84951a4e0492c290038bfdc4f9fb9aa86"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable-port-mdpi/splash.png",
+      "size": [
+        320,
+        480
+      ],
+      "mode": "RGB",
+      "sha256": "19233a1dd4a4587bd85a5d82b0d4ffdf6920e58c299dc64a0fd61c6cdc89d232"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable-port-xhdpi/splash.png",
+      "size": [
+        720,
+        1280
+      ],
+      "mode": "RGB",
+      "sha256": "77b5bad0f28fecd1845e5032352bde3629fb98035c9d3d1bb186e364ba622174"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable-port-xxhdpi/splash.png",
+      "size": [
+        960,
+        1600
+      ],
+      "mode": "RGB",
+      "sha256": "8e9dfdfd30a90712603409f195f25149f5ced77183dfab35e3e2b0d77a788308"
+    },
+    {
+      "path": "pachinko/mobile/android/app/src/main/res/drawable-port-xxxhdpi/splash.png",
+      "size": [
+        1280,
+        1920
+      ],
+      "mode": "RGB",
+      "sha256": "ced86a3c18850877ea3e8518c7e015fa12c0ef5d1188126955122c58681c9008"
+    },
+    {
+      "path": "pachinko/mobile/ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732-1.png",
+      "size": [
+        2732,
+        2732
+      ],
+      "mode": "RGB",
+      "sha256": "d95df983819c737c22dc25bcd9b63625995132aa0b7847a730395092c7ecd833"
+    },
+    {
+      "path": "pachinko/mobile/ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732-2.png",
+      "size": [
+        2732,
+        2732
+      ],
+      "mode": "RGB",
+      "sha256": "d95df983819c737c22dc25bcd9b63625995132aa0b7847a730395092c7ecd833"
+    },
+    {
+      "path": "pachinko/mobile/ios/App/App/Assets.xcassets/Splash.imageset/splash-2732x2732.png",
+      "size": [
+        2732,
+        2732
+      ],
+      "mode": "RGB",
+      "sha256": "d95df983819c737c22dc25bcd9b63625995132aa0b7847a730395092c7ecd833"
+    }
+  ]
+}
