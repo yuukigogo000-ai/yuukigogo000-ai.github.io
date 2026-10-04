@@ -1,4 +1,9 @@
 import { App } from '@capacitor/app';
+import { registerPlugin } from '@capacitor/core';
+import { installBilling } from './billing-ui.js';
+
+const billing = installBilling(registerPlugin('PachiBilling'), window.PachiBillingGame);
+App.addListener('appStateChange', ({ isActive }) => { if (isActive) void billing.refresh(); });
 import { installNativePrivacy } from './privacy-native.js';
 
 const closeNativePrivacy = installNativePrivacy();
@@ -8,6 +13,7 @@ function isShown(id) {
 }
 
 App.addListener('backButton', async () => {
+  if (billing.close()) return;
   if (closeNativePrivacy()) return;
   if (isShown('askBg')) {
     document.getElementById('askNo')?.click();

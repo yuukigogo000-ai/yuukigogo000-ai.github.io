@@ -45,6 +45,8 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")) {
 `;
 if (html.split(serviceWorkerBlock).length !== 2) throw new Error('Unexpected service-worker block');
 html = html.replace(serviceWorkerBlock, '');
+// Set before game code: a missing/failed native module must not bypass the trial.
+html = html.replace('<head>', '<head>\n<script>window.PachiBillingRequired = true;</script>');
 const bodyEnd = '</body>';
 if (html.split(bodyEnd).length !== 2) throw new Error('Unexpected body end');
 html = html.replace(bodyEnd, '<script type="module" src="./native-entry.js"></script>\n</body>');

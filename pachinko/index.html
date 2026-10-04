@@ -3300,7 +3300,10 @@ function renderCTA() {
   if (!b.querySelector(".rv")) {
     b.insertAdjacentHTML("afterbegin", '<span class="rv a"></span><span class="rv b"></span><span class="rv c"></span><span class="rv d"></span>');
   }
-  b.querySelector(".lab").innerHTML = dead
+  const trialLocked = !dead && window.PachiBillingRequired && state.day > 30 && !window.PachiBilling?.canOpen(state.day);
+  b.querySelector(".lab").innerHTML = trialLocked
+    ? `${ic("lock")}完全版で続ける<small>30営業日のお試し終了</small>`
+    : dead
     ? `${ic("skull")}倒産`
     : `${ic("bolt")}営業開始<small>${tk ? "特日 — 客が殺到する" : state.trend && state.trend.ids.length ? esc(state.trend.name) : "DAY " + state.day}</small>`;
 }
@@ -6759,13 +6762,15 @@ $("askYes").addEventListener("click", () => askClose(true));
 $("askNo").addEventListener("click", () => askClose(false));
 $("askBg").addEventListener("click", e => { if (e.target === $("askBg")) askClose(false); });
 /* 確認待ちの間は営業開始などを受け付けない */
-const uiBlocked = () => $("modalBg").classList.contains("show") || $("askBg").classList.contains("show");
+const uiBlocked = () => document.getElementById("pachiPurchase")?.open || $("modalBg").classList.contains("show") || $("askBg").classList.contains("show");
 window.ask = ask;
 
 // マウス・タッチ・キーボードで共通の入力ロック。モーダル内の操作は許可する。
 let interactionReturnFocus = null;
 let interactionInertBefore = null;
 function interactionOverlay() {
+  const purchase = document.getElementById("pachiPurchase");
+  if (purchase?.open) return purchase;
   if ($("askBg").classList.contains("show")) return $("askBg");
   if ($("modalBg").classList.contains("show")) return $("modalBg");
   return busy ? $("dayVizBlocker") : null;
@@ -6854,6 +6859,14 @@ function runDay() {
   if (busy) return;
   // 結果モーダル表示中の再クリック(Enter連打等)で日が進むのを防ぐ
   if (uiBlocked()) return;
+  // Native-only store gate, before any simulation, RNG, cash or day mutation.
+  if (window.PachiBillingRequired && state.day > 30 && !window.PachiBilling?.canOpen(state.day)) {
+    if (!busy && !uiBlocked()) {
+      if (window.PachiBilling) window.PachiBilling.show();
+      else toast("購入情報を準備できません。アプリを再起動してください。進行データは保持しています。");
+    }
+    return;
+  }
   if (state.machines.length === 0) {
     showModal(`${mh("alert", "台がありません", true)}
       <div class="mb"><p class="note" style="font-size:12px;color:var(--tx-2)">台が1台もないと営業できません。「新台」から台を導入してください。</p>
@@ -7364,6 +7377,12 @@ if (launchHasSave) {
   renderAll();
 }
 showLaunchTitle();
+window.PachiBillingGame = Object.freeze({
+  getDay: () => state.day,
+  canShow: () => !busy && !uiBlocked(),
+  render: () => renderCTA(),
+  syncLock: () => syncInteractionLock(),
+});
 /* 起動後の空き時間に、営業演出の背景と代表素材だけ先に読んでおく */
 try { bdPreload(); } catch (e) {}
 </script>

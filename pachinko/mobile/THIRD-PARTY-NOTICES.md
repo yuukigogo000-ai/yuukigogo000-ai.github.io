@@ -263,3 +263,12 @@ License: https://www.apache.org/licenses/LICENSE-2.0
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+## Google Play Billing Library (Android only)
+
+The Android app includes `com.android.billingclient:billing:9.1.0`, supplied by Google LLC under the Android Software Development Kit License listed in the artifact's published Maven metadata.
+
+License: https://developer.android.com/studio/terms.html
+Product documentation: https://developer.android.com/google/play/billing
+
+The app's small Capacitor purchase bridge is project code. It does not bundle a third-party purchase-management SDK or a remote purchase-management service.
