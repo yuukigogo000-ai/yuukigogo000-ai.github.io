@@ -49,6 +49,7 @@ def finish(p):
         p.evaluate('closeModal()')
 
 def check(engine,name,fn,browser):
+    if len(sys.argv)>3 and name!=sys.argv[3]:return
     try:
         data=fn(browser);r={'engine':engine,'case':name,'status':'PASS','data':data}
     except Exception as e:r={'engine':engine,'case':name,'status':'FAIL','error':str(e),'traceback':traceback.format_exc()}
@@ -163,6 +164,8 @@ def layout(b):
             p.locator('#launchTitle [data-launch=settings]').last.click()
             settings=p.locator('#launchInfo .billing-entry');assert settings.is_visible()
             settings.click();assert p.locator('#pachiPurchase').is_visible()
+            p.keyboard.press('Escape');assert not p.locator('#pachiPurchase').is_visible()
+            assert p.locator('#launchInfo').is_visible(), 'Escape closed underlying settings' 
             evidence.append({'width':width,'height':height,'title_entry_box':bb,'settings_entry':True})
         finally:ctx.close()
     return evidence

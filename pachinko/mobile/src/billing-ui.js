@@ -56,6 +56,11 @@ export function installBilling(store, game, doc = document) {
     dialog.close(); return true;
   }
   dialog.addEventListener('close', () => game.syncLock());
+  // Keep Escape/other keys from reaching the underlying title settings dialog.
+  dialog.addEventListener('keydown', event => {
+    event.stopPropagation();
+    if (event.key === 'Escape') { event.preventDefault(); close(); }
+  });
   dialog.addEventListener('click', event => {
     const action = event.target.closest('[data-billing]')?.dataset.billing;
     if (action === 'buy') void controller.purchase();
