@@ -1636,6 +1636,7 @@ body{font-size:15px;line-height:1.6;font-feature-settings:normal}
 </div></div>
 <div id="curtain"><div class="fl"></div><div class="tx">開店</div></div>
 <div id="toasts" aria-live="polite"></div>
+<div id="saveWarning" role="alert" hidden style="position:fixed;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top));z-index:100;padding:12px;background:#521b17;color:#fff;border:2px solid #ffb02e;font:700 16px/1.6 system-ui">保存できませんでした。進行はこの画面に残っています。アプリを閉じず、空き容量や保存の許可を確認して、店長室のセーブを再試行してください。</div>
 
 <script src="./launch-info.js"></script>
 <script>
@@ -2227,17 +2228,6 @@ function simulateDay() {
 
   s.ad = "none";
 
-  // --- 資金ショート時の緊急融資 ---
-  if (s.money < 0) {
-    const need2 = -s.money + 200000;
-    if (s.debt + need2 <= creditLimit()) {
-      s.debt += need2;
-      s.maxDebt = Math.max(s.maxDebt, s.debt);
-      s.money += need2;
-      notes.push(`🏦 資金ショート!銀行から緊急融資 ${yen(need2)} を受けた(金利0.25%/日)。借金地獄に注意…`);
-    }
-  }
-
   // --- 記録 ---
   const rec = {
     day: s.day, cust: customers, cas: casual, reg: regs, pro: pros,
@@ -2340,9 +2330,34 @@ function isDead() { return !!state && (state.money < 0 || isTimeUp()); }
 /* 倒産だけを見たいとき(表示の出し分け用) */
 function isBankrupt() { return !!state && state.money < 0; }
 
+// 日次処理の途中状態は保存せず、全精算後に一度だけ書き込む。
+let deferDaySave = false;
 function save(silent) {
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+  if (deferDaySave) return false;
+  try {
+    localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+  } catch (e) {
+    $("saveWarning").hidden = false;
+    return false;
+  }
+  $("saveWarning").hidden = true;
   if (!silent) renderStatus();
+  return true;
+}
+function settleEmergencyLoan(notes) {
+  const s = state;
+  // --- 資金ショート時の緊急融資 ---
+  if (s.money < 0) {
+    const need2 = -s.money + 200000;
+    if (s.debt + need2 <= creditLimit()) {
+      s.debt += need2;
+      s.maxDebt = Math.max(s.maxDebt, s.debt);
+      s.money += need2;
+      notes.push(`🏦 資金ショート!銀行から緊急融資 ${yen(need2)} を受けた(金利0.25%/日)。借金地獄に注意…`);
+      return need2;
+    }
+  }
+
 }
 // セーブデータの無害化: 型崩れ・範囲外・不正ID・HTML注入をすべて補正/除去する。
 // (手動編集・旧バージョン・破損への防御。ここを通った値だけがゲームに入る)
@@ -6154,6 +6169,9 @@ function bdPlayDay(sum, onDone) {
 
   box.hidden = false;
   blocker.hidden = false;
+  // ホール以外のタブから営業しても、スキップを操作できるようにする。
+  document.body.appendChild(blocker);
+  syncInteractionLock();
   if (dayLb) dayLb.textContent = "DAY " + sum.day;
   if (elCust) elCust.textContent = "0";
   if (elSales) elSales.textContent = yen(0);
@@ -6702,11 +6720,13 @@ function showModal(html) {
   $("modalBox").innerHTML = html;
   $("modalBg").classList.add("show");
   $("modalBg").scrollTop = 0;
+  syncInteractionLock();
 }
 function closeModal() {
   // 倒産後はモーダルを閉じられない(リセットのみ)。doResetはstateを先に差し替えるので通る
   if (isDead()) { showEndModal(); return; }
   $("modalBg").classList.remove("show");
+  syncInteractionLock();
   renderAll();
   if (pendingUnlock) { pendingUnlock = false; rgShowUnlock(); }
 }
@@ -6725,12 +6745,14 @@ function ask(msg, sub, yesLabel) {
     $("askTx").innerHTML = esc(msg) + (sub ? `<small>${esc(sub)}</small>` : "");
     $("askYes").textContent = yesLabel || "実行する";
     $("askBg").classList.add("show");
+    syncInteractionLock();
     $("askYes").focus();
   });
 }
 function askClose(v) {
   const r = askResolve; askResolve = null;
   $("askBg").classList.remove("show");
+  syncInteractionLock();
   if (r) r(v);
 }
 $("askYes").addEventListener("click", () => askClose(true));
@@ -6739,6 +6761,50 @@ $("askBg").addEventListener("click", e => { if (e.target === $("askBg")) askClos
 /* 確認待ちの間は営業開始などを受け付けない */
 const uiBlocked = () => $("modalBg").classList.contains("show") || $("askBg").classList.contains("show");
 window.ask = ask;
+
+// マウス・タッチ・キーボードで共通の入力ロック。モーダル内の操作は許可する。
+let interactionReturnFocus = null;
+let interactionInertBefore = null;
+function interactionOverlay() {
+  if ($("askBg").classList.contains("show")) return $("askBg");
+  if ($("modalBg").classList.contains("show")) return $("modalBg");
+  return busy ? $("dayVizBlocker") : null;
+}
+function interactionControls(root) {
+  return [...root.querySelectorAll('button,[href],input,select,textarea,[tabindex]')]
+    .filter(el => !el.disabled && el.tabIndex >= 0 && el.getClientRects().length);
+}
+function syncInteractionLock() {
+  const overlay = interactionOverlay(), app = $("app");
+  if (overlay) {
+    if (interactionInertBefore === null) {
+      interactionReturnFocus = document.activeElement;
+      interactionInertBefore = app.inert;
+    }
+    app.inert = true;
+    if (!overlay.contains(document.activeElement)) interactionControls(overlay)[0]?.focus({ preventScroll: true });
+  } else if (interactionInertBefore !== null) {
+    app.inert = interactionInertBefore;
+    interactionInertBefore = null;
+    const target = interactionReturnFocus;
+    interactionReturnFocus = null;
+    if (target?.isConnected && !target.closest('[inert]')) target.focus({ preventScroll: true });
+  }
+}
+document.addEventListener("click", e => {
+  const overlay = interactionOverlay();
+  if (overlay && !overlay.contains(e.target)) { e.preventDefault(); e.stopImmediatePropagation(); }
+}, true);
+document.addEventListener("keydown", e => {
+  const overlay = interactionOverlay();
+  if (!overlay) return;
+  if (e.key === "Tab") {
+    const controls = interactionControls(overlay);
+    const i = controls.indexOf(document.activeElement);
+    const next = e.shiftKey ? (i <= 0 ? controls.length - 1 : i - 1) : (i + 1) % controls.length;
+    e.preventDefault(); e.stopImmediatePropagation(); controls[next]?.focus();
+  } else if (!overlay.contains(e.target)) { e.preventDefault(); e.stopImmediatePropagation(); }
+}, true);
 
 const mh = (icon, title, closable) =>
   `<div class="mh">${ic(icon)}<h2>${title}</h2>${closable ? `<button class="x" onclick="closeModal()" aria-label="閉じる">${ic("x")}</button>` : ""}</div>`;
@@ -6795,6 +6861,7 @@ function runDay() {
     return;
   }
   busy = true;
+  deferDaySave = true;
   /* 営業前の値を控えておき、支店・スタッフ・維持費まで全部済んだあとの
      差分を「今日どれだけ動いたか」として結果に出す。
      演出は「確定して保存し終えた結果」を映すだけなので、
@@ -6824,11 +6891,15 @@ function runDay() {
       result.ds = dsDay(result.rec);
       if (result.ds && result.ds.notes.length) result.notes = result.notes.concat(result.ds.notes);
     } catch (e) { result.ds = null; }
+    // 維持費・支店・イベントを含む全現金変動後、既存の20万円余裕ルールで一度だけ判定。
+    const emergencyLoan = settleEmergencyLoan(result.notes);
+    if (emergencyLoan) { try { grantAchEx("ex-emg"); } catch (e) {} }
   } catch (e) {
     /* 計算が途中で落ちたら演出には入らない。busy を握ったままにしない */
     busy = false;
+    syncInteractionLock();
     throw e;
-  }
+  } finally { deferDaySave = false; }
   /* 拡張処理まで全部終わった状態を、演出を始める前に保存する。
      演出中にリロードしても同じ日をやり直さない */
   save(true);
@@ -6843,7 +6914,7 @@ function runDay() {
   const reveal = () => {
     if (shown) return;
     shown = true;
-    try { showDayResult(result); } finally { busy = false; }
+    try { showDayResult(result); } finally { busy = false; syncInteractionLock(); }
     if (result.rg && result.rg.unlock) pendingUnlock = true;
   };
 
@@ -7268,7 +7339,7 @@ $("btnRepay").addEventListener("click", () => {
   if (state.debt === 0 && state.maxDebt >= 10000000) grantAch("loan-clear");
   save(); renderAll();
 });
-$("btnSave").addEventListener("click", () => { save(); toast("セーブしました"); });
+$("btnSave").addEventListener("click", () => { if (save()) toast("セーブしました"); });
 $("btnReset").addEventListener("click", async () => {
   if (await ask("本当に最初からやり直しますか?", "セーブデータは消えます。この操作は取り消せません。", "やり直す")) doReset();
 });
