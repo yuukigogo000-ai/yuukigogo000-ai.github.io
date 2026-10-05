@@ -1241,6 +1241,55 @@ body{font-size:15px;line-height:1.6;font-feature-settings:normal}
 #chartWrap:has(svg)::after{content:"グラフは横にスワイプできます";display:block;width:100%;position:sticky;left:0;padding:0 12px 8px;color:var(--tx-3);font-size:12px}
 @media(max-width:370px){.brand .jp{font-size:16px}#fundBox .v{font-size:22px}.gp-b{padding:10px}.sec{margin-left:10px;margin-right:10px}#nav button i{font-size:12px}}
 
+
+/* Hall overview and pinned report action. */
+#machineManagement{margin-bottom:14px}
+#machineManagement #focusWrap{padding:12px}
+#machineManagement #hallNote{margin:12px 0 0}
+#modalBg.day-report.show{display:flex;overflow:hidden}
+#modalBg.day-report #modalBox{display:flex;flex-direction:column;width:100%;min-height:0;max-height:100%;margin:0 auto}
+.day-report-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+.day-report-actions{flex:none;padding:12px 14px;background:#171c25;border-top:1px solid var(--line);box-shadow:0 -4px 16px #0004}
+.day-report-actions .btn{width:100%;min-height:50px}
+@media(max-width:899px){
+  #app.hall-overview{height:100vh;min-height:100vh;height:100dvh;min-height:100dvh;display:flex;flex-direction:column;padding-bottom:0}
+  #app.hall-overview #top{flex:none;padding-top:calc(var(--sat) + 6px);padding-bottom:8px;gap:6px}
+  #app.hall-overview .brand .jp{font-size:16px;line-height:1.35}
+  #app.hall-overview #fundBox{padding:5px 10px}
+  #app.hall-overview #fundBox .sub{display:none} /* Previous-day result remains in statusBand. */
+  #app.hall-overview #main{display:flex;flex:1;min-height:min-content}
+  #panel-hall.on{display:flex;flex:1;flex-direction:column}
+  #panel-hall #stage{flex:1;min-height:168px}
+  #panel-hall #hallArt{position:absolute;inset:0;height:100%}
+  #panel-hall #crest{top:6px;bottom:auto;left:10px;width:72px;height:72px}
+  #panel-hall .stage-tag{left:94px;top:12px;right:10px;align-items:flex-start}
+  #panel-hall #stageFlags{display:flex;flex-wrap:wrap;gap:4px}
+  #panel-hall #kpi{bottom:8px}
+  #panel-hall #statusBand{flex:none;padding:8px 12px 0;gap:6px}
+  #panel-hall #statusBand .sb{padding:6px 9px}
+  #panel-hall #statusBand .sb:first-child{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center}
+  #panel-hall #statusBand .sb:first-child .v{text-align:right}
+  #panel-hall #statusBand .sb:first-child .meter{margin:0}
+  #panel-hall #statusBand .sb:first-child .k2{text-align:right}
+  #app.hall-overview #dock{position:relative;inset:auto;flex:none;width:100%;padding-top:8px;box-shadow:none}
+}
+
+
+@media(max-width:899px) and (max-height:740px){
+  #app.hall-overview #top{gap:4px;padding-bottom:6px}
+  #app.hall-overview #dayBox{padding:2px 6px}
+  #app.hall-overview #dayBox .s,#app.hall-overview #dayBox .lim{line-height:1.25}
+  #panel-hall #stage{min-height:160px}
+  #panel-hall #crest{width:64px;height:64px}
+  #panel-hall #kpi .cell{padding:5px}
+  #panel-hall #statusBand .sb{padding:4px 8px}
+  #panel-hall #statusBand .k,#panel-hall #statusBand .k2,#panel-hall #statusBand .k2 b{line-height:1.4}
+  #panel-hall #statusBand .v{line-height:1.3}
+  #app.hall-overview #dock{padding-top:6px}
+  #app.hall-overview #btnOpen{min-height:54px}
+  #app.hall-overview #nav button{min-height:50px}
+}
+
 </style>
 <link rel="stylesheet" href="./launch-v2.css?v=3-exact">
 <link rel="stylesheet" href="./launch-info.css">
@@ -1328,7 +1377,7 @@ body{font-size:15px;line-height:1.6;font-feature-settings:normal}
   </div>
 </div>
 
-<div id="app">
+<div id="app" class="hall-overview">
   <header id="top">
     <div class="brand" role="img" aria-label="パチンコ店経営シミュレーション 〜目指せ、純資産1億円〜">
       <span class="jp" aria-hidden="true"><span class="l">パチンコ店経営</span><span class="l">シミュレーション</span></span>
@@ -1405,16 +1454,6 @@ body{font-size:15px;line-height:1.6;font-feature-settings:normal}
       </div>
       <div id="dayVizBlocker" hidden><button type="button" class="dv-skip" id="dvSkip">スキップ</button></div>
 
-      <!-- 400–640px : 設置台・設定判断 -->
-      <div id="focusWrap">
-        <div id="focusCard"></div>
-        <div id="hallList" role="tablist" aria-label="シマの切替"></div>
-        <button class="btn wide" id="btnSetList" data-setlist style="margin-top:6px">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><use href="#i-gear"/></svg>
-          全シマの平均設定を一覧で変更
-        </button>
-      </div>
-
       <!-- 640–710px : Goal / boom / 特日 / warning / strategy -->
       <div id="statusBand">
         <div class="sb gp">
@@ -1434,7 +1473,7 @@ body{font-size:15px;line-height:1.6;font-feature-settings:normal}
           <div class="k2">客数 ・ 収支 <b class="num" id="stNet2">—</b></div>
         </div>
       </div>
-      <p class="note" id="hallNote"></p>
+
     </section>
 
     <!-- ===================== SHOP ===================== -->
@@ -1450,6 +1489,19 @@ body{font-size:15px;line-height:1.6;font-feature-settings:normal}
     <section class="panel" id="panel-mgmt" aria-label="経営">
       <div class="sec">
         <div class="sec-h"><i class="bar"></i><h2>店長室</h2><span class="sub">OWNER ROOM</span></div>
+        <div class="gp" id="machineManagement">
+          <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-slot"/></svg><b>設置台・設定</b></div>
+      <div id="focusWrap">
+        <div id="focusCard"></div>
+        <div id="hallList" role="tablist" aria-label="シマの切替"></div>
+        <button class="btn wide" id="btnSetList" data-setlist style="margin-top:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><use href="#i-gear"/></svg>
+          全シマの平均設定を一覧で変更
+        </button>
+        <p class="note" id="hallNote"></p>
+      </div>
+        </div>
+
         <div class="gp" id="saveDataCard" style="margin-bottom:6px">
           <div class="gp-h"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><use href="#i-save"/></svg><b>データ</b></div>
           <div class="gp-b">
@@ -2881,6 +2933,7 @@ function renderNav() {
 function setArea(id) {
   if (id === "map" && !rgUnlocked()) id = "mgmt";
   area = id;
+  $("app").classList.toggle("hall-overview", id === "hall");
   ALL_PANELS.forEach(a => { const el = $("panel-" + a); if (el) el.classList.toggle("on", a === id); });
   renderNav();
   window.scrollTo({ top: 0, behavior: reduced() ? "auto" : "smooth" });
@@ -6716,7 +6769,8 @@ function renderCalamity() {
    モーダル / 1営業日 / 当日結果 / 起動
    ========================================================================== */
 let pendingUnlock = false;
-function showModal(html) {
+function showModal(html, kind = "") {
+  $("modalBg").classList.toggle("day-report", kind === "day-report");
   $("modalBox").innerHTML = html;
   $("modalBg").classList.add("show");
   $("modalBg").scrollTop = 0;
@@ -6993,6 +7047,7 @@ function showDayResult(result) {
   }
 
   showModal(`
+    <div class="day-report-body" role="region" aria-label="営業報告の詳細" tabindex="0">
     <div class="res-hero${rec.net >= 0 ? " win" : " lose"}">
       <img class="res-art" src="./art/${rec.net >= 0 ? (state.cleared && state.clearDay === rec.day ? "fx_win" : "fx_bonus") : "atm_smoke"}.jpg" alt="" decoding="async">
       <div class="d">DAY ${rec.day}${rec.note ? " 〈" + esc(rec.note) + "〉" : ""}</div>
@@ -7024,8 +7079,9 @@ function showDayResult(result) {
       ${rgHtml}
       ${weekHtml}
       ${endHtml}
-      ${state.money >= 0 ? `<div class="rowbtns"><button class="btn gold" onclick="closeModal()">${ic("check")}確認して次の日へ</button></div>` : ""}
-    </div>`);
+    </div>
+    </div>
+    ${state.money >= 0 ? `<div class="day-report-actions"><button class="btn gold" id="btnDayResultNext" onclick="closeModal()">${ic("check")}確認して次の日へ</button></div>` : ""}`, "day-report");
   const amt = $("resAmt");
   if (amt && !reduced()) requestAnimationFrame(() => amt.classList.add("slam"));
 }
@@ -7249,7 +7305,7 @@ document.addEventListener("click", e => {
     if (d.tile === "closemodal") { closeModal(); return; }
     if (d.tile === "shopjump") { closeModal(); setArea("shop"); return; }
     if (d.tile === "set") { openSetList(); return; }
-    if (d.tile === "__legacy_set") { setArea("hall"); const t = $("hallList"); if (t) t.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); return; }
+    if (d.tile === "__legacy_set") { setArea("mgmt"); const t = $("hallList"); if (t) t.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "start" }); return; }
     if (d.tile === "owner") { setArea("mgmt"); return; }
     if (d.tile === "ad") { setArea("mgmt"); const t = $("adButtons"); if (t) t.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "center" }); return; }
     if (d.tile === "staff") { setArea("mgmt"); const t = $("staffCount"); if (t) t.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "center" }); return; }
