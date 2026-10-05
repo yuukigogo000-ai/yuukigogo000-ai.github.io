@@ -1136,6 +1136,8 @@ body{font-size:15px;line-height:1.6;font-feature-settings:normal}
 .sec-h .sub{font-size:12px;letter-spacing:0}
 .note,.adv,.empty,.week p,.ach .d,.ce-tx,.ce-lead,.lr-log div,.ds-log{font-size:14px;line-height:1.8;letter-spacing:0}
 .note{margin:12px 0;color:var(--tx-2)}
+.note-points{padding-left:1.2em}
+.note-points li+li{margin-top:6px}
 .row{gap:12px;padding-top:7px;padding-bottom:7px;align-items:baseline}
 .row .k,.row .v,.row.s .k,.row.s .v{font-size:14px;line-height:1.65;white-space:normal}
 .row .v{text-align:right;overflow-wrap:anywhere}
@@ -1440,7 +1442,7 @@ body{font-size:15px;line-height:1.6;font-feature-settings:normal}
       <div class="sec">
         <div class="sec-h"><i class="bar"></i><h2>新台購入</h2><span class="sub" id="shopSlots"></span></div>
         <div id="shopList"></div>
-        <p class="note" id="shopNote"></p>
+        <ul class="note note-points" id="shopNote"></ul>
       </div>
     </section>
 
@@ -1508,10 +1510,11 @@ body{font-size:15px;line-height:1.6;font-feature-settings:normal}
             <div class="row"><span class="k">規模維持費</span><span class="v" id="upkeepNow">¥0 / 日</span></div>
             <div class="row s"><span class="k s">次の1台で</span><span class="v s" id="upkeepNext">—</span></div>
             <button class="btn wide" id="btnExpand" style="margin-top:6px">+5台 拡張する</button>
-            <p class="note">増設費は消えない。払った額の<b>6割が「店舗簿価」として純資産に残る</b>ので、拡張は罰ではなく<b>初期投資</b>だ。<br>
-            ただし現金は確実に出ていく。序盤ほど安く、広げるほど1回あたりの費用は上がる。<br>
-            <b>規模維持費</b>は130台目(13シマ目)から発生し、台数が増えるほど1台あたりが重くなる(警備・設備保守・駐車場・人員教育)。
-            さらに日が経つほど上がっていくので、<b>広げたまま埋められないと詰む</b>。</p>
+            <ul class="note note-points" id="expandNote">
+              <li><b>費用：</b>全額を現金で支払い、6割は「店舗簿価」として純資産に残ります。</li>
+              <li><b>拡張費：</b>拡張するほど高くなります。</li>
+              <li><b>維持費：</b>設置130台目（13シマ目）から発生。台数が増えるほど割高になり、日数とともに上がります。</li>
+            </ul>
           </div>
         </div>
 
@@ -3026,17 +3029,11 @@ function renderHall() {
 function renderShop() {
   $("shopSlots").textContent = `空き ${tai(Math.max(0, state.cap - state.machines.length))}台`;
   $("shopNote").innerHTML =
-    "スペック名(<b>甘デジ / ミドル / 高継続ミドル / 低純増AT / スマスロ</b>など)は飾りではない。" +
-    "<b>週替わりブーム</b>はこのカテゴリ単位で来て、<b>地方ごとの得意・苦手</b>も同じカテゴリで決まる。<br>" +
-    "ただしブームの1.4倍は<b>その機種自身の集客力</b>にかかるだけ。" +
-    "弱い機種がブームでも、強い機種の素の集客力には届かないことが多い。" +
-    "上の数字を見比べて、<b>店全体の平均人気を下げない</b>ように選ぶこと。<br>" +
-    "新台は導入から5日間「新台効果」で人気1.4倍。同一機種のシマを複数並べると<b>シマ効果</b>(+6%/シマ・最大+30%)。" +
-    "ブーム中のカテゴリは<b>中古相場が1.35倍</b>になる(新品の価格は定価のまま)。" +
-    "枯れた台を手放すなら、そのカテゴリにブームが来ている週が得。<br>" +
-    "売却額は定価の<b>55%</b>(帳簿上の資産評価は45%)。差額の分だけ売った方が現金は増えるが、" +
-    "買い直すと45%を失うので<b>入れ替え目的だと基本は損</b>。売却は資金繰りと設置枠の確保のための手段。" +
-    "導入直後は<b>新装開店フェア</b>(店長室)で告知すると効果大。";
+    "<li><b>台選び：</b>集客力を比較。週替わりブームや地域との相性は、甘デジ・ミドルなどのカテゴリごとに変わります。</li>" +
+    "<li><b>人気UP：</b>ブームは各機種の集客力1.4倍。新台も導入から5日間は1.4倍。</li>" +
+    "<li><b>シマ効果：</b>同じ機種を増やすと+6%／シマ（最大+30%）。</li>" +
+    "<li><b>売却：</b>通常は定価の55%（資産評価45%）。ブーム中は売却額1.35倍で、新品価格は変わりません。同じ台の買い直しは損。資金や空き枠の確保に。</li>" +
+    "<li><b>導入後：</b>「経営」の新装開店フェアで集客UP。</li>";
   const dead = isDead();
   $("shopList").innerHTML = CATALOG.map(c => {
     const owned = state.machines.filter(m => m.cid === c.id).length;
