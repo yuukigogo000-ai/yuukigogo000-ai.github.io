@@ -955,7 +955,7 @@ function bindLibrary() {
 // 共有リンクの土台。デスクトップ版(app://)やfile://で開いている場合でも、
 // 受け取った相手がブラウザで開ける公開URLを使う
 const SHARE_BASE = location.protocol.startsWith("http")
-  ? `${location.origin}${location.pathname}`
+  ? new URL("./", location.href).href
   : "https://yuukigogo000-ai.github.io/band/";
 
 async function buildShareUrl() {

@@ -4,7 +4,7 @@
 // 曲データは配列 [title,bpm,key,tuning,sec,energy,mc,memo,gear] で運ぶ
 // (v1リンクは gear なしの8要素 — 後方互換で読める)。
 
-import { sanitizeSong, clampNum } from "./store.js";
+import { sanitizeSong, clampNum } from "./song-model.js";
 export const MAX_SHARE_BYTES = 2 * 1024 * 1024;
 
 export function toShareBundle(sl, entries) {

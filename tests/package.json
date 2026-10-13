@@ -7,6 +7,7 @@
     "test": "npm run test:web && npm run test:torture",
     "test:web": "node smoke.mjs",
     "test:torture": "node torture.mjs",
+    "test:viewer": "node share-viewer.mjs",
     "test:electron": "node electron-smoke.mjs"
   },
   "devDependencies": {

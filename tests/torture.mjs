@@ -41,7 +41,7 @@ const MIME = {
 };
 const server = createServer(async (req, res) => {
   let path = req.url.split("#")[0].split("?")[0];
-  if (path === "/") path = "/index.html";
+  if (path === "/") path = "/legacy.html";
   try {
     const body = await readFile(join(ROOT, path));
     res.writeHead(200, { "content-type": MIME[extname(path)] || "application/octet-stream" });

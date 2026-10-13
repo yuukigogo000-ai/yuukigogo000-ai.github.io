@@ -1,9 +1,9 @@
 name: BANDHUB share security
 on:
   push:
-    paths: ['band/**', 'tests/share-security.mjs', '.github/workflows/band-share-security.yml']
+    paths: ['band/**', 'tests/share-security.mjs', 'tests/share-viewer.mjs', '.github/workflows/band-share-security.yml']
   pull_request:
-    paths: ['band/**', 'tests/share-security.mjs', '.github/workflows/band-share-security.yml']
+    paths: ['band/**', 'tests/share-security.mjs', 'tests/share-viewer.mjs', '.github/workflows/band-share-security.yml']
 permissions:
   contents: read
 jobs:
@@ -11,8 +11,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
       - run: node --test tests/share-security.mjs
-      - run: node --check band/app.js && node --check band/share.js && node --check band/sw.js
+      - run: node --check band/app.js && node --check band/share.js && node --check band/sw.js && node --check band/viewer.js
+      - run: npm ci
+        working-directory: tests
+      - run: npx playwright-core install --with-deps chromium
+        working-directory: tests
+      - run: npm run test:viewer
+        working-directory: tests
