@@ -1,7 +1,7 @@
 // オフライン対応:stale-while-revalidate 方式のService Worker。
 // キャッシュから即応答しつつ、裏で最新版を取りに行って次回に備える。
 
-const CACHE = "setlism-v2";
+const CACHE = "setlism-v3-security-20261013";
 const ASSETS = [
   "./",
   "./index.html",
@@ -29,7 +29,7 @@ self.addEventListener("install", (e) => {
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => /^setlism-v\d+(?:-|$)/.test(k) && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });

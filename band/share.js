@@ -5,6 +5,7 @@
 // (v1リンクは gear なしの8要素 — 後方互換で読める)。
 
 import { sanitizeSong, clampNum } from "./store.js";
+export const MAX_SHARE_BYTES = 2 * 1024 * 1024;
 
 export function toShareBundle(sl, entries) {
   return {
@@ -64,8 +65,23 @@ async function deflate(bytes) {
 
 async function inflate(bytes) {
   const ds = new DecompressionStream("deflate-raw");
-  const buf = await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer();
-  return new Uint8Array(buf);
+  const reader = new Blob([bytes]).stream().pipeThrough(ds).getReader();
+  const chunks=[]; let total=0;
+  try {
+    for (;;) {
+      const {done,value}=await reader.read();
+      if (done) break;
+      total+=value.byteLength;
+      if (total>MAX_SHARE_BYTES) throw new Error("Shared setlist exceeds safe size limit");
+      chunks.push(value);
+    }
+  } catch (error) {
+    await reader.cancel().catch(()=>{});
+    throw error;
+  } finally { reader.releaseLock(); }
+  const result=new Uint8Array(total); let offset=0;
+  for (const chunk of chunks) {result.set(chunk,offset);offset+=chunk.byteLength;}
+  return result;
 }
 
 export async function encodeShare(sl, entries) {
@@ -83,6 +99,7 @@ export async function encodeShare(sl, entries) {
 
 // 戻り値: 共有バンドル(fromCompact 参照)。壊れたリンクは例外を投げる
 export async function decodeShare(payload) {
+  if (typeof payload!=="string" || payload.length>Math.ceil(MAX_SHARE_BYTES*4/3)+4) throw new Error("Shared setlist exceeds safe size limit");
   const dot = payload.indexOf(".");
   if (dot !== 1) throw new Error("bad format");
   const mode = payload.slice(0, 1);
@@ -96,6 +113,7 @@ export async function decodeShare(payload) {
   } else if (mode !== "0") {
     throw new Error("bad format");
   }
+  if (bytes.byteLength>MAX_SHARE_BYTES) throw new Error("Shared setlist exceeds safe size limit");
   const json = new TextDecoder().decode(bytes);
   return fromCompact(JSON.parse(json));
 }
