@@ -235,6 +235,13 @@ function bindSetlistBar() {
   });
 
   $("addSongBtn").addEventListener("click", openPicker);
+  $("studioAddBtn").addEventListener("click", openPicker);
+  $("studioTimeBtn").addEventListener("click", () => $("timeDialog").showModal());
+  $("studioRehearseBtn").addEventListener("click", () => {
+    selectTab("practice");
+    $("tabbtn-practice").focus();
+    window.scrollTo({ top: 0, behavior: "instant" });
+  });
 
   // Undo / Redo
   const syncUndoButtons = () => {
@@ -263,6 +270,29 @@ function renderTimePanel() {
   const diffEl = $("timeDiff");
   const fill = $("timeBarFill");
   const targetSec = sl.targetMin * 60;
+  const entries = entriesOf(sl);
+  const missing = entries.filter((e) => !(e.song.sec > 0)).length;
+  $("studioPlay").textContent = fmtTime(d.play) + (missing ? "+" : "");
+  $("studioGaps").textContent = fmtTime(d.gaps + d.mc);
+  $("studioSongCount").textContent = `${entries.length}曲`;
+  $("studioMarginLabel").textContent = targetSec > 0 && d.total > targetSec ? "超過" : "残り";
+  $("studioMargin").textContent = missing || !targetSec ? "—" : fmtTime(Math.abs(targetSec - d.total));
+  $("studioMargin").className = missing || !targetSec ? "unknown" : d.total > targetSec ? "over" : "";
+  $("studioTimeNote").textContent = missing
+    ? `${missing}曲の長さが未入力。表示は入力済み分の合計です。`
+    : targetSec ? `持ち時間 ${sl.targetMin}分 · 転換とMCは別々に加算` : "持ち時間を設定すると残り時間が分かります。";
+  const barBase = Math.max(targetSec, d.total, 1);
+  $("studioPlayBar").style.width = `${d.play / barBase * 100}%`;
+  $("studioGapBar").style.width = `${(d.gaps + d.mc) / barBase * 100}%`;
+  if (missing) {
+    $("totalTime").textContent = `${fmtTime(d.total)}＋未入力`;
+    diffEl.textContent = targetSec > 0 && d.total > targetSec
+      ? `少なくとも ${fmtTime(d.total - targetSec)} オーバー` : "長さを入力すると残り時間が確定します";
+    diffEl.className = "time-diff" + (targetSec > 0 && d.total > targetSec ? " over" : "");
+    fill.style.width = `${Math.min(100, d.total / (targetSec || barBase) * 100)}%`;
+    fill.classList.toggle("over", targetSec > 0 && d.total > targetSec);
+    return;
+  }
   if (targetSec > 0) {
     const diff = targetSec - d.total;
     if (diff >= 0) {
@@ -292,6 +322,7 @@ function bindTimeInputs() {
       save();
       renderTimePanel();
       renderDiagnosis();
+      renderPlanner();
     });
   };
   bind("targetMin", "targetMin", 0, 600);
@@ -365,7 +396,7 @@ function renderItems() {
 
       const num = document.createElement("span");
       num.className = "song-num";
-      num.textContent = i + 1;
+      num.textContent = String(i + 1).padStart(2, "0");
 
       const main = document.createElement("div");
       main.className = "song-main";
@@ -494,7 +525,7 @@ function renderEnergy() {
   // テンプレート一致度
   const tpl = templateById(sl.template);
   const fit = templateFit(tpl, entries);
-  $("templateFit").textContent = fit !== null ? `一致度 ${fit}%` : "";
+  $("templateFit").textContent = fit !== null ? `型との近さ ${fit}%（演出の参考）` : "";
 
   if (n < 2) {
     wrap.innerHTML =
@@ -647,79 +678,97 @@ function bindChartControls() {
 // ---------- セトリ診断 ----------
 
 function renderDiagnosis() {
-  const sl = activeSetlist();
-  const entries = entriesOf(sl);
+  const entries = entriesOf(activeSetlist());
   const listEl = $("diagList");
-  const results = diagnose(sl, entries);
-  if (entries.length < 2) {
-    listEl.innerHTML = '<p class="note">曲が増えると、構成上の注意点をここでお知らせします。</p>';
+  const results = diagnose(activeSetlist(), entries);
+  const warnings = results.filter((r) => r.level === "warn").length;
+  const missing = results.filter((r) => r.level === "missing").length;
+  $("diagBadge").textContent = !entries.length ? "未判定" : warnings ? `要確認 ${warnings}` : missing ? "入力待ち" : "チェック済み";
+  listEl.replaceChildren();
+  if (!entries.length || !results.length) {
+    const p = document.createElement("p");
+    p.className = !entries.length ? "note" : "diag-ok";
+    p.textContent = !entries.length ? "曲を追加すると、時間と持ち替えを確認できます。"
+      : "入力済みの範囲では、このチェック条件に該当する項目はありません。最終確認は通し練習で。";
+    listEl.appendChild(p);
     return;
   }
-  if (!results.length) {
-    listEl.innerHTML = '<p class="diag-ok">指摘はありません。流れの良いセトリです 👍</p>';
-    return;
-  }
-  listEl.replaceChildren(
-    ...results.map((r) => {
+  for (const [level, label] of [["warn", "先に確認"], ["missing", "入力が必要"], ["info", "演出・運用のヒント"]]) {
+    const group = results.filter((r) => r.level === level);
+    if (!group.length) continue;
+    const section = document.createElement(level === "info" ? "details" : "section");
+    if (level === "info") section.className = "diag-hints";
+    const heading = document.createElement(level === "info" ? "summary" : "h3");
+    heading.className = "diag-group-title";
+    heading.textContent = `${label} · ${group.length}`;
+    section.appendChild(heading);
+    for (const r of group) {
       const div = document.createElement("div");
       div.className = `diag-item diag-${r.level}`;
       const icon = document.createElement("span");
       icon.className = "diag-icon";
-      icon.textContent = r.level === "warn" ? "⚠" : "💡";
-      const text = document.createElement("span");
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = r.level === "warn" ? "△" : "•";
+      const copy = document.createElement("div");
+      copy.className = "diag-copy";
+      const category = document.createElement("div");
+      category.className = "diag-category";
+      category.textContent = r.category;
+      const title = document.createElement("strong");
+      title.className = "diag-title";
+      title.textContent = r.title;
+      const text = document.createElement("p");
       text.textContent = r.text;
-      div.append(icon, text);
-      return div;
-    })
-  );
+      const suggestion = document.createElement("p");
+      suggestion.className = "diag-suggestion";
+      suggestion.textContent = r.suggestion;
+      copy.append(category, title, text, suggestion);
+      if (r.action) {
+        const button = document.createElement("button");
+        button.className = "ghost small";
+        button.textContent = r.action.label;
+        button.addEventListener("click", () => {
+          if (r.action.kind === "time") $("timeDialog").showModal();
+          if (r.action.kind === "song") openSongDialog({ mode: "edit", songId: r.action.songId });
+        });
+        copy.appendChild(button);
+      }
+      div.append(icon, copy);
+      section.appendChild(div);
+    }
+    listEl.appendChild(section);
+  }
 }
 
 // ---------- 持ち替えプランナー ----------
 
 function renderPlanner() {
-  const entries = entriesOf(activeSetlist());
+  const sl = activeSetlist();
+  const plan = switchPlan(entriesOf(sl));
   const body = $("plannerBody");
-  const plan = switchPlan(entries);
-
-  if (!plan.needed.length) {
-    body.innerHTML = '<p class="note">曲にチューニングを登録すると、持ち替えプランが表示されます。</p>';
-    return;
-  }
-  if (plan.needed.length === 1) {
-    // チューニング名は共有リンク経由で他人が渡せるので、HTMLとして解釈させない
-    const only = document.createElement("p");
-    only.className = "note";
-    only.textContent = `チューニングは「${plan.needed[0].tuning}」の1種類。持ち替えなしで通せます 👍`;
-    body.replaceChildren(only);
-    return;
-  }
-
   body.replaceChildren();
-  const h = document.createElement("p");
-  h.className = "planner-head";
-  h.textContent = `必要な本数:${plan.needed.length}本`;
-  body.appendChild(h);
-
-  for (const g of plan.needed) {
-    const div = document.createElement("div");
-    div.className = "planner-row";
-    div.textContent = `ギター${g.label}(${g.tuning}):${g.positions.map((p) => `M${p}`).join(", ")}`;
-    body.appendChild(div);
+  const paragraph = (text, cls = "note") => {
+    const p = document.createElement("p"); p.className = cls; p.textContent = text; body.appendChild(p);
+  };
+  if (!plan.needed.length) {
+    paragraph("曲にチューニングを登録すると、持ち替え候補を確認できます。");
+    return;
   }
-
-  if (plan.switches.length) {
-    const h2 = document.createElement("p");
-    h2.className = "planner-head";
-    h2.textContent = `持ち替えタイミング:${plan.switches.length}回`;
-    body.appendChild(h2);
-    for (const s of plan.switches) {
-      const div = document.createElement("div");
-      div.className = "planner-row" + (s.hasMC ? "" : " planner-warn");
-      div.textContent =
-        `M${s.fromIdx + 1}→M${s.toIdx + 1}:${s.from} → ${s.to} ` +
-        (s.hasMC ? "(MCあり ✓ 余裕)" : "(MCなし ⚠ 転換が慌ただしくなります)");
-      body.appendChild(div);
-    }
+  paragraph(`登録チューニング：${plan.needed.length}種類`, "planner-head");
+  paragraph("調弦ごとに専用の楽器を用意する場合の割り当て例です。必要本数は、再調弦の可否・楽器の仕様・演奏者数でも変わります。");
+  for (const g of plan.needed) {
+    paragraph(`候補${g.label}（${g.tuning}）：${g.positions.map((n) => `M${n}`).join("、")}`, "planner-row");
+  }
+  if (plan.unknownPositions.length) {
+    paragraph(`${plan.unknownPositions.map((n) => `M${n}`).join("・")}は調弦未入力。その前後の持ち替えは未判定です。`, "planner-row planner-warn");
+  }
+  paragraph(`確認できる調弦変更：${plan.switches.length}回`, "planner-head");
+  for (const change of plan.switches) {
+    const gap = sl.gapSec || 0, mc = change.hasMC ? sl.mcSec || 0 : 0;
+    paragraph(`M${change.fromIdx + 1}→M${change.toIdx + 1}：${change.from} → ${change.to}。転換 ${fmtTime(gap)} ＋ MC ${fmtTime(mc)}。実際に間に合うか要計測。`, "planner-row");
+  }
+  if (!plan.switches.length && !plan.unknownPositions.length) {
+    paragraph("登録上の調弦変更はありません。機材・カポ・音色変更は曲ごとのチェックリストでも確認してください。");
   }
 }
 
@@ -1153,11 +1202,11 @@ function buildStageSheet() {
     pl.className = "ss-plan";
     const h = document.createElement("div");
     h.className = "ss-plan-head";
-    h.textContent = `持ち替え(${plan.needed.length}本)`;
+    h.textContent = `調弦別の楽器割り当て例（${plan.needed.length}種類・必要本数ではありません）`;
     pl.appendChild(h);
     for (const g of plan.needed) {
       const line = document.createElement("div");
-      line.textContent = `ギター${g.label}(${g.tuning}):${g.positions.map((p) => `M${p}`).join(", ")}`;
+      line.textContent = `候補${g.label}(${g.tuning}):${g.positions.map((p) => `M${p}`).join(", ")}`;
       pl.appendChild(line);
     }
     sheet.appendChild(pl);
@@ -1168,7 +1217,7 @@ function buildStageSheet() {
   const left = document.createElement("span");
   left.textContent = `全${entries.length}曲`;
   const right = document.createElement("span");
-  right.textContent = `合計 ${fmtTime(d.total)}(持ち時間 ${sl.targetMin}分)`;
+  right.textContent = `合計 ${fmtTime(d.total)}${entries.some((e) => !(e.song.sec > 0)) ? "＋長さ未入力" : ""}(持ち時間 ${sl.targetMin}分)`;
   foot.append(left, right);
   sheet.appendChild(foot);
 }

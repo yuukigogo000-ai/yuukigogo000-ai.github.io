@@ -10,6 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="studio.css">
 </head>
 <body>
 
@@ -22,8 +23,8 @@
       <rect x="25" y="12" width="4" height="16" rx="2" fill="#ffb454"/>
     </svg>
     <div class="brand-text">
-      <span class="brand-name">セトリズム</span>
-      <span class="brand-sub">SETLISM — バンドのためのセトリ設計スタジオ</span>
+      <span class="brand-name">SETLISM<span class="sr-only"> セトリズム</span></span>
+      <span class="brand-sub">SETLIST STUDIO</span>
     </div>
   </div>
   <nav class="tabs" role="tablist" aria-label="機能切り替え">
@@ -41,15 +42,44 @@
 <!-- ============ セットリスト ============ -->
 <section id="tab-setlist" role="tabpanel" aria-labelledby="tabbtn-setlist">
 
+  <header class="studio-hero">
+    <p class="studio-eyebrow">MAKE EVERY SONG COUNT</p>
+    <h1>次のライブを、<br>最高の流れに。</h1>
+    <p class="studio-hero-note">曲順も、持ち時間も。本番前の迷いをここで整える。</p>
+    <span class="studio-local">端末内に保存 · アカウント不要</span>
+  </header>
+
+  <div class="studio-workspace">
+  <div class="studio-main">
+
   <!-- 上部: セトリの切替と「その他」だけ(操作は ⋯ に畳む) -->
   <div class="sl-head">
     <select id="setlistSelect" aria-label="セットリスト選択"></select>
     <button id="moreBtn" class="icon-btn icon-btn-lg" title="その他の操作" aria-haspopup="dialog">⋯</button>
   </div>
 
+  <div class="studio-timing" aria-label="演奏時間の内訳">
+    <div><span class="studio-metric-label">演奏</span><strong id="studioPlay">0:00</strong></div>
+    <div><span class="studio-metric-label">転換・MC</span><strong id="studioGaps">0:00</strong></div>
+    <div><span id="studioMarginLabel" class="studio-metric-label">残り</span><strong id="studioMargin">—</strong></div>
+    <div class="studio-budget"><span id="studioPlayBar"></span><span id="studioGapBar"></span></div>
+    <p id="studioTimeNote" class="note"></p>
+    <button id="studioTimeBtn" class="ghost small">時間の設定</button>
+  </div>
+  <div class="studio-list-heading"><h2>曲順</h2><span id="studioSongCount" class="note"></span></div>
+
   <!-- 主役: 曲リスト -->
   <ol id="songList" class="song-list" aria-label="曲リスト"></ol>
-  <p id="emptyHint" class="empty-hint" hidden>まだ曲がありません。下の「＋ 曲を追加」から始めましょう。</p>
+  <div id="emptyHint" class="studio-empty" hidden>
+    <img src="assets/studio/empty-setlist.webp" width="180" height="150" alt="" loading="lazy">
+    <h2>最初の1曲から、はじめよう。</h2>
+    <p class="note">持ち曲を追加して、あなたのライブの流れを作りましょう。</p>
+  </div>
+  <button id="studioAddBtn" class="studio-add ghost">＋ 曲を追加</button>
+  <p class="note studio-list-note">曲の操作は「⋯」から。並べ替え・MC・メモもここで。</p>
+  </div>
+
+  <aside class="studio-insights" aria-label="本番前のチェック">
 
   <!-- 分析(曲リストの下) -->
   <div class="energy-card card">
@@ -67,10 +97,10 @@
     <p id="compareInfo" class="note" hidden></p>
   </div>
 
-  <div class="card diag-card">
+  <div class="card diag-card" id="diagnosisCard">
     <div class="card-head">
-      <h2>セトリ診断</h2>
-      <p class="note">構成上の注意点を自動チェックします。</p>
+      <h2>セトリ診断 <span id="diagBadge" class="studio-badge"></span></h2>
+      <p class="note">時間・入力・演出を分けて確認。曲順は自動で変更しません。</p>
     </div>
     <div id="diagList" class="diag-list"></div>
   </div>
@@ -79,6 +109,15 @@
     <summary><h2>持ち替えプランナー</h2></summary>
     <div id="plannerBody" class="planner-body"></div>
   </details>
+
+  <div class="studio-rehearsal card">
+    <p class="studio-eyebrow">READY FOR REHEARSAL</p>
+    <h2>最後は、音で確かめよう。</h2>
+    <p class="note">曲間と持ち替えの時間を、実際の演奏で確認。</p>
+    <button id="studioRehearseBtn" class="primary">練習へ進む <span aria-hidden="true">→</span></button>
+  </div>
+  </aside>
+  </div>
 
   <!-- 下部固定バー: 合計・残り・主操作(親指の届く位置に常駐) -->
   <div class="bottom-bar" id="bottomBar">

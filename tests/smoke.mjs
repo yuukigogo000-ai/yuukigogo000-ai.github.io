@@ -106,14 +106,14 @@ ok((await page.title()).includes("セトリズム"), "ページタイトル");
 ok((await page.locator("#songList .song").count()) === 6, "サンプル6曲");
 ok((await page.locator("#energyChart svg circle[data-dot]").count()) === 6, "エナジーチャート6点");
 ok((await page.locator("#totalTime").textContent()) === "28:40", "合計時間 28:40");
-ok((await page.locator("#diagList .diag-ok").count()) === 1, "サンプルセトリは診断指摘なし");
+ok((await page.locator("#diagList .diag-warn").count()) === 1, "サンプル:短い持ち替え時間1件を確認");
 
 // ============ 2. 診断ルール(ユニットテスト) ============
 const diagResult = await page.evaluate(async () => {
   const { diagnose } = await import("./diagnose.js");
   const mk = (over) => ({
     targetMin: over ? 10 : 0, gapSec: 15, mcSec: 60,
-    items: [], // setlistDuration が entriesOf を使うため簡易ダミーに差し替え不可 → targetMin=0 で回避
+    items: [], // 診断は引数 entries だけで時間を集計
   });
   const entry = (title, key, tuning, bpm, energy, mc = false, sec = 240) => ({
     item: { mc, songId: title }, song: { title, key, tuning, bpm, energy, sec, gear: [] },
@@ -136,10 +136,10 @@ const diagResult = await page.evaluate(async () => {
   ];
   const r3 = diagnose(mk(false), e3);
   return {
-    sameKey: r1.some((x) => x.text.includes("同じキー")),
-    flatBpm: r1.some((x) => x.text.includes("BPMがほぼ同じ")),
-    tuningRun: r2.some((x) => x.text.includes("チューニング替えが連続")),
-    energyDrop: r3.some((x) => x.text.includes("エナジーが大きく落ちます")),
+    sameKey: r1.some((x) => x.id === "same-key"),
+    flatBpm: r1.some((x) => x.id === "similar-bpm"),
+    tuningRun: r2.some((x) => x.id.startsWith("tuning-")),
+    energyDrop: r3.some((x) => x.id.startsWith("energy-drop-")),
   };
 });
 ok(diagResult.sameKey, "診断:同キー3連続を検出");
@@ -150,9 +150,9 @@ ok(diagResult.energyDrop, "診断:エナジー急落を検出");
 // ============ 3. 持ち替えプランナー ============
 await page.locator(".planner-card summary").click();
 const plannerText = await page.locator("#plannerBody").textContent();
-ok(plannerText.includes("必要な本数:3本"), "プランナー:3本必要");
-ok(plannerText.includes("持ち替えタイミング:3回"), "プランナー:持ち替え3回");
-ok((await page.locator(".planner-row.planner-warn").count()) === 1, "プランナー:MCなし持ち替えを警告(1件)");
+ok(plannerText.includes("登録チューニング：3種類") && plannerText.includes("必要本数は"), "プランナー:調弦3種類、必要本数と区別");
+ok(plannerText.includes("確認できる調弦変更：3回"), "プランナー:既知の調弦変更3回");
+ok(!plannerText.includes("余裕") && plannerText.includes("実際に間に合うか要計測"), "プランナー:MCだけで安全と断定しない");
 
 // ============ 4. v1からのマイグレーション ============
 {
@@ -236,7 +236,7 @@ ok((await page.locator("#setlistSelect option:checked").textContent()).includes(
 // ============ 9. テンプレート重ねと比較 ============
 await page.selectOption("#templateSelect", "buildup");
 ok((await page.locator("#energyChart svg path[stroke-dasharray='6 5']").count()) === 1, "テンプレート破線を重ね描画");
-ok(/一致度 \d+%/.test(await page.locator("#templateFit").textContent()), "一致度%表示");
+ok(/型との近さ \d+%/.test(await page.locator("#templateFit").textContent()), "型との近さを演出参考として表示");
 await page.selectOption("#compareSelect", { index: 1 });
 ok((await page.locator("#energyChart svg path[stroke='#7ab8ff']").count()) === 1, "比較セトリの曲線(青)");
 ok((await page.locator("#chartLegend .legend-item").count()) === 3, "凡例3系列");
@@ -426,7 +426,7 @@ ok((await page.locator("#stageSheet .ss-song").count()) === 7, "ステージシ�
 ok((await page.locator("#stageSheet .ss-mc").count()) === 2, "ステージシートMC2箇所");
 const ssText = await page.locator("#stageSheet").textContent();
 ok(ssText.includes("☐"), "ステージシートに転換チェックリスト");
-ok(ssText.includes("持ち替え(3本)"), "ステージシートに持ち替えプラン");
+ok(ssText.includes("調弦別の楽器割り当て例（3種類・必要本数ではありません）"), "ステージシートに持ち替えプラン");
 
 // ============ 20. バックアップ ============
 const dl = page.waitForEvent("download");
