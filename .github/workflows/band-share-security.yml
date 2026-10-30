@@ -1,9 +1,9 @@
 name: BANDHUB share security
 on:
   push:
-    paths: ['band/**', 'tests/share-security.mjs', 'tests/share-viewer.mjs', 'tests/smoke.mjs', 'tests/torture.mjs', 'tests/diagnosis-unit.mjs', 'tests/studio-release.mjs', '.github/workflows/band-share-security.yml']
+    paths: ['band/**', 'tests/share-security.mjs', 'tests/share-viewer.mjs', 'tests/smoke.mjs', 'tests/torture.mjs', 'tests/diagnosis-unit.mjs', 'tests/studio-release.mjs', 'tests/flow-model.mjs', 'tests/flow-browser.mjs', 'tests/diagnosis-mutations.mjs', '.github/workflows/band-share-security.yml']
   pull_request:
-    paths: ['band/**', 'tests/share-security.mjs', 'tests/share-viewer.mjs', 'tests/smoke.mjs', 'tests/torture.mjs', 'tests/diagnosis-unit.mjs', 'tests/studio-release.mjs', '.github/workflows/band-share-security.yml']
+    paths: ['band/**', 'tests/share-security.mjs', 'tests/share-viewer.mjs', 'tests/smoke.mjs', 'tests/torture.mjs', 'tests/diagnosis-unit.mjs', 'tests/studio-release.mjs', 'tests/flow-model.mjs', 'tests/flow-browser.mjs', 'tests/diagnosis-mutations.mjs', '.github/workflows/band-share-security.yml']
 permissions:
   contents: read
 jobs:
@@ -31,3 +31,4 @@ jobs:
           export CHROMIUM_PATH="$(node --input-type=module -e "import {chromium} from 'playwright-core'; console.log(chromium.executablePath())")"
           npm test
           npm run test:studio
+          npm run test:flow

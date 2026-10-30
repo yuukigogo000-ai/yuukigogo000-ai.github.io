@@ -236,11 +236,11 @@ ok((await page.locator("#setlistSelect option:checked").textContent()).includes(
 // ============ 9. テンプレート重ねと比較 ============
 if (!(await page.locator("#templateSelect").isVisible())) await page.locator(".studio-chart-settings > summary").click();
 await page.selectOption("#templateSelect", "buildup");
-ok((await page.locator("#energyChart svg path[stroke-dasharray='6 5']").count()) === 1, "テンプレート破線を重ね描画");
-ok(/型との近さ \d+%/.test(await page.locator("#templateFit").textContent()), "型との近さを演出参考として表示");
+ok((await page.locator("#energyChart .flow-map").count()) === 1, "経過時間のフローを表示");
+ok((await page.locator("#templateFit").textContent()).includes("狙い："), "架空スコアではなく狙いを表示");
 await page.selectOption("#compareSelect", { index: 1 });
-ok((await page.locator("#energyChart svg path[stroke='#7ab8ff']").count()) === 1, "比較セトリの曲線(青)");
-ok((await page.locator("#chartLegend .legend-item").count()) === 3, "凡例3系列");
+ok((await page.locator("#energyChart svg path.flow-baseline").count()) === 1, "比較セトリの曲線(青)");
+ok((await page.locator("#energyChart .flow-key").innerText()).includes("青破線"), "元の案の凡例");
 ok(!(await page.locator("#compareInfo").isHidden()), "比較サマリー表示");
 await page.selectOption("#compareSelect", "");
 await page.selectOption("#templateSelect", "");

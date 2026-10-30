@@ -110,6 +110,7 @@ export function diagnose(sl, entries) {
 
 export const TEMPLATES = [
   { id: "", name: "テンプレートなし", f: null },
+  { id: "afterglow", name: "余韻を残す", f: null },
   {
     id: "buildup",
     name: "尻上がり型(最後に爆発)",
@@ -136,7 +137,7 @@ export const TEMPLATES = [
 ];
 
 export function templateById(id) {
-  return TEMPLATES.find((t) => t.id === id) || TEMPLATES[0];
+  return TEMPLATES.find((t) => t.id === id) || TEMPLATES.find(t => t.id === "");
 }
 
 // テンプレートを曲位置でサンプリング(曲数 n)

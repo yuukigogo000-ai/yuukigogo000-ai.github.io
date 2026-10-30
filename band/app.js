@@ -15,6 +15,7 @@ import { encodeShare, decodeShare } from "./share.js";
 import { diagnose, TEMPLATES, templateById, sampleTemplate, templateFit, switchPlan } from "./diagnose.js";
 import { initPractice, refreshPracticeTab } from "./practice.js";
 import { initLive, refreshLiveTab } from "./live.js";
+import { renderFlow } from "./flow-ui.js";
 import qrcode from "./vendor/qrcode.mjs";
 
 const $ = (id) => document.getElementById(id);
@@ -324,6 +325,7 @@ function bindTimeInputs() {
       sl[field] = clampNum($(id).value, min, max, sl[field]);
       save();
       renderTimePanel();
+      renderEnergy();
       renderDiagnosis();
       renderPlanner();
     });
@@ -534,6 +536,17 @@ function renderEnergy() {
   const wrap = $("energyChart");
   const entries = entriesOf(sl);
   const n = entries.length;
+  if ($("flowVersion")) {
+    const cmp = store.setlists.find(s => s.id === compareId);
+    $("templateFit").textContent = sl.template ? `狙い：${templateById(sl.template).name}` : "";
+    $("chartLegend").replaceChildren();
+    $("compareInfo").hidden = !cmp;
+    if(cmp) $("compareInfo").textContent = `${sl.name} ／ 比較元：${cmp.name}（同じ経過時間軸）`;
+    renderFlow({host:wrap,sl,entries,comparison:cmp?{sl:cmp,entries:entriesOf(cmp)}:null,
+      getCurrent:()=>({sl:activeSetlist(),entries:entriesOf(activeSetlist())}),
+      onApply:(items,template)=>{pushUndo();sl.items=items;sl.template=template;save();renderAll();toast("曲順とMCの案を採用しました");}});
+    return;
+  }
 
   // テンプレート一致度
   const tpl = templateById(sl.template);
@@ -681,6 +694,7 @@ function bindChartControls() {
     sl.template = $("templateSelect").value;
     save();
     renderEnergy();
+    renderDiagnosis();
   });
   $("compareSelect").addEventListener("change", () => {
     compareId = $("compareSelect").value;
