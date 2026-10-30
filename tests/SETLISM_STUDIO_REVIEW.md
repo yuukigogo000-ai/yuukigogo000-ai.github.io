@@ -70,3 +70,34 @@ Production `main` must not be updated on the strength of this first implementati
 - This revision passes JS syntax and diff checks. The existing 17 diagnosis tests
   passed before the final presentation-only metadata change. Browser inspection
   covers desktop and 360/390 CSS-pixel frame layouts; final release gates above remain.
+
+## Release candidate verification (2026-10-30 JST)
+
+- Windows Chrome on an isolated checkout: smoke 86 PASS, torture 44 PASS,
+  viewer 11 PASS (including previous public cache upgrade and offline sharing),
+  CSP 57 PASS including legacy editor and privacy page. All exited 0.
+- `studio-release.mjs` passes: old main HTML with current app.js remains usable;
+  an MC edit writes nonempty saved data, current-shell reload preserves exact
+  bytes; 360/390 widths × light/dark × DPR3 pass controls and offline reload.
+- Diagnosis/security 22 Node tests pass. Three isolated mutation copies are
+  rejected by assertion failures (disabled overtime, missing duration accepted,
+  MC treated as sufficient). Mutation runner is included in CI.
+- uicheck GREEN against the immediately preceding studio candidate: console errors
+  0, overflow false, small inputs 0, tap targets below44px 0, low contrast 0.
+  It still counts 8 font sizes (including chart text) and 61 unknown contrast
+  cases for image/gradient surfaces. GREEN does not certify all aesthetics.
+- Independent Codex-context source review PASS; final source reviewed includes
+  cached-shell guards. This does not replace real iPhone/microphone checks.
+- Dedicated SETLISM manifest starts legacy.html; BANDHUB manifest/viewer unchanged.
+  Privacy page and offline cache entries added. CI now runs full studio regression.
+- Execution incident: an early Windows clone had not finished when the runner
+  started. Directory change failed and npm attempted to run in the connector's
+  directory; npm ci rejected missing lockfile and build failed on missing tsc.
+  Those results were discarded. Final runners stop on directory errors and use
+  literal .ps1 files to avoid nested PowerShell variable expansion. Candidate
+  tests were rerun from the explicit checkout.
+
+Public main remains pending the repository-required owner smartphone check.
+The owner-approved design is retained; a separate owner-private review site is
+for that check only. Its storage is separate from the public app. Do not import
+private production data for testing. No claim of real-device testing is made.

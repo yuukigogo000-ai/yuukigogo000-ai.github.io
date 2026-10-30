@@ -235,9 +235,9 @@ function bindSetlistBar() {
   });
 
   $("addSongBtn").addEventListener("click", openPicker);
-  $("studioAddBtn").addEventListener("click", openPicker);
-  $("studioTimeBtn").addEventListener("click", () => $("timeDialog").showModal());
-  $("studioRehearseBtn").addEventListener("click", () => {
+  $("studioAddBtn")?.addEventListener("click", openPicker);
+  $("studioTimeBtn")?.addEventListener("click", () => $("timeDialog").showModal());
+  $("studioRehearseBtn")?.addEventListener("click", () => {
     selectTab("practice");
     $("tabbtn-practice").focus();
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -272,6 +272,9 @@ function renderTimePanel() {
   const targetSec = sl.targetMin * 60;
   const entries = entriesOf(sl);
   const missing = entries.filter((e) => !(e.song.sec > 0)).length;
+  const barBase = Math.max(targetSec, d.total, 1);
+  // Old cached HTML can briefly run the new module during a PWA update.
+  if ($("studioPlay")) {
   $("studioPlay").textContent = fmtTime(d.play) + (missing ? "+" : "");
   $("studioGaps").textContent = fmtTime(d.gaps + d.mc);
   $("studioSongCount").textContent = `${entries.length}曲`;
@@ -281,9 +284,9 @@ function renderTimePanel() {
   $("studioTimeNote").textContent = missing
     ? `${missing}曲の長さが未入力。表示は入力済み分の合計です。`
     : targetSec ? `${sl.targetMin}分枠 · 転換＋MC別加算` : "持ち時間を設定すると残り時間が分かります。";
-  const barBase = Math.max(targetSec, d.total, 1);
   $("studioPlayBar").style.width = `${d.play / barBase * 100}%`;
   $("studioGapBar").style.width = `${(d.gaps + d.mc) / barBase * 100}%`;
+  }
   if (missing) {
     $("totalTime").textContent = `${fmtTime(d.total)}＋未入力`;
     diffEl.textContent = targetSec > 0 && d.total > targetSec
@@ -442,7 +445,9 @@ function renderItems() {
         iconBtn("⋯", `${song.title} の操作`, () => openRowMenu(i, item, song, entries.length))
       );
 
-      li.append(handle, num, main, columns, actions);
+      li.append(handle, num, main);
+      if ($("studioPlay")) li.append(columns);
+      li.append(actions);
       setupDrag(li, handle);
       return li;
     })
@@ -691,7 +696,7 @@ function renderDiagnosis() {
   const results = diagnose(activeSetlist(), entries);
   const warnings = results.filter((r) => r.level === "warn").length;
   const missing = results.filter((r) => r.level === "missing").length;
-  $("diagBadge").textContent = !entries.length ? "未判定" : warnings ? `要確認 ${warnings}` : missing ? "入力待ち" : "チェック済み";
+  if ($("diagBadge")) $("diagBadge").textContent = !entries.length ? "未判定" : warnings ? `要確認 ${warnings}` : missing ? "入力待ち" : "チェック済み";
   listEl.replaceChildren();
   if (!entries.length || !results.length) {
     const p = document.createElement("p");

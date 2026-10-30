@@ -40,8 +40,9 @@ test('large expanded, large plain and malformed inputs are rejected',async()=>{
   for(const p of [payload(big,true),payload(big,false),'1.invalid','2.e30',null]) await assert.rejects(()=>share.decodeShare(p));
 });
 test('cache activation removes only old BANDHUB caches',async()=>{
-  let task;const handlers={};const keys=new Set(['setlism-v2','setlism-v3-security-20261013','setlism-v4-viewer-20261013','other-app']);
+  const current = read('sw.js').match(/const CACHE = "([^"]+)"/)[1];
+  let task;const handlers={};const keys=new Set(['setlism-v2','setlism-v3-security-20261013','setlism-v4-viewer-20261013',current,'other-app']);
   vm.runInNewContext(read('sw.js'), {self:{addEventListener:(k,f)=>handlers[k]=f,clients:{claim:async()=>{}}},caches:{keys:async()=>[...keys],delete:async k=>keys.delete(k)}});
   handlers.activate({waitUntil:p=>task=p});await task;
-  assert.deepEqual([...keys],['setlism-v4-viewer-20261013','other-app']);
+  assert.deepEqual([...keys],[current,'other-app']);
 });

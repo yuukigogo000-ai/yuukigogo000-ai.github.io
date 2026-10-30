@@ -238,3 +238,12 @@ body.with-bottom-bar { padding-bottom: var(--sp-5); }
   #songList .chip-mc { min-height: 0; padding: 0 var(--sp-1); line-height: 1.4; flex: none; border-radius: var(--r-1); }
   #studioTimeNote { font-size: var(--fs-label); }
 }
+
+/* Release check: readable inputs and touch targets without changing the layout. */
+.chart-controls select { font-size: var(--fs-title); }
+@media (max-width: 760px) {
+  #studioTimeBtn, .diag-detail summary, .studio-chart-settings summary, .diag-hints summary {
+    min-height: var(--tap); display: flex; align-items: center;
+  }
+}
+.app-footer a { color: var(--ink-2); display: inline-flex; align-items: center; min-height: var(--tap); }

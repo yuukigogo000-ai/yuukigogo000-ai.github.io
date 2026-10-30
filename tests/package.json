@@ -9,7 +9,8 @@
     "test:torture": "node torture.mjs",
     "test:viewer": "node share-viewer.mjs",
     "test:electron": "node electron-smoke.mjs",
-    "test:diagnosis": "node --test diagnosis-unit.mjs"
+    "test:diagnosis": "node --test diagnosis-unit.mjs",
+    "test:studio": "node --test studio-release.mjs"
   },
   "devDependencies": {
     "jsqr": "^1.4.0",

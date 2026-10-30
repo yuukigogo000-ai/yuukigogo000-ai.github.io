@@ -1,9 +1,9 @@
 name: BANDHUB share security
 on:
   push:
-    paths: ['band/**', 'tests/share-security.mjs', 'tests/share-viewer.mjs', '.github/workflows/band-share-security.yml']
+    paths: ['band/**', 'tests/share-security.mjs', 'tests/share-viewer.mjs', 'tests/smoke.mjs', 'tests/torture.mjs', 'tests/diagnosis-unit.mjs', 'tests/studio-release.mjs', '.github/workflows/band-share-security.yml']
   pull_request:
-    paths: ['band/**', 'tests/share-security.mjs', 'tests/share-viewer.mjs', '.github/workflows/band-share-security.yml']
+    paths: ['band/**', 'tests/share-security.mjs', 'tests/share-viewer.mjs', 'tests/smoke.mjs', 'tests/torture.mjs', 'tests/diagnosis-unit.mjs', 'tests/studio-release.mjs', '.github/workflows/band-share-security.yml']
 permissions:
   contents: read
 jobs:
@@ -17,6 +17,7 @@ jobs:
         with:
           node-version: '24'
       - run: node --test tests/share-security.mjs
+      - run: node tests/diagnosis-mutations.mjs
       - run: node --check band/app.js && node --check band/share.js && node --check band/sw.js && node --check band/viewer.js
       - run: npm ci
         working-directory: tests
@@ -24,3 +25,9 @@ jobs:
         working-directory: tests
       - run: npm run test:viewer
         working-directory: tests
+      - name: SETLISM complete regression
+        working-directory: tests
+        run: |
+          export CHROMIUM_PATH="$(node --input-type=module -e "import {chromium} from 'playwright-core'; console.log(chromium.executablePath())")"
+          npm test
+          npm run test:studio

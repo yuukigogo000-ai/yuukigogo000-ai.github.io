@@ -1,11 +1,13 @@
 // オフライン対応:stale-while-revalidate 方式のService Worker。
 // キャッシュから即応答しつつ、裏で最新版を取りに行って次回に備える。
 
-const CACHE = "setlism-v6-studio-fidelity-20261030";
+const CACHE = "setlism-v7-studio-release-20261031";
 const ASSETS = [
   "./",
   "./index.html",
   "./legacy.html",
+  "./setlism.webmanifest",
+  "./privacy.html",
   "./viewer.css",
   "./viewer.js",
   "./song-model.js",
@@ -24,6 +26,7 @@ const ASSETS = [
   "./live.js",
   "./rec-db.js",
   "./vendor/qrcode.mjs",
+  "./vendor/qrcode-LICENSE.txt",
   "./manifest.webmanifest",
   "./icon.svg",
 ];

@@ -34,7 +34,7 @@ const MIME = {
 
 // 検査対象 = 公開している画面
 const PAGES = [
-  "/", "/band/", "/pachinko/", "/surf/", "/reply-ai/",
+  "/", "/band/", "/band/legacy.html", "/band/privacy.html", "/pachinko/", "/surf/", "/reply-ai/",
   "/honmono/", "/honmono/checker/", "/honmono/badge/", "/honmono/aicheck/",
   "/honmono/creators/", "/honmono/docs/", "/honmono/report/", "/honmono/business/",
   "/honmono/legal/privacy.html", "/honmono/legal/terms.html", "/honmono/legal/credits.html",

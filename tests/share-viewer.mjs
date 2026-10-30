@@ -120,7 +120,8 @@ try {
   await up.waitForFunction(()=>navigator.serviceWorker.controller!==window.oldController);
   await up.reload();await up.waitForSelector('#title');
   const cacheKeys=await up.evaluate(()=>caches.keys());
-  assert(cacheKeys.includes('setlism-v4-viewer-20261013'));assert(!cacheKeys.includes('setlism-v3-security-20261013'));assert(cacheKeys.includes('other-app-keep'));
+  const currentCache=readFileSync(resolve(root,'band/sw.js'),'utf8').match(/const CACHE = "([^"]+)"/)[1];
+  assert(cacheKeys.includes(currentCache));assert(!cacheKeys.includes('setlism-v3-security-20261013'));assert(cacheKeys.includes('other-app-keep'));
   assert.equal(await up.evaluate(()=>localStorage.getItem('unrelated')),'keep');
   await upgrade.setOffline(true);await up.goto(base+'#s='+encode(bundle));await up.waitForSelector('.song-row');
   assert.equal(await up.locator('.song-row').count(),3);await upgrade.close();

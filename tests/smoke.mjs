@@ -211,7 +211,7 @@ await page.fill("#libSearch", "");
 
 // ============ 6. ピッカーでセトリに追加 ============
 await page.click('[data-tab="setlist"]');
-await page.click("#addSongBtn");
+await page.click("#studioAddBtn");
 await page.fill("#pickerSearch", "新曲");
 await page.locator(".picker-row").first().click();
 await page.click("#pickerClose");
@@ -234,6 +234,7 @@ ok((await page.locator("#setlistSelect option").count()) === 2, "複製でセト
 ok((await page.locator("#setlistSelect option:checked").textContent()).includes("(コピー)"), "複製がアクティブに");
 
 // ============ 9. テンプレート重ねと比較 ============
+if (!(await page.locator("#templateSelect").isVisible())) await page.locator(".studio-chart-settings > summary").click();
 await page.selectOption("#templateSelect", "buildup");
 ok((await page.locator("#energyChart svg path[stroke-dasharray='6 5']").count()) === 1, "テンプレート破線を重ね描画");
 ok(/型との近さ \d+%/.test(await page.locator("#templateFit").textContent()), "型との近さを演出参考として表示");
@@ -440,6 +441,7 @@ ok(realErrors.length === 0, `JSエラーなし ${realErrors.length ? JSON.string
 // ============ スクリーンショット ============
 await page.setViewportSize({ width: 420, height: 1600 });
 await page.click('[data-tab="setlist"]');
+if (!(await page.locator("#templateSelect").isVisible())) await page.locator(".studio-chart-settings > summary").click();
 await page.selectOption("#templateSelect", "buildup");
 await page.screenshot({ path: "shot-setlist.png", fullPage: true });
 await page.selectOption("#templateSelect", "");
