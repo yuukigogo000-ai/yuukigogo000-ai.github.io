@@ -280,7 +280,7 @@ function renderTimePanel() {
   $("studioMargin").className = missing || !targetSec ? "unknown" : d.total > targetSec ? "over" : "";
   $("studioTimeNote").textContent = missing
     ? `${missing}曲の長さが未入力。表示は入力済み分の合計です。`
-    : targetSec ? `持ち時間 ${sl.targetMin}分 · 転換とMCは別々に加算` : "持ち時間を設定すると残り時間が分かります。";
+    : targetSec ? `${sl.targetMin}分枠 · 転換＋MC別加算` : "持ち時間を設定すると残り時間が分かります。";
   const barBase = Math.max(targetSec, d.total, 1);
   $("studioPlayBar").style.width = `${d.play / barBase * 100}%`;
   $("studioGapBar").style.width = `${(d.gaps + d.mc) / barBase * 100}%`;
@@ -408,7 +408,8 @@ function renderItems() {
       meta.className = "song-meta";
       const metaText = document.createElement("span");
       metaText.className = "song-meta-text";
-      metaText.textContent = songMetaText(song);
+      metaText.textContent = [song.sec > 0 ? fmtTime(song.sec) : "時間未入力", song.bpm || "BPM未入力", song.tuning || "チューニング未入力"].join("  |  ");
+      metaText.title = songMetaText(song);
       meta.appendChild(metaText);
 
       // MC は表示だけ(入り切りは行の ⋯ メニュー)。見本B に合わせて小さいピル1個
@@ -421,6 +422,13 @@ function renderItems() {
       }
 
       main.append(title, meta);
+      const columns = document.createElement("div");
+      columns.className = "studio-song-columns";
+      for (const value of [song.sec > 0 ? fmtTime(song.sec) : "未入力", song.bpm || "—", song.tuning || "未入力", song.memo || "—"]) {
+        const cell = document.createElement("span");
+        cell.textContent = value;
+        columns.appendChild(cell);
+      }
       if (song.memo) {
         const memo = document.createElement("div");
         memo.className = "song-memo";
@@ -434,7 +442,7 @@ function renderItems() {
         iconBtn("⋯", `${song.title} の操作`, () => openRowMenu(i, item, song, entries.length))
       );
 
-      li.append(handle, num, main, actions);
+      li.append(handle, num, main, columns, actions);
       setupDrag(li, handle);
       return li;
     })
@@ -722,7 +730,12 @@ function renderDiagnosis() {
       const suggestion = document.createElement("p");
       suggestion.className = "diag-suggestion";
       suggestion.textContent = r.suggestion;
-      copy.append(category, title, text, suggestion);
+      const detail = document.createElement("details");
+      detail.className = "diag-detail";
+      const disclosure = document.createElement("summary");
+      disclosure.textContent = "理由と改善案";
+      detail.append(disclosure, suggestion);
+      copy.append(title, text, detail);
       if (r.action) {
         const button = document.createElement("button");
         button.className = "ghost small";
@@ -731,7 +744,7 @@ function renderDiagnosis() {
           if (r.action.kind === "time") $("timeDialog").showModal();
           if (r.action.kind === "song") openSongDialog({ mode: "edit", songId: r.action.songId });
         });
-        copy.appendChild(button);
+        detail.appendChild(button);
       }
       div.append(icon, copy);
       section.appendChild(div);

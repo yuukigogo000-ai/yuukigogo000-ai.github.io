@@ -55,3 +55,18 @@ initial images were removed in a targeted imagegen edit before final packaging.
   behavior, large libraries and the repository's final release gate remain to test.
 
 Production `main` must not be updated on the strength of this first implementation.
+
+## Reference fidelity revision
+
+- Reason: the first implementation had oversized spacing, a wide verbose diagnosis
+  panel and a duplicate sticky action bar that obscured songs. Follow the supplied
+  concept's continuous black stage frame, 2.15:1 workspace and compact table rows.
+- Primary action is inline song addition. The three working tasks remain song order,
+  time budget and checks. Detailed reasoning and chart comparison settings use native
+  disclosures; warning titles and evidence stay visible. All six tool tabs remain.
+- Desktop columns show duration, BPM, tuning and memo. Mobile prioritizes duration,
+  BPM and tuning on one line, with full metadata retained in the editor and tooltip.
+- No new image, dependency, network call, permission, storage or diagnosis rule.
+- This revision passes JS syntax and diff checks. The existing 17 diagnosis tests
+  passed before the final presentation-only metadata change. Browser inspection
+  covers desktop and 360/390 CSS-pixel frame layouts; final release gates above remain.

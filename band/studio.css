@@ -124,3 +124,117 @@ main, .app-header, .app-footer, .bottom-bar-inner { max-width: var(--studio-max)
   .bottom-bar-inner { padding-inline: var(--sp-4); }
 }
 @media print { .studio-hero, .studio-workspace, .bottom-bar { display: none !important; } }
+
+/* Reference fidelity pass: one continuous stage, compact working surfaces. */
+:root {
+  --bg: #090e10; --card: #0d1314; --surface: #141b1c; --surface-2: #1a2223;
+  --surface-3: #263031; --card-border: #2b3536; --ink: #f3f4f2;
+  --ink-2: #c6cdcd; --muted: #96a2a3; --accent: #f3bd66;
+  --studio-main: 2.15fr; --studio-aside: 1fr; --studio-hero-title: 52px;
+  --studio-hero-padding: 36px; --studio-hero-height: 264px;
+  --studio-metric: 32px; --studio-bar-height: 10px;
+  --studio-shell: 12px; --studio-song-height: 52px;
+  --studio-row-columns: 62px 48px 112px minmax(64px,1fr);
+  --studio-black: #060a0c; --studio-glow: #203035;
+}
+body { background: radial-gradient(ellipse at 50% 0,var(--studio-glow),var(--bg) 70%); }
+.app-header { margin-top: var(--sp-5); padding: var(--sp-3) var(--sp-6); background: var(--studio-black); border: 1px solid var(--card-border); border-radius: var(--r-2) var(--r-2) 0 0; }
+.brand .logo { display: none; }
+.brand-name { font-size: var(--studio-metric); line-height: 1.1; letter-spacing: .08em; }
+.brand-sub { font-size: var(--fs-label); letter-spacing: .22em; }
+.tab[aria-selected="true"] { background: transparent; border-radius: 0; }
+.studio-hero { border-top: 0; border-radius: 0; background-position: center; padding-block: var(--sp-5); }
+.studio-hero h1 { line-height: 1.16; letter-spacing: -.025em; }
+.studio-eyebrow { color: var(--ink-2); }
+.studio-hero-note { font-size: var(--fs-title); }
+.studio-workspace { padding: var(--studio-shell); margin-top: 0; gap: var(--sp-3); border: 1px solid var(--card-border); border-top: 0; border-radius: 0 0 var(--r-2) var(--r-2); background: var(--studio-black); }
+.studio-main { padding: var(--sp-3); }
+.sl-head { margin: 0 0 var(--sp-3); }
+.sl-head select { color: var(--ink); font-weight: 700; padding-left: var(--sp-2); }
+.studio-timing { padding: var(--sp-3) var(--sp-4); gap: var(--sp-1) var(--sp-4); background: linear-gradient(110deg,var(--surface),var(--card)); }
+.studio-budget { background: var(--ok); }
+#studioGapBar { background: var(--muted); }
+#studioTimeNote { font-size: var(--fs-label); }
+#studioTimeBtn { min-height: 28px; padding-block: 0; border: 0; text-decoration: underline; }
+.studio-list-heading { margin-top: var(--sp-2); }
+.studio-list-heading h2 { font-size: var(--fs-label); color: var(--muted); font-weight: 400; }
+.studio-table-heading { display: grid; grid-template-columns: 48px minmax(120px,1fr) var(--studio-row-columns); padding: var(--sp-2) 48px var(--sp-2) var(--sp-2); color: var(--muted); font-size: var(--fs-label); gap: var(--sp-2); }
+#songList { gap: var(--sp-1); margin-top: 0; }
+#songList .song { min-height: var(--studio-song-height); padding: var(--sp-1) var(--sp-2); gap: var(--sp-2); background: linear-gradient(115deg,var(--surface),var(--card)); }
+#songList .song:first-child { border-color: var(--accent); }
+#songList .song-handle { width: 14px; font-size: var(--fs-label); }
+#songList .song-num { width: 26px; font-size: var(--fs-label); font-weight: 400; }
+#songList .song-main { min-width: 120px; }
+#songList .song-title { font-size: var(--fs-body); }
+#songList .song-meta, #songList .song-memo { display: none; }
+#songList .song-main:has(.chip-mc) .song-title::after { content: ' · MC'; color: var(--accent); font-size: var(--fs-label); }
+.studio-song-columns { display: grid; grid-template-columns: var(--studio-row-columns); flex: 1.8; gap: var(--sp-2); font-size: var(--fs-label); color: var(--ink-2); }
+.studio-song-columns span { min-width: 0; overflow-wrap: anywhere; }
+.studio-add { margin-top: var(--sp-2); }
+.studio-list-note { display: none; }
+.studio-insights { gap: var(--sp-2); }
+.studio-insights .card { padding: var(--sp-3); border-radius: var(--r-1); background-color: var(--card); }
+.studio-insights .card-head { margin-bottom: var(--sp-2); }
+.studio-insights .card-head > .note { display: none; }
+.diag-group-title:not(summary) { display: none; }
+.diag-item { padding: var(--sp-2); border-left-width: 0; border: 1px solid var(--card-border); background: linear-gradient(115deg,var(--surface),var(--card)); }
+.diag-title { color: var(--accent); font-size: var(--fs-body); }
+.diag-copy p { margin-top: var(--sp-1); line-height: 1.55; }
+.diag-detail summary, .studio-chart-settings summary { cursor: pointer; font-size: var(--fs-label); color: var(--muted); padding-block: var(--sp-1); }
+.diag-hints summary { min-height: 32px; }
+.studio-chart-settings { margin-bottom: var(--sp-1); }
+.energy-card { position: relative; }
+.chart-legend { font-size: var(--fs-label); }
+.studio-rehearsal { order: 2; }
+.studio-rehearsal .studio-eyebrow { display: none; }
+.studio-rehearsal button { margin-top: var(--sp-3); }
+.planner-card { order: 3; }
+.planner-card summary h2 { font-size: var(--fs-body); }
+.bottom-bar { display: none; }
+body.with-bottom-bar { padding-bottom: var(--sp-5); }
+@media (max-width: 1100px) and (min-width: 761px) {
+  :root { --studio-row-columns: 48px 36px 80px; }
+  .studio-song-columns span:last-child, .studio-table-heading span:last-child { display: none; }
+}
+@media (max-width: 760px) {
+  :root { --studio-hero-title-mobile: 30px; --studio-hero-mobile: 156px; --studio-metric-mobile: 24px; --studio-shell: 8px; }
+  body { padding-inline: var(--sp-2); }
+  .app-header { margin-top: var(--sp-2); padding: var(--sp-3) var(--sp-3) 0; gap: var(--sp-2); }
+  .brand-name { font-size: var(--fs-title-lg); }
+  .brand-sub { font-size: var(--fs-label); }
+  .tabs { gap: 0; }
+  .tab { padding: var(--sp-2) var(--sp-3); font-size: var(--fs-label); }
+  .studio-hero { padding: var(--sp-4); min-height: var(--studio-hero-mobile); background-position: 60% center; }
+  .studio-hero h1 { font-size: var(--studio-hero-title-mobile); }
+  .studio-hero .studio-eyebrow { display: block; font-size: var(--fs-label); margin-bottom: var(--sp-2); }
+  .studio-hero-note { display: none; }
+  .studio-workspace { margin-top: 0; gap: var(--sp-3); }
+  .studio-main { border: 0; padding: 0; background: transparent; }
+  .sl-head { margin-bottom: var(--sp-2); }
+  .sl-head select { padding-inline: 0; font-size: var(--fs-title); }
+  .studio-timing { padding: var(--sp-2); gap: var(--sp-1) var(--sp-2); }
+  #studioTimeNote { line-height: 1.3; }
+  .studio-table-heading { display: none; }
+  #songList { margin-top: var(--sp-2); }
+  #songList .song { min-height: 58px; }
+  #songList .song-main { min-width: 0; }
+  #songList .song-meta { display: flex; line-height: 1.3; }
+  #songList .song-meta-text { font-size: var(--fs-label); }
+  #songList .song-main:has(.chip-mc) .song-title::after { content: none; }
+  .studio-song-columns { display: none; }
+  .studio-insights .card { padding: var(--sp-3); }
+}
+/* Align column labels with their values, and keep MC badges inline. */
+@media (min-width: 761px) {
+  #songList .song { display: grid; grid-template-columns: 14px 26px minmax(120px,1fr) var(--studio-row-columns) 40px; }
+  .studio-song-columns { display: contents; }
+  .studio-table-heading { grid-template-columns: 48px minmax(120px,1fr) var(--studio-row-columns) 40px; padding-right: var(--sp-2); }
+  #songList .song-main { min-width: 0; }
+}
+@media (max-width: 760px) {
+  :root { --studio-hero-mobile: 136px; }
+  #songList .song-meta { flex-wrap: nowrap; }
+  #songList .song-meta-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #songList .chip-mc { min-height: 0; padding: 0 var(--sp-1); line-height: 1.4; flex: none; border-radius: var(--r-1); }
+  #studioTimeNote { font-size: var(--fs-label); }
+}
