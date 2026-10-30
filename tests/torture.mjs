@@ -197,7 +197,7 @@ await page.fill("#f-gear", "<script>window.__xss3=1</script>準備");
 await page.fill("#f-dur", "3:00");
 await page.click("#songSaveBtn");
 await page.click('[data-tab="setlist"]');
-await page.click("#addSongBtn");
+await page.click("#studioAddBtn");
 await page.fill("#pickerSearch", "曲");
 await page.locator(".picker-row", { hasText: "onerror" }).click();
 await page.click("#pickerClose");
@@ -398,7 +398,7 @@ console.log("--- G. 空セトリ+通し練習中のUndo ---");
   errors.length = 0;
 
   // 曲を2曲入れてから通し練習中にUndoで足元のデータを差し替える
-  await page.click("#addSongBtn");
+  await page.click("#studioAddBtn");
   await page.locator(".picker-row").first().click();
   await page.locator(".picker-row").nth(1).click();
   await page.click("#pickerClose");

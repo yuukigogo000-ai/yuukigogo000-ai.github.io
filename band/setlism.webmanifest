@@ -1,0 +1,21 @@
+{
+  "name": "SETLISM — セトリズム",
+  "short_name": "SETLISM",
+  "description": "バンドのためのセトリ設計・練習スタジオ",
+  "lang": "ja",
+  "start_url": "./legacy.html",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#090e10",
+  "theme_color": "#090e10",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "id": "./legacy.html"
+}

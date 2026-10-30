@@ -1,99 +1,108 @@
-// セトリ診断・型テンプレート・持ち替え解析。
-// すべて純粋関数 — 入力は entriesOf() が返す {item, song} の配列。
+// Deterministic, local-only checks. Style hints are not a quality score.
+import { fmtTime } from "./store.js";
 
-import { setlistDuration, fmtTime } from "./store.js";
+const positive = (v) => Number.isFinite(v) && v > 0;
+const seconds = (v) => Number.isFinite(v) && v >= 0 ? v : 0;
+const tuningOf = (e) => String(e.song.tuning || "").trim();
+const songAction = (e, label = "曲を確認") => ({ kind: "song", songId: e.song.id, label });
+const timeAction = { kind: "time", label: "時間を調整" };
 
-// ---------- セトリ診断 ----------
-// level: "warn"(構成上の注意) / "info"(検討のヒント)
+// Use the supplied entries, never a second lookup in mutable global storage.
+export function timingSummary(sl, entries) {
+  const missing = entries.map((e, i) => positive(e.song.sec) ? null : i).filter((i) => i !== null);
+  const play = entries.reduce((sum, e) => sum + (positive(e.song.sec) ? e.song.sec : 0), 0);
+  const gaps = Math.max(0, entries.length - 1) * seconds(sl.gapSec);
+  const mcCount = entries.filter((e) => e.item.mc).length;
+  const mc = mcCount * seconds(sl.mcSec);
+  const target = seconds(sl.targetMin) * 60;
+  const total = play + gaps + mc;
+  return { play, gaps, mc, mcCount, total, target, missing, margin: target > 0 && !missing.length ? target - total : null };
+}
 
 export function diagnose(sl, entries) {
+  if (!entries.length) return [];
   const out = [];
-  const n = entries.length;
-  if (n < 2) return out;
-
-  // 1. チューニング替えの連続(間にMCなし)
-  let switchRun = 0;
-  for (let i = 1; i < n; i++) {
+  const add = (id, level, category, title, text, suggestion, action) => out.push({ id, level, category, title, text, suggestion, action });
+  const d = timingSummary(sl, entries);
+  if (d.missing.length) {
+    add("missing-duration", "missing", "入力", `${d.missing.length}曲の長さが未入力`,
+      `${d.missing.map((i) => `M${i + 1}`).join("・")}の長さが未入力です。現在の合計 ${fmtTime(d.total)} は入力済み分だけです。`,
+      "実測した長さを入れてください。未入力の曲を0秒として、時間に収まるとは判定しません。",
+      songAction(entries[d.missing[0]], "長さを入力"));
+  }
+  if (d.target > 0 && d.total > d.target) {
+    add("overtime", "warn", "時間", `${d.missing.length ? "少なくとも" : ""}${fmtTime(d.total - d.target)} オーバー`,
+      `合計 ${fmtTime(d.total)} ／ 持ち時間 ${fmtTime(d.target)}。演奏 ${fmtTime(d.play)} ＋ 転換 ${fmtTime(d.gaps)} ＋ MC ${fmtTime(d.mc)}。`,
+      `${fmtTime(d.total - d.target)}以上短縮が必要です。MC・曲間を見直し、それでも難しければ外す曲を選んで再計算してください。`, timeAction);
+  } else if (d.margin !== null && d.margin < 60) {
+    add("tight-margin", "warn", "時間", `予備時間は ${fmtTime(d.margin)}`,
+      "現在の入力では持ち時間内ですが、1分未満の余白しかありません。",
+      "拍手・入退場・機材トラブルの時間を含めた計画か確認してください。1分は確認用の目安です。", timeAction);
+  } else if (!d.target) {
+    add("missing-target", "missing", "入力", "持ち時間が未設定",
+      `入力済みの合計は ${fmtTime(d.total)}。枠内に収まるかは未判定です。`,
+      "主催者から指定された持ち時間を設定してください。", timeAction);
+  }
+  const unknownTuning = entries.map((e, i) => tuningOf(e) ? null : i).filter((i) => i !== null);
+  if (unknownTuning.length) {
+    add("missing-tuning", "missing", "入力", `${unknownTuning.length}曲の調弦が未入力`,
+      `${unknownTuning.map((i) => `M${i + 1}`).join("・")}のチューニングが不明なため、その前後の持ち替えは判定できません。`,
+      "使用する楽器のチューニングを入力してください。未入力は「直前と同じ」と扱いません。",
+      songAction(entries[unknownTuning[0]], "調弦を入力"));
+  }
+  for (let i = 1; i < entries.length; i++) {
     const prev = entries[i - 1], cur = entries[i];
-    const switched = prev.song.tuning && cur.song.tuning && prev.song.tuning !== cur.song.tuning;
-    if (switched && !prev.item.mc) {
-      switchRun++;
-      if (switchRun >= 2) {
-        out.push({
-          level: "warn",
-          text: `${i}〜${i + 1}曲目でチューニング替えが連続しています。転換が伸びやすいので、間にMCを挟むか曲順の見直しを検討してください。`,
-        });
-        switchRun = 0; // 同じ並びで多重に指摘しない
-      }
-    } else if (!switched) {
-      switchRun = 0;
+    const from = tuningOf(prev), to = tuningOf(cur);
+    if (from && to && from !== to) {
+      const gap = seconds(sl.gapSec), mc = prev.item.mc ? seconds(sl.mcSec) : 0;
+      const budget = gap + mc;
+      add(`tuning-${i}`, budget < 30 ? "warn" : "info", "持ち替え", `M${i} → M${i + 1} の持ち替えを確認`,
+        `${from} → ${to}。設定は転換 ${fmtTime(gap)} ＋ MC ${fmtTime(mc)} = ${fmtTime(budget)}。`,
+        `${budget < 30 ? "確認用の目安30秒より短い設定です。" : ""}MC中に実際に交換・再調弦できるか通し練習で計測してください。MCがあるだけでは余裕ありとは判定しません。`,
+        songAction(cur));
     }
   }
-
-  // 2. 同じキーが3曲以上連続
-  for (let i = 2; i < n; i++) {
-    const k = entries[i].song.key;
-    if (k && k === entries[i - 1].song.key && k === entries[i - 2].song.key) {
-      out.push({
-        level: "info",
-        text: `${i - 1}〜${i + 1}曲目が同じキー(${k})で3曲続いています。響きが単調に聞こえることがあります。`,
-      });
+  if (!d.missing.length && d.total > 0 && (d.gaps + d.mc) / d.total > .25) {
+    add("transition-share", "info", "時間", "転換・MCの配分を確認",
+      `全体 ${fmtTime(d.total)} のうち、転換・MCは ${fmtTime(d.gaps + d.mc)}（${Math.round(100 * (d.gaps + d.mc) / d.total)}%）です。`,
+      "トークを重視するライブなら問題ありません。演奏を増やしたい場合のみ見直してください。", timeAction);
+  }
+  for (let i = 2; i < entries.length; i++) {
+    const es = entries.slice(i - 2, i + 1), key = es[0].song.key;
+    if (key && es.every((e) => e.song.key === key)) {
+      add("same-key", "info", "演出", `M${i - 1}〜M${i + 1} は同じキー`,
+        `3曲が ${key} で続きます。同じ響きによる一体感を作る構成でもあります。`,
+        "変化を出したい場合だけ、曲調や編成の違いを聴き比べてください。", songAction(es[1]));
       break;
     }
   }
-
-  // 3. BPMがほぼ同じ曲が3曲以上連続
-  for (let i = 2; i < n; i++) {
-    const a = entries[i - 2].song.bpm, b = entries[i - 1].song.bpm, c = entries[i].song.bpm;
-    if (a && b && c && Math.abs(a - b) < 8 && Math.abs(b - c) < 8) {
-      out.push({
-        level: "info",
-        text: `${i - 1}〜${i + 1}曲目のBPMがほぼ同じ(${a}前後)です。テンポの起伏をつけると流れが生まれます。`,
-      });
+  for (let i = 2; i < entries.length; i++) {
+    const es = entries.slice(i - 2, i + 1), bpms = es.map((e) => e.song.bpm);
+    if (bpms.every(positive) && Math.max(...bpms) - Math.min(...bpms) < 8) {
+      add("similar-bpm", "info", "演出", `M${i - 1}〜M${i + 1} のテンポが近い`,
+        `BPM ${Math.min(...bpms)}〜${Math.max(...bpms)}。数値が近くても、拍子やリズムで体感は変わります。`,
+        "連続するグルーヴを狙うならそのままで大丈夫です。変化が必要なら通して聴き比べましょう。", songAction(es[1]));
       break;
     }
   }
-
-  // 4. エナジーの急落(MCを挟まず3段階以上下がる)
-  for (let i = 1; i < n; i++) {
-    const drop = entries[i - 1].song.energy - entries[i].song.energy;
-    if (drop >= 3 && !entries[i - 1].item.mc) {
-      out.push({
-        level: "info",
-        text: `${i}曲目から${i + 1}曲目でエナジーが大きく落ちます(${entries[i - 1].song.energy}→${entries[i].song.energy})。意図的な演出でなければ、間にMCを挟むと自然につながります。`,
-      });
+  for (let i = 1; i < entries.length; i++) {
+    const a = entries[i - 1].song.energy, b = entries[i].song.energy;
+    if (positive(a) && positive(b) && a - b >= 3 && !entries[i - 1].item.mc) {
+      add(`energy-drop-${i}`, "info", "演出", `M${i} → M${i + 1} に大きな緩急`,
+        `入力した盛り上がり度が ${a} → ${b} に変わります。静けさを作る意図的な演出なら問題ありません。`,
+        "照明・余韻・短いMCを含め、どのようにつなぐかを決めておきましょう。", songAction(entries[i]));
     }
   }
-
-  // 5. 最高エナジーの曲が序盤に来ている
-  const maxEnergy = Math.max(...entries.map((e) => e.song.energy));
-  const firstMaxIdx = entries.findIndex((e) => e.song.energy === maxEnergy);
-  if (maxEnergy >= 4 && firstMaxIdx >= 0 && firstMaxIdx < Math.floor(n / 3) && n >= 4) {
-    out.push({
-      level: "info",
-      text: `最高エナジーの「${entries[firstMaxIdx].song.title}」が序盤(${firstMaxIdx + 1}曲目)に来ています。切り札を後半に温存する構成も検討の余地があります。`,
-    });
+  // An opener-first template explicitly calls for an early peak.
+  const maxEnergy = Math.max(...entries.map((e) => Number(e.song.energy) || 0));
+  const firstMax = entries.findIndex((e) => e.song.energy === maxEnergy);
+  if (sl.template === "buildup" && entries.length >= 4 && maxEnergy >= 4 && firstMax < Math.floor(entries.length / 3)) {
+    add("early-peak", "info", "演出", "選んだ尻上がり型と序盤のピークを確認",
+      `最高の盛り上がり度の曲が M${firstMax + 1} にあります。`,
+      "最初に強く掴む意図なら、掴み優先型との比較もできます。型に合わせること自体が目的ではありません。", songAction(entries[firstMax]));
   }
-
-  // 6. 転換・MC時間が演奏時間に対して重い
-  const d = setlistDuration(sl);
-  if (d.play > 0 && d.gaps + d.mc > d.play * 0.25) {
-    out.push({
-      level: "warn",
-      text: `演奏 ${fmtTime(d.play)} に対して転換+MCが ${fmtTime(d.gaps + d.mc)} あります。持ち時間の4分の1を超えているので、配分を見直すと演奏に時間を回せます。`,
-    });
-  }
-
-  // 7. 持ち時間オーバー
-  const target = sl.targetMin * 60;
-  if (target > 0 && d.total > target) {
-    out.push({
-      level: "warn",
-      text: `合計 ${fmtTime(d.total)} で持ち時間(${sl.targetMin}分)を ${fmtTime(d.total - target)} オーバーしています。`,
-    });
-  }
-
-  return out;
+  const priority = { warn: 0, missing: 1, info: 2 };
+  return out.sort((a, b) => priority[a.level] - priority[b.level]);
 }
 
 // ---------- 型テンプレート ----------
@@ -101,6 +110,7 @@ export function diagnose(sl, entries) {
 
 export const TEMPLATES = [
   { id: "", name: "テンプレートなし", f: null },
+  { id: "afterglow", name: "余韻を残す", f: null },
   {
     id: "buildup",
     name: "尻上がり型(最後に爆発)",
@@ -127,7 +137,7 @@ export const TEMPLATES = [
 ];
 
 export function templateById(id) {
-  return TEMPLATES.find((t) => t.id === id) || TEMPLATES[0];
+  return TEMPLATES.find((t) => t.id === id) || TEMPLATES.find(t => t.id === "");
 }
 
 // テンプレートを曲位置でサンプリング(曲数 n)
@@ -149,36 +159,22 @@ export function templateFit(tpl, entries) {
 }
 
 // ---------- 持ち替えプランナー ----------
-// チューニングの並びから「何本必要か」「どこで持ち替えるか」を出す。
-// チューニング未設定の曲は「直前のまま弾ける」とみなしてスキップする。
-// 戻り値: {needed:[{tuning, label, positions:[1-based...]}],
-//          switches:[{fromIdx, toIdx, from, to, hasMC}]}  ※idxは0始まり
-
+// Distinct registered tunings are options for dedicated instruments, not a minimum guitar count.
+// Unknown tunings break adjacency: no invented transition across an unknown song.
 export function switchPlan(entries) {
-  const seq = entries
-    .map((e, idx) => ({ idx, tuning: e.song.tuning }))
-    .filter((x) => x.tuning);
-  if (!seq.length) return { needed: [], switches: [] };
-
-  const order = [];
-  for (const x of seq) {
-    if (!order.includes(x.tuning)) order.push(x.tuning);
-  }
-  const LABELS = "ABCDEFGH";
+  const seq = entries.map((e, idx) => ({ idx, tuning: tuningOf(e) }));
+  const known = seq.filter((x) => x.tuning);
+  const order = [...new Set(known.map((x) => x.tuning))];
   const needed = order.map((tuning, i) => ({
-    tuning,
-    label: LABELS[i] || `#${i + 1}`,
-    positions: seq.filter((x) => x.tuning === tuning).map((x) => x.idx + 1),
+    tuning, label: "ABCDEFGH"[i] || `#${i + 1}`,
+    positions: known.filter((x) => x.tuning === tuning).map((x) => x.idx + 1),
   }));
-
   const switches = [];
   for (let i = 1; i < seq.length; i++) {
     const a = seq[i - 1], b = seq[i];
-    if (a.tuning !== b.tuning) {
-      // 2曲の間(未設定の曲を挟む場合も含む)のどこかにMCがあれば余裕あり
-      const hasMC = entries.slice(a.idx, b.idx).some((e) => e.item.mc);
-      switches.push({ fromIdx: a.idx, toIdx: b.idx, from: a.tuning, to: b.tuning, hasMC });
+    if (a.tuning && b.tuning && a.tuning !== b.tuning) {
+      switches.push({ fromIdx: a.idx, toIdx: b.idx, from: a.tuning, to: b.tuning, hasMC: !!entries[a.idx].item.mc });
     }
   }
-  return { needed, switches };
+  return { needed, switches, unknownPositions: seq.filter((x) => !x.tuning).map((x) => x.idx + 1) };
 }
