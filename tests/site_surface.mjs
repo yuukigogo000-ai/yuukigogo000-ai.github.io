@@ -31,6 +31,11 @@ const MUST_BE_OPEN = [
   ['/honmono/vendor/models/honmono_v31_int8.onnx.part1', '判定モデル本体'],
   ['/band/', 'セトリズム'],
   ['/pachinko/', 'パチスロ帝国'],
+  ['/photo-roguelike/', 'ハウス・グランプリ(URLを知っている人だけ・入口と sitemap には載せない)'],
+  ['/photo-roguelike/privacy.html', 'ハウス・グランプリ 写真とデータの扱い'],
+  ['/photo-roguelike/licenses.html', 'ハウス・グランプリ ライセンス'],
+  ['/photo-roguelike/sw.js', 'ハウス・グランプリ オフライン用ServiceWorker'],
+  ['/photo-roguelike/manifest.webmanifest', 'ハウス・グランプリ マニフェスト'],
   ['/line-auto-reply/', 'LINE自動返信ボット 手順'],
   ['/surf/', '波チェック 公開停止の告知'],
   ['/reply-ai/', 'Replier 公開停止の告知'],
@@ -81,6 +86,13 @@ const CONTENT = [
   ['/band/', 'includes', "base-uri 'none'", 'セトリズムのCSPが base 注入を封じている'],
   ['/honmono/checker/', 'includes', "connect-src 'self'", 'チェッカーのCSPが外部送信を封じている'],
   ['/pachinko/', 'includes', 'Content-Security-Policy', 'パチスロ帝国にCSPが入っている'],
+  ['/photo-roguelike/', 'includes', "base-uri 'none'", 'ハウス・グランプリのCSPが base 注入を封じている'],
+  ['/photo-roguelike/', 'excludes', "'unsafe-inline' 'wasm", 'ハウス・グランプリはインラインscriptを許していない'],
+  ['/photo-roguelike/', 'includes', 'name="robots" content="noindex"', 'ハウス・グランプリは見た目の仕上げまで検索に出さない'],
+  ['/photo-roguelike/privacy.html', 'includes', 'Hugging Face', 'プライバシーの説明に送信先(モデルの読み込み元)が書いてある'],
+  ['/photo-roguelike/sw.js', 'includes', "k.startsWith('house-gp-')", 'ハウス・グランプリのSWは自分の保存領域だけを消す'],
+  ['/', 'excludes', 'photo-roguelike', '入口にはまだ載せていない'],
+  ['/sitemap.xml', 'excludes', 'photo-roguelike', 'sitemap にもまだ載せていない'],
 ];
 
 async function head(path) {

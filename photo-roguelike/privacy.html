@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' data: blob: https://huggingface.co https://*.huggingface.co https://*.hf.co; worker-src 'self' blob:; manifest-src 'self'" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>写真とデータの扱い - ハウス・グランプリ</title>
+<style>
+  :root { --bg: #fff8f6; --fg: #231915; --muted: #57423a; --link: #a14000; font-family: system-ui, -apple-system, 'Hiragino Sans', sans-serif; line-height: 1.7; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1c110c; --fg: #f4ded5; --muted: #dfc0b3; --link: #ffb694; } }
+  body { margin: 0; background: var(--bg); color: var(--fg); }
+  main { max-width: 640px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-size: 22px; } h2 { font-size: 16px; margin-top: 24px; } p, li { font-size: 16px; } .muted { color: var(--muted); font-size: 14px; }
+  a { color: var(--link); }
+</style>
+</head>
+<body>
+<main>
+  <h1>写真とデータの扱い(プライバシーの説明)</h1>
+  <p class="muted">最終更新: 2026年11月12日</p>
+
+  <h2>1. 写真</h2>
+  <ul>
+    <li>撮った写真・選んだ写真は、<b>あなたの端末の中だけ</b>で処理し、端末の中(ブラウザの保存領域)にだけ保存します。サーバーには送りません。</li>
+    <li>保存する前に写真を正方形に切り出して描き直すので、撮影場所(位置情報)などの付帯情報は残りません。</li>
+    <li>写真から決めるのは「系統(台所・文房具など)」だけです。強さは作成時の乱数で決まります。</li>
+    <li>人の写った写真は鑑定しません。ご自分で撮った写真だけを使ってください。</li>
+  </ul>
+
+  <h2>2. 自動の鑑定(端末内AI)を選んだとき</h2>
+  <ul>
+    <li>写真が何の物かを当てる判定は、あなたの端末の中で動くAI(OpenAI の CLIP を Transformers.js で動かしたもの)が行います。<b>写真は外に送りません</b>。</li>
+    <li>ただし最初に使ったとき、判定に使う画像のモデルのファイル(約85MB)を <b>Hugging Face</b>(huggingface.co とその配信網)から読み込みます。このとき Hugging Face には、通常の通信と同じく IP アドレスなどが届きます。扱いは <a href="https://huggingface.co/privacy" rel="noopener">Hugging Face のプライバシーポリシー</a>によります。</li>
+    <li>写真を選ぶたびに「自動で鑑定する」か「自分で選ぶ」かを選べます(「自動で鑑定する」を一度選ぶと、次からは聞かずに自動で鑑定します。設定でやめられます)。<b>「自分で選ぶ」の場合は外への通信はありません</b>。自動の鑑定を始めてから途中で「自分で選ぶ」に切り替えた場合は、始めたモデルの読み込みが最後まで続くことがあります。</li>
+  </ul>
+
+  <h2>3. ゲームのデータ</h2>
+  <ul>
+    <li>キャラ・図鑑・戦績・遊びかけのランは、端末の中(ブラウザの保存領域)にだけ保存します。アカウントはありません。</li>
+    <li>章の始まりの物語を一度読んだかどうか(2回目から畳んで出すため)と、自動の鑑定を使うかどうかの選択も、端末の中にだけ覚えます。</li>
+    <li>ブラウザの都合で保存が消えることがあります(iPhone の Safari は、7日以上開かないと消すことがあります)。設定の「書き出す」でファイルに残せます。書き出したファイルには写真は入りません。</li>
+    <li>アクセス解析・広告・追跡のための仕組みは使っていません。</li>
+  </ul>
+
+  <h2>4. 課金</h2>
+  <p>課金はありません。キャラの作成に使うフィルムは、毎日のログインやゲームの中のご褒美でもらえます(お金では買えません)。出る確率はゲームの中の設定画面に書いてあります。</p>
+
+  <h2>5. 変更</h2>
+  <p>この説明を変えるときは、このページを書き換え、最終更新の日付を改めます。</p>
+
+  <p class="muted"><a href="./">ゲームに戻る</a></p>
+</main>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "ハウス・グランプリ",
+  "short_name": "ハウスGP",
+  "description": "家のモノを撮るとシールのキャラになり、4体の並べ方と作戦で闘技場サーキットを勝ち上がるオートバトルのローグライト",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff8f6",
+  "theme_color": "#ff7a33",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -1,6 +1,7 @@
 # yuukigogo000-ai.github.io — Claude への常設指示
 
-静的サイト(GitHub Pages)。各ディレクトリが1アプリ(`band/`=セトリズム, `reply-ai/`=Replier のビルド出力(ソースは `reply-ai-app/` React+Vite), `honmono/`, `surf/`=波チェック, `health/`=おじさん健康手帳(ブランチ), `pachinko/`, `line-auto-reply/`=GAS ボット)。ビルドが要るのは `reply-ai-app/` だけ。
+静的サイト(GitHub Pages)。各ディレクトリが1アプリ(`band/`=セトリズム, `reply-ai/`=Replier のビルド出力(ソースは `reply-ai-app/` React+Vite), `honmono/`, `surf/`=波チェック, `health/`=おじさん健康手帳(ブランチ), `pachinko/`, `line-auto-reply/`=GAS ボット, `photo-roguelike/`=ハウス・グランプリのビルド出力)。ビルドが要るのは `reply-ai-app/` と、リポジトリの外にソースがある `photo-roguelike/`(ソース=`AI_WORKSPACE/photo-roguelike`・非公開。そちらで `npm run build` → `node scripts/publish_site.mjs <このリポジトリ>` で写す。直接ここを編集しない)。
+`photo-roguelike/` は見た目の仕上げまで **URL を知っている人だけ**(入口ページと sitemap に載せない・各ページに noindex)。
 
 ## UI(見た目)の規則 — 正本 `~/.claude/playbooks/UI_PLAYBOOK.md`(例外なし)
 - 見本なしで発明しない(見本=Material Design 3 公式+Google Stitch/M3仕様から Claude が自動用意。「もっと良く」には見本生成で答える)
