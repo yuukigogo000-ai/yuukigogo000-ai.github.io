@@ -54,6 +54,10 @@ exclude:
   - pachinko/redesign/
   - pachinko/review/
 
+  # 調査メモと調査レポート(内部資料。リポジトリには残すが配信しない)
+  - research_notes/
+  - reports/
+
   # デスクトップ版のビルド定義(Webサイトとしては配信しない)
   - desktop/
   - pachinko/desktop/
