@@ -1,0 +1,128 @@
+{
+  "mob/base/greedy_err6deg": {
+    "winRate": 0.8,
+    "shotsAvg": 8.8,
+    "playerKoPerBattle": 2.2,
+    "selfRingOutPerBattle": 1.25,
+    "fallsPerBattle": 0
+  },
+  "mob/base/safe_err6deg": {
+    "winRate": 1,
+    "shotsAvg": 9.5,
+    "playerKoPerBattle": 0.55,
+    "selfRingOutPerBattle": 0.1,
+    "fallsPerBattle": 0
+  },
+  "mob/base/safe_err11deg": {
+    "winRate": 0.75,
+    "shotsAvg": 12.4,
+    "playerKoPerBattle": 2,
+    "selfRingOutPerBattle": 0.75,
+    "fallsPerBattle": 0
+  },
+  "mob/shooterSafe/greedy_err6deg": {
+    "winRate": 0.95,
+    "shotsAvg": 9.4,
+    "playerKoPerBattle": 0.9,
+    "selfRingOutPerBattle": 0,
+    "fallsPerBattle": 0
+  },
+  "mob/shooterSafe/safe_err6deg": {
+    "winRate": 1,
+    "shotsAvg": 8.9,
+    "playerKoPerBattle": 0.35,
+    "selfRingOutPerBattle": 0,
+    "fallsPerBattle": 0
+  },
+  "mob/shooterSafe/safe_err11deg": {
+    "winRate": 1,
+    "shotsAvg": 10.3,
+    "playerKoPerBattle": 1.2,
+    "selfRingOutPerBattle": 0,
+    "fallsPerBattle": 0
+  },
+  "mob/ringReturn/greedy_err6deg": {
+    "winRate": 1,
+    "shotsAvg": 9.1,
+    "playerKoPerBattle": 0.15,
+    "selfRingOutPerBattle": 1.45,
+    "fallsPerBattle": 2.3
+  },
+  "mob/ringReturn/safe_err6deg": {
+    "winRate": 1,
+    "shotsAvg": 9.1,
+    "playerKoPerBattle": 0.05,
+    "selfRingOutPerBattle": 0.4,
+    "fallsPerBattle": 0.9
+  },
+  "mob/ringReturn/safe_err11deg": {
+    "winRate": 1,
+    "shotsAvg": 11.3,
+    "playerKoPerBattle": 0.3,
+    "selfRingOutPerBattle": 1.55,
+    "fallsPerBattle": 2.2
+  },
+  "boss/base/greedy_err6deg": {
+    "winRate": 0.15,
+    "shotsAvg": 12.8,
+    "playerKoPerBattle": 3.85,
+    "selfRingOutPerBattle": 1.15,
+    "fallsPerBattle": 0
+  },
+  "boss/base/safe_err6deg": {
+    "winRate": 0.25,
+    "shotsAvg": 14.7,
+    "playerKoPerBattle": 3.5,
+    "selfRingOutPerBattle": 0,
+    "fallsPerBattle": 0
+  },
+  "boss/base/safe_err11deg": {
+    "winRate": 0.05,
+    "shotsAvg": 14.8,
+    "playerKoPerBattle": 3.8,
+    "selfRingOutPerBattle": 0.45,
+    "fallsPerBattle": 0
+  },
+  "boss/shooterSafe/greedy_err6deg": {
+    "winRate": 0.1,
+    "shotsAvg": 14.3,
+    "playerKoPerBattle": 3.8,
+    "selfRingOutPerBattle": 0,
+    "fallsPerBattle": 0
+  },
+  "boss/shooterSafe/safe_err6deg": {
+    "winRate": 0.4,
+    "shotsAvg": 16.2,
+    "playerKoPerBattle": 3.25,
+    "selfRingOutPerBattle": 0,
+    "fallsPerBattle": 0
+  },
+  "boss/shooterSafe/safe_err11deg": {
+    "winRate": 0.35,
+    "shotsAvg": 17.4,
+    "playerKoPerBattle": 3.35,
+    "selfRingOutPerBattle": 0,
+    "fallsPerBattle": 0
+  },
+  "boss/ringReturn/greedy_err6deg": {
+    "winRate": 0.15,
+    "shotsAvg": 15.4,
+    "playerKoPerBattle": 3.85,
+    "selfRingOutPerBattle": 0.9,
+    "fallsPerBattle": 2
+  },
+  "boss/ringReturn/safe_err6deg": {
+    "winRate": 0.3,
+    "shotsAvg": 15.6,
+    "playerKoPerBattle": 3.5,
+    "selfRingOutPerBattle": 0.1,
+    "fallsPerBattle": 0.85
+  },
+  "boss/ringReturn/safe_err11deg": {
+    "winRate": 0.25,
+    "shotsAvg": 16.3,
+    "playerKoPerBattle": 3.45,
+    "selfRingOutPerBattle": 0.45,
+    "fallsPerBattle": 1.25
+  }
+}

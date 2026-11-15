@@ -58,6 +58,9 @@ exclude:
   - research_notes/
   - reports/
 
+  # 遊びの試作(灰色の箱の段階。配信しない)
+  - prototypes/
+
   # デスクトップ版のビルド定義(Webサイトとしては配信しない)
   - desktop/
   - pachinko/desktop/

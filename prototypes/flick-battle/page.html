@@ -1,0 +1,93 @@
+<title>はじきバトル試作</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<style>
+  /* レイアウト: 1 画面のアプリ。上に状況 1 行、中央に卓(canvas)、下に操作。 */
+  :root {
+    --bg: #eef0ee; --surface: #ffffff; --fg: #1d2622; --muted: #5d6a64; --line: #c9d0cc;
+    --table: #d9c7a3; --table-edge: #7a5c3a; --gap: #c0392b;
+    --ally: #1f6f8b; --ally-fg: #ffffff; --enemy: #a8442f; --enemy-fg: #ffffff;
+    --accent: #0b7a53; --accent-fg: #ffffff; --danger: #c0392b; --heal: #2e8b57;
+    --font: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141a17; --surface: #1e2622; --fg: #e6ece8; --muted: #9aa8a1; --line: #36423c;
+      --table: #5b4b33; --table-edge: #c9a06a; --gap: #ff7a66;
+      --ally: #58b6d6; --ally-fg: #06222c; --enemy: #e98a72; --enemy-fg: #2b0d05;
+      --accent: #46c493; --accent-fg: #06261a; --danger: #ff7a66; --heal: #6fd69a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141a17; --surface: #1e2622; --fg: #e6ece8; --muted: #9aa8a1; --line: #36423c;
+    --table: #5b4b33; --table-edge: #c9a06a; --gap: #ff7a66;
+    --ally: #58b6d6; --ally-fg: #06222c; --enemy: #e98a72; --enemy-fg: #2b0d05;
+    --accent: #46c493; --accent-fg: #06261a; --danger: #ff7a66; --heal: #6fd69a;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.4;
+    display: flex; flex-direction: column; gap: 8px; box-sizing: border-box;
+    padding-block: 8px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    overscroll-behavior: contain; -webkit-user-select: none; user-select: none;
+  }
+  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .top h1 { font-size: 16px; margin: 0; font-weight: 700; }
+  .status { color: var(--muted); font-variant-numeric: tabular-nums; min-width: 0; }
+  .stage-wrap { flex: 1 1 auto; min-height: 0; position: relative; display: flex; justify-content: center; align-items: center; }
+  canvas { display: block; touch-action: none; max-width: 100%; border-radius: 8px; }
+  .hint { text-align: center; color: var(--muted); min-height: 1.4em; }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; }
+  .controls label { display: flex; gap: 4px; align-items: center; color: var(--muted); }
+  select, button {
+    font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 12px; min-height: 44px;
+  }
+  button.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 700; }
+  button:disabled { opacity: .5; }
+  select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column; gap: 12px; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--bg) 78%, transparent); border-radius: 8px; text-align: center;
+  }
+  .overlay strong { font-size: 28px; }
+  .overlay span { color: var(--muted); font-variant-numeric: tabular-nums; }
+</style>
+
+<div class="top">
+  <h1>はじきバトル試作</h1>
+  <div class="status" id="status">1 手目</div>
+</div>
+<div class="stage-wrap" id="wrap">
+  <canvas id="cv" aria-label="卓。引っぱって離すと味方を弾きます"></canvas>
+  <div class="overlay" id="overlay" hidden>
+    <strong id="ovTitle">勝ち!</strong>
+    <span id="ovSub"></span>
+    <button class="primary" id="again" type="button">もう一回</button>
+  </div>
+</div>
+<div class="hint" id="hint">光っている味方が弾く番です。画面を引っぱって離すと反対向きに飛びます</div>
+<div class="controls">
+  <label>相手
+    <select id="stage">
+      <option value="mob">ザコ戦</option>
+      <option value="boss">ボス戦(掃除機)</option>
+    </select>
+  </label>
+  <label>落ちたら
+    <select id="rule">
+      <option value="base">即やられる</option>
+      <option value="shooterSafe">弾いた本人は落ちない</option>
+      <option value="ringReturn">傷を負って戻る</option>
+    </select>
+  </label>
+  <button id="auto" type="button">おまかせで1手</button>
+  <button id="reset" type="button">やり直す</button>
+</div>
+
+<script>/*__SIM__*/</script>
+<script>/*__UI__*/</script>
