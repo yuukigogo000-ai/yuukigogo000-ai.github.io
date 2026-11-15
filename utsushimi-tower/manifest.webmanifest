@@ -1,0 +1,17 @@
+{
+  "name": "身代わりの塔",
+  "short_name": "身代わりの塔",
+  "description": "写真に撮った物が身代わりになって、黒い塔を登る。技札と隊列のオートバトルのローグライト。",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#031c1e",
+  "theme_color": "#06292c",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

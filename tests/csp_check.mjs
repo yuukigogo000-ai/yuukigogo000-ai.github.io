@@ -36,6 +36,7 @@ const MIME = {
 const PAGES = [
   "/", "/band/", "/pachinko/", "/surf/", "/reply-ai/",
   "/photo-roguelike/", "/photo-roguelike/privacy.html", "/photo-roguelike/licenses.html",
+  "/utsushimi-tower/", "/utsushimi-tower/privacy.html", "/utsushimi-tower/licenses.html",
   "/honmono/", "/honmono/checker/", "/honmono/badge/", "/honmono/aicheck/",
   "/honmono/creators/", "/honmono/docs/", "/honmono/report/", "/honmono/business/",
   "/honmono/legal/privacy.html", "/honmono/legal/terms.html", "/honmono/legal/credits.html",

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+    <meta name="robots" content="noindex" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; object-src 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>身代わりの塔 部品と書体</title>
+<style>
+:root { --bg: #f6f1e7; --ink: #2b231b; --line: #c9bba1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #071f21; --ink: #efe6d6; --line: #2e5254; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, sans-serif; line-height: 1.75; }
+main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 2rem; border-bottom: 1px solid var(--line); }
+li { margin: 0.3rem 0; } a { color: inherit; word-break: break-all; }
+</style>
+</head>
+<body>
+<main>
+<h1>使っている部品と書体</h1>
+<h2>書体</h2>
+<ul>
+<li>Kaisei Opti — SIL Open Font License 1.1(使う字だけに削って同梱) — https://github.com/google/fonts/tree/main/ofl/kaiseiopti</li>
+</ul>
+<h2>プログラムの部品</h2>
+<ul>
+<li>React / React DOM — MIT License</li>
+<li>Transformers.js(@huggingface/transformers)— Apache License 2.0</li>
+<li>ONNX Runtime Web(Transformers.js に含まれる)— MIT License</li>
+</ul>
+<h2>端末内AIのモデル(使う設定にした時だけ読み込む)</h2>
+<ul>
+<li>CLIP ViT-B/32(Xenova/clip-vit-base-patch32、OpenAI CLIP の変換版)— MIT License</li>
+</ul>
+<h2>絵</h2>
+<p>このゲームのために画像生成で作った絵を使っています。</p>
+<p><a href="./index.html">ゲームに戻る</a> ・ <a href="./privacy.html">プライバシーについて</a></p>
+</main>
+</body>
+</html>
