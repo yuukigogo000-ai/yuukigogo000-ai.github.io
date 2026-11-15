@@ -1,0 +1,146 @@
+{
+  "mob/off/safe_err6deg": {
+    "winRate": 1,
+    "shotsAvg": 9.1,
+    "playerKoPerBattle": 0.05,
+    "fallsPerBattle": 0.9,
+    "enemyKoByRingOut": 0.63,
+    "enemyHpWhenRungOut": 0.66,
+    "allyHpLeftPerBattle": 3.03
+  },
+  "mob/off/safe_err11deg": {
+    "winRate": 1,
+    "shotsAvg": 11.3,
+    "playerKoPerBattle": 0.3,
+    "fallsPerBattle": 2.2,
+    "enemyKoByRingOut": 0.5,
+    "enemyHpWhenRungOut": 0.63,
+    "allyHpLeftPerBattle": 2.63
+  },
+  "mob/enemy/safe_err6deg": {
+    "winRate": 1,
+    "shotsAvg": 8.4,
+    "playerKoPerBattle": 0,
+    "fallsPerBattle": 1,
+    "enemyKoByRingOut": 0.59,
+    "enemyHpWhenRungOut": 0.57,
+    "allyHpLeftPerBattle": 3.01
+  },
+  "mob/enemy/safe_err11deg": {
+    "winRate": 1,
+    "shotsAvg": 10.8,
+    "playerKoPerBattle": 0.2,
+    "fallsPerBattle": 1.85,
+    "enemyKoByRingOut": 0.57,
+    "enemyHpWhenRungOut": 0.56,
+    "allyHpLeftPerBattle": 2.81
+  },
+  "mob/both/safe_err6deg": {
+    "winRate": 1,
+    "shotsAvg": 7.7,
+    "playerKoPerBattle": 0.1,
+    "fallsPerBattle": 0.8,
+    "enemyKoByRingOut": 0.75,
+    "enemyHpWhenRungOut": 0.6,
+    "allyHpLeftPerBattle": 3.13
+  },
+  "mob/both/safe_err11deg": {
+    "winRate": 1,
+    "shotsAvg": 11.3,
+    "playerKoPerBattle": 0.15,
+    "fallsPerBattle": 2.05,
+    "enemyKoByRingOut": 0.56,
+    "enemyHpWhenRungOut": 0.58,
+    "allyHpLeftPerBattle": 2.87
+  },
+  "boss/off/safe_err6deg": {
+    "winRate": 0.3,
+    "shotsAvg": 15.6,
+    "playerKoPerBattle": 3.5,
+    "fallsPerBattle": 0.85,
+    "enemyKoByRingOut": 0.72,
+    "enemyHpWhenRungOut": 0.7,
+    "allyHpLeftPerBattle": 0.15
+  },
+  "boss/off/safe_err11deg": {
+    "winRate": 0.25,
+    "shotsAvg": 16.3,
+    "playerKoPerBattle": 3.45,
+    "fallsPerBattle": 1.25,
+    "enemyKoByRingOut": 0.69,
+    "enemyHpWhenRungOut": 0.69,
+    "allyHpLeftPerBattle": 0.12
+  },
+  "boss/enemy/safe_err6deg": {
+    "winRate": 0.1,
+    "shotsAvg": 16.1,
+    "playerKoPerBattle": 3.75,
+    "fallsPerBattle": 1.3,
+    "enemyKoByRingOut": 0.57,
+    "enemyHpWhenRungOut": 0.61,
+    "allyHpLeftPerBattle": 0.05
+  },
+  "boss/enemy/safe_err11deg": {
+    "winRate": 0.1,
+    "shotsAvg": 14.7,
+    "playerKoPerBattle": 3.85,
+    "fallsPerBattle": 1.8,
+    "enemyKoByRingOut": 0.57,
+    "enemyHpWhenRungOut": 0.53,
+    "allyHpLeftPerBattle": 0.03
+  },
+  "boss/both/safe_err6deg": {
+    "winRate": 0.3,
+    "shotsAvg": 18.5,
+    "playerKoPerBattle": 3.55,
+    "fallsPerBattle": 3.4,
+    "enemyKoByRingOut": 0.59,
+    "enemyHpWhenRungOut": 0.55,
+    "allyHpLeftPerBattle": 0.11
+  },
+  "boss/both/safe_err11deg": {
+    "winRate": 0.05,
+    "shotsAvg": 15.2,
+    "playerKoPerBattle": 3.9,
+    "fallsPerBattle": 3.8,
+    "enemyKoByRingOut": 0.66,
+    "enemyHpWhenRungOut": 0.59,
+    "allyHpLeftPerBattle": 0.02
+  },
+  "mob/half/safe_err6deg": {
+    "winRate": 1,
+    "shotsAvg": 10.2,
+    "playerKoPerBattle": 0.1,
+    "fallsPerBattle": 0.3,
+    "enemyKoByRingOut": 0.35,
+    "enemyHpWhenRungOut": 0.3,
+    "allyHpLeftPerBattle": 2.79
+  },
+  "mob/half/safe_err11deg": {
+    "winRate": 1,
+    "shotsAvg": 11.9,
+    "playerKoPerBattle": 0.1,
+    "fallsPerBattle": 0.25,
+    "enemyKoByRingOut": 0.28,
+    "enemyHpWhenRungOut": 0.31,
+    "allyHpLeftPerBattle": 2.79
+  },
+  "boss/half/safe_err6deg": {
+    "winRate": 0.2,
+    "shotsAvg": 15.8,
+    "playerKoPerBattle": 3.6,
+    "fallsPerBattle": 0.25,
+    "enemyKoByRingOut": 0.43,
+    "enemyHpWhenRungOut": 0.42,
+    "allyHpLeftPerBattle": 0.12
+  },
+  "boss/half/safe_err11deg": {
+    "winRate": 0.1,
+    "shotsAvg": 15.1,
+    "playerKoPerBattle": 3.9,
+    "fallsPerBattle": 0.75,
+    "enemyKoByRingOut": 0.25,
+    "enemyHpWhenRungOut": 0.2,
+    "allyHpLeftPerBattle": 0.01
+  }
+}

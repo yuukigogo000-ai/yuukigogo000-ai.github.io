@@ -80,9 +80,16 @@
   </label>
   <label>落ちたら
     <select id="rule">
-      <option value="base">即やられる</option>
+      <option value="ringReturn" selected>体力が減って戻る</option>
       <option value="shooterSafe">弾いた本人は落ちない</option>
-      <option value="ringReturn">傷を負って戻る</option>
+      <option value="base">即やられる</option>
+    </select>
+  </label>
+  <label>体力と場外
+    <select id="hpk">
+      <option value="half" selected>半分以下だけ落ちる</option>
+      <option value="both">減るほど飛びやすい</option>
+      <option value="off">関係なし</option>
     </select>
   </label>
   <button id="auto" type="button">おまかせで1手</button>

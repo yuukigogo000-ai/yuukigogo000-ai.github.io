@@ -5,6 +5,7 @@
   const $ = (id) => document.getElementById(id);
   const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('wrap');
   const RULES = { base: {}, shooterSafe: { shooterSafe: true }, ringReturn: { playerRingReturn: true } };
+  const HP_RULES = { half: { ringHalf: true }, both: { hpKnockback: 'both' }, off: {} };
   const SKILL_JA = { slash: '一閃', heal: '給食', stun: '足止め', burst: 'びっくり箱' };
 
   let state, scale = 1, dpr = 1, colors = {};
@@ -21,7 +22,7 @@
   }
 
   function newGame() {
-    state = S.createState($('stage').value, { rules: RULES[$('rule').value] });
+    state = S.createState($('stage').value, { rules: Object.assign({}, RULES[$('rule').value], HP_RULES[$('hpk').value]) });
     popups = []; rings = []; aim = null; acc = 0; pauseUntil = 0; busy = false;
     $('overlay').hidden = true;
     updateStatus();
@@ -94,6 +95,7 @@
   $('again').addEventListener('click', newGame);
   $('stage').addEventListener('change', newGame);
   $('rule').addEventListener('change', newGame);
+  $('hpk').addEventListener('change', newGame);
 
   // ---- 出来事を画面に出す ----------------------------------------------------
   function consumeEvents(now) {
@@ -156,15 +158,27 @@
       const pulse = 4 + 2 * Math.sin(now / 180);
       ctx.beginPath(); ctx.arc(u.x, u.y, u.r + pulse, 0, Math.PI * 2); ctx.strokeStyle = colors.accent; ctx.lineWidth = 3; ctx.stroke();
     }
+    const ratio = Math.max(0, u.hp / u.maxHp);
+    // はがれかけ(落ちる・飛びやすい状態)の駒は色を薄くする
+    let alpha = 1;
+    if (!u.anchored) {
+      if (state.rules.ringHalf) alpha = u.hp * 2 > u.maxHp ? 1 : 0.55;
+      else if (state.rules.hpKnockback === 'both' || (state.rules.hpKnockback === 'enemy' && !ally)) alpha = 0.5 + 0.5 * ratio;
+    }
+    ctx.globalAlpha = alpha;
     ctx.beginPath(); ctx.arc(u.x, u.y, u.r, 0, Math.PI * 2); ctx.fillStyle = base; ctx.fill();
+    ctx.globalAlpha = 1;
     if (u.move === 'pierce') { ctx.setLineDash([3, 3]); ctx.strokeStyle = fg; ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]); }
     ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.font = '700 ' + Math.max(10, Math.round(u.r * 0.62)) + 'px ' + getComputedStyle(document.body).fontFamily;
     ctx.fillText(u.name.slice(0, u.r >= 28 ? 3 : 2), u.x, u.y);
     // 体力
-    const w = u.r * 1.8, hx = u.x - w / 2, hy = u.y + u.r + 3, ratio = Math.max(0, u.hp / u.maxHp);
-    ctx.fillStyle = colors.line; ctx.fillRect(hx, hy, w, 4);
-    ctx.fillStyle = ratio > 0.4 ? colors.heal : colors.danger; ctx.fillRect(hx, hy, w * ratio, 4);
+    const w = Math.max(30, u.r * 1.8), hx = u.x - w / 2, hy = u.y + u.r + 3;
+    ctx.fillStyle = colors.line; ctx.fillRect(hx, hy, w, 6);
+    ctx.fillStyle = ratio > 0.4 ? colors.heal : colors.danger; ctx.fillRect(hx, hy, w * ratio, 6);
+    ctx.font = '700 10px ' + getComputedStyle(document.body).fontFamily;
+    ctx.lineWidth = 3; ctx.strokeStyle = colors.table; ctx.strokeText(String(Math.max(0, u.hp)), u.x, hy + 13);
+    ctx.fillStyle = colors.fg; ctx.fillText(String(Math.max(0, u.hp)), u.x, hy + 13);
     // 敵のカウント
     if (!ally) {
       const bx = u.x + u.r * 0.72, by = u.y - u.r * 0.72;

@@ -26,16 +26,16 @@
     },
     "end": {
       "phase": "won",
-      "shots": 9
+      "shots": 10
     },
-    "wallSec": 13.8,
+    "wallSec": 17.6,
     "cpuThrottle": 6,
-    "frames": 692,
-    "slowFramesOver25ms": 10,
-    "worstFrameMs": 400,
-    "worstSimMsInFrame": 3.2,
-    "aiTurnMsMedian": 269,
-    "aiTurnMsMax": 393,
+    "frames": 794,
+    "slowFramesOver25ms": 30,
+    "worstFrameMs": 650,
+    "worstSimMsInFrame": 3.3,
+    "aiTurnMsMedian": 410,
+    "aiTurnMsMax": 633,
     "pageErrors": []
   },
   "360x800-dark": {
@@ -58,16 +58,16 @@
     },
     "end": {
       "phase": "won",
-      "shots": 9
+      "shots": 10
     },
-    "wallSec": 13.6,
+    "wallSec": 17.6,
     "cpuThrottle": 6,
-    "frames": 680,
-    "slowFramesOver25ms": 9,
-    "worstFrameMs": 383,
-    "worstSimMsInFrame": 1.5,
-    "aiTurnMsMedian": 285,
-    "aiTurnMsMax": 384,
+    "frames": 801,
+    "slowFramesOver25ms": 13,
+    "worstFrameMs": 600,
+    "worstSimMsInFrame": 3.8,
+    "aiTurnMsMedian": 438,
+    "aiTurnMsMax": 598,
     "pageErrors": []
   },
   "390x844-light": {
@@ -90,16 +90,16 @@
     },
     "end": {
       "phase": "won",
-      "shots": 9
+      "shots": 10
     },
-    "wallSec": 14,
+    "wallSec": 18,
     "cpuThrottle": 6,
-    "frames": 696,
-    "slowFramesOver25ms": 9,
-    "worstFrameMs": 450,
-    "worstSimMsInFrame": 1.3,
-    "aiTurnMsMedian": 257,
-    "aiTurnMsMax": 446,
+    "frames": 817,
+    "slowFramesOver25ms": 19,
+    "worstFrameMs": 817,
+    "worstSimMsInFrame": 2.1,
+    "aiTurnMsMedian": 423,
+    "aiTurnMsMax": 773,
     "pageErrors": []
   },
   "390x844-dark": {
@@ -122,16 +122,16 @@
     },
     "end": {
       "phase": "won",
-      "shots": 9
+      "shots": 10
     },
-    "wallSec": 13.9,
+    "wallSec": 19,
     "cpuThrottle": 6,
-    "frames": 691,
-    "slowFramesOver25ms": 8,
-    "worstFrameMs": 417,
-    "worstSimMsInFrame": 2.5,
-    "aiTurnMsMedian": 313,
-    "aiTurnMsMax": 418,
+    "frames": 807,
+    "slowFramesOver25ms": 24,
+    "worstFrameMs": 833,
+    "worstSimMsInFrame": 1.7,
+    "aiTurnMsMedian": 565,
+    "aiTurnMsMax": 820,
     "pageErrors": []
   }
 }

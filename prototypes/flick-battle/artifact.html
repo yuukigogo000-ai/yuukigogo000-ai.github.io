@@ -80,9 +80,16 @@
   </label>
   <label>落ちたら
     <select id="rule">
-      <option value="base">即やられる</option>
+      <option value="ringReturn" selected>体力が減って戻る</option>
       <option value="shooterSafe">弾いた本人は落ちない</option>
-      <option value="ringReturn">傷を負って戻る</option>
+      <option value="base">即やられる</option>
+    </select>
+  </label>
+  <label>体力と場外
+    <select id="hpk">
+      <option value="half" selected>半分以下だけ落ちる</option>
+      <option value="both">減るほど飛びやすい</option>
+      <option value="off">関係なし</option>
     </select>
   </label>
   <button id="auto" type="button">おまかせで1手</button>
@@ -165,7 +172,9 @@
     return {
       stage: stageKey, w: W, h: H, gaps: st.gaps, units,
       // shooterSafe: 弾いた味方本人は柵の切れ目でも跳ね返る / playerRingReturn: 味方は落ちても最大HPの3割を失って元の位置に戻る
-      rules: Object.assign({ shooterSafe: false, playerRingReturn: false }, overrides && overrides.rules),
+      // hpKnockback: 'off' | 'enemy'(敵だけ) | 'both'(全員)。体力が減るほど押されやすくなる
+      // ringHalf: 体力が半分より多い駒は柵の切れ目でも落ちない(削ってから落とす)
+      rules: Object.assign({ shooterSafe: false, playerRingReturn: false, hpKnockback: 'off', ringHalf: false }, overrides && overrides.rules),
       phase: 'aim', active: 0, queue: [], motion: null,
       turnNo: 1, shots: 0, events: [],
       stats: { capHits: 0, maxMotionSteps: 0, steps: 0, maxPenetration: 0, dmgDirect: 0, dmgSkill: 0,
@@ -187,6 +196,16 @@
   }
 
   // ---- 戦闘ルール ----------------------------------------------------------
+
+  // 押されやすさ(質量の逆数)。体力満タンは貼りついていて動きにくく(0.7 倍)、
+  // 体力が尽きかけると 2.5 倍飛ぶ。
+  function invM(s, u) {
+    if (u.invMass === 0) return 0;
+    const mode = s.rules.hpKnockback;
+    if (mode === 'off' || (mode === 'enemy' && u.side === 0)) return u.invMass;
+    const ratio = u.hp > 0 ? u.hp / u.maxHp : 0;
+    return u.invMass * (0.7 + 1.8 * (1 - ratio));
+  }
 
   function knockOut(s, u, how) {
     if (how === 'ring' && u.side === 0 && s.rules.playerRingReturn) {
@@ -246,7 +265,7 @@
         if (d >= R + u.r) continue;
         damage(s, by, u, Math.round(by.atk * 0.5), true);
         if (!u.alive || u.anchored || d === 0) continue;
-        const k = 700 * (1 - d / (R + u.r)) * u.invMass / d;
+        const k = 700 * (1 - d / (R + u.r)) * invM(s, u) / d;
         u.vx += dx * k; u.vy += dy * k;
       }
     }
@@ -274,7 +293,8 @@
 
   const NO_GAPS = { top: [], bottom: [], left: [], right: [] };
   function rails(s, u) {
-    const g = (s.rules.shooterSafe && u.side === 0 && s.motion && s.motion.shooter === u.id) ? NO_GAPS : s.gaps;
+    const safe = (s.rules.shooterSafe && u.side === 0 && s.motion && s.motion.shooter === u.id) || (s.rules.ringHalf && u.hp * 2 > u.maxHp);
+    const g = safe ? NO_GAPS : s.gaps;
     if (u.x < u.r) {
       if (inGap(g.left, u.y)) { if (u.x < 0) return knockOut(s, u, 'ring'); }
       else { u.x = u.r; if (u.vx < 0) u.vx = -u.vx * E_RAIL; }
@@ -313,7 +333,7 @@
 
     let d = Math.sqrt(d2), nx = 1, ny = 0;
     if (d > 0) { nx = dx / d; ny = dy / d; }
-    const ia = a.invMass, ib = b.invMass, isum = ia + ib;
+    const ia = invM(s, a), ib = invM(s, b), isum = ia + ib;
     if (isum === 0) return;
     const pen = rr - d;
     if (pen > s.stats.maxPenetration) s.stats.maxPenetration = pen;
@@ -411,7 +431,7 @@
         if (!o.alive || o.anchored || o.id === u.id) continue;
         const dx = u.x - o.x, dy = u.y - o.y, d = Math.sqrt(dx * dx + dy * dy);
         if (d === 0) continue;
-        const k = u.pull * o.invMass / d;
+        const k = u.pull * invM(s, o) / d;
         o.vx += dx * k; o.vy += dy * k;
       }
       startMotion(s, -1);
@@ -548,6 +568,7 @@
   const $ = (id) => document.getElementById(id);
   const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('wrap');
   const RULES = { base: {}, shooterSafe: { shooterSafe: true }, ringReturn: { playerRingReturn: true } };
+  const HP_RULES = { half: { ringHalf: true }, both: { hpKnockback: 'both' }, off: {} };
   const SKILL_JA = { slash: '一閃', heal: '給食', stun: '足止め', burst: 'びっくり箱' };
 
   let state, scale = 1, dpr = 1, colors = {};
@@ -564,7 +585,7 @@
   }
 
   function newGame() {
-    state = S.createState($('stage').value, { rules: RULES[$('rule').value] });
+    state = S.createState($('stage').value, { rules: Object.assign({}, RULES[$('rule').value], HP_RULES[$('hpk').value]) });
     popups = []; rings = []; aim = null; acc = 0; pauseUntil = 0; busy = false;
     $('overlay').hidden = true;
     updateStatus();
@@ -637,6 +658,7 @@
   $('again').addEventListener('click', newGame);
   $('stage').addEventListener('change', newGame);
   $('rule').addEventListener('change', newGame);
+  $('hpk').addEventListener('change', newGame);
 
   // ---- 出来事を画面に出す ----------------------------------------------------
   function consumeEvents(now) {
@@ -699,15 +721,27 @@
       const pulse = 4 + 2 * Math.sin(now / 180);
       ctx.beginPath(); ctx.arc(u.x, u.y, u.r + pulse, 0, Math.PI * 2); ctx.strokeStyle = colors.accent; ctx.lineWidth = 3; ctx.stroke();
     }
+    const ratio = Math.max(0, u.hp / u.maxHp);
+    // はがれかけ(落ちる・飛びやすい状態)の駒は色を薄くする
+    let alpha = 1;
+    if (!u.anchored) {
+      if (state.rules.ringHalf) alpha = u.hp * 2 > u.maxHp ? 1 : 0.55;
+      else if (state.rules.hpKnockback === 'both' || (state.rules.hpKnockback === 'enemy' && !ally)) alpha = 0.5 + 0.5 * ratio;
+    }
+    ctx.globalAlpha = alpha;
     ctx.beginPath(); ctx.arc(u.x, u.y, u.r, 0, Math.PI * 2); ctx.fillStyle = base; ctx.fill();
+    ctx.globalAlpha = 1;
     if (u.move === 'pierce') { ctx.setLineDash([3, 3]); ctx.strokeStyle = fg; ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]); }
     ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     ctx.font = '700 ' + Math.max(10, Math.round(u.r * 0.62)) + 'px ' + getComputedStyle(document.body).fontFamily;
     ctx.fillText(u.name.slice(0, u.r >= 28 ? 3 : 2), u.x, u.y);
     // 体力
-    const w = u.r * 1.8, hx = u.x - w / 2, hy = u.y + u.r + 3, ratio = Math.max(0, u.hp / u.maxHp);
-    ctx.fillStyle = colors.line; ctx.fillRect(hx, hy, w, 4);
-    ctx.fillStyle = ratio > 0.4 ? colors.heal : colors.danger; ctx.fillRect(hx, hy, w * ratio, 4);
+    const w = Math.max(30, u.r * 1.8), hx = u.x - w / 2, hy = u.y + u.r + 3;
+    ctx.fillStyle = colors.line; ctx.fillRect(hx, hy, w, 6);
+    ctx.fillStyle = ratio > 0.4 ? colors.heal : colors.danger; ctx.fillRect(hx, hy, w * ratio, 6);
+    ctx.font = '700 10px ' + getComputedStyle(document.body).fontFamily;
+    ctx.lineWidth = 3; ctx.strokeStyle = colors.table; ctx.strokeText(String(Math.max(0, u.hp)), u.x, hy + 13);
+    ctx.fillStyle = colors.fg; ctx.fillText(String(Math.max(0, u.hp)), u.x, hy + 13);
     // 敵のカウント
     if (!ally) {
       const bx = u.x + u.r * 0.72, by = u.y - u.r * 0.72;

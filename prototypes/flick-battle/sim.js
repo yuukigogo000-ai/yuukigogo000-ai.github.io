@@ -74,7 +74,9 @@
     return {
       stage: stageKey, w: W, h: H, gaps: st.gaps, units,
       // shooterSafe: 弾いた味方本人は柵の切れ目でも跳ね返る / playerRingReturn: 味方は落ちても最大HPの3割を失って元の位置に戻る
-      rules: Object.assign({ shooterSafe: false, playerRingReturn: false }, overrides && overrides.rules),
+      // hpKnockback: 'off' | 'enemy'(敵だけ) | 'both'(全員)。体力が減るほど押されやすくなる
+      // ringHalf: 体力が半分より多い駒は柵の切れ目でも落ちない(削ってから落とす)
+      rules: Object.assign({ shooterSafe: false, playerRingReturn: false, hpKnockback: 'off', ringHalf: false }, overrides && overrides.rules),
       phase: 'aim', active: 0, queue: [], motion: null,
       turnNo: 1, shots: 0, events: [],
       stats: { capHits: 0, maxMotionSteps: 0, steps: 0, maxPenetration: 0, dmgDirect: 0, dmgSkill: 0,
@@ -96,6 +98,16 @@
   }
 
   // ---- 戦闘ルール ----------------------------------------------------------
+
+  // 押されやすさ(質量の逆数)。体力満タンは貼りついていて動きにくく(0.7 倍)、
+  // 体力が尽きかけると 2.5 倍飛ぶ。
+  function invM(s, u) {
+    if (u.invMass === 0) return 0;
+    const mode = s.rules.hpKnockback;
+    if (mode === 'off' || (mode === 'enemy' && u.side === 0)) return u.invMass;
+    const ratio = u.hp > 0 ? u.hp / u.maxHp : 0;
+    return u.invMass * (0.7 + 1.8 * (1 - ratio));
+  }
 
   function knockOut(s, u, how) {
     if (how === 'ring' && u.side === 0 && s.rules.playerRingReturn) {
@@ -155,7 +167,7 @@
         if (d >= R + u.r) continue;
         damage(s, by, u, Math.round(by.atk * 0.5), true);
         if (!u.alive || u.anchored || d === 0) continue;
-        const k = 700 * (1 - d / (R + u.r)) * u.invMass / d;
+        const k = 700 * (1 - d / (R + u.r)) * invM(s, u) / d;
         u.vx += dx * k; u.vy += dy * k;
       }
     }
@@ -183,7 +195,8 @@
 
   const NO_GAPS = { top: [], bottom: [], left: [], right: [] };
   function rails(s, u) {
-    const g = (s.rules.shooterSafe && u.side === 0 && s.motion && s.motion.shooter === u.id) ? NO_GAPS : s.gaps;
+    const safe = (s.rules.shooterSafe && u.side === 0 && s.motion && s.motion.shooter === u.id) || (s.rules.ringHalf && u.hp * 2 > u.maxHp);
+    const g = safe ? NO_GAPS : s.gaps;
     if (u.x < u.r) {
       if (inGap(g.left, u.y)) { if (u.x < 0) return knockOut(s, u, 'ring'); }
       else { u.x = u.r; if (u.vx < 0) u.vx = -u.vx * E_RAIL; }
@@ -222,7 +235,7 @@
 
     let d = Math.sqrt(d2), nx = 1, ny = 0;
     if (d > 0) { nx = dx / d; ny = dy / d; }
-    const ia = a.invMass, ib = b.invMass, isum = ia + ib;
+    const ia = invM(s, a), ib = invM(s, b), isum = ia + ib;
     if (isum === 0) return;
     const pen = rr - d;
     if (pen > s.stats.maxPenetration) s.stats.maxPenetration = pen;
@@ -320,7 +333,7 @@
         if (!o.alive || o.anchored || o.id === u.id) continue;
         const dx = u.x - o.x, dy = u.y - o.y, d = Math.sqrt(dx * dx + dy * dy);
         if (d === 0) continue;
-        const k = u.pull * o.invMass / d;
+        const k = u.pull * invM(s, o) / d;
         o.vx += dx * k; o.vy += dy * k;
       }
       startMotion(s, -1);
