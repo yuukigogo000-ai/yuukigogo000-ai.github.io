@@ -1,0 +1,13 @@
+{
+  "name": "けもの天下",
+  "short_name": "けもの天下",
+  "description": "12 の国を取り合う、けものたちの国盗りゲーム",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f1eee6",
+  "theme_color": "#f1eee6",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

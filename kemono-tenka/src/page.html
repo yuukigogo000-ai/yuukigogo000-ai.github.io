@@ -1,0 +1,107 @@
+<title>けもの天下</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<style>
+  /* レイアウト: 1 画面のアプリ。上に年・米・国の数、家の一覧、中央に地図(canvas)、下に選んだ国の命令。 */
+  :root {
+    --bg: #f1eee6; --surface: #ffffff; --fg: #24201a; --muted: #6b655a; --line: #d3ccbd;
+    --land: #e4dcc8; --road: #b9ae97; --neutral: #9a9488; --neutral-fg: #ffffff;
+    --c0: #8a5a2b; --c1: #2f7d57; --c2: #c9622a; --c3: #a04a86; --clan-fg: #ffffff;
+    --accent: #1f5f8b; --accent-fg: #ffffff; --danger: #b8322a; --good: #23794f; --gold: #9a6a10;
+    --font: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17150f; --surface: #23201a; --fg: #ece7dc; --muted: #a39c8d; --line: #3d382d;
+      --land: #2e2a20; --road: #5a5343; --neutral: #777266; --neutral-fg: #17150f;
+      --c0: #c99558; --c1: #63c796; --c2: #f09a62; --c3: #e08fc8; --clan-fg: #17150f;
+      --accent: #6db7e6; --accent-fg: #06202e; --danger: #ff8a7d; --good: #6fd6a0; --gold: #f0b54a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17150f; --surface: #23201a; --fg: #ece7dc; --muted: #a39c8d; --line: #3d382d;
+    --land: #2e2a20; --road: #5a5343; --neutral: #777266; --neutral-fg: #17150f;
+    --c0: #c99558; --c1: #63c796; --c2: #f09a62; --c3: #e08fc8; --clan-fg: #17150f;
+    --accent: #6db7e6; --accent-fg: #06202e; --danger: #ff8a7d; --good: #6fd6a0; --gold: #f0b54a;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.45;
+    display: flex; flex-direction: column; gap: 6px; box-sizing: border-box;
+    padding-block: 8px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    overscroll-behavior: contain; -webkit-user-select: none; user-select: none;
+  }
+  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .top h1 { font-size: 15px; margin: 0; font-weight: 700; }
+  .top .when { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; flex-wrap: wrap; }
+  .bar b { font-weight: 700; }
+  .pips { letter-spacing: 3px; color: var(--accent); }
+  .clans { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+  .clan { border: 1px solid var(--line); border-left-width: 6px; border-radius: 8px; padding: 3px 5px; background: var(--surface); min-width: 0; text-align: left; min-height: 44px; font: inherit; color: var(--fg); }
+  .clan b { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .clan span { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .clan.gone { opacity: .4; }
+  .stage-wrap { flex: 1 1 auto; min-height: 0; position: relative; display: flex; justify-content: center; align-items: center; }
+  canvas { display: block; touch-action: manipulation; max-width: 100%; border-radius: 10px; }
+  .sheet { display: flex; flex-direction: column; gap: 6px; }
+  .info { color: var(--muted); min-height: 2.9em; font-size: 13px; text-align: center; }
+  .acts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .acts.three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  button {
+    font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 4px; min-height: 44px; min-width: 0;
+  }
+  button.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 700; }
+  button.warn { border-color: var(--danger); color: var(--danger); }
+  button:disabled { opacity: .5; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button small { display: block; font-size: 11px; color: inherit; opacity: .8; }
+  .panel {
+    position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; align-items: stretch; justify-content: center;
+    background: color-mix(in srgb, var(--bg) 94%, transparent); border-radius: 10px; padding: 12px; overflow-y: auto;
+  }
+  .panel h2 { font-size: 20px; margin: 0; text-align: center; }
+  .panel p { margin: 0; text-align: center; color: var(--muted); }
+  .panel .big { font-size: 26px; font-weight: 800; text-align: center; }
+  .panel ul { margin: 0; padding-left: 1.2em; }
+  .panel li { margin-block: 2px; }
+  .panel li.good { color: var(--good); } .panel li.bad { color: var(--danger); } .panel li.big { font-weight: 700; }
+  .panel .rows { display: grid; grid-template-columns: auto auto; gap: 2px 14px; justify-content: center; font-variant-numeric: tabular-nums; }
+  .panel .rows span:nth-child(odd) { color: var(--muted); }
+  .choice { text-align: left; padding: 8px 10px; }
+  .choice b { display: block; } .choice span { color: var(--muted); font-size: 13px; }
+  .choice.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+</style>
+
+<div class="top">
+  <h1>けもの天下</h1>
+  <div class="when" id="when"></div>
+</div>
+<div class="bar" id="bar" hidden>
+  <div id="rice"></div>
+  <div id="provs"></div>
+  <div>命令 <span class="pips" id="pips"></span></div>
+</div>
+<div class="clans" id="clans" aria-label="4 つの家"></div>
+<div class="stage-wrap" id="wrap">
+  <canvas id="cv" aria-label="国の地図。国をタップすると命令を選べます"></canvas>
+  <div class="panel" id="panel" hidden></div>
+</div>
+<div class="sheet">
+  <div class="info" id="info"></div>
+  <div class="acts" id="acts"></div>
+  <div class="acts three">
+    <button type="button" id="advice">家臣の進言</button>
+    <button type="button" id="logBtn">きろく</button>
+    <button type="button" class="primary" id="end">番をおえる</button>
+  </div>
+</div>
+
+<script>/*__BUNDLE__*/</script>

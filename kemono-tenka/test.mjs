@@ -71,7 +71,7 @@ const quiet = (s) => { for (const c of s.clans) c.intents = []; return s; }; // 
   a.pact = 4; set(s, 6, a.id, 1, { castle: 0 }); home(s).troops = 8; C.order(s, { t: 'march', from: 9, to: 6, sent: 7 });
   ok('約束を破ると、すべての家からの信用を失う', a.pact === 0 && a.rel <= -3 && b.rel === -3, [a.rel, b.rel]);
   // 約束は守られる
-  s = G({ clan: 1 }); const f = s.clans.find((c) => c.id !== s.player); f.pact = 3;
+  s = G({ clan: 1 }); s.turn = 5; const f = s.clans.find((c) => c.id !== s.player); f.pact = 3;
   set(s, 6, f.id, 12, { castle: 0 }); home(s).troops = 1; f.intents = [{ t: 'march', from: 6, to: 9, sent: 11 }];
   for (const c of s.clans) if (c.id !== f.id) c.intents = [];
   C.endTurn(s);
@@ -93,7 +93,7 @@ const quiet = (s) => { for (const c of s.clans) c.intents = []; return s; }; // 
 }
 // ---- 相手の予告と動き --------------------------------------------------------
 {
-  let s = G({ clan: 1 }); const bear = s.clans.find((c) => c.key === 'bear');
+  let s = G({ clan: 1 }); s.turn = 5; const bear = s.clans.find((c) => c.key === 'bear'); // 2 年目(本拠を攻められる)
   for (const c of s.clans) c.intents = [];
   set(s, 6, bear.id, 9, { castle: 0 }); home(s).troops = 2; home(s).castle = 0;
   bear.intents = [{ t: 'march', from: 6, to: 9, sent: 8 }];
@@ -104,7 +104,7 @@ const quiet = (s) => { for (const c of s.clans) c.intents = []; return s; }; // 
   me(s).rice = 12; C.order(s, { t: 'recruit', at: 9 }); C.order(s, { t: 'recruit', at: 9 }); C.order(s, { t: 'fortify', at: 9 }); C.endTurn(s);
   ok('予告を見て守りを固めれば、はね返せる(クマ家は取りやめない)', s.provs[9].owner === s.player && s.provs[6].troops < 9, [s.provs[9].owner, s.provs[6].troops]);
   // カメ家は勝ち目がなくなると取りやめる
-  s = G({ clan: 0 }); const turtle = s.clans.find((c) => c.key === 'turtle');
+  s = G({ clan: 0 }); s.turn = 5; const turtle = s.clans.find((c) => c.key === 'turtle');
   for (const c of s.clans) c.intents = [];
   set(s, 6, turtle.id, 9, { castle: 0 }); home(s).troops = 20;
   turtle.intents = [{ t: 'march', from: 6, to: 9, sent: 8 }]; C.endTurn(s);
@@ -117,6 +117,16 @@ const quiet = (s) => { for (const c of s.clans) c.intents = []; return s; }; // 
   C.order(s, { t: 'march', from: 9, to: 6, sent: 11 }); C.endTurn(s);
   ok('出どころの国を先に取れば、その攻めは取りやめになる', s.provs[6].owner === s.player && s.log.some((l) => l.text.includes('取りやめ')), s.log.slice(-4).map((l) => l.text));
   ok('相手は番のあと、次の予定を出し直す', s.clans.filter((c) => c.id !== s.player && c.alive).every((c) => Array.isArray(c.intents)));
+}
+{
+  // 最初の 1 年は本拠を攻められない(自分も相手も)
+  const s = quiet(G({ clan: 1 })); const a = s.clans.find((c) => c.id !== s.player);
+  set(s, 6, a.id, 9, { castle: 0 }); s.clans[a.id].home = 6; home(s).troops = 30;
+  ok('最初の 1 年は、ほかの家の本拠を攻められない', C.whyNot(s, s.player, { t: 'march', from: 9, to: 6, sent: 20 }) !== null);
+  s.turn = C.TRUCE_TURNS + 1; ok('2 年目からは攻められる', C.whyNot(s, s.player, { t: 'march', from: 9, to: 6, sent: 20 }) === null);
+  let early = 0;
+  for (let seed = 1; seed <= 120; seed++) { const g = C.newGame({ seed, clan: seed % 4, difficulty: 'hard' }); while (g.phase !== 'over' && g.turn <= C.TRUCE_TURNS) { if (g.event) C.answerEvent(g, 'A'); else C.endTurn(g); } if (g.phase === 'over') early++; }
+  ok('何もしなくても、最初の 1 年のうちに負けることはない(120 回・むずかしい)', early === 0, early);
 }
 // ---- 決着・包囲網 ------------------------------------------------------------
 {
@@ -132,7 +142,7 @@ const quiet = (s) => { for (const c of s.clans) c.intents = []; return s; }; // 
   ok('包囲網のあいだは約束を結べない', (() => { const o = s.clans.find((c) => c.id !== s.player); o.rel = 5; s.clans[s.player].rice = 9; return C.whyNot(s, s.player, { t: 'pact', clan: o.id }) !== null; })());
   s = quiet(G({ clan: 1 })); s.turn = C.MAX_TURNS; set(s, 6, s.player, 1); C.endTurn(s);
   ok('6 年が過ぎたら、いちばん多くの国を持つ家の勝ち', s.phase === 'over' && s.winner === s.player && s.endReason.includes('6 年'), [s.winner, s.endReason]);
-  s = quiet(G({ clan: 1 })); const e = s.clans.find((c) => c.id !== s.player); set(s, 9, e.id, 5);
+  s = quiet(G({ clan: 1 })); s.turn = 5; const e = s.clans.find((c) => c.id !== s.player); set(s, 9, e.id, 5);
   C.endTurn(s); ok('自分の国がなくなったら負け', s.phase === 'over' && s.winner !== s.player);
 }
 // ---- 出来事 ------------------------------------------------------------------

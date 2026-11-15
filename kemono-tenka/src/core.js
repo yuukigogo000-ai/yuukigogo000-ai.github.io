@@ -15,6 +15,7 @@ export const WIN_PROVS = 7;        // この数の国を持った家が天下人
 export const MAX_TURNS = 24;       // 6 年 × 4 季
 export const ORDERS_PER_TURN = 3;
 export const COALITION_AT = 5;     // この数の国を持つ単独首位に、包囲網が組まれる
+export const TRUCE_TURNS = 4;      // 最初の 1 年は、どの家も、ほかの家の本拠を攻められない
 const CASTLE_MUL = [1, 1.3, 1.6];
 export const SEASONS = ['春', '夏', '秋', '冬'];
 
@@ -218,6 +219,7 @@ export function whyNot(s, clan, order) {
     if (a.adj.indexOf(d.id) < 0) return 'となりの国にしか出せません';
     if (!(order.sent >= 1) || order.sent > a.troops - 1) return '国には兵を 1 つ残します';
     if (a.tired) return '攻め取ったばかりの国からは、このターンは出せません';
+    if (s.turn <= TRUCE_TURNS && d.owner >= 0 && d.owner !== clan && s.clans[d.owner].home === d.id) return '最初の 1 年は、ほかの家の本拠を攻められません';
     return null;
   }
   if (order.t === 'recruit' || order.t === 'develop' || order.t === 'fortify') {
@@ -347,6 +349,7 @@ export function rankOrders(s, clan, opts) {
         continue;
       }
       if (clan !== s.player && q.owner === s.player && c.pact > 0) continue;       // 約束は守る
+      if (whyNot(s, clan, { t: 'march', from: p.id, to: q.id, sent })) continue;      // 最初の 1 年の本拠など、出せない攻めは考えない
       if (clan === s.player && q.owner >= 0 && s.clans[q.owner].pact > 0) continue; // 進言では約束破りをすすめない
       const f = forecast(s, p.id, q.id, sent);
       if (!f.win || f.atk < f.def * P.margin) continue;
@@ -397,7 +400,7 @@ function runIntents(s, c) {
       if (a.owner !== c.id) { say(s, c.name + ' の攻めは、出どころの国を失って取りやめになった', 'good'); continue; }
       if (d.owner === s.player && c.pact > 0) continue;
       const sent = a.troops - 1;
-      if (sent < 1 || a.tired) continue;
+      if (sent < 1 || whyNot(s, c.id, { t: 'march', from: a.id, to: d.id, sent })) continue;
       if (d.owner !== c.id && !PERSONA[c.key].commit && !forecast(s, a.id, d.id, sent).win) { say(s, c.name + ' は ' + d.name + ' への攻めを取りやめた(勝ち目がなくなった)', d.owner === s.player ? 'good' : 'info'); continue; }
       march(s, c.id, a.id, d.id, sent);
       checkEnd(s);

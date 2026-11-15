@@ -1,0 +1,77 @@
+{
+  "360x800-light": {
+    "clan": 0,
+    "diff": "やさしい",
+    "noHScroll": true,
+    "noVScroll": true,
+    "manualRecruit": true,
+    "marchConfirmShown": true,
+    "steps": 67,
+    "end": {
+      "phase": "over",
+      "turn": 16,
+      "won": true,
+      "reason": "7 国を手にした",
+      "saved": true
+    },
+    "errors": []
+  },
+  "360x800-dark": {
+    "clan": 1,
+    "diff": "ふつう",
+    "noHScroll": true,
+    "noVScroll": true,
+    "manualRecruit": true,
+    "marchConfirmShown": true,
+    "steps": 46,
+    "end": {
+      "phase": "over",
+      "turn": 18,
+      "won": false,
+      "reason": "7 国を手にした",
+      "saved": true
+    },
+    "errors": []
+  },
+  "390x844-light": {
+    "clan": 2,
+    "diff": "むずかしい",
+    "noHScroll": true,
+    "noVScroll": true,
+    "manualRecruit": true,
+    "marchConfirmShown": true,
+    "steps": 109,
+    "end": {
+      "phase": "over",
+      "turn": 24,
+      "won": false,
+      "reason": "6 年がすぎ、いちばん多くの国を持っていた",
+      "saved": true
+    },
+    "errors": []
+  },
+  "390x844-dark": {
+    "clan": 3,
+    "diff": "やさしい",
+    "noHScroll": true,
+    "noVScroll": true,
+    "manualRecruit": true,
+    "marchConfirmShown": true,
+    "steps": 53,
+    "end": {
+      "phase": "over",
+      "turn": 12,
+      "won": true,
+      "reason": "7 国を手にした",
+      "saved": true
+    },
+    "errors": []
+  },
+  "offline": {
+    "controlled": true,
+    "offlineOk": true,
+    "resumeShown": true,
+    "resumedAtTurn2": true,
+    "errors": []
+  }
+}
