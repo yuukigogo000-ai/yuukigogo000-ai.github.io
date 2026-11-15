@@ -1,0 +1,183 @@
+{
+  "360x800-light": {
+    "char": 0,
+    "diff": 0,
+    "noHScroll": true,
+    "noVScroll": true,
+    "dragSetsTicks": true,
+    "forecastShown": true,
+    "animated": true,
+    "clockMoved": true,
+    "steps": 50,
+    "seen": [
+      "reward",
+      "map",
+      "event",
+      "rest",
+      "battle2",
+      "battle3"
+    ],
+    "fit": {
+      "title": true,
+      "intro": true,
+      "map": true,
+      "reward": true,
+      "event": true,
+      "rest": true,
+      "end": true
+    },
+    "end": {
+      "phase": "over",
+      "result": {
+        "win": true,
+        "how": "dawn",
+        "step": 8,
+        "ticks": 32
+      },
+      "deck": 12,
+      "relics": 2,
+      "fights": 5,
+      "saved": true,
+      "ending": "夜明け"
+    },
+    "errors": []
+  },
+  "360x800-dark": {
+    "char": 1,
+    "diff": 1,
+    "noHScroll": true,
+    "noVScroll": true,
+    "dragSetsTicks": true,
+    "forecastShown": true,
+    "animated": true,
+    "clockMoved": true,
+    "steps": 63,
+    "seen": [
+      "battle3",
+      "reward",
+      "map",
+      "event",
+      "shop",
+      "rest",
+      "battle2"
+    ],
+    "fit": {
+      "title": true,
+      "intro": true,
+      "map": true,
+      "reward": true,
+      "event": true,
+      "shop": true,
+      "rest": true,
+      "end": true
+    },
+    "end": {
+      "phase": "over",
+      "result": {
+        "win": true,
+        "how": "dawn",
+        "step": 8,
+        "ticks": 36
+      },
+      "deck": 11,
+      "relics": 1,
+      "fights": 3,
+      "saved": true,
+      "ending": "夜明け"
+    },
+    "errors": []
+  },
+  "390x844-light": {
+    "char": 2,
+    "diff": 0,
+    "noHScroll": true,
+    "noVScroll": true,
+    "dragSetsTicks": true,
+    "forecastShown": true,
+    "animated": true,
+    "clockMoved": true,
+    "steps": 90,
+    "seen": [
+      "reward",
+      "map",
+      "event",
+      "battle3",
+      "rest",
+      "battle2"
+    ],
+    "fit": {
+      "title": true,
+      "intro": true,
+      "map": true,
+      "reward": true,
+      "event": true,
+      "rest": true,
+      "end": true
+    },
+    "end": {
+      "phase": "over",
+      "result": {
+        "win": true,
+        "how": "dawn",
+        "step": 8,
+        "ticks": 36
+      },
+      "deck": 12,
+      "relics": 3,
+      "fights": 5,
+      "saved": true,
+      "ending": "夜明け"
+    },
+    "errors": []
+  },
+  "390x844-dark": {
+    "char": 0,
+    "diff": 2,
+    "noHScroll": true,
+    "noVScroll": true,
+    "dragSetsTicks": true,
+    "forecastShown": true,
+    "animated": true,
+    "clockMoved": true,
+    "steps": 34,
+    "seen": [
+      "battle3",
+      "reward",
+      "map",
+      "event",
+      "rest",
+      "battle2"
+    ],
+    "fit": {
+      "title": true,
+      "intro": true,
+      "map": true,
+      "reward": true,
+      "event": true,
+      "rest": true,
+      "end": true
+    },
+    "end": {
+      "phase": "over",
+      "result": {
+        "win": false,
+        "how": "dead",
+        "step": 4
+      },
+      "deck": 10,
+      "relics": 0,
+      "fights": 3,
+      "saved": true,
+      "ending": "明けない夜"
+    },
+    "errors": []
+  },
+  "offline": {
+    "controlled": true,
+    "offlineOk": true,
+    "resumeShown": true,
+    "resumedSameState": true,
+    "bagShown": true,
+    "errors": []
+  }
+}

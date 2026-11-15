@@ -1,0 +1,1129 @@
+<title>うしみつ時計</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<style>
+  /* レイアウト: 1 画面のアプリ。上から 刻限・体力 → 化け物 → 時計(canvas)→ 見通しの一言 → 構えと札 → 回す刻と「決める」。 */
+  /* 色は夜の 1 種類だけ(明るい版は作らない)。見た目は仮で、仕上げは別作業 */
+  :root {
+    color-scheme: dark;
+    --bg: #0d0e14; --surface: #1a1c26; --fg: #ebe6d8; --muted: #9a968a; --line: #343746;
+    --face: #151722; --rim: #3d4154; --hand: #ebe6d8;
+    --f0: #e0705a; --f1: #5fb0c9; --f2: #c79bdf; --foe-fg: #0d0e14;
+    --atk: #e0705a; --def: #6aa8ff; --waza: #e0b85a; --fire: #ff9a4a;
+    --accent: #e0b85a; --accent-fg: #17130a; --danger: #ff7a66; --good: #7fd6a8;
+    --font: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.45;
+    display: flex; flex-direction: column; gap: 6px; box-sizing: border-box;
+    padding-block: 8px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    overscroll-behavior: contain; -webkit-user-select: none; user-select: none;
+  }
+  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .top h1 { font-size: 15px; margin: 0; font-weight: 700; }
+  .top .when { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .bar { display: flex; align-items: center; gap: 8px; font-variant-numeric: tabular-nums; }
+  .bar .hp { flex: 1 1 auto; height: 10px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); overflow: hidden; }
+  .bar .hp i { display: block; height: 100%; background: var(--good); }
+  .bar .hp i.low { background: var(--danger); }
+  .bar button { min-height: 32px; padding: 2px 10px; font-size: 13px; }
+  .main { flex: 1 1 auto; min-height: 0; position: relative; display: flex; flex-direction: column; gap: 6px; }
+  .foes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+  .foe { border: 1px solid var(--line); border-top-width: 5px; border-radius: 8px; padding: 3px 5px; background: var(--surface); min-width: 0; text-align: left; min-height: 64px; font: inherit; color: var(--fg); position: relative; }
+  .foe b { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .foe span { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+  .foe span.next { color: var(--fg); }
+  .foe.sel { box-shadow: inset 0 0 0 2px var(--accent); }
+  .foe.gone { opacity: .35; }
+  .foe .pop { position: absolute; right: 4px; top: 2px; font-weight: 800; font-size: 15px; color: var(--danger); animation: pop .7s ease-out forwards; pointer-events: none; }
+  @keyframes pop { from { transform: translateY(6px); opacity: 1; } to { transform: translateY(-10px); opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .foe .pop { animation-duration: .01s; } }
+  .stage-wrap { flex: 1 1 auto; min-height: 0; position: relative; display: flex; justify-content: center; align-items: center; }
+  canvas { display: block; touch-action: none; max-width: 100%; }
+  .sheet { display: flex; flex-direction: column; gap: 6px; }
+  .info { color: var(--muted); min-height: 2.9em; font-size: 13px; text-align: center; }
+  .info b { color: var(--fg); font-weight: 700; }
+  .info .bad { color: var(--danger); } .info .ok { color: var(--good); }
+  .acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .acts.cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .acts.cards.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .commit { display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px minmax(0, 2fr); gap: 6px; align-items: stretch; }
+  .commit .k { display: flex; align-items: center; justify-content: center; font-weight: 700; font-variant-numeric: tabular-nums; border: 1px solid var(--line); border-radius: 8px; }
+  button {
+    font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 4px; min-height: 44px; min-width: 0;
+  }
+  button.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 700; }
+  button:disabled { opacity: .45; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button small { display: block; font-size: 11px; color: inherit; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  button.act { border-left-width: 5px; }
+  button.act.atk { border-left-color: var(--atk); } button.act.def { border-left-color: var(--def); }
+  button.act.waza { border-left-color: var(--waza); } button.act.fire { border-left-color: var(--fire); }
+  button.act.sel { box-shadow: inset 0 0 0 2px var(--accent); }
+  button.act.empty { border-style: dashed; }
+  .panel {
+    position: absolute; inset: 0; display: flex; flex-direction: column; gap: 8px; align-items: stretch; justify-content: flex-start;
+    background: var(--bg); padding: 4px 0; overflow-y: auto; z-index: 2;
+  }
+  /* 中身が短いときは中央、長いときは上から順に読めて下へ送れる */
+  .panel > :first-child { margin-top: auto; } .panel > :last-child { margin-bottom: auto; }
+  .panel h2 { font-size: 20px; margin: 0; text-align: center; }
+  .panel h3 { font-size: 13px; margin: 6px 0 0; color: var(--muted); font-weight: 400; }
+  .panel p { margin: 0; text-align: center; color: var(--muted); }
+  .panel p.tale { color: var(--fg); text-align: left; line-height: 1.8; }
+  .panel p.note { color: var(--good); }
+  .panel .rows { display: grid; grid-template-columns: auto auto; gap: 2px 14px; justify-content: center; font-variant-numeric: tabular-nums; }
+  .panel .rows span:nth-child(odd) { color: var(--muted); }
+  .choice { text-align: left; padding: 8px 10px; }
+  .choice b { display: block; } .choice span { display: block; color: var(--muted); font-size: 13px; }
+  .choice.sel { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .hour { display: grid; grid-template-columns: 5.2em minmax(0, 1fr); gap: 8px; align-items: center; padding: 3px 0; border-top: 1px solid var(--line); }
+  .hour .h { color: var(--muted); font-size: 13px; }
+  .hour.past { opacity: .4; } .hour.now .h { color: var(--accent); font-weight: 700; }
+  .hour .o { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+  .hour .o span { color: var(--muted); }
+  .item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; text-align: left; padding: 6px 10px; }
+  .item b { display: block; } .item span { display: block; color: var(--muted); font-size: 13px; }
+  .item em { font-style: normal; font-variant-numeric: tabular-nums; color: var(--accent); }
+</style>
+
+<div class="top">
+  <h1>うしみつ時計</h1>
+  <div class="when" id="when"></div>
+</div>
+<div class="bar" id="bar" hidden>
+  <span id="hpText"></span>
+  <div class="hp" aria-hidden="true"><i id="hpBar"></i></div>
+  <span id="zeni"></span>
+  <button type="button" id="bag">もちもの</button>
+</div>
+<div class="main" id="main">
+  <div class="foes" id="foes" aria-label="化け物"></div>
+  <div class="stage-wrap" id="wrap">
+    <canvas id="cv" aria-label="時計。針を引っぱって、行動に使う刻を決めます"></canvas>
+  </div>
+  <div class="sheet">
+    <div class="info" id="info"></div>
+    <div class="acts" id="basics"></div>
+    <div class="acts cards" id="cards"></div>
+    <div class="commit">
+      <button type="button" id="less" aria-label="刻をへらす">−</button>
+      <div class="k" id="kText"></div>
+      <button type="button" id="more" aria-label="刻をふやす">＋</button>
+      <button type="button" class="primary" id="go">決める</button>
+    </div>
+  </div>
+  <div class="panel" id="panel" hidden></div>
+</div>
+
+<script>(function () {
+"use strict";
+// うしみつ時計: 中身の表(札・おまもり・化け物・夜回り)。決まりは battle.js / run.js。
+// 数字はすべて仮置き(模擬の打ち手でしか確かめていない)。
+
+// ---- 札 ---------------------------------------------------------------------
+// min〜max: 使う刻(針を回す量)。配列は「回した刻ごとの値」(min から順)。
+//   dmg ダメージ / hits 回数 / all 全員 / crush かまえへの効きの倍率 / exec 弱った相手への上乗せ / byBurn やけどの何倍かを上乗せ
+//   self 自分へのダメージ / strip かたさを消す / guard 守り(回している間) / ward 見切り / counter 無傷なら次の攻撃に上乗せ
+//   burn やけど / delay 印をおくらせる / heal 回復 / power 次の攻撃に上乗せ / draw 札を引く / quick 次の行動を短く / cleanse のろいと砂を消す
+//   once 1 回の戦いで 1 度きり
+const CARDS = {
+  kiru:      { name: '斬りこむ', kind: 'atk', min: 1, max: 3, dmg: [5, 11, 18] },
+  tsuki:     { name: '突き', kind: 'atk', min: 1, max: 1, dmg: [4], crush: 2 },
+  nidan:     { name: '二度打ち', kind: 'atk', min: 2, max: 2, dmg: [5], hits: 2 },
+  nagi:      { name: 'なぎ払い', kind: 'atk', min: 2, max: 3, dmg: [5, 9], all: true },
+  daijodan:  { name: '大上段', kind: 'atk', min: 4, max: 4, dmg: [28] },
+  kaeshi:    { name: '返し刀', kind: 'atk', min: 1, max: 1, dmg: [3], guard: [3] },
+  sutemi:    { name: '捨て身', kind: 'atk', min: 2, max: 2, dmg: [17], self: 3 },
+  todome:    { name: 'とどめ', kind: 'atk', min: 1, max: 1, dmg: [6], exec: 6 },
+  kuzushi:   { name: 'くずしの一撃', kind: 'atk', min: 2, max: 2, dmg: [7], crush: 3 },
+  hayawaza:  { name: '早業', kind: 'atk', min: 0, max: 0, dmg: [3] },
+  hyoshigi:  { name: '拍子木', kind: 'atk', min: 1, max: 1, dmg: [3], all: true, guard: [2] },
+  oharai:    { name: 'お祓い', kind: 'atk', min: 2, max: 2, dmg: [9], strip: true },
+  hinoko:    { name: '火の粉', kind: 'fire', min: 1, max: 2, burn: [3, 6] },
+  abura:     { name: '油をまく', kind: 'fire', min: 2, max: 2, burn: [3], all: true },
+  oibi:      { name: '追い火', kind: 'fire', min: 1, max: 1, dmg: [2], byBurn: 2 },
+  hidaruma:  { name: '火だるま', kind: 'fire', min: 3, max: 3, burn: [10] },
+  migamae:   { name: '身がまえ', kind: 'def', min: 1, max: 3, guard: [6, 13, 21] },
+  mikiri:    { name: '見切り', kind: 'def', min: 1, max: 1, ward: 1 },
+  yanagi:    { name: '柳に風', kind: 'def', min: 2, max: 2, guard: [8], counter: 6 },
+  jizo:      { name: '石地蔵', kind: 'def', min: 3, max: 3, guard: [25] },
+  shio:      { name: '塩をまく', kind: 'def', min: 1, max: 1, guard: [3], cleanse: true },
+  migawari:  { name: '身代わり札', kind: 'def', min: 0, max: 0, ward: 1, once: true },
+  fuda:      { name: '札を貼る', kind: 'waza', min: 1, max: 2, delay: [2, 3] },
+  suzu:      { name: '鈴を鳴らす', kind: 'waza', min: 1, max: 1, delay: [1], all: true },
+  kanashibari: { name: '金しばり', kind: 'waza', min: 2, max: 2, dmg: [4], delay: [3] },
+  hitoiki:   { name: '一息', kind: 'waza', min: 2, max: 2, heal: [6], once: true },
+  kiai:      { name: '気合', kind: 'waza', min: 1, max: 1, power: [6] },
+  sente:     { name: '先手', kind: 'waza', min: 0, max: 0, quick: 1, draw: 1 },
+  yonabe:    { name: '夜なべ', kind: 'waza', min: 3, max: 3, guard: [8], draw: 2 },
+};
+const CARD_IDS = Object.keys(CARDS);
+// いつでも使える 2 つの構え(札ではない)。値は夜回りごとに違う
+const BASIC = { utsu: { name: '打つ', kind: 'atk', min: 1, max: 3 }, ukeru: { name: '受ける', kind: 'def', min: 1, max: 3 } };
+
+const NUM = ['dmg', 'guard', 'burn', 'heal', 'power'];
+// 札の id('kiru' または きたえた 'kiru+')から、実際の値を引く
+function getCard(id) {
+  const plus = id.endsWith('+'), base = CARDS[plus ? id.slice(0, -1) : id];
+  if (!base) throw new Error('知らない札: ' + id);
+  if (!plus) return { id, ...base };
+  const c = { id, ...base, name: base.name + '+' };
+  let grew = false;
+  for (const k of NUM) if (c[k]) { c[k] = c[k].map((v) => Math.ceil(v * 1.35)); grew = true; }
+  if (c.delay) { c.delay = c.delay.map((v) => v + 1); grew = true; }
+  if (c.counter) c.counter += 3;
+  if (c.exec) c.exec += 3;
+  if (!grew) { if (c.ward) c.ward += 1; if (c.draw) c.draw += 1; }
+  return c;
+}
+const canUpgrade = (id) => !id.endsWith('+');
+
+// ---- おまもり -----------------------------------------------------------------
+const RELICS = {
+  hiuchi:   { name: '火打ち石', text: '戦いの始めに、化け物みんなにやけど 3' },
+  tokei:    { name: 'こわれた懐中時計', text: '戦いの最初の行動は、針が進まない' },
+  suzu:     { name: '魔よけの鈴', text: 'かまえを崩すたび、体力 3 回復' },
+  hanten:   { name: '厚い半纏', text: '「受ける」の守り +2' },
+  toishi:   { name: '研ぎ石', text: '「打つ」のダメージ +2' },
+  ningyo:   { name: '身代わり人形', text: '一夜に 1 度だけ、倒れるところを体力 1 でこらえる' },
+  yakogai:  { name: '夜光貝', text: '3 刻以上の行動をするたび、そのあいだ守り 4' },
+  juzu:     { name: '数珠', text: 'のろいを受けない' },
+  hoshigaki: { name: '干し柿', text: '戦いに勝つたび、体力 4 回復' },
+  oni:      { name: '鬼の面', text: '体力が半分以下のとき、攻撃のダメージ +3' },
+  fudabako: { name: '札箱', text: '手札の上限 +1' },
+  hane:     { name: '朝告げ鳥の羽', text: '丑三つ時の夜明けが 4 刻早く来る' },
+  maneki:   { name: 'まねき猫', text: '手に入る銭 +30%' },
+  omamori:  { name: '古いお守り', text: '戦いの始めに、見切り 1' },
+  himo:     { name: '赤いひも', text: '1 刻の行動のあと、次の攻撃 +2' },
+  kane:     { name: '割れ鐘', text: '化け物の最初の印が 2 刻おそくなる' },
+};
+const RELIC_IDS = Object.keys(RELICS);
+
+// ---- 化け物 -------------------------------------------------------------------
+// pat: 行動の並び(くり返す)。w = その行動までの刻。poise = かまえ(それだけ削ると行動をつぶせる)
+//   dmg(×x 回)/ curse のろい / slow 砂(次の行動 +1 刻)/ steal 札を落とす / armor かたさ / up 攻撃上げ / heal 回復 / summon 仲間を呼ぶ
+const FOES = {
+  chochin:   { name: '提灯お化け', hp: 32, pat: [{ n: '火をふく', dmg: 5, w: 3 }, { n: '火をふく', dmg: 5, w: 3 }, { n: '大あくび', dmg: 12, w: 5, poise: 7 }] },
+  kasa:      { name: 'からかさ', hp: 26, pat: [{ n: 'けとばす', dmg: 4, w: 3 }, { n: 'けとばす', dmg: 4, w: 3 }, { n: 'はねまわる', dmg: 2, x: 3, w: 3 }] },
+  kooni:     { name: '小鬼', hp: 16, pat: [{ n: 'ひっかく', dmg: 3, w: 3 }] },
+  hitotsume: { name: '一つ目小僧', hp: 38, pat: [{ n: 'にらむ', curse: 3, w: 3 }, { n: 'なぐる', dmg: 7, w: 3 }] },
+  nopperabo: { name: 'のっぺらぼう', hp: 40, pat: [{ n: '顔をかくす', armor: 3, w: 2 }, { n: 'なぐる', dmg: 8, w: 4 }] },
+  kappa:     { name: '河童', hp: 56, pat: [{ n: '水をかける', dmg: 5, w: 2 }, { n: 'すもう', dmg: 15, w: 5, poise: 9 }] },
+  sunakake:  { name: '砂かけ婆', hp: 44, pat: [{ n: '砂をかける', dmg: 2, slow: 1, w: 3 }, { n: 'つえでたたく', dmg: 7, w: 3 }] },
+  rokuro:    { name: 'ろくろ首', hp: 68, pat: [{ n: '巻きつく', dmg: 6, steal: 1, w: 3 }, { n: '首をのばす', dmg: 17, w: 6, poise: 11 }] },
+  yukionna:  { name: '雪女', hp: 72, pat: [{ n: '冷たい息', dmg: 8, w: 4 }, { n: '吹雪', dmg: 3, x: 4, w: 5 }, { n: 'こおらせる', slow: 1, curse: 2, w: 3 }] },
+  kamaitachi: { name: '鎌いたち', hp: 20, pat: [{ n: '切りつける', dmg: 4, w: 3 }] },
+  // 手ごわい相手
+  nurikabe:  { name: 'ぬりかべ', hp: 100, pat: [{ n: 'かたくなる', armor: 4, w: 3 }, { n: 'たおれこむ', dmg: 20, w: 6, poise: 14 }, { n: 'おしつぶす', dmg: 9, w: 3 }] },
+  kasha:     { name: '火車', hp: 88, pat: [{ n: '火の輪', dmg: 6, x: 2, w: 3 }, { n: 'いきおいづく', up: 2, w: 2 }, { n: 'ひきずる', dmg: 14, w: 5, poise: 10 }] },
+  mukade:    { name: '大百足', hp: 80, pat: [{ n: 'かみつく', dmg: 5, curse: 2, w: 2 }, { n: '百の足', dmg: 2, x: 6, w: 4 }, { n: '毒の牙', dmg: 8, curse: 4, w: 4, poise: 9 }] },
+  // 真夜中の主
+  ogama:     { name: '大がま', hp: 95, pat: [{ n: '舌をのばす', dmg: 8, steal: 1, w: 3 }, { n: '毒のあわ', dmg: 3, curse: 4, w: 3 }, { n: 'とびのる', dmg: 20, w: 6, poise: 14 }, { n: 'ふくらむ', armor: 4, heal: 6, w: 2 }] },
+  tsuchigumo: { name: '土ぐも', hp: 80, pat: [{ n: '子を呼ぶ', summon: 'kogumo', w: 3 }, { n: '糸をはく', dmg: 5, slow: 1, w: 3 }, { n: 'かみくだく', dmg: 16, w: 5, poise: 11 }] },
+  kogumo:    { name: '子ぐも', hp: 12, minion: true, pat: [{ n: 'かむ', dmg: 3, w: 2 }] },
+  // 丑三つ時に来るもの(それぞれ、戦いの決まりを 1 つ変える)
+  gasha:     { name: 'がしゃどくろ', hp: 145, rule: '手を倒しても、骨を集めてまた生やす', pat: [{ n: '骨を集める', summon: 'gashate', w: 3 }, { n: 'にぎりつぶす', dmg: 24, w: 7, poise: 18 }, { n: '歯を鳴らす', dmg: 6, curse: 3, w: 3 }] },
+  gashate:   { name: 'どくろの手', hp: 34, minion: true, pat: [{ n: 'なぎはらう', dmg: 6, w: 2 }] },
+  ushioni:   { name: '牛鬼', hp: 140, rule: '毒の息: 3 刻ごとに 2 ダメージ(守りでは防げない)', aura: { every: 3, dmg: 2 }, pat: [{ n: 'つので突く', dmg: 10, w: 3 }, { n: '毒をはく', dmg: 4, curse: 5, w: 3 }, { n: 'ふみつぶす', dmg: 26, w: 7, poise: 18 }] },
+  onyudo:    { name: '大入道', hp: 165, rule: '動くたびに、攻撃が 2 ずつ上がる', grow: 2, pat: [{ n: 'ふみつける', dmg: 7, w: 3 }, { n: '見おろす', dmg: 4, slow: 1, w: 2 }, { n: '張り手', dmg: 12, w: 4, poise: 12 }] },
+};
+const ENCOUNTERS = {
+  easy: [['chochin'], ['kasa', 'kooni'], ['hitotsume'], ['kooni', 'kooni'], ['nopperabo'], ['kasa', 'chochin']],
+  hard: [['kappa', 'kooni'], ['sunakake', 'kasa'], ['rokuro'], ['yukionna'], ['kamaitachi', 'kamaitachi', 'kamaitachi'], ['nopperabo', 'hitotsume']],
+  elite: [['nurikabe'], ['kasha'], ['mukade']],
+  mid: [['ogama'], ['tsuchigumo']],
+  boss: [['gasha'], ['ushioni'], ['onyudo']],
+};
+
+// ---- 夜回り -------------------------------------------------------------------
+const CHARS = [
+  { id: 'yokichi', name: '夜回りの与吉', hp: 56, utsu: [4, 9, 15], ukeru: [4, 9, 15], trait: '「打つ」が強い(1 刻 4 / 2 刻 9 / 3 刻 15)',
+    deck: ['kiru', 'kiru', 'migamae', 'migamae', 'tsuki', 'kaeshi', 'hyoshigi', 'kiai'], likes: ['atk', 'def'] },
+  { id: 'suzu', name: '巫女のすず', hp: 50, utsu: [3, 7, 12], ukeru: [4, 9, 15], trait: 'かまえを崩すと体力 3 回復。崩された化け物は、さらに 2 刻おくれる',
+    deck: ['fuda', 'fuda', 'migamae', 'migamae', 'kiru', 'mikiri', 'suzu', 'tsuki'], likes: ['waza', 'def'] },
+  { id: 'tomo', name: '提灯屋のとも', hp: 52, utsu: [3, 7, 12], ukeru: [4, 9, 15], trait: 'やけどしている化け物の攻撃は 2 へる',
+    deck: ['hinoko', 'hinoko', 'oibi', 'migamae', 'migamae', 'kiru', 'abura', 'kaeshi'], likes: ['fire', 'def'] },
+];
+const DIFFS = {
+  easy:   { name: 'やさしい', hp: 0.85, dmg: 0.85 },
+  normal: { name: 'ふつう', hp: 1, dmg: 1 },
+  hard:   { name: 'むずかしい', hp: 1.1, dmg: 1.15 },
+};
+
+// うしみつ時計: 戦いの決まり。依存は data.js だけ。乱数は盤面の中の種だけ(同じ手順なら同じ結果)。
+//
+// 核になる決まり:
+//   - 行動は「何をするか」と「針を何刻回すか」で決める。回した刻だけ時間が進む
+//   - 攻めは、回し終わった刻に当たる。同じ刻なら、あなたが先
+//   - 守りは、回しているあいだだけ効く
+//   - 化け物は、時計に置かれた印の刻が来ると動く(印は必ず見えている)
+//   - 「かまえ」のある大技は、印の刻までにその数だけ削るとつぶせる
+
+
+const HAND_MAX = 3;     // 手札の上限
+const DRAW_EVERY = 2;   // 何刻ごとに札を 1 枚引くか
+const CLOCK = 12;       // 時計の 1 周
+const LOW_HP = 0.3;     // 火事場: これ以下で守りが 1.5 倍
+const DELAY_ONCE = true; // 同じ印は 1 回しかおくらせられない
+const LAP_UP = 2;        // 時計がひと回りするたび、化け物の攻撃がこれだけ上がる(長引かせても得をしない)
+
+function rnd(s) { // mulberry32。種は s.rng(整数)
+  s.rng = (s.rng + 0x6D2B79F5) >>> 0; let t = s.rng;
+  t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+const pick = (s, n) => Math.floor(rnd(s) * n);
+function shuffle(s, a) { for (let i = a.length - 1; i > 0; i--) { const j = pick(s, i + 1); const x = a[i]; a[i] = a[j]; a[j] = x; } return a; }
+const cloneState = (s) => JSON.parse(JSON.stringify(s));
+function hashState(s) { // FNV-1a
+  const str = JSON.stringify(s); let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(16);
+}
+
+const has = (b, id) => b.relics.includes(id);
+const alive = (b) => b.foes.filter((f) => !f.dead);
+const fdmg = (b, v) => Math.max(1, Math.round(v * b.mul.dmg));
+const handMax = (b) => HAND_MAX + (has(b, 'fudabako') ? 1 : 0);
+const lowHp = (b) => b.hp <= Math.floor(b.maxHp * LOW_HP);
+
+function schedule(b, f, extra) {
+  const pat = FOES[f.kind].pat, ai = f.pi % pat.length, act = pat[ai];
+  f.mark = { at: b.t + act.w + (extra || 0), ai, poise: act.poise ? Math.max(1, Math.round(act.poise * b.mul.hp)) : 0, dealt: 0, delayed: false };
+  f.pi++;
+}
+function addFoe(b, kind, extra) {
+  const d = FOES[kind], hp = Math.max(1, Math.round(d.hp * b.mul.hp));
+  const f = { id: b.nextId++, kind, name: d.name, hp, maxHp: hp, armor: 0, burn: 0, up: 0, pi: 0, core: !d.minion, dead: false, broken: false, mark: null };
+  b.foes.push(f); schedule(b, f, extra); return f;
+}
+
+// hero: { char(CHARS の 1 つ), hp, maxHp, deck:[札 id], relics:[id], dollUsed }
+function newBattle({ seed, hero, foes, mul, dawn }) {
+  const b = {
+    rng: (seed >>> 0) || 1, t: 0, char: hero.char.id, utsu: hero.char.utsu.slice(), ukeru: hero.char.ukeru.slice(),
+    hp: hero.hp, maxHp: hero.maxHp, relics: hero.relics.slice(), dollUsed: !!hero.dollUsed,
+    guard: 0, guardUntil: -1, ward: 0, power: 0, curse: 0, slow: 0, quick: 0, first: true,
+    draw: [], hand: [], disc: [], gone: [], foes: [], nextId: 0, mul: { hp: mul ? mul.hp : 1, dmg: mul ? mul.dmg : 1 },
+    dawn: dawn ? dawn - (hero.relics.includes('hane') ? 4 : 0) : 0, aura: null, over: null,
+    stats: { dealt: 0, taken: 0, breaks: 0, acts: 0, kills: 0 },
+  };
+  if (has(b, 'toishi')) b.utsu = b.utsu.map((v) => v + 2);
+  if (has(b, 'hanten')) b.ukeru = b.ukeru.map((v) => v + 2);
+  foes.forEach((kind, i) => { const f = addFoe(b, kind, i + (has(b, 'kane') ? 2 : 0)); if (has(b, 'hiuchi')) f.burn = 3; if (FOES[kind].aura) b.aura = { ...FOES[kind].aura }; });
+  if (has(b, 'omamori')) b.ward = 1;
+  b.draw = shuffle(b, hero.deck.slice());
+  drawCards(b, handMax(b), null);
+  return b;
+}
+
+function drawCards(b, n, ev) {
+  for (let i = 0; i < n; i++) {
+    if (b.hand.length >= handMax(b)) return;
+    if (!b.draw.length) { if (!b.disc.length) return; b.draw = shuffle(b, b.disc); b.disc = []; }
+    const id = b.draw.pop(); b.hand.push(id); if (ev) ev.push({ e: 'draw', id });
+  }
+}
+
+// いま選べる行動の中身。a は 'utsu' / 'ukeru' / 手札の番号
+function specOf(b, a) {
+  if (a === 'utsu') return { id: 'utsu', ...BASIC.utsu, dmg: b.utsu };
+  if (a === 'ukeru') return { id: 'ukeru', ...BASIC.ukeru, guard: b.ukeru };
+  const id = b.hand[a]; return id ? getCard(id) : null;
+}
+const needsTarget = (sp) => !sp.all && !!(sp.dmg || sp.burn || sp.delay || sp.byBurn);
+// 実際に進む刻(砂・先手・懐中時計をふくむ)
+function costOf(b, k) { if (b.first && has(b, 'tokei')) return 0; return Math.max(0, k + b.slow - b.quick); }
+const at = (arr, sp, k) => arr[Math.min(arr.length - 1, k - sp.min)];
+const guardOf = (b, sp, k) => (sp.guard ? Math.floor(at(sp.guard, sp, k) * (lowHp(b) ? 1.5 : 1)) : 0) + (k >= 3 && has(b, 'yakogai') ? 4 : 0);
+
+function whyNot(b, o) {
+  if (b.over) return '戦いは終わっています';
+  const sp = specOf(b, o.a); if (!sp) return 'その札はありません';
+  if (!(o.k >= sp.min && o.k <= sp.max)) return sp.name + ' は ' + (sp.min === sp.max ? sp.min : sp.min + '〜' + sp.max) + ' 刻です';
+  if (needsTarget(sp)) { const f = b.foes.find((x) => x.id === o.target); if (!f || f.dead) return '相手を選んでください'; }
+  return null;
+}
+
+function kill(b, f, ev) {
+  f.dead = true; f.hp = 0; f.mark = null; b.stats.kills++; ev.push({ e: 'kill', id: f.id });
+  if (!b.foes.some((x) => x.core && !x.dead)) { b.over = 'win'; ev.push({ e: 'over', r: 'win' }); }
+}
+function breakFoe(b, f, ev) {
+  f.broken = true; b.stats.breaks++; ev.push({ e: 'break', id: f.id });
+  schedule(b, f, 2 + (b.char === 'suzu' ? 2 : 0)); // つぶされた行動は飛ばして、次の行動へ(2 刻ひるむ)
+  let heal = (has(b, 'suzu') ? 3 : 0) + (b.char === 'suzu' ? 3 : 0);
+  if (heal) { heal = Math.min(heal, b.maxHp - b.hp); b.hp += heal; if (heal) ev.push({ e: 'heal', v: heal }); }
+}
+function hurtFoe(b, f, d, crush, ev, why) { // d は、かたさを引いたあとの値
+  if (f.dead) return;
+  f.hp -= d; b.stats.dealt += d; ev.push({ e: why, id: f.id, v: d });
+  if (f.hp <= 0) return kill(b, f, ev);
+  if (f.mark && f.mark.poise) { f.mark.dealt += d * crush; if (f.mark.dealt >= f.mark.poise) breakFoe(b, f, ev); }
+}
+function hurtHero(b, d, ev, why) { // 守りで防げないダメージ
+  b.hp -= d; b.stats.taken += d; ev.push({ e: why, v: d });
+  if (b.hp <= 0) {
+    if (has(b, 'ningyo') && !b.dollUsed) { b.hp = 1; b.dollUsed = true; ev.push({ e: 'doll' }); }
+    else { b.hp = 0; b.over = 'lose'; ev.push({ e: 'over', r: 'lose' }); }
+  }
+}
+function hitHero(b, d, ev, from) {
+  if (b.ward > 0) { b.ward--; ev.push({ e: 'ward', id: from }); return; }
+  let blocked = 0;
+  if (b.guard > 0 && b.t <= b.guardUntil) { blocked = Math.min(b.guard, d); b.guard -= blocked; d -= blocked; }
+  if (blocked) ev.push({ e: 'block', v: blocked, id: from });
+  if (d > 0) hurtHero(b, d, ev, 'hit');
+}
+
+function foeAct(b, f, ev) {
+  const act = FOES[f.kind].pat[f.mark.ai]; f.mark = null; f.armor = 0; f.broken = false;
+  ev.push({ e: 'foe', id: f.id, n: act.n });
+  if (act.dmg) {
+    const d = Math.max(0, fdmg(b, act.dmg) + f.up - (b.char === 'tomo' && f.burn > 0 ? 2 : 0));
+    for (let i = 0; i < (act.x || 1) && !b.over; i++) hitHero(b, d, ev, f.id);
+  }
+  if (b.over) return;
+  if (act.curse && !has(b, 'juzu')) { b.curse += act.curse; ev.push({ e: 'cursed', v: act.curse }); }
+  if (act.slow) { b.slow = 1; ev.push({ e: 'slowed' }); }
+  if (act.steal && b.hand.length) { const i = pick(b, b.hand.length); const id = b.hand.splice(i, 1)[0]; b.disc.push(id); ev.push({ e: 'steal', card: id }); }
+  if (act.armor) f.armor += act.armor;
+  if (act.up) f.up += act.up;
+  if (act.heal) f.hp = Math.min(f.maxHp, f.hp + Math.round(act.heal * b.mul.hp));
+  if (act.summon && alive(b).length < 3) { const n = addFoe(b, act.summon, 0); ev.push({ e: 'summon', id: n.id }); }
+  if (FOES[f.kind].grow) f.up += FOES[f.kind].grow;
+  schedule(b, f, 0);
+}
+
+// 行動が当たる(回し終わった刻)
+function land(b, sp, k, target, ev) {
+  const tg = sp.all ? alive(b) : b.foes.filter((f) => f.id === target && !f.dead);
+  if (sp.dmg) {
+    const bonus = b.power + (has(b, 'oni') && b.hp * 2 <= b.maxHp ? 3 : 0); b.power = 0;
+    for (let h = 0; h < (sp.hits || 1); h++) for (const f of tg) {
+      if (f.dead) continue;
+      if (sp.strip) f.armor = 0;
+      let d = at(sp.dmg, sp, k) + bonus + (sp.byBurn ? f.burn * sp.byBurn : 0) + (sp.exec && f.hp * 2 <= f.maxHp ? sp.exec : 0);
+      d = Math.max(0, d - f.armor);
+      hurtFoe(b, f, d, sp.crush || 1, ev, 'dmg');
+    }
+  }
+  if (sp.self) { const d = Math.min(sp.self, b.hp - 1); if (d > 0) { b.hp -= d; ev.push({ e: 'self', v: d }); } } // 捨て身では倒れない
+  if (sp.burn) for (const f of tg) if (!f.dead) { f.burn += at(sp.burn, sp, k); ev.push({ e: 'burned', id: f.id, v: at(sp.burn, sp, k) }); }
+  if (sp.delay) for (const f of tg) if (!f.dead && f.mark && !(DELAY_ONCE && f.mark.delayed)) { f.mark.at += at(sp.delay, sp, k); f.mark.delayed = true; ev.push({ e: 'delay', id: f.id, v: at(sp.delay, sp, k) }); }
+  if (sp.heal) { const v = Math.min(at(sp.heal, sp, k), b.maxHp - b.hp); b.hp += v; ev.push({ e: 'heal', v }); }
+  if (sp.power) b.power += at(sp.power, sp, k);
+  if (sp.cleanse) { b.curse = 0; b.slow = 0; }
+  if (sp.quick) b.quick += sp.quick;
+  if (sp.draw) drawCards(b, sp.draw, ev);
+}
+
+function tick(b, landing, ev) {
+  b.t++; ev.push({ e: 'tick', t: b.t });
+  for (const f of b.foes) if (!f.dead && f.burn > 0) { const d = f.burn; f.burn--; hurtFoe(b, f, d, 1, ev, 'burn'); if (b.over) return; }
+  if (b.curse > 0) { b.curse--; hurtHero(b, 1, ev, 'curse'); if (b.over) return; }
+  if (b.aura && b.t % b.aura.every === 0) { hurtHero(b, fdmg(b, b.aura.dmg), ev, 'aura'); if (b.over) return; }
+  if (landing) { landing(); if (b.over) return; }
+  for (const f of b.foes.slice()) if (!f.dead && f.mark && f.mark.at <= b.t) { foeAct(b, f, ev); if (b.over) return; }
+  if (b.t % DRAW_EVERY === 0) drawCards(b, 1, ev);
+  if (b.t % CLOCK === 0) { for (const f of b.foes) if (!f.dead) f.up += LAP_UP; ev.push({ e: 'lap', v: LAP_UP }); }
+  if (b.dawn && b.t >= b.dawn) { b.over = 'dawn'; ev.push({ e: 'over', r: 'dawn' }); }
+}
+
+// 行動する。o = { a: 'utsu' | 'ukeru' | 手札の番号, k: 回す刻, target: 相手の id }
+// 返り値 { ok, why, events }。events は起きた順(画面の再生用)
+function act(b, o) {
+  const why = whyNot(b, o); if (why) return { ok: false, why, events: [] };
+  const sp = specOf(b, o.a), k = o.k, ev = [], cost = costOf(b, k);
+  b.first = false; b.slow = 0; b.quick = 0; b.stats.acts++;
+  if (typeof o.a === 'number') { const id = b.hand.splice(o.a, 1)[0]; (sp.once ? b.gone : b.disc).push(id); }
+  ev.push({ e: 'act', name: sp.name, k, cost });
+  const g = guardOf(b, sp, k);
+  if (g) { if (b.t > b.guardUntil) b.guard = 0; b.guard += g; b.guardUntil = Math.max(b.guardUntil, b.t + Math.max(k, cost)); ev.push({ e: 'guard', v: g }); }
+  if (sp.ward) b.ward += sp.ward;
+  const hp0 = b.hp;
+  const doLand = () => land(b, sp, k, o.target, ev);
+  if (cost === 0) doLand();
+  for (let i = 1; i <= cost && !b.over; i++) tick(b, i === cost ? doLand : null, ev);
+  if (!b.over) {
+    if (sp.counter && b.hp >= hp0) { b.power += sp.counter; ev.push({ e: 'counter', v: sp.counter }); }
+    if (k === 1 && has(b, 'himo')) b.power += 2;
+    if (b.guardUntil <= b.t) b.guard = 0; // 回し終わったら守りは消える
+  }
+  return { ok: true, events: ev };
+}
+
+// 行動する前の見通し(盤面は変えない)。運は入らないので、見えた通りになる
+function preview(b, o) {
+  const c = cloneState(b), r = act(c, o);
+  if (!r.ok) return { ok: false, why: r.why };
+  return {
+    ok: true, cost: c.t - b.t, hp: c.hp, hpLost: Math.max(0, b.hp - c.hp), over: c.over,
+    foes: b.foes.filter((f) => !f.dead).map((f) => { const n = c.foes.find((x) => x.id === f.id); return { id: f.id, hp: n.hp, lost: f.hp - n.hp, dead: n.dead, broke: r.events.some((e) => e.e === 'break' && e.id === f.id) }; }),
+    fired: r.events.filter((e) => e.e === 'foe').length, blocked: r.events.filter((e) => e.e === 'block').reduce((a, e) => a + e.v, 0), events: r.events,
+  };
+}
+
+// 化け物の次の行動(画面の予告用)。数字は、いまの状態で実際に出る値
+function intent(b, f) {
+  if (!f.mark) return null;
+  const a = FOES[f.kind].pat[f.mark.ai], parts = [];
+  if (a.dmg) { const d = Math.max(0, fdmg(b, a.dmg) + f.up - (b.char === 'tomo' && f.burn > 0 ? 2 : 0)); parts.push(a.x ? d + '×' + a.x : '' + d); }
+  if (a.curse) parts.push('のろい ' + a.curse);
+  if (a.slow) parts.push('砂');
+  if (a.steal) parts.push('札を落とす');
+  if (a.armor) parts.push('かたさ ' + a.armor);
+  if (a.up) parts.push('攻撃 +' + a.up);
+  if (a.heal) parts.push('回復');
+  if (a.summon) parts.push(FOES[a.summon].name + 'を呼ぶ');
+  return { at: f.mark.at, in: f.mark.at - b.t, name: a.n, text: parts.join('・'), dmg: a.dmg ? Math.max(0, fdmg(b, a.dmg) + f.up - (b.char === 'tomo' && f.burn > 0 ? 2 : 0)) * (a.x || 1) : 0,
+    poise: f.mark.poise, poiseLeft: f.mark.poise ? Math.max(0, f.mark.poise - f.mark.dealt) : 0, delayed: f.mark.delayed };
+}
+
+// 札の説明(値から作るので、文と効果がずれない)。k を渡すとその刻の値、渡さなければ全部
+function describe(sp, k, b) {
+  const v = (arr) => (k !== undefined ? at(arr, sp, k) : arr.length > 1 ? arr.join(' / ') : arr[0]);
+  const p = [];
+  if (sp.dmg) p.push((sp.all ? '全員に ' : '') + v(sp.dmg) + (sp.hits ? '×' + sp.hits : '') + ' ダメージ');
+  if (sp.byBurn) p.push('相手のやけどの ' + sp.byBurn + ' 倍を上乗せ');
+  if (sp.exec) p.push('体力が半分以下の相手には +' + sp.exec);
+  if (sp.crush) p.push('かまえには ' + sp.crush + ' 倍効く');
+  if (sp.strip) p.push('かたさを消してから当てる');
+  if (sp.self) p.push('自分も ' + sp.self + ' ダメージ');
+  if (sp.guard) p.push('守り ' + (b && k !== undefined ? guardOf(b, sp, k) : v(sp.guard)));
+  if (sp.ward) p.push('次の攻撃を ' + sp.ward + ' 回かわす');
+  if (sp.counter) p.push('無傷で受けきると次の攻撃 +' + sp.counter);
+  if (sp.burn) p.push((sp.all ? '全員に' : '') + 'やけど ' + v(sp.burn));
+  if (sp.delay) p.push((sp.all ? '全員の' : '') + '印を ' + v(sp.delay) + ' 刻おくらせる');
+  if (sp.heal) p.push('体力 ' + v(sp.heal) + ' 回復');
+  if (sp.power) p.push('次の攻撃 +' + v(sp.power));
+  if (sp.cleanse) p.push('のろいと砂を消す');
+  if (sp.quick) p.push('次の行動が ' + sp.quick + ' 刻みじかい');
+  if (sp.draw) p.push('札を ' + sp.draw + ' 枚引く');
+  if (sp.once) p.push('1 度きり');
+  return p.join('、');
+}
+const ticksText = (sp) => (sp.min === sp.max ? sp.min + ' 刻' : sp.min + '〜' + sp.max + ' 刻');
+
+// うしみつ時計: 文章だけを集めた表(決まりは入っていない)。
+// 物語工房などで書き直すときは、このファイルの文だけを差し替えればよい(id・eff・need は変えない)。
+
+const HOURS = ['暮れ六つ', '宵五つ', '夜四つ', '四つ半', '真夜九つ', '九つ半', '夜八つ', '丑の刻', '丑三つ時'];
+const HOUR_LINES = [
+  '日が落ちた。町の戸が、ひとつずつ閉まっていく。',
+  '提灯の灯が、風もないのにゆれている。',
+  '犬が鳴きやんだ。鳴きやんだまま、こちらを見ている。',
+  '自分の足音が、ひとつ多い。',
+  '寺の鐘が九つ。鳴らす者は、もういないはずだ。',
+  '月がかくれた。影だけが、まだそこにある。',
+  '井戸の底から、水ではない音がする。',
+  '草木もねむる。ねむらないものだけが、歩いている。',
+  '時計が止まった。止まったのに、針の音だけが聞こえる。',
+];
+const INTRO = {
+  yokichi: ['夜回りの与吉は、今夜も拍子木を打つ。', '「火の用心」と言うたびに、どこかで、だれかが同じ言葉を返す。', '夜明けまで、六つの刻。歩ききれば、朝が来る。'],
+  suzu: ['巫女のすずは、社の鈴が鳴らなくなった夜に目をさました。', '札を帯にはさみ、戸を開ける。町は、知っている町の形をしていない。', '夜明けまで、六つの刻。祓いきれば、朝が来る。'],
+  tomo: ['提灯屋のともは、売り物の提灯に、ひとつ残らず火を入れた。', '今夜は、暗いところから順に、何かが出てくる。', '夜明けまで、六つの刻。灯を守りきれば、朝が来る。'],
+};
+const BOSS_LINES = {
+  gasha: '丑三つ時、町はずれの野に、骨の鳴る音が集まってくる。',
+  ushioni: '丑三つ時、川のほうから、息をするたびに草が枯れるものが上がってくる。',
+  onyudo: '丑三つ時、辻のむこうに、見上げるたびに大きくなるものが立っている。',
+};
+const ENDINGS = {
+  slain: { title: '退治', lines: ['最後の一打ちで、それは崩れた。', '東の空は、まだ暗い。けれど町のどこかで、戸の開く音がした。', 'あなたは夜明けを待たずに、夜を終わらせた。'] },
+  dawn: { title: '夜明け', lines: ['一番鶏が鳴いた。', 'それは、朝の光にふれたところから、うすくなって消えた。', '倒してはいない。けれど、あなたは朝まで立っていた。それで十分だ。'] },
+  dead: { title: '明けない夜', lines: ['拍子木の音が、とぎれた。', '次の夜、町の者はこう言う。「夜回りが、ひとり多い」と。', '時計の針は、丑三つ時を指したまま動かない。'] },
+};
+
+// 出来事。a / b のどちらかを選ぶ。eff の中身: hp 体力 / maxHp 体力の上限 / zeni 銭 / card 札を得る / relic おまもりを得る /
+//   upgrade 札を 1 枚きたえる / remove 札を 1 枚手放す。need.zeni は、その銭がないと選べない
+const EVENTS = [
+  { id: 'soba', title: '夜鳴きそば', text: 'こんな刻に、屋台の灯。湯気のむこうの顔は、見えない。',
+    a: { label: 'すする(銭 8)', need: { zeni: 8 }, eff: { zeni: -8, hp: 12 }, out: 'あたたかい。どんぶりの底に、だれかの歯がひとつ。見なかったことにした。' },
+    b: { label: '通りすぎる', eff: {}, out: 'ふり返ると、屋台はなかった。湯気だけが、まだそこにあった。' } },
+  { id: 'oiteke', title: '置いてけ堀', text: '堀の水の中から、声がする。「おいてけ。おいてけ」',
+    a: { label: '銭を置いていく(銭 15)', need: { zeni: 15 }, eff: { zeni: -15, relic: true }, out: '水面に銭が沈むと、かわりに何かが浮いてきた。ぬれたそれを、ふところにしまった。' },
+    b: { label: '走ってにげる', eff: { hp: -5 }, out: '足首を、冷たい手がなでた。走りぬけたが、あとが残っている。' } },
+  { id: 'chochin', title: '迷い提灯', text: '道の先を、持つ者のいない提灯が、ゆっくりと進んでいく。',
+    a: { label: 'ついていく', eff: { hp: -3, card: 'hinoko' }, out: '提灯は墓場で止まり、ふっと消えた。指先に、火の粉が残っている。' },
+    b: { label: '吹き消す', eff: { zeni: 10 }, out: '消えたあとに、古い銭が落ちていた。まだ、あたたかい。' } },
+  { id: 'jizo', title: '首のない地蔵', text: '辻の地蔵に、首がない。足もとに、小さな足あとが続いている。',
+    a: { label: '手を合わせる', eff: { maxHp: 4 }, out: '目をあけると、地蔵がこちらを向いていた。首は、まだない。けれど、少し楽になった。' },
+    b: { label: '首をさがす', eff: { hp: -6, relic: true }, out: 'やぶの中で、何かにかまれた。それでも首は見つかった。首のあった場所に、礼がひとつ置かれていた。' } },
+  { id: 'kushi', title: '髪をとく女', text: '橋のたもとで、女が髪をといている。くしが落ちた。女は、ふり向かない。',
+    a: { label: 'くしを拾う', eff: { upgrade: true }, out: '「ありがとう」と声がした。背中のほうから。帯の札が、少し重くなっている。' },
+    b: { label: '見ないふりをする', eff: { hp: 5 }, out: '通りすぎた。何も起きなかった。何も起きないことが、こんなにありがたい。' } },
+  { id: 'sara', title: '皿を数える声', text: '古い井戸の底から、声がする。「いちまい。にまい。さんまい」',
+    a: { label: 'いっしょに数える', eff: { remove: true }, out: '九枚めで、声が止まった。帯を見ると、札が 1 枚たりない。' },
+    b: { label: '「十枚」と言ってやる', eff: { zeni: 20, hp: -4 }, out: '井戸から、皿が 1 枚とんできた。額に当たった。皿は、よい値で売れそうだ。' } },
+  { id: 'okuri', title: '送り拍子木', text: '後ろで、拍子木の音がする。自分は、打っていない。',
+    a: { label: '礼を言う', eff: { hp: 8 }, out: '音は、家ひとつぶん先までついてきて、止んだ。足が、軽い。' },
+    b: { label: 'ふり向く', eff: { card: 'mikiri' }, out: 'だれもいない。ただ、ふり向く直前に、何がいたのかは、分かった。次は、かわせる。' } },
+  { id: 'shichiya', title: '質屋の灯', text: '閉まっているはずの質屋に、灯がついている。のれんの下から、手だけが出ている。',
+    a: { label: '札を 1 枚あずける', eff: { remove: true, zeni: 12 }, out: '手は札を受けとり、銭を置いた。質札は、くれなかった。' },
+    b: { label: '入らない', eff: {}, out: '通りすぎると、灯が消えた。のれんは、最初からなかった。' } },
+  { id: 'kage', title: '影がひとつ多い', text: '月が出た。地面の影を数える。ひとつ、多い。',
+    a: { label: '踏む', eff: { card: 'kanashibari' }, out: '影は、びくりと止まった。止め方は、覚えた。' },
+    b: { label: '数えない', eff: { maxHp: 3 }, out: '数えなければ、いないのと同じだ。そう決めたら、腹がすわった。' } },
+];
+
+// うしみつ時計: 一夜の進行(道の選択・戦い・ごほうび・店・茶屋・出来事)。
+// 盤面は JSON にできる値だけで持つ(保存して読み直しても続きから同じ結果になる)。
+
+
+
+
+const DAWN = 36; // 丑三つ時の戦いで、夜明けが来る刻
+// 一夜は 9 つの刻。どの刻に何があるかは、夜の始めに全部見える
+const PLAN = [['easy'], ['easy', 'event'], ['easy', 'shop'], ['elite', 'rest'], ['mid'], ['hard', 'event'], ['elite', 'shop'], ['rest'], ['boss']];
+const TYPE_JA = { easy: '戦い', hard: '戦い', elite: '手ごわい相手', mid: '真夜中の主', boss: '丑三つ時に来るもの', event: '出来事', shop: '店', rest: '茶屋' };
+const FIGHT = ['easy', 'hard', 'elite', 'mid', 'boss'];
+const ZENI = { easy: 14, hard: 18, elite: 26, mid: 32, boss: 0 };
+const PRICE = { card: 28, relic: 60, heal: 18, remove: 30 };
+const SHOP_HEAL = 12, REST_HEAL = 0.3;
+
+function newRun({ seed, char, diff }) {
+  const c = CHARS[char] || CHARS[0];
+  const r = {
+    v: 1, seed: seed >>> 0, rng: ((seed >>> 0) ^ 0x9e3779b9) >>> 0 || 1, char: CHARS.indexOf(c), diff: DIFFS[diff] ? diff : 'normal',
+    hp: c.hp, maxHp: c.hp, deck: c.deck.slice(), relics: [], zeni: 0, dollUsed: false,
+    step: 0, nodes: [], phase: 'map', battle: null, node: null, reward: null, shop: null, event: null, result: null,
+    stats: { fights: 0, dealt: 0, taken: 0, breaks: 0, ticks: 0 },
+  };
+  const pools = {}; const draw = (k) => { if (!pools[k] || !pools[k].length) pools[k] = shuffle(r, ENCOUNTERS[k].slice()); return pools[k].pop(); };
+  const evs = shuffle(r, EVENTS.map((e, i) => i));
+  r.nodes = PLAN.map((opts) => opts.map((type) => (FIGHT.includes(type) ? { type, foes: draw(type) } : type === 'event' ? { type, event: evs.pop() } : { type })));
+  return r;
+}
+const charOf = (r) => CHARS[r.char];
+const options = (r) => (r.phase === 'map' ? r.nodes[r.step] : []);
+const bossOf = (r) => r.nodes[r.nodes.length - 1][0].foes[0];
+const heal = (r, n) => { const v = Math.max(0, Math.min(n, r.maxHp - r.hp)); r.hp += v; return v; };
+
+function freeRelics(r) { return RELIC_IDS.filter((id) => !r.relics.includes(id)); }
+function rollRelics(r, n) { const pool = shuffle(r, freeRelics(r)); return pool.slice(0, n); }
+function rollCards(r, n) { // 夜回りの得意な種類が出やすい
+  const likes = charOf(r).likes, bag = [];
+  for (const id of CARD_IDS) for (let i = 0; i < (likes.includes(CARDS[id].kind) ? 3 : 1); i++) bag.push(id);
+  const out = [];
+  while (out.length < n) { const id = bag[pick(r, bag.length)]; if (!out.includes(id)) out.push(id); }
+  return out;
+}
+
+// 道を選ぶ
+function choose(r, i) {
+  if (r.phase !== 'map') return { ok: false, why: 'いまは道を選べません' };
+  const node = r.nodes[r.step][i]; if (!node) return { ok: false, why: 'その道はありません' };
+  r.node = { ...node, i };
+  if (FIGHT.includes(node.type)) {
+    r.battle = newBattle({ seed: (r.seed + r.step * 7919 + 1) >>> 0, hero: { char: charOf(r), hp: r.hp, maxHp: r.maxHp, deck: r.deck, relics: r.relics, dollUsed: r.dollUsed },
+      foes: node.foes, mul: DIFFS[r.diff], dawn: node.type === 'boss' ? DAWN : 0 });
+    r.phase = 'battle';
+  } else if (node.type === 'event') { r.event = node.event; r.phase = 'event'; }
+  else if (node.type === 'shop') {
+    r.shop = { cards: rollCards(r, 3).map((id) => ({ id, sold: false })), relics: rollRelics(r, 2).map((id) => ({ id, sold: false })), healSold: false, removeSold: false };
+    r.phase = 'shop';
+  } else r.phase = 'rest';
+  return { ok: true };
+}
+function advance(r) { r.step++; r.node = null; r.battle = null; r.reward = null; r.shop = null; r.event = null; r.phase = 'map'; }
+
+// 戦いの 1 手。戦いが終わったら、ごほうび(または結末)へ進む
+function fight(r, o) {
+  if (r.phase !== 'battle') return { ok: false, why: 'いまは戦いではありません', events: [] };
+  const res = act(r.battle, o); if (!res.ok || !r.battle.over) return res;
+  const b = r.battle, type = r.node.type;
+  r.hp = b.hp; r.dollUsed = b.dollUsed; r.stats.fights++; r.stats.dealt += b.stats.dealt; r.stats.taken += b.stats.taken; r.stats.breaks += b.stats.breaks; r.stats.ticks += b.t;
+  if (b.over === 'lose') { r.phase = 'over'; r.result = { win: false, how: 'dead', step: r.step }; return res; }
+  if (type === 'boss') { r.phase = 'over'; r.result = { win: true, how: b.over === 'dawn' ? 'dawn' : 'slain', step: r.step, ticks: b.t }; return res; }
+  const healed = (r.relics.includes('hoshigaki') ? heal(r, 4) : 0) + (type === 'mid' ? heal(r, Math.ceil(r.maxHp * 0.3)) : 0);
+  const zeni = Math.round(ZENI[type] * (r.relics.includes('maneki') ? 1.3 : 1)); r.zeni += zeni;
+  const nRel = type === 'elite' ? 2 : type === 'mid' ? 3 : 0;
+  r.reward = { zeni, healed, relics: nRel ? rollRelics(r, nRel) : null, cards: rollCards(r, 3) };
+  if (r.reward.relics && !r.reward.relics.length) r.reward.relics = null;
+  r.phase = 'reward';
+  return res;
+}
+function takeRelic(r, i) {
+  if (r.phase !== 'reward' || !r.reward.relics) return { ok: false, why: 'いまは選べません' };
+  const id = r.reward.relics[i]; if (!id) return { ok: false, why: 'そのおまもりはありません' };
+  r.relics.push(id); r.reward.relics = null; if (!r.reward.cards) advance(r); return { ok: true, id };
+}
+function takeCard(r, i) { // i = -1 で「もらわない」
+  if (r.phase !== 'reward' || !r.reward.cards) return { ok: false, why: 'いまは選べません' };
+  if (r.reward.relics) return { ok: false, why: '先におまもりを選んでください' };
+  if (i >= 0) { const id = r.reward.cards[i]; if (!id) return { ok: false, why: 'その札はありません' }; r.deck.push(id); }
+  r.reward.cards = null; advance(r); return { ok: true };
+}
+
+// 店。kind = 'card' | 'relic' | 'heal' | 'remove'。remove は手放す札の番号(deck の中の位置)を idx に渡す
+function buy(r, kind, idx) {
+  if (r.phase !== 'shop') return { ok: false, why: 'いまは店ではありません' };
+  const price = PRICE[kind]; if (!price) return { ok: false, why: 'それは売っていません' };
+  if (r.zeni < price) return { ok: false, why: '銭がたりません(' + price + ')' };
+  const s = r.shop;
+  if (kind === 'card' || kind === 'relic') {
+    const it = s[kind + 's'][idx]; if (!it || it.sold) return { ok: false, why: '売り切れです' };
+    it.sold = true; (kind === 'card' ? r.deck : r.relics).push(it.id);
+  } else if (kind === 'heal') {
+    if (s.healSold) return { ok: false, why: '売り切れです' }; if (r.hp >= r.maxHp) return { ok: false, why: '体力は満タンです' };
+    s.healSold = true; heal(r, SHOP_HEAL);
+  } else {
+    if (s.removeSold) return { ok: false, why: '1 回だけです' }; if (r.deck.length <= 5) return { ok: false, why: '札は 5 枚より減らせません' };
+    if (!(idx >= 0 && idx < r.deck.length)) return { ok: false, why: '手放す札を選んでください' };
+    s.removeSold = true; r.deck.splice(idx, 1);
+  }
+  r.zeni -= price; return { ok: true };
+}
+function leave(r) { if (r.phase !== 'shop') return { ok: false, why: 'いまは店ではありません' }; advance(r); return { ok: true }; }
+
+// 茶屋。how = 'heal'(体力を 3 割回復)| 'up'(札を 1 枚きたえる。idx = deck の中の位置)
+function rest(r, how, idx) {
+  if (r.phase !== 'rest') return { ok: false, why: 'いまは茶屋ではありません' };
+  if (how === 'heal') { const v = heal(r, Math.ceil(r.maxHp * REST_HEAL)); advance(r); return { ok: true, healed: v }; }
+  if (how === 'up') {
+    const id = r.deck[idx]; if (!id || !canUpgrade(id)) return { ok: false, why: 'きたえる札を選んでください' };
+    r.deck[idx] = id + '+'; advance(r); return { ok: true, id: id + '+' };
+  }
+  return { ok: false, why: '休むか、きたえるかを選んでください' };
+}
+
+// 出来事。ch = 'a' | 'b'。返り値の notes は、実際に起きたこと(画面に出す)
+function canAnswer(r, ch) { const o = EVENTS[r.event][ch]; return !(o.need && o.need.zeni > r.zeni); }
+function answer(r, ch) {
+  if (r.phase !== 'event') return { ok: false, why: 'いまは出来事ではありません' };
+  const ev = EVENTS[r.event], o = ev[ch]; if (!o) return { ok: false, why: 'a か b を選んでください' };
+  if (!canAnswer(r, ch)) return { ok: false, why: '銭がたりません' };
+  const e = o.eff, notes = [];
+  if (e.zeni) { r.zeni = Math.max(0, r.zeni + e.zeni); notes.push('銭 ' + (e.zeni > 0 ? '+' : '') + e.zeni); }
+  if (e.maxHp) { r.maxHp += e.maxHp; r.hp += e.maxHp; notes.push('体力の上限 +' + e.maxHp); }
+  if (e.hp > 0) notes.push('体力 +' + heal(r, e.hp));
+  if (e.hp < 0) { const d = Math.min(-e.hp, r.hp - 1); r.hp -= d; notes.push('体力 -' + d); } // 出来事では倒れない
+  if (e.card) { r.deck.push(e.card); notes.push('札「' + CARDS[e.card].name + '」を得た'); }
+  if (e.relic) { const id = rollRelics(r, 1)[0]; if (id) { r.relics.push(id); notes.push('おまもりを得た'); r.lastRelic = id; } else { r.zeni += 20; notes.push('銭 +20'); } }
+  if (e.upgrade) { const ok = r.deck.map((id, i) => (canUpgrade(id) ? i : -1)).filter((i) => i >= 0); if (ok.length) { const i = ok[pick(r, ok.length)]; r.deck[i] += '+'; notes.push('札「' + CARDS[r.deck[i].slice(0, -1)].name + '」がきたえられた'); } }
+  if (e.remove && r.deck.length > 5) { const i = pick(r, r.deck.length), id = r.deck.splice(i, 1)[0]; notes.push('札「' + CARDS[id.replace('+', '')].name + '」を手放した'); }
+  advance(r);
+  return { ok: true, out: o.out, notes };
+}
+
+// うしみつ時計 — 画面と入力(結果を決めるのは battle.js / run.js。ここは見せるだけ)
+// build.mjs が data.js・battle.js・tales.js・run.js と一緒に 1 つのスクリプトにまとめる。
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('wrap'), panel = $('panel');
+  const SAVE_KEY = 'ushimitsu.v1';
+  const GLYPH = [['curse', '呪'], ['slow', '砂'], ['steal', '盗'], ['armor', '固'], ['up', '強'], ['heal', '癒'], ['summon', '呼']];
+
+  let run = null, sel = null, tgt = -1, busy = false, skip = false, alwaysFast = false, view = null, note = '', bagOpen = false, sub = null;
+  let setup = { char: 0, diff: 'normal', mode: 'normal' };
+  let S = 300, dpr = 1, colors = {}, font = 'sans-serif', handPos = 0, shakeUntil = 0;
+  // 検査用の入口(browser-check.mjs が使う)。best は「見通し」だけで選ぶ、かんたんな打ち手
+  function bestMove() {
+    const b = run && run.battle; if (!b || b.over) return null; let best = null, bs = -1e9;
+    const tryIt = (a) => { const sp = specOf(b, a); if (!sp) return; for (let k = sp.min; k <= sp.max; k++) for (const f of needsTarget(sp) ? alive(b) : [null]) {
+      const o = { a, k, target: f ? f.id : tgt }, p = preview(b, o); if (!p.ok) continue;
+      const s = (p.over === 'win' ? 500 : p.over === 'lose' ? -5000 : 0) - p.hpLost * 2.5 + p.foes.reduce((x, y) => x + y.lost + (y.broke ? 6 : 0) + (y.dead ? 6 : 0), 0) - p.cost;
+      if (s > bs) { bs = s; best = o; } } };
+    tryIt('utsu'); tryIt('ukeru'); for (let i = 0; i < b.hand.length; i++) tryIt(i); return best;
+  }
+  globalThis.__um = () => ({ run, busy, sel, tgt, panelOpen: !panel.hidden, sub: !!sub, best: bestMove, setFast: (v) => { alwaysFast = !!v; } });
+
+  // ---- 保存(この端末のブラウザだけ。読めなくても遊べる) ----------------------
+  function load() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch (e) { return {}; } }
+  function store(patch) { try { localStorage.setItem(SAVE_KEY, JSON.stringify(Object.assign(load(), patch))); } catch (e) { /* 保存できなくても続ける */ } }
+  const today = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); };
+  const dateSeed = (str) => { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; };
+  function saveResume() { store({ resume: run && run.phase !== 'over' ? { run, mode: setup.mode } : null }); }
+
+  // ---- 効果音(その場で音を作る) ----------------------------------------------
+  let audio = null, soundOn = load().sound !== false;
+  const SFX = { tap: [[620, 620, 0.03, 'sine', 0.07]], tock: [[180, 150, 0.05, 'square', 0.05]], hit: [[330, 220, 0.09, 'triangle', 0.14]], hurt: [[160, 90, 0.2, 'sawtooth', 0.14]],
+                block: [[520, 480, 0.06, 'square', 0.06]], brk: [[440, 880, 0.12, 'triangle', 0.14], [660, 1320, 0.12, 'triangle', 0.08, 0.06]], coin: [[880, 1175, 0.1, 'sine', 0.1]],
+                story: [[220, 208, 0.9, 'sine', 0.1], [330, 311, 0.9, 'sine', 0.05, 0.05]], bell: [[196, 190, 1.1, 'sine', 0.16]],
+                victory: [[523, 523, 0.1, 'triangle', 0.14, 0], [659, 659, 0.1, 'triangle', 0.14, 0.1], [784, 784, 0.1, 'triangle', 0.14, 0.2], [1047, 1047, 0.24, 'triangle', 0.14, 0.3]],
+                defeat: [[392, 392, 0.14, 'triangle', 0.14, 0], [311, 311, 0.14, 'triangle', 0.14, 0.14], [233, 233, 0.3, 'triangle', 0.14, 0.28]] };
+  function sfx(name) {
+    if (!soundOn || !SFX[name]) return;
+    try {
+      if (!audio) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; audio = new AC(); }
+      if (audio.state === 'suspended') audio.resume();
+      for (const n of SFX[name]) {
+        const t0 = audio.currentTime + (n[5] || 0), o = audio.createOscillator(), g = audio.createGain();
+        o.type = n[3]; o.frequency.setValueAtTime(n[0], t0); o.frequency.linearRampToValueAtTime(n[1], t0 + n[2]);
+        g.gain.setValueAtTime(n[4], t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + n[2]);
+        o.connect(g); g.connect(audio.destination); o.start(t0); o.stop(t0 + n[2] + 0.02);
+      }
+    } catch (e) { /* 音が出せなくても続ける */ }
+  }
+
+  // ---- 部品 ------------------------------------------------------------------
+  function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+  function btn(label, cls, fn, small) {
+    const b = el('button', cls); b.type = 'button'; b.append(el('b', '', label)); if (small) b.append(el('small', '', small));
+    if (fn) b.addEventListener('click', () => { sfx('tap'); fn(); }); return b;
+  }
+  function choice(title, text, fn, extra) { const b = el('button', 'choice' + (extra ? ' ' + extra : '')); b.type = 'button'; b.append(el('b', '', title)); if (text) b.append(el('span', '', text)); if (fn) b.addEventListener('click', () => { sfx('tap'); fn(); }); return b; }
+  function show(nodes) { panel.replaceChildren(...nodes); panel.hidden = false; panel.scrollTop = 0; }
+  function hide() { panel.hidden = true; panel.replaceChildren(); }
+  const wait = (ms) => (skip || alwaysFast ? Promise.resolve() : new Promise((r) => setTimeout(r, ms)));
+  const cardLine = (id) => { const c = getCard(id); return ticksText(c) + '・' + describe(c); };
+  const foeColor = (f) => colors['f' + (f.id % 3)];
+  const bt = () => view || (run && run.battle);
+
+  // ---- 下ごしらえ ------------------------------------------------------------
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement);
+    for (const k of ['bg', 'surface', 'fg', 'muted', 'line', 'face', 'rim', 'hand', 'f0', 'f1', 'f2', 'foe-fg', 'atk', 'def', 'waza', 'fire', 'accent', 'danger', 'good']) colors[k] = cs.getPropertyValue('--' + k).trim();
+    font = getComputedStyle(document.body).fontFamily;
+  }
+  function resize() {
+    const r = wrap.getBoundingClientRect(); S = Math.max(160, Math.floor(Math.min(r.width, r.height)));
+    dpr = Math.min(3, window.devicePixelRatio || 1);
+    cv.style.width = S + 'px'; cv.style.height = S + 'px'; cv.width = Math.round(S * dpr); cv.height = Math.round(S * dpr);
+    draw();
+  }
+
+  // ---- 時計を描く --------------------------------------------------------------
+  const ang = (p) => (p / CLOCK) * Math.PI * 2 - Math.PI / 2;
+  function draw() {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, S, S);
+    const b = bt(); if (!b || !run || run.phase !== 'battle' && !view) return;
+    const cx = S / 2 + (performance.now() < shakeUntil ? Math.sin(performance.now() / 18) * 4 : 0), cy = S / 2, R = S / 2 - 36;
+    const text = (s, x, y, size, color, weight) => { ctx.font = (weight || 400) + ' ' + size + 'px ' + font; ctx.fillStyle = color; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(s, x, y); };
+    // 文字盤
+    ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fillStyle = colors.face; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = colors.rim; ctx.stroke();
+    for (let i = 0; i < CLOCK; i++) {
+      const a = ang(i), x0 = cx + Math.cos(a) * (R - 6), y0 = cy + Math.sin(a) * (R - 6), x1 = cx + Math.cos(a) * R, y1 = cy + Math.sin(a) * R;
+      ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.strokeStyle = colors.rim; ctx.lineWidth = 2; ctx.stroke();
+    }
+    // あと何刻かの数字と、札を引く刻(小さな四角)
+    for (let i = 1; i < CLOCK; i++) {
+      const a = ang(b.t + i); text('' + i, cx + Math.cos(a) * (R - 18), cy + Math.sin(a) * (R - 18), 11, colors.muted);
+      if ((b.t + i) % DRAW_EVERY === 0 && b.hand.length < handMax(b)) { ctx.fillStyle = colors.waza; ctx.fillRect(cx + Math.cos(a) * (R - 33) - 2.5, cy + Math.sin(a) * (R - 33) - 2.5, 5, 5); }
+    }
+    text('鐘', cx, cy - R + 48, 11, colors.danger); // 針がてっぺんを過ぎるたび、化け物の攻撃が上がる
+    // これから使う刻(見通し)
+    let end = -1, kind = 'atk';
+    if (sel && !busy) {
+      const sp = specOf(b, sel.a);
+      if (sp) { end = b.t + costOf(b, sel.k); kind = sp.kind; ctx.beginPath(); ctx.arc(cx, cy, R - 3, ang(b.t), ang(end)); ctx.lineWidth = 8; ctx.strokeStyle = colors[kind]; ctx.lineCap = 'round'; ctx.stroke(); ctx.lineCap = 'butt'; }
+    }
+    // 化け物の印
+    const byTick = {};
+    for (const f of b.foes) if (!f.dead && f.mark && f.mark.at - b.t < CLOCK) (byTick[f.mark.at] = byTick[f.mark.at] || []).push(f);
+    for (const k of Object.keys(byTick)) {
+      const list = byTick[k], n = list.length;
+      list.forEach((f, i) => {
+        const a = ang(+k) + (i - (n - 1) / 2) * 0.27, x = cx + Math.cos(a) * (R + 18), y = cy + Math.sin(a) * (R + 18), it = intent(b, f), pat = FOES[f.kind].pat[f.mark.ai];
+        ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fillStyle = foeColor(f); ctx.fill();
+        if (it.poise) { ctx.beginPath(); ctx.arc(x, y, 15.5, 0, Math.PI * 2); ctx.lineWidth = 2.5; ctx.strokeStyle = colors.accent; ctx.stroke(); }
+        if (end >= 0 && +k <= end) { ctx.beginPath(); ctx.arc(x, y, 18.5, 0, Math.PI * 2); ctx.lineWidth = 1.5; ctx.strokeStyle = colors.fg; ctx.stroke(); }
+        const g = GLYPH.find((x2) => pat[x2[0]]);
+        text(pat.dmg ? (pat.x ? it.dmg / pat.x + '×' + pat.x : '' + it.dmg) : g ? g[1] : '?', x, y + 0.5, pat.dmg && pat.x ? 10 : 12, colors['foe-fg'], 700);
+      });
+    }
+    if (b.dawn && b.dawn - b.t < CLOCK) { const a = ang(b.dawn), x = cx + Math.cos(a) * (R + 18), y = cy + Math.sin(a) * (R + 18); ctx.beginPath(); ctx.arc(x, y, 13, 0, Math.PI * 2); ctx.fillStyle = colors.good; ctx.fill(); text('朝', x, y + 0.5, 12, colors['foe-fg'], 700); }
+    // 針
+    const hand = (p, color, w, dash) => { const a = ang(p); ctx.beginPath(); ctx.setLineDash(dash || []); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * (R - 26), cy + Math.sin(a) * (R - 26)); ctx.lineWidth = w; ctx.strokeStyle = color; ctx.lineCap = 'round'; ctx.stroke(); ctx.setLineDash([]); ctx.lineCap = 'butt'; };
+    if (end > b.t) hand(end, colors[kind], 3, [5, 5]);
+    hand(busy ? handPos : b.t, colors.hand, 4);
+    // まん中: 体力と守り
+    ctx.beginPath(); ctx.arc(cx, cy, 40, 0, Math.PI * 2); ctx.fillStyle = colors.face; ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = colors.rim; ctx.stroke();
+    text('' + b.hp, cx, cy - 8, 24, lowHp(b) ? colors.danger : colors.fg, 800);
+    const st = [];
+    if (b.guard > 0) st.push('守' + b.guard); if (b.ward) st.push('見' + b.ward); if (b.power) st.push('力+' + b.power); if (b.curse) st.push('呪' + b.curse); if (b.slow) st.push('砂');
+    text(st.length ? st.join(' ') : '体力', cx, cy + 14, 11, b.guard > 0 ? colors.def : colors.muted, 700);
+    if (b.dawn) text('夜明けまで ' + Math.max(0, b.dawn - b.t) + ' 刻', cx, cy + R - 44, 11, colors.good);
+  }
+  let rafOn = false;
+  function loop() { if (!rafOn) return; draw(); if (busy || performance.now() < shakeUntil) requestAnimationFrame(loop); else rafOn = false; }
+  function kick() { if (!rafOn) { rafOn = true; requestAnimationFrame(loop); } }
+
+  // ---- 戦いの画面 --------------------------------------------------------------
+  function fixTarget() { const b = bt(); if (!b) return; const f = b.foes.find((x) => x.id === tgt && !x.dead); if (!f) { const a = b.foes.find((x) => !x.dead); tgt = a ? a.id : -1; } }
+  function renderBattle() {
+    const b = bt(); fixTarget();
+    // 化け物
+    const shown = b.foes.filter((f) => !f.dead).concat(b.foes.filter((f) => f.dead)).slice(0, 3).sort((x, y) => x.id - y.id);
+    const fo = $('foes'); fo.replaceChildren(); fo.style.gridTemplateColumns = 'repeat(' + Math.max(1, shown.length) + ', minmax(0, 1fr))';
+    for (const f of shown) {
+      const it = f.dead ? null : intent(b, f), e = el('button', 'foe' + (f.dead ? ' gone' : '') + (f.id === tgt ? ' sel' : '')); e.type = 'button'; e.dataset.id = f.id; e.style.borderTopColor = foeColor(f);
+      e.append(el('b', '', f.name));
+      e.append(el('span', '', f.dead ? 'たおした' : '体 ' + f.hp + '/' + f.maxHp + (f.burn ? ' 火' + f.burn : '') + (f.armor ? ' 固' + f.armor : '') + (f.up ? ' 強' + f.up : '')));
+      e.append(el('span', 'next', it ? 'あと ' + it.in + ' 刻: ' + it.text : f.dead ? '' : '…'));
+      e.append(el('span', '', it ? (it.poise ? 'かまえ あと ' + it.poiseLeft : it.name) + (f.broken ? '(ひるみ)' : '') : ''));
+      if (!f.dead) e.addEventListener('click', () => { if (busy) return; sfx('tap'); tgt = f.id; refresh(); });
+      fo.append(e);
+    }
+    // 構えと札
+    const mk = (a, sp, wrapEl) => {
+      const e = btn(sp.name, 'act ' + sp.kind + (sel && sel.a === a ? ' sel' : ''), () => { if (busy) return; const keep = sel && sel.a === a ? sel.k : sp.min; sel = { a, k: keep }; refresh(); }, ticksText(sp));
+      e.disabled = busy; wrapEl.append(e);
+    };
+    const ba = $('basics'), ca = $('cards'); ba.replaceChildren(); ca.replaceChildren(); ca.className = 'acts cards' + (handMax(b) > 3 ? ' four' : '');
+    mk('utsu', specOf(b, 'utsu'), ba); mk('ukeru', specOf(b, 'ukeru'), ba);
+    for (let i = 0; i < handMax(b); i++) { if (b.hand[i]) mk(i, getCard(b.hand[i]), ca); else { const e = btn('—', 'act empty', null, '札なし'); e.disabled = true; ca.append(e); } }
+    // 見通し
+    const info = $('info'), sp = sel ? specOf(b, sel.a) : null;
+    if (busy) info.textContent = note;
+    else if (!sp) {
+      sel = null; const f = b.foes.find((x) => x.id === tgt && !x.dead), it = f ? intent(b, f) : null;
+      info.textContent = (it ? f.name + ': あと ' + it.in + ' 刻で「' + it.name + '」' + it.text + (it.poise ? '(かまえ あと ' + it.poiseLeft + ')' : '') + '。' : '') + '構えか札を選んで、針を回す';
+    }
+    else {
+      if (sel.k < sp.min || sel.k > sp.max) sel.k = sp.min;
+      const o = { a: sel.a, k: sel.k, target: tgt }, p = preview(b, o), cost = costOf(b, sel.k);
+      let h = '<b>' + sp.name + '・' + sel.k + ' 刻</b> ' + describe(sp, sel.k, b) + (cost !== sel.k ? '(針は ' + cost + ' 刻進む)' : '') + '<br>';
+      if (!p.ok) h += '<span class="bad">' + p.why + '</span>';
+      else if (p.over === 'win') h += '<span class="ok">これで勝ち</span>';
+      else if (p.over === 'lose') h += '<span class="bad">これをやると倒れる</span>';
+      else {
+        const parts = [p.hpLost ? '受ける <span class="bad">' + p.hpLost + '</span>' : '<span class="ok">無傷</span>'];
+        if (p.blocked) parts.push('守りで ' + p.blocked + ' 防ぐ');
+        for (const f of p.foes) if (f.lost > 0 || f.broke) parts.push(b.foes.find((x) => x.id === f.id).name + ' −' + f.lost + (f.dead ? '(たおす)' : f.broke ? '<span class="ok">(くずす)</span>' : ''));
+        if (p.over === 'dawn') parts.push('<span class="ok">夜が明ける</span>');
+        h += parts.join('・');
+      }
+      info.innerHTML = h; // 中身は札の名前と数字だけ(外から来た文字は入らない)
+    }
+    $('kText').textContent = sp ? sel.k + ' 刻' : '—';
+    $('less').disabled = busy || !sp || sel.k <= sp.min; $('more').disabled = busy || !sp || sel.k >= sp.max;
+    $('go').disabled = busy || !sp || !!whyNot(b, { a: sel.a, k: sel.k, target: tgt });
+    draw();
+  }
+  function popOn(id, textStr) { const e = $('foes').querySelector('[data-id="' + id + '"]'); if (!e) return; const p = el('span', 'pop', textStr); e.append(p); setTimeout(() => p.remove(), 750); }
+
+  async function commit() {
+    if (busy || !sel || !run || run.phase !== 'battle') return;
+    const o = { a: sel.a, k: sel.k, target: tgt }, before = cloneState(run.battle);
+    const res = fight(run, o);
+    if (!res.ok) { $('info').textContent = res.why; return; }
+    if (typeof o.a === 'number') before.hand.splice(o.a, 1);
+    view = before; busy = true; skip = false; sel = null; handPos = view.t; note = ''; saveResume(); kick();
+    const foe = (id) => view.foes.find((f) => f.id === id);
+    for (const ev of res.events) {
+      let pause = 0;
+      switch (ev.e) {
+        case 'act': note = ev.name + '・' + ev.k + ' 刻'; break;
+        case 'tick': { const from = ev.t - 1, t0 = performance.now(), dur = skip || alwaysFast ? 0 : 190; sfx('tock');
+          while (dur && performance.now() - t0 < dur) { handPos = from + (performance.now() - t0) / dur; await new Promise((r) => requestAnimationFrame(r)); if (skip) break; }
+          handPos = ev.t; view.t = ev.t; if (view.guardUntil < view.t) view.guard = 0; break; }
+        case 'guard': view.guard += ev.v; view.guardUntil = 999; break;
+        case 'dmg': case 'burn': { const f = foe(ev.id); if (f) { f.hp = Math.max(0, f.hp - ev.v); if (ev.e === 'burn') f.burn = Math.max(0, f.burn - 1); } renderBattle(); popOn(ev.id, '−' + ev.v); sfx('hit'); pause = 150; break; }
+        case 'kill': { const f = foe(ev.id); if (f) { f.dead = true; f.mark = null; note = f.name + ' をたおした'; } pause = 200; break; }
+        case 'break': { const f = foe(ev.id); if (f) { f.mark = null; f.broken = true; note = f.name + ' のかまえをくずした'; } sfx('brk'); pause = 320; break; }
+        case 'foe': { const f = foe(ev.id); if (f) { f.mark = null; f.armor = 0; note = f.name + '「' + ev.n + '」'; } pause = 220; break; }
+        case 'hit': case 'curse': case 'aura': view.hp = Math.max(0, view.hp - ev.v); shakeUntil = performance.now() + 220; sfx('hurt'); note += ev.e === 'hit' ? ' → ' + ev.v + ' うけた' : ev.e === 'curse' ? '(のろい ' + ev.v + ')' : '(毒の息 ' + ev.v + ')'; pause = 170; break;
+        case 'block': view.guard = Math.max(0, view.guard - ev.v); sfx('block'); note += ' → 守りで ' + ev.v + ' 防いだ'; pause = 120; break;
+        case 'ward': view.ward = Math.max(0, view.ward - 1); note += ' → かわした'; sfx('block'); pause = 150; break;
+        case 'heal': view.hp = Math.min(view.maxHp, view.hp + ev.v); break;
+        case 'self': view.hp -= ev.v; break;
+        case 'doll': view.hp = 1; note = '身代わり人形が、かわりに倒れた'; pause = 400; break;
+        case 'burned': { const f = foe(ev.id); if (f) f.burn += ev.v; break; }
+        case 'delay': { const f = foe(ev.id); if (f && f.mark) f.mark.at += ev.v; break; }
+        case 'draw': if (view.hand.length < handMax(view)) view.hand.push(ev.id); break;
+        case 'steal': { const i = view.hand.indexOf(ev.card); if (i >= 0) view.hand.splice(i, 1); note += '・札を 1 枚落とされた'; break; }
+        case 'cursed': note += '・のろい ' + ev.v; break;
+        case 'slowed': note += '・砂をかけられた(次の行動 +1 刻)'; break;
+        case 'summon': note += '・仲間を呼んだ'; break;
+        case 'counter': note = '受けきった。次の攻撃 +' + ev.v; break;
+        case 'lap': note = '鐘が鳴った。化け物の攻撃 +' + ev.v; sfx('bell'); pause = 380; break;
+        case 'over': pause = 350; break;
+      }
+      renderBattle(); if (pause) await wait(pause);
+    }
+    view = null; busy = false; skip = false; note = '';
+    saveResume(); refresh();
+  }
+  function setK(k) { const b = bt(); if (!sel || !b) return; const sp = specOf(b, sel.a); if (!sp) return; const n = Math.max(sp.min, Math.min(sp.max, k)); if (n !== sel.k) { sel.k = n; sfx('tock'); renderBattle(); } }
+  function dragTo(e) { // 針を引っぱる: 指のある向きの刻まで回す
+    const b = bt(); if (busy || !sel || !b) return;
+    const r = cv.getBoundingClientRect(), a = Math.atan2(e.clientY - r.top - S / 2, e.clientX - r.left - S / 2);
+    let d = (a - ang(b.t)) / (Math.PI * 2 / CLOCK); d = ((d % CLOCK) + CLOCK) % CLOCK; const want = Math.round(d) % CLOCK;
+    const sp = specOf(b, sel.a); let best = sp.min, bd = 99;
+    for (let k = sp.min; k <= sp.max; k++) { const dd = Math.abs(costOf(b, k) - want); if (dd < bd) { bd = dd; best = k; } }
+    setK(best);
+  }
+
+  // ---- 画面の切りかえ ----------------------------------------------------------
+  function refresh() {
+    const inRun = !!run;
+    $('bar').hidden = !inRun;
+    if (inRun) {
+      const b = bt(), hp = run.phase === 'battle' || view ? b.hp : run.hp, max = run.maxHp;
+      $('when').textContent = HOURS[Math.min(run.step, HOURS.length - 1)] + '(' + Math.min(run.step + 1, 9) + ' / 9)';
+      $('hpText').textContent = '体力 ' + hp + '/' + max; $('hpBar').style.width = Math.max(0, Math.min(100, hp / max * 100)) + '%'; $('hpBar').className = hp <= max * LOW_HP ? 'low' : '';
+      $('zeni').textContent = '銭 ' + run.zeni;
+    } else $('when').textContent = '';
+    if (bagOpen) return bagPanel();
+    if (sub) return sub();
+    if (!run) return titlePanel();
+    if (view || run.phase === 'battle') { hide(); return renderBattle(); }
+    if (run.phase === 'map') return mapPanel();
+    if (run.phase === 'reward') return rewardPanel();
+    if (run.phase === 'shop') return shopPanel();
+    if (run.phase === 'rest') return restPanel();
+    if (run.phase === 'event') return eventPanel();
+    if (run.phase === 'over') return overPanel();
+  }
+  const after = (fn) => () => { fn(); saveResume(); refresh(); };
+
+  function titlePanel() {
+    const sv = load(), rec = sv.rec || {}, nodes = [el('h2', '', 'うしみつ時計'), el('p', '', '針を回したぶんだけ、強く打てる。けれど針が印を越えると、化け物が動く。夜明けまで、九つの刻。')];
+    nodes.push(el('h3', '', '夜回り'));
+    const g1 = el('div', ''); g1.style.display = 'grid'; g1.style.gap = '6px';
+    CHARS.forEach((c, i) => g1.append(choice(c.name, c.trait + '(体力 ' + c.hp + ')', () => { setup.char = i; refresh(); }, setup.char === i ? 'sel' : '')));
+    nodes.push(g1, el('h3', '', 'むずかしさ'));
+    const g2 = el('div', 'grid3'); for (const k of Object.keys(DIFFS)) g2.append(btn(DIFFS[k].name, 'choice' + (setup.diff === k ? ' sel' : ''), () => { setup.diff = k; refresh(); }));
+    nodes.push(g2);
+    nodes.push(btn('夜回りに出る', 'primary', () => begin('normal')));
+    const d = sv.daily && sv.daily.date === today() ? sv.daily : null;
+    nodes.push(btn('きょうの夜', '', () => begin('daily'), d ? 'きょうの結果: ' + (d.win ? ENDINGS[d.how].title : HOURS[d.step] + ' で倒れた') : 'その日の日付で決まる、みんな同じ夜'));
+    if (sv.resume && sv.resume.run && sv.resume.run.v === 1) nodes.push(btn('つづきから', '', () => { run = sv.resume.run; setup.mode = sv.resume.mode || 'normal'; setup.char = run.char; setup.diff = run.diff; sel = null; refresh(); }, HOURS[sv.resume.run.step] + '・' + CHARS[sv.resume.run.char].name));
+    const g3 = el('div', 'grid2'); g3.append(btn('あそびかた', '', () => { sub = howPanel; refresh(); }), btn('音: ' + (soundOn ? 'あり' : 'なし'), '', () => { soundOn = !soundOn; store({ sound: soundOn }); refresh(); }));
+    nodes.push(g3);
+    const wins = Object.keys(rec).reduce((a, k) => a + rec[k].win, 0), ends = Object.keys(sv.endings || {}).length;
+    nodes.push(el('p', '', '朝をむかえた回数: ' + wins + '・見た結末: ' + ends + ' / 3'));
+    show(nodes);
+  }
+  function begin(mode) {
+    setup.mode = mode;
+    const seed = mode === 'daily' ? dateSeed(today()) : (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0;
+    run = newRun({ seed, char: setup.char, diff: setup.diff }); sel = null; tgt = -1; saveResume();
+    sub = introPanel; sfx('story'); refresh();
+  }
+  function introPanel() {
+    const c = charOf(run), boss = FOES[bossOf(run)], nodes = [el('p', '', '夜語り'), el('h2', '', c.name)];
+    for (const line of INTRO[c.id]) nodes.push(el('p', 'tale', line));
+    nodes.push(el('h3', '', '今夜、丑三つ時に来るもの'), el('p', 'tale', boss.name + ' — ' + boss.rule));
+    nodes.push(btn('歩きだす', 'primary', () => { sub = null; refresh(); }));
+    show(nodes);
+  }
+  function howPanel() {
+    const ul = el('ul', ''); ul.style.margin = '0'; ul.style.paddingLeft = '1.2em';
+    for (const t of ['構え(打つ・受ける)か札を選び、時計の針を引っぱって、使う刻を決める。「決める」で針が進む',
+      '攻めは、回し終わった刻に当たる。同じ刻なら、あなたが先',
+      '守りは、回しているあいだだけ効く',
+      '時計のまわりの丸い印が、化け物の次の行動。針がその刻に来ると動く。数字はダメージ',
+      '金色の輪がついた印は大技。「かまえ」の数だけ先に削ると、つぶせる',
+      '札は 2 刻ごとに 1 枚引く(時計の内側の小さな四角)',
+      '針がてっぺん(鐘)を過ぎるたび、化け物の攻撃が ' + LAP_UP + ' 上がる。長引かせても得はしない',
+      '体力が 3 割以下になると、守りが 1.5 倍になる(火事場)',
+      '丑三つ時は、相手を倒すか、夜明けの刻まで立っていれば勝ち']) ul.append(el('li', '', t));
+    show([el('h2', '', 'あそびかた'), ul, btn('もどる', 'primary', () => { sub = null; refresh(); })]);
+  }
+  const optLabel = (n) => TYPE_JA[n.type] + (n.foes ? ': ' + n.foes.map((k) => FOES[k].name).join('・') : '');
+  const optText = (n) => (n.type === 'event' ? '何かが起きる。2 つから選ぶ' : n.type === 'shop' ? '札・おまもり・手当て(銭 ' + run.zeni + ')' : n.type === 'rest' ? '体力を 3 割もどすか、札を 1 枚きたえる' : n.type === 'elite' ? '勝てば、おまもり' : n.type === 'mid' ? '勝てば、おまもりと手当て' : n.type === 'boss' ? FOES[n.foes[0]].rule : '勝てば、銭と札');
+  function mapPanel() {
+    const nodes = [el('h2', '', HOURS[run.step]), el('p', 'tale', HOUR_LINES[run.step])];
+    run.nodes.forEach((opts, i) => {
+      const row = el('div', 'hour' + (i < run.step ? ' past' : i === run.step ? ' now' : '')), o = el('div', 'o');
+      row.append(el('div', 'h', HOURS[i]), o);
+      if (i === run.step) opts.forEach((n, j) => o.append(choice(optLabel(n), optText(n), () => enter(j))));
+      else o.append(el('span', '', opts.map(optLabel).join(' / ')));
+      nodes.push(row);
+    });
+    show(nodes);
+  }
+  function enter(j) {
+    const n = run.nodes[run.step][j]; choose(run, j); sel = null; tgt = -1; saveResume();
+    if (n.type === 'boss') { sub = () => show([el('p', '', '丑三つ時'), el('h2', '', FOES[n.foes[0]].name), el('p', 'tale', BOSS_LINES[n.foes[0]]), el('p', 'tale', FOES[n.foes[0]].rule + '。夜明けの刻(朝の印)まで立っていれば、勝ち。'), btn('むかえうつ', 'primary', () => { sub = null; refresh(); })]); sfx('bell'); }
+    refresh();
+  }
+  function rewardPanel() {
+    const rw = run.reward, nodes = [el('h2', '', '切りぬけた'), el('p', '', '銭 +' + rw.zeni + (rw.healed ? '・体力 +' + rw.healed : ''))];
+    if (rw.relics) { nodes.push(el('h3', '', 'おまもりを 1 つ選ぶ')); rw.relics.forEach((id, i) => nodes.push(choice(RELICS[id].name, RELICS[id].text, after(() => { takeRelic(run, i); sfx('coin'); })))); }
+    else { nodes.push(el('h3', '', '札を 1 枚もらう(束は ' + run.deck.length + ' 枚)')); rw.cards.forEach((id, i) => nodes.push(choice(getCard(id).name, cardLine(id), after(() => takeCard(run, i))))); nodes.push(btn('もらわない', '', after(() => takeCard(run, -1)))); }
+    show(nodes);
+  }
+  function pickCard(title, filter, onPick, back) { // 束から 1 枚選ぶ
+    sub = () => { const nodes = [el('h2', '', title)]; run.deck.forEach((id, i) => { if (filter(id)) nodes.push(choice(getCard(id).name, cardLine(id), () => { sub = null; onPick(i); saveResume(); refresh(); })); }); nodes.push(btn('やめる', '', () => { sub = null; refresh(); })); show(nodes); };
+    refresh();
+  }
+  function shopPanel() {
+    const s = run.shop, nodes = [el('h2', '', '店'), el('p', '', '銭 ' + run.zeni)];
+    const item = (name, text, price, sold, fn) => { const b = el('button', 'item'); b.type = 'button'; const l = el('div', ''); l.append(el('b', '', name), el('span', '', text)); b.append(l, el('em', '', sold ? '売り切れ' : '銭 ' + price)); b.disabled = sold || run.zeni < price; b.addEventListener('click', () => { sfx('coin'); fn(); }); return b; };
+    nodes.push(el('h3', '', '札'));
+    s.cards.forEach((it, i) => nodes.push(item(getCard(it.id).name, cardLine(it.id), PRICE.card, it.sold, after(() => buy(run, 'card', i)))));
+    nodes.push(el('h3', '', 'おまもり'));
+    s.relics.forEach((it, i) => nodes.push(item(RELICS[it.id].name, RELICS[it.id].text, PRICE.relic, it.sold, after(() => buy(run, 'relic', i)))));
+    nodes.push(el('h3', '', 'そのほか'));
+    const h = item('手当て', '体力 +' + SHOP_HEAL, PRICE.heal, s.healSold, after(() => buy(run, 'heal'))); if (run.hp >= run.maxHp) h.disabled = true; nodes.push(h);
+    const rm = item('札を 1 枚手放す', '束をうすくして、ほしい札を引きやすくする', PRICE.remove, s.removeSold, () => pickCard('手放す札', () => true, (i) => buy(run, 'remove', i))); if (run.deck.length <= 5) rm.disabled = true; nodes.push(rm);
+    nodes.push(btn('店を出る', 'primary', after(() => leave(run))));
+    show(nodes);
+  }
+  function restPanel() {
+    const v = Math.min(Math.ceil(run.maxHp * REST_HEAL), run.maxHp - run.hp);
+    show([el('h2', '', '茶屋'), el('p', 'tale', '湯のみが、ひとつ多く出ている。だれのぶんかは、聞かないことにした。'),
+      choice('休む', '体力 +' + v, after(() => rest(run, 'heal'))),
+      choice('札をきたえる', '束の札を 1 枚、強くする', () => pickCard('きたえる札', canUpgrade, (i) => rest(run, 'up', i))),
+      btn('もちものを見る', '', () => { bagOpen = true; refresh(); })]);
+  }
+  function eventPanel() {
+    const ev = EVENTS[run.event], nodes = [el('p', '', '出来事'), el('h2', '', ev.title), el('p', 'tale', ev.text)];
+    for (const ch of ['a', 'b']) {
+      const b = choice(ev[ch].label, '', () => { const r = answer(run, ch); saveResume(); sfx('story');
+        sub = () => show([el('h2', '', ev.title), el('p', 'tale', r.out), el('p', 'note', r.notes.length ? r.notes.join('・') : '何も変わらなかった'), btn('つぎへ', 'primary', () => { sub = null; refresh(); })]); refresh(); });
+      b.disabled = !canAnswer(run, ch); nodes.push(b);
+    }
+    show(nodes);
+  }
+  function overPanel() {
+    const rs = run.result, end = ENDINGS[rs.how], sv = load();
+    if (!run.counted) {
+      run.counted = true; sfx(rs.win ? 'victory' : 'defeat');
+      const rec = sv.rec || {}, key = run.char + '/' + run.diff; rec[key] = rec[key] || { win: 0, play: 0 }; rec[key].play++; if (rs.win) rec[key].win++;
+      const ends = sv.endings || {}; ends[rs.how] = true;
+      const patch = { rec, endings: ends, resume: null };
+      if (setup.mode === 'daily' && !(sv.daily && sv.daily.date === today() && sv.daily.win)) patch.daily = { date: today(), win: rs.win, how: rs.how, step: rs.step };
+      store(patch);
+    }
+    const rows = el('div', 'rows'); const add = (a, b) => rows.append(el('span', '', a), el('span', '', b));
+    add('たどりついた刻', HOURS[rs.step]); add('戦い', run.stats.fights + ' 回'); add('与えたダメージ', '' + run.stats.dealt); add('受けたダメージ', '' + run.stats.taken); add('くずした大技', run.stats.breaks + ' 回');
+    if (rs.win) add('丑三つ時', rs.how === 'slain' ? rs.ticks + ' 刻で退治' : '夜明けまで耐えた');
+    const nodes = [el('p', '', '結末'), el('h2', '', end.title)]; for (const line of end.lines) nodes.push(el('p', 'tale', line));
+    nodes.push(rows, btn('もう一回', 'primary', () => begin(setup.mode)), btn('タイトルへ', '', () => { run = null; refresh(); }));
+    show(nodes);
+  }
+  function bagPanel() {
+    const c = charOf(run), nodes = [el('h2', '', 'もちもの'), el('h3', '', c.name), el('p', 'tale', c.trait)];
+    nodes.push(el('h3', '', 'おまもり(' + run.relics.length + ')'));
+    if (!run.relics.length) nodes.push(el('p', '', 'まだない')); for (const id of run.relics) nodes.push(el('p', 'tale', RELICS[id].name + ' — ' + RELICS[id].text));
+    nodes.push(el('h3', '', '札の束(' + run.deck.length + ' 枚)'));
+    const count = {}; for (const id of run.deck) count[id] = (count[id] || 0) + 1;
+    for (const id of Object.keys(count)) nodes.push(el('p', 'tale', getCard(id).name + (count[id] > 1 ? ' ×' + count[id] : '') + ' — ' + cardLine(id)));
+    const g = el('div', 'grid2'); g.append(btn('あそびかた', '', () => { bagOpen = false; sub = howPanel; refresh(); }), btn('とじる', 'primary', () => { bagOpen = false; refresh(); }));
+    nodes.push(g, btn('この夜をやめてタイトルへ', '', () => { bagOpen = false; saveResume(); run = null; refresh(); }));
+    show(nodes);
+  }
+
+  // ---- 入力 ------------------------------------------------------------------
+  let dragging = false;
+  cv.addEventListener('pointerdown', (e) => { if (busy) { skip = true; return; } if (!sel) return; dragging = true; try { cv.setPointerCapture(e.pointerId); } catch (x) { /* つかめなくても続ける */ } dragTo(e); });
+  cv.addEventListener('pointermove', (e) => { if (dragging) dragTo(e); });
+  cv.addEventListener('pointerup', () => { dragging = false; });
+  cv.addEventListener('pointercancel', () => { dragging = false; });
+  $('less').addEventListener('click', () => { if (sel) setK(sel.k - 1); });
+  $('more').addEventListener('click', () => { if (sel) setK(sel.k + 1); });
+  $('go').addEventListener('click', () => { sfx('tap'); commit(); });
+  $('bag').addEventListener('click', () => { if (busy || !run) return; sfx('tap'); bagOpen = !bagOpen; if (!bagOpen) hide(); refresh(); });
+  $('info').addEventListener('click', () => { if (busy) skip = true; });
+  window.addEventListener('resize', resize);
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(wrap);
+  try { const mq = window.matchMedia('(prefers-color-scheme: dark)'); mq.addEventListener('change', () => { readColors(); draw(); }); } catch (e) { /* 古いブラウザ */ }
+
+  readColors(); refresh(); resize();
+})();
+
+})();</script>

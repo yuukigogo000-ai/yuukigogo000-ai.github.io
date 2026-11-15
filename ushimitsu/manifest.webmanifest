@@ -1,0 +1,13 @@
+{
+  "name": "うしみつ時計",
+  "short_name": "うしみつ時計",
+  "description": "時計の針を自分で回して、夜明けまで生きのびる札バトル",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0e14",
+  "theme_color": "#0d0e14",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

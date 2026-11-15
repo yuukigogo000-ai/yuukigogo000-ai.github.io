@@ -1,7 +1,7 @@
 // うしみつ時計: 一夜の進行(道の選択・戦い・ごほうび・店・茶屋・出来事)。
 // 盤面は JSON にできる値だけで持つ(保存して読み直しても続きから同じ結果になる)。
 import { CHARS, DIFFS, ENCOUNTERS, CARDS, CARD_IDS, RELIC_IDS, canUpgrade } from './data.js';
-import { newBattle, act as battleAct, pick, shuffle } from './battle.js';
+import { newBattle, act, pick, shuffle } from './battle.js'; // 別名をつけない(1 つにまとめるとき import 行を消すため)
 import { EVENTS } from './tales.js';
 
 export const DAWN = 36; // 丑三つ時の戦いで、夜明けが来る刻
@@ -62,7 +62,7 @@ function advance(r) { r.step++; r.node = null; r.battle = null; r.reward = null;
 // 戦いの 1 手。戦いが終わったら、ごほうび(または結末)へ進む
 export function fight(r, o) {
   if (r.phase !== 'battle') return { ok: false, why: 'いまは戦いではありません', events: [] };
-  const res = battleAct(r.battle, o); if (!res.ok || !r.battle.over) return res;
+  const res = act(r.battle, o); if (!res.ok || !r.battle.over) return res;
   const b = r.battle, type = r.node.type;
   r.hp = b.hp; r.dollUsed = b.dollUsed; r.stats.fights++; r.stats.dealt += b.stats.dealt; r.stats.taken += b.stats.taken; r.stats.breaks += b.stats.breaks; r.stats.ticks += b.t;
   if (b.over === 'lose') { r.phase = 'over'; r.result = { win: false, how: 'dead', step: r.step }; return res; }
