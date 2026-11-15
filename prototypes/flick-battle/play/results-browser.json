@@ -1,0 +1,149 @@
+{
+  "360x800-light": {
+    "noHScroll": true,
+    "noVScroll": true,
+    "canvas": [
+      328,
+      473
+    ],
+    "dragWorked": true,
+    "stages": {
+      "mob:kitchen:0": {
+        "phase": "won",
+        "shots": 4,
+        "ults": 0,
+        "chain": 5,
+        "frames": 551,
+        "slow": 26,
+        "simMs": 1.7,
+        "aiMsMedian": 617,
+        "aiMsMax": 633
+      },
+      "mob:living:1": {
+        "phase": "won",
+        "shots": 5,
+        "ults": 0,
+        "chain": 6,
+        "frames": 444,
+        "slow": 39,
+        "simMs": 2.7,
+        "aiMsMedian": 455,
+        "aiMsMax": 600
+      },
+      "mob:attic:2": {
+        "phase": "won",
+        "shots": 9,
+        "ults": 0,
+        "chain": 5,
+        "frames": 933,
+        "slow": 74,
+        "simMs": 3.3,
+        "aiMsMedian": 393,
+        "aiMsMax": 640
+      },
+      "boss:vacuum": {
+        "phase": "won",
+        "shots": 28,
+        "ults": 5,
+        "chain": 6,
+        "frames": 4614,
+        "slow": 159,
+        "simMs": 6.6,
+        "aiMsMedian": 505,
+        "aiMsMax": 1480
+      },
+      "boss:washer": {
+        "phase": "won",
+        "shots": 10,
+        "ults": 2,
+        "chain": 5,
+        "frames": 1335,
+        "slow": 80,
+        "simMs": 2.3,
+        "aiMsMedian": 345,
+        "aiMsMax": 758
+      },
+      "boss:fan": {
+        "phase": "won",
+        "shots": 11,
+        "ults": 2,
+        "chain": 4,
+        "frames": 1402,
+        "slow": 64,
+        "simMs": 2.1,
+        "aiMsMedian": 365,
+        "aiMsMax": 497
+      }
+    },
+    "errors": []
+  },
+  "360x800-dark": {
+    "noHScroll": true,
+    "noVScroll": true,
+    "canvas": [
+      328,
+      473
+    ],
+    "dragWorked": true,
+    "stages": {
+      "boss:washer": {
+        "phase": "won",
+        "shots": 10,
+        "ults": 2,
+        "chain": 5,
+        "frames": 1360,
+        "slow": 52,
+        "simMs": 2.2,
+        "aiMsMedian": 427,
+        "aiMsMax": 592
+      }
+    },
+    "errors": []
+  },
+  "390x844-light": {
+    "noHScroll": true,
+    "noVScroll": true,
+    "canvas": [
+      358,
+      517
+    ],
+    "dragWorked": true,
+    "stages": {
+      "boss:fan": {
+        "phase": "won",
+        "shots": 11,
+        "ults": 2,
+        "chain": 4,
+        "frames": 1393,
+        "slow": 68,
+        "simMs": 5.1,
+        "aiMsMedian": 342,
+        "aiMsMax": 609
+      }
+    },
+    "errors": []
+  },
+  "390x844-dark": {
+    "noHScroll": true,
+    "noVScroll": true,
+    "canvas": [
+      358,
+      517
+    ],
+    "dragWorked": true,
+    "stages": {
+      "boss:washer": {
+        "phase": "won",
+        "shots": 10,
+        "ults": 2,
+        "chain": 5,
+        "frames": 1324,
+        "slow": 98,
+        "simMs": 3.5,
+        "aiMsMedian": 451,
+        "aiMsMax": 793
+      }
+    },
+    "errors": []
+  }
+}

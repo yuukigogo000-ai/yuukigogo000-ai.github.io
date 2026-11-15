@@ -658,7 +658,7 @@ function bossRule(s) {
       if (!o.alive || o.anchored || o.id === b.id) continue;
       const dx = b.x - o.x, dy = b.y - o.y, d = Math.sqrt(dx * dx + dy * dy);
       if (d === 0) continue;
-      const k = sign * 380 * o.invMass / d;
+      const k = sign * (sign > 0 ? 380 : 260) * o.invMass / d; // 吹き出しは弱め(近づけなくなって長引くため)
       o.vx += dx * k; o.vy += dy * k; moved = true;
     }
   } else if (b.boss === 'washer') {

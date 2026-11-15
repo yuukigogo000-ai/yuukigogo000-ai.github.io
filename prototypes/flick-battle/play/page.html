@@ -1,0 +1,108 @@
+<title>はじきバトル試作</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<style>
+  /* レイアウト: 1 画面のアプリ。上に弾く順番、中央に卓(canvas)、下に必殺と設定。 */
+  :root {
+    --bg: #eef0ee; --surface: #ffffff; --fg: #1d2622; --muted: #5d6a64; --line: #c9d0cc;
+    --table: #d9c7a3; --table-edge: #7a5c3a; --gap: #c0392b;
+    --ally: #1f6f8b; --ally-fg: #ffffff; --enemy: #a8442f; --enemy-fg: #ffffff; --boss: #5b3a7a; --obstacle: #8a8f8c;
+    --accent: #0b7a53; --accent-fg: #ffffff; --danger: #c0392b; --heal: #2e8b57;
+    --ult: #b7791f; --ult-fg: #ffffff; --wet: #4f9bd1; --mat: #6f8f4e; --stove: #d1603d; --poison: #7a4fa3;
+    --font: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141a17; --surface: #1e2622; --fg: #e6ece8; --muted: #9aa8a1; --line: #36423c;
+      --table: #5b4b33; --table-edge: #c9a06a; --gap: #ff7a66;
+      --ally: #58b6d6; --ally-fg: #06222c; --enemy: #e98a72; --enemy-fg: #2b0d05; --boss: #b89ad6; --obstacle: #7d8581;
+      --accent: #46c493; --accent-fg: #06261a; --danger: #ff7a66; --heal: #6fd69a;
+      --ult: #f0b54a; --ult-fg: #2a1c02; --wet: #6db4e6; --mat: #9bbf73; --stove: #f08a66; --poison: #b48be0;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141a17; --surface: #1e2622; --fg: #e6ece8; --muted: #9aa8a1; --line: #36423c;
+    --table: #5b4b33; --table-edge: #c9a06a; --gap: #ff7a66;
+    --ally: #58b6d6; --ally-fg: #06222c; --enemy: #e98a72; --enemy-fg: #2b0d05; --boss: #b89ad6; --obstacle: #7d8581;
+    --accent: #46c493; --accent-fg: #06261a; --danger: #ff7a66; --heal: #6fd69a;
+    --ult: #f0b54a; --ult-fg: #2a1c02; --wet: #6db4e6; --mat: #9bbf73; --stove: #f08a66; --poison: #b48be0;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.4;
+    display: flex; flex-direction: column; gap: 6px; box-sizing: border-box;
+    padding-block: 8px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    overscroll-behavior: contain; -webkit-user-select: none; user-select: none;
+  }
+  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .top h1 { font-size: 15px; margin: 0; font-weight: 700; }
+  .status { color: var(--muted); font-variant-numeric: tabular-nums; }
+  .order { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  .chip { border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; background: var(--surface); min-width: 0; }
+  .chip.now { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .chip.down { opacity: .4; }
+  .chip b { display: block; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip span { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chip.ready span { color: var(--ult); font-weight: 700; }
+  .stage-wrap { flex: 1 1 auto; min-height: 0; position: relative; display: flex; justify-content: center; align-items: center; }
+  canvas { display: block; touch-action: none; max-width: 100%; border-radius: 8px; }
+  .hint { text-align: center; color: var(--muted); min-height: 1.4em; font-size: 13px; }
+  .controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; justify-content: center; }
+  select, button {
+    font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 8px 10px; min-height: 44px; max-width: 100%;
+  }
+  button.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 700; }
+  button.ult { background: var(--surface); color: var(--muted); font-weight: 700; flex: 1 1 100%; }
+  button.ult.ready { color: var(--ult); border-color: var(--ult); }
+  button.ult.armed { background: var(--ult); color: var(--ult-fg); border-color: transparent; }
+  button:disabled { opacity: .55; }
+  select:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .overlay {
+    position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--bg) 80%, transparent); border-radius: 8px; text-align: center; padding: 12px;
+  }
+  .overlay strong { font-size: 28px; }
+  .overlay span { color: var(--muted); font-variant-numeric: tabular-nums; }
+</style>
+
+<div class="top">
+  <h1>はじきバトル試作</h1>
+  <div class="status" id="status">0 手</div>
+</div>
+<div class="order" id="order" aria-label="弾く順番"></div>
+<div class="stage-wrap" id="wrap">
+  <canvas id="cv" aria-label="卓。引っぱって離すと、光っている味方を弾きます"></canvas>
+  <div class="overlay" id="overlay" hidden>
+    <strong id="ovTitle">勝ち!</strong>
+    <span id="ovSub"></span>
+    <button class="primary" id="again" type="button">もう一回</button>
+  </div>
+</div>
+<div class="hint" id="hint"></div>
+<div class="controls">
+  <button class="ult" id="ult" type="button" disabled>必殺</button>
+  <select id="stage" aria-label="相手">
+    <option value="mob:kitchen:0">ザコ戦・台所</option>
+    <option value="mob:living:1">ザコ戦・リビング</option>
+    <option value="mob:attic:2">ザコ戦・屋根裏</option>
+    <option value="boss:vacuum">ボス・掃除機</option>
+    <option value="boss:washer">ボス・洗濯機</option>
+    <option value="boss:fan">ボス・扇風機</option>
+  </select>
+  <select id="team" aria-label="編成">
+    <option value="mixed">編成・ばらばら</option>
+    <option value="heavy">編成・重量級</option>
+    <option value="chain">編成・連鎖</option>
+    <option value="poison">編成・毒と狙撃</option>
+    <option value="pierce">編成・貫通</option>
+  </select>
+  <button id="auto" type="button">おまかせ</button>
+  <button id="reset" type="button">やり直す</button>
+</div>
+
+<script>/*__BUNDLE__*/</script>

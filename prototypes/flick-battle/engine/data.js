@@ -85,7 +85,7 @@ export function bossBattle(kind, allies, opts) {
   const minion = (l, x, y) => foe(l, x, y, { pct: o.pct || 0 });
   if (kind === 'vacuum') {
     return { gaps: { top: [], bottom: [[130, 230]], left: [[240, 340]], right: [[240, 340]] }, allies,
-      enemies: [{ name: '掃除機', boss: 'vacuum', anchored: true, r: 46, mass: 9, hp: 1, gauges: g([220, 260]), atk: Math.round(24 * k), action: 'blast', count: 3, actR: 120, x: 180, y: 120 },
+      enemies: [{ name: '掃除機', boss: 'vacuum', anchored: true, r: 46, mass: 9, hp: 1, gauges: g([220, 250]), atk: Math.round(24 * k), action: 'blast', count: 3, actR: 120, x: 180, y: 120 },
                 minion('creature', 80, 240), minion('creature', 280, 240)] };
   }
   if (kind === 'washer') {
@@ -96,13 +96,13 @@ export function bossBattle(kind, allies, opts) {
       { top: [], bottom: [], left: [[190, 310]], right: [] },
     ];
     return { gaps: cycle[0], gapCycle: cycle, allies,
-      enemies: [{ name: '洗濯機', boss: 'washer', anchored: true, r: 46, mass: 9, hp: 1, gauges: g([220, 260]), atk: Math.round(24 * k), action: 'beamH', count: 3, actR: 120, x: 180, y: 130 },
+      enemies: [{ name: '洗濯機', boss: 'washer', anchored: true, r: 46, mass: 9, hp: 1, gauges: g([240, 280]), atk: Math.round(24 * k), action: 'beamH', count: 3, actR: 120, x: 180, y: 130 },
                 minion('bath', 90, 250), minion('clothing', 270, 250)] };
   }
   // 扇風機
   const wc = [[0, 200], [-200, 0], [0, -200], [200, 0]];
   return { gaps: { top: [[130, 230]], bottom: [[130, 230]], left: [[210, 310]], right: [[210, 310]] }, wind: { ax: wc[0][0], ay: wc[0][1] }, windCycle: wc, allies,
-    enemies: [{ name: '扇風機', boss: 'fan', anchored: true, r: 44, mass: 9, hp: 1, gauges: g([150, 170, 150]), atk: Math.round(22 * k), action: 'gust', count: 2, actR: 90, x: 180, y: 110 },
+    enemies: [{ name: '扇風機', boss: 'fan', anchored: true, r: 44, mass: 9, hp: 1, gauges: g([210, 240, 210]), atk: Math.round(22 * k), action: 'gust', count: 2, actR: 90, x: 180, y: 110 },
               minion('stationery', 90, 230), minion('toy', 270, 230)] };
 }
 
