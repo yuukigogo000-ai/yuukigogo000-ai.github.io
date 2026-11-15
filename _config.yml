@@ -66,6 +66,7 @@ exclude:
 
   # けもの天下(機能は完成、見た目は仮。仕上げるまで配信しない)
   - kemono-tenka/
+  - ushimitsu/
 
   # 作業ログ(内部資料)
   - WORKLOG.md

@@ -1,0 +1,299 @@
+{
+ "best/easy": {
+  "n": 90,
+  "win": 0.91,
+  "winByChar": [
+   0.93,
+   0.93,
+   0.87
+  ],
+  "slain": 55,
+  "dawn": 27,
+  "avgHpLeftOnWin": 20,
+  "avgBossTicks": 27.8,
+  "avgTicksPerRun": 98,
+  "diedAtStep": {
+   "5": 1,
+   "8": 7
+  }
+ },
+ "best/normal": {
+  "n": 90,
+  "win": 0.76,
+  "winByChar": [
+   0.87,
+   0.67,
+   0.73
+  ],
+  "slain": 32,
+  "dawn": 36,
+  "avgHpLeftOnWin": 18,
+  "avgBossTicks": 30.8,
+  "avgTicksPerRun": 113,
+  "diedAtStep": {
+   "4": 2,
+   "5": 7,
+   "8": 13
+  }
+ },
+ "best/hard": {
+  "n": 90,
+  "win": 0.53,
+  "winByChar": [
+   0.7,
+   0.33,
+   0.57
+  ],
+  "slain": 17,
+  "dawn": 31,
+  "avgHpLeftOnWin": 15.8,
+  "avgBossTicks": 30.8,
+  "avgTicksPerRun": 109,
+  "diedAtStep": {
+   "4": 23,
+   "5": 8,
+   "8": 11
+  }
+ },
+ "greedy/easy": {
+  "n": 90,
+  "win": 0.7,
+  "winByChar": [
+   0.83,
+   0.7,
+   0.57
+  ],
+  "slain": 34,
+  "dawn": 29,
+  "avgHpLeftOnWin": 16.7,
+  "avgBossTicks": 30,
+  "avgTicksPerRun": 100,
+  "diedAtStep": {
+   "4": 11,
+   "5": 5,
+   "8": 11
+  }
+ },
+ "greedy/normal": {
+  "n": 90,
+  "win": 0.43,
+  "winByChar": [
+   0.53,
+   0.37,
+   0.4
+  ],
+  "slain": 19,
+  "dawn": 20,
+  "avgHpLeftOnWin": 14.8,
+  "avgBossTicks": 31.6,
+  "avgTicksPerRun": 106,
+  "diedAtStep": {
+   "3": 2,
+   "4": 21,
+   "5": 13,
+   "8": 15
+  }
+ },
+ "greedy/hard": {
+  "n": 90,
+  "win": 0.26,
+  "winByChar": [
+   0.2,
+   0.27,
+   0.3
+  ],
+  "slain": 8,
+  "dawn": 15,
+  "avgHpLeftOnWin": 14.7,
+  "avgBossTicks": 32.6,
+  "avgTicksPerRun": 104,
+  "diedAtStep": {
+   "0": 1,
+   "3": 7,
+   "4": 36,
+   "5": 9,
+   "8": 14
+  }
+ },
+ "loose/easy": {
+  "n": 90,
+  "win": 0.37,
+  "winByChar": [
+   0.4,
+   0.33,
+   0.37
+  ],
+  "slain": 14,
+  "dawn": 19,
+  "avgHpLeftOnWin": 12.1,
+  "avgBossTicks": 31.2,
+  "avgTicksPerRun": 103,
+  "diedAtStep": {
+   "3": 2,
+   "4": 27,
+   "5": 2,
+   "6": 1,
+   "8": 25
+  }
+ },
+ "loose/normal": {
+  "n": 90,
+  "win": 0.14,
+  "winByChar": [
+   0.1,
+   0.07,
+   0.27
+  ],
+  "slain": 4,
+  "dawn": 9,
+  "avgHpLeftOnWin": 8.2,
+  "avgBossTicks": 32,
+  "avgTicksPerRun": 92,
+  "diedAtStep": {
+   "2": 1,
+   "3": 11,
+   "4": 39,
+   "5": 5,
+   "8": 21
+  }
+ },
+ "loose/hard": {
+  "n": 90,
+  "win": 0.09,
+  "winByChar": [
+   0.1,
+   0.1,
+   0.07
+  ],
+  "slain": 1,
+  "dawn": 7,
+  "avgHpLeftOnWin": 9.4,
+  "avgBossTicks": 34.5,
+  "avgTicksPerRun": 89,
+  "diedAtStep": {
+   "0": 2,
+   "2": 2,
+   "3": 15,
+   "4": 43,
+   "5": 5,
+   "6": 3,
+   "8": 12
+  }
+ },
+ "basic/easy": {
+  "n": 90,
+  "win": 0.36,
+  "winByChar": [
+   0.6,
+   0.27,
+   0.2
+  ],
+  "slain": 11,
+  "dawn": 21,
+  "avgHpLeftOnWin": 8.3,
+  "avgBossTicks": 33.5,
+  "avgTicksPerRun": 97,
+  "diedAtStep": {
+   "3": 10,
+   "4": 23,
+   "5": 11,
+   "8": 14
+  }
+ },
+ "basic/normal": {
+  "n": 90,
+  "win": 0.11,
+  "winByChar": [
+   0.13,
+   0.13,
+   0.07
+  ],
+  "slain": 0,
+  "dawn": 10,
+  "avgHpLeftOnWin": 11.7,
+  "avgBossTicks": 34.8,
+  "avgTicksPerRun": 91,
+  "diedAtStep": {
+   "0": 5,
+   "1": 10,
+   "3": 13,
+   "4": 26,
+   "5": 10,
+   "8": 16
+  }
+ },
+ "basic/hard": {
+  "n": 90,
+  "win": 0.02,
+  "winByChar": [
+   0.03,
+   0,
+   0.03
+  ],
+  "slain": 0,
+  "dawn": 2,
+  "avgHpLeftOnWin": 10.5,
+  "avgBossTicks": 34,
+  "avgTicksPerRun": 81,
+  "diedAtStep": {
+   "0": 10,
+   "1": 10,
+   "2": 4,
+   "3": 15,
+   "4": 29,
+   "5": 10,
+   "8": 10
+  }
+ },
+ "idle/easy": {
+  "n": 90,
+  "win": 0,
+  "winByChar": [
+   0,
+   0,
+   0
+  ],
+  "slain": 0,
+  "dawn": 0,
+  "avgHpLeftOnWin": 0,
+  "avgBossTicks": 0,
+  "avgTicksPerRun": 43,
+  "diedAtStep": {
+   "0": 90
+  }
+ },
+ "idle/normal": {
+  "n": 90,
+  "win": 0,
+  "winByChar": [
+   0,
+   0,
+   0
+  ],
+  "slain": 0,
+  "dawn": 0,
+  "avgHpLeftOnWin": 0,
+  "avgBossTicks": 0,
+  "avgTicksPerRun": 40,
+  "diedAtStep": {
+   "0": 90
+  }
+ },
+ "idle/hard": {
+  "n": 90,
+  "win": 0,
+  "winByChar": [
+   0,
+   0,
+   0
+  ],
+  "slain": 0,
+  "dawn": 0,
+  "avgHpLeftOnWin": 0,
+  "avgBossTicks": 0,
+  "avgTicksPerRun": 36,
+  "diedAtStep": {
+   "0": 90
+  }
+ }
+}
