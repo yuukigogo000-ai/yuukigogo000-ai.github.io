@@ -1,0 +1,13 @@
+{
+  "name": "ペンギンずもう",
+  "short_name": "ペンギンずもう",
+  "description": "氷の上を滑って、敵を外へ押し出すターン制のゲーム",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#e9f0f4",
+  "theme_color": "#d3ecf6",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

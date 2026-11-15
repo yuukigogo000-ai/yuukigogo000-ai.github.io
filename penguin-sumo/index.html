@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#d3ecf6">
 <title>ペンギンずもう</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="robots" content="noindex,nofollow">
@@ -852,6 +855,30 @@ function dailySeed(dateStr) { let h = 2166136261; for (let i = 0; i < dateStr.le
     else if (!sv.best || cleared > sv.best.floors) store({ best: { floors: cleared, won: run.over === 'won' } });
   }
 
+  // ---- 効果音(ファイルを使わず、その場で音を作る。最初の操作のあとにだけ鳴らせる) ----
+  let audio = null, soundOn = load().sound !== false;
+  const SFX = {
+    bump: [[150, 90, 0.09, 'square', 0.16]], hit: [[260, 170, 0.08, 'triangle', 0.14]], ring: [[520, 980, 0.16, 'triangle', 0.16]], down: [[330, 210, 0.12, 'triangle', 0.14]],
+    hurt: [[140, 90, 0.2, 'sawtooth', 0.16]], fall: [[420, 70, 0.32, 'sine', 0.18]], guard: [[720, 720, 0.07, 'sine', 0.12]], boom: [[90, 40, 0.28, 'sawtooth', 0.2]],
+    tap: [[640, 640, 0.03, 'sine', 0.08]], boss: [[110, 150, 0.22, 'square', 0.12]],
+    win: [[523, 523, 0.1, 'triangle', 0.14, 0], [659, 659, 0.1, 'triangle', 0.14, 0.1], [784, 784, 0.18, 'triangle', 0.14, 0.2]],
+    lose: [[392, 392, 0.14, 'triangle', 0.14, 0], [311, 311, 0.14, 'triangle', 0.14, 0.14], [233, 233, 0.26, 'triangle', 0.14, 0.28]],
+  };
+  function sfx(name) {
+    if (!soundOn || !SFX[name]) return;
+    try {
+      if (!audio) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; audio = new AC(); }
+      if (audio.state === 'suspended') audio.resume();
+      for (const n of SFX[name]) {
+        const t0 = audio.currentTime + (n[5] || 0), o = audio.createOscillator(), g = audio.createGain();
+        o.type = n[3]; o.frequency.setValueAtTime(n[0], t0); o.frequency.linearRampToValueAtTime(n[1], t0 + n[2]);
+        g.gain.setValueAtTime(n[4], t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + n[2]);
+        o.connect(g); g.connect(audio.destination); o.start(t0); o.stop(t0 + n[2] + 0.02);
+      }
+    } catch (e) { /* 音が出せなくても続ける */ }
+  }
+  globalThis.__psSound = () => ({ on: soundOn, started: !!audio });
+
   // ---- 見た目の下ごしらえ ----------------------------------------------------
   function readColors() {
     const cs = getComputedStyle(document.documentElement);
@@ -900,7 +927,7 @@ function dailySeed(dateStr) { let h = 2166136261; for (let i = 0; i < dateStr.le
   function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
   function show(nodes) { panel.textContent = ''; for (const n of nodes) panel.append(n); panel.hidden = false; panel.scrollTop = 0; refresh(); }
   function hide() { panel.hidden = true; refresh(); defaultHint(); }
-  function btn(text, cls, fn, sub) { const b = el('button', cls, text); b.type = 'button'; if (sub) b.append(el('small', '', sub)); b.addEventListener('click', fn); return b; }
+  function btn(text, cls, fn, sub) { const b = el('button', cls, text); b.type = 'button'; if (sub) b.append(el('small', '', sub)); b.addEventListener('click', () => { sfx('tap'); fn(); }); return b; }
 
   function titleScreen() {
     state = null; run = null; refresh(); setHint('');
@@ -910,6 +937,7 @@ function dailySeed(dateStr) { let h = 2166136261; for (let i = 0; i < dateStr.le
     const d = sv.daily && sv.daily.date === today() ? sv.daily : null;
     nodes.push(btn('きょうの氷', '', () => begin('daily'), d ? 'きょうの記録: ' + (d.won ? '制覇' : d.floors + ' フロア') : '毎日かわる同じ並びに挑戦'));
     nodes.push(btn('あそびかた', '', howTo));
+    nodes.push(btn('音: ' + (soundOn ? 'オン' : 'オフ'), '', () => { soundOn = !soundOn; store({ sound: soundOn }); sfx('tap'); titleScreen(); }));
     show(nodes);
   }
   function howTo() {
@@ -979,8 +1007,8 @@ function dailySeed(dateStr) { let h = 2166136261; for (let i = 0; i < dateStr.le
   function afterAct() {
     animating = false;
     syncSprites();
-    if (state.phase === 'won') { const w = winFloor(run, state, fl.quickTurns); if (w.finished) resultScreen(); else { store({ resume: null }); upgradeScreen(w); } }
-    else if (state.phase === 'lost') { loseRun(run, state); resultScreen(); }
+    if (state.phase === 'won') { sfx('win'); const w = winFloor(run, state, fl.quickTurns); if (w.finished) resultScreen(); else { store({ resume: null }); upgradeScreen(w); } }
+    else if (state.phase === 'lost') { sfx('lose'); loseRun(run, state); resultScreen(); }
     else { saveResume(); refresh(); defaultHint(); }
   }
   function move(dir) {
@@ -1044,20 +1072,20 @@ function dailySeed(dateStr) { let h = 2166136261; for (let i = 0; i < dateStr.le
       const sp = e.id !== undefined ? sprites[e.id] : null;
       switch (e.t) {
         case 'move': { const d = Math.abs(e.to[0] - e.from[0]) + Math.abs(e.to[1] - e.from[1]); cur = { id: e.id, from: e.from, to: e.to, t0: now, dur: 70 + d * 45 }; if (!sprites[e.id]) sprites[e.id] = { x: e.from[0], y: e.from[1], alive: true }; break; }
-        case 'bump': if (sp) pop(sp.x, sp.y - 0.5, e.r > 0 ? 'ドン! 助走 ' + e.r : 'コツン', 'gold', now); break;
-        case 'hit': if (sp) pop(sp.x, sp.y - 0.2, '-' + e.n, 'danger', now); break;
+        case 'bump': sfx('bump'); if (sp) pop(sp.x, sp.y - 0.5, e.r > 0 ? 'ドン! 助走 ' + e.r : 'コツン', 'gold', now); break;
+        case 'hit': sfx('hit'); if (sp) pop(sp.x, sp.y - 0.2, '-' + e.n, 'danger', now); break;
         case 'brace': if (sp) pop(sp.x, sp.y - 0.5, '踏んばった', 'muted', now); break;
-        case 'ko': if (sp) { sp.alive = false; pop(e.x, e.y, e.how === 'hp' ? 'たおした' : e.how === 'self' ? '自分で落ちた!' : '場外!', 'gold', now); } break;
-        case 'hurt': pop(sprites[0].x, sprites[0].y - 0.5, 'ハート -' + e.n, 'danger', now); break;
-        case 'shield': pop(sprites[0].x, sprites[0].y - 0.5, 'たてで防いだ', 'good', now); break;
-        case 'grip': pop(sprites[0].x, sprites[0].y - 0.5, 'ふんばった', 'good', now); break;
-        case 'fall': pop(sprites[0].x, sprites[0].y, '落ちた! ハート -1', 'danger', now); cur = { id: -1, from: [0, 0], to: [0, 0], t0: now, dur: 260 }; break;
+        case 'ko': sfx(e.how === 'hp' ? 'down' : 'ring'); if (sp) { sp.alive = false; pop(e.x, e.y, e.how === 'hp' ? 'たおした' : e.how === 'self' ? '自分で落ちた!' : '場外!', 'gold', now); } break;
+        case 'hurt': sfx('hurt'); pop(sprites[0].x, sprites[0].y - 0.5, 'ハート -' + e.n, 'danger', now); break;
+        case 'shield': sfx('guard'); pop(sprites[0].x, sprites[0].y - 0.5, 'たてで防いだ', 'good', now); break;
+        case 'grip': sfx('guard'); pop(sprites[0].x, sprites[0].y - 0.5, 'ふんばった', 'good', now); break;
+        case 'fall': sfx('fall'); pop(sprites[0].x, sprites[0].y, '落ちた! ハート -1', 'danger', now); cur = { id: -1, from: [0, 0], to: [0, 0], t0: now, dur: 260 }; break;
         case 'respawn': sprites[0].x = e.x; sprites[0].y = e.y; break;
         case 'act': if (sp && e.kind !== 'crab') cur = { id: -1, from: [0, 0], to: [0, 0], t0: now, dur: 120 }; break;
-        case 'explode': pop(e.x, e.y, 'ドカン!', 'danger', now); if (sprites[e.id]) sprites[e.id].alive = false; cur = { id: -1, from: [0, 0], to: [0, 0], t0: now, dur: 160 }; break;
+        case 'explode': sfx('boom'); pop(e.x, e.y, 'ドカン!', 'danger', now); if (sprites[e.id]) sprites[e.id].alive = false; cur = { id: -1, from: [0, 0], to: [0, 0], t0: now, dur: 160 }; break;
         case 'snowball': if (sp) pop(sp.x, sp.y - 0.5, '雪玉', 'accent', now); break;
-        case 'sweep': pop(W / 2 - 0.5, 0.2, '押し流し!', 'boss', now); break;
-        case 'tide': pop(W / 2 - 0.5, 0.2, '潮が ' + DIR_JA[e.dir] + ' へ!', 'boss', now); break;
+        case 'sweep': sfx('boss'); pop(W / 2 - 0.5, 0.2, '押し流し!', 'boss', now); break;
+        case 'tide': sfx('boss'); pop(W / 2 - 0.5, 0.2, '潮が ' + DIR_JA[e.dir] + ' へ!', 'boss', now); break;
         case 'spawn': { const en = state.enemies.find((q) => q.id === e.id); if (en) sprites[e.id] = { x: en.x, y: en.y, alive: true }; break; }
         case 'melt': pop(W / 2 - 0.5, 0.2, '氷がとけてきた! ハート -1', 'danger', now); break;
         default: break;
@@ -1150,5 +1178,6 @@ function dailySeed(dateStr) { let h = 2166136261; for (let i = 0; i < dateStr.le
 })();
 
 })();</script>
+<script>if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { navigator.serviceWorker.register('sw.js').catch(function () {}); }</script>
 </body>
 </html>

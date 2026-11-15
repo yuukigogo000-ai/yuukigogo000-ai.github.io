@@ -7,13 +7,13 @@
       378
     ],
     "swipeWorked": true,
-    "steps": 113,
-    "upgrades": 14,
+    "steps": 131,
+    "upgrades": 12,
     "end": {
-      "over": "won",
-      "floor": 14,
-      "turns": 86,
-      "ups": 12,
+      "over": "lost",
+      "floor": 12,
+      "turns": 109,
+      "ups": 10,
       "saved": true
     },
     "errors": []
@@ -26,13 +26,13 @@
       378
     ],
     "swipeWorked": true,
-    "steps": 112,
-    "upgrades": 14,
+    "steps": 81,
+    "upgrades": 5,
     "end": {
-      "over": "won",
-      "floor": 14,
-      "turns": 85,
-      "ups": 11,
+      "over": "lost",
+      "floor": 5,
+      "turns": 73,
+      "ups": 5,
       "saved": true
     },
     "errors": []
@@ -45,13 +45,13 @@
       413
     ],
     "swipeWorked": true,
-    "steps": 97,
-    "upgrades": 14,
+    "steps": 89,
+    "upgrades": 6,
     "end": {
-      "over": "won",
-      "floor": 14,
-      "turns": 70,
-      "ups": 12,
+      "over": "lost",
+      "floor": 6,
+      "turns": 79,
+      "ups": 6,
       "saved": true
     },
     "errors": []
@@ -64,13 +64,13 @@
       413
     ],
     "swipeWorked": true,
-    "steps": 108,
+    "steps": 104,
     "upgrades": 14,
     "end": {
       "over": "won",
       "floor": 14,
-      "turns": 81,
-      "ups": 12,
+      "turns": 77,
+      "ups": 11,
       "saved": true
     },
     "errors": []

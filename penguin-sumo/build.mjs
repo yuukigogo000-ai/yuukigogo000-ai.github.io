@@ -12,5 +12,9 @@ const cut = body.indexOf('</style>') + 8;
 writeFileSync(new URL('./index.html', import.meta.url),
   '<!doctype html>\n<html lang="ja">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n' +
   '<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>\n' + // Artifact の骨組みと同じ下地
-  body.slice(0, cut) + '\n</head>\n<body>' + body.slice(cut) + '</body>\n</html>\n');
+  '<link rel="manifest" href="manifest.webmanifest">\n<link rel="icon" href="icon.svg" type="image/svg+xml">\n<meta name="theme-color" content="#d3ecf6">\n' +
+  body.slice(0, cut) + '\n</head>\n<body>' + body.slice(cut) +
+  // オフラインでも開けるようにする(サイトとして配信されているときだけ。ファイルを直接開いたときは何もしない)
+  "<script>if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { navigator.serviceWorker.register('sw.js').catch(function () {}); }</script>\n" +
+  '</body>\n</html>\n');
 console.log('built', body.length, 'bytes');
