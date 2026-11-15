@@ -1,0 +1,104 @@
+{
+  "上級者(勝ち筋どおり)": {
+    "runs": 40,
+    "winRate": 1,
+    "floorsCleared": 15,
+    "turnsPerRun": 71,
+    "quickPerRun": 15,
+    "fallsPerRun": 0.2,
+    "turnsVsPar": 0.93,
+    "reachArea2": 1,
+    "reachArea3": 1,
+    "hurtBy": {
+      "gull": 10,
+      "fall": 8,
+      "bomb": 10,
+      "crab": 6,
+      "dosukoi": 1
+    },
+    "diedAtFloor": "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0",
+    "sec": 10.4
+  },
+  "3手読み・ミスなし": {
+    "runs": 40,
+    "winRate": 0.63,
+    "floorsCleared": 12.5,
+    "turnsPerRun": 81,
+    "quickPerRun": 12.1,
+    "fallsPerRun": 0.3,
+    "turnsVsPar": 1.02,
+    "reachArea2": 0.95,
+    "reachArea3": 0.78,
+    "hurtBy": {
+      "gull": 2,
+      "fall": 10,
+      "melt": 49,
+      "seal": 1,
+      "bomb": 2,
+      "crab": 1
+    },
+    "diedAtFloor": "1 0 0 1 0 1 2 2 2 0 0 2 1 2 1",
+    "sec": 7.3
+  },
+  "2手読み・1割ミス": {
+    "runs": 40,
+    "winRate": 0.28,
+    "floorsCleared": 9.1,
+    "turnsPerRun": 91,
+    "quickPerRun": 7.8,
+    "fallsPerRun": 1.1,
+    "turnsVsPar": 1.34,
+    "reachArea2": 0.8,
+    "reachArea3": 0.5,
+    "hurtBy": {
+      "gull": 8,
+      "fall": 42,
+      "crab": 12,
+      "melt": 83,
+      "dosukoi": 1,
+      "bomb": 1
+    },
+    "diedAtFloor": "5 0 1 2 0 5 0 3 4 0 2 0 1 3 3",
+    "sec": 3.1
+  },
+  "1手読み・2割ミス": {
+    "runs": 40,
+    "winRate": 0,
+    "floorsCleared": 3.3,
+    "turnsPerRun": 80,
+    "quickPerRun": 1.8,
+    "fallsPerRun": 0.6,
+    "turnsVsPar": 2.73,
+    "reachArea2": 0.38,
+    "reachArea3": 0.05,
+    "hurtBy": {
+      "melt": 105,
+      "gull": 5,
+      "crab": 10,
+      "fall": 25,
+      "dosukoi": 2
+    },
+    "diedAtFloor": "13 3 3 6 0 6 2 4 0 1 0 1 0 1 0",
+    "sec": 0.4
+  },
+  "でたらめ": {
+    "runs": 40,
+    "winRate": 0,
+    "floorsCleared": 1.2,
+    "turnsPerRun": 49,
+    "quickPerRun": 0.3,
+    "fallsPerRun": 0.6,
+    "turnsVsPar": 6.87,
+    "reachArea2": 0.05,
+    "reachArea3": 0,
+    "hurtBy": {
+      "gull": 22,
+      "fall": 24,
+      "crab": 34,
+      "melt": 49,
+      "dosukoi": 2
+    },
+    "diedAtFloor": "17 10 4 7 0 2 0 0 0 0 0 0 0 0 0",
+    "sec": 0
+  }
+}

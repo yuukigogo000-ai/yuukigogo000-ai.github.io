@@ -61,6 +61,9 @@ exclude:
   # 遊びの試作(灰色の箱の段階。配信しない)
   - prototypes/
 
+  # ペンギンずもう(機能は完成、見た目は仮。仕上げるまで配信しない)
+  - penguin-sumo/
+
   # デスクトップ版のビルド定義(Webサイトとしては配信しない)
   - desktop/
   - pachinko/desktop/

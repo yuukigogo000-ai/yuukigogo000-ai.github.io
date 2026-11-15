@@ -1,0 +1,1154 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>html{color-scheme:light}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>ペンギンずもう</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<style>
+  /* レイアウト: 1 画面のアプリ。上に状況、中央に氷の盤面(canvas)、下に操作。重ねる画面は盤面の上に出す。 */
+  :root {
+    --bg: #e9f0f4; --surface: #ffffff; --fg: #17262e; --muted: #5a6b74; --line: #c3d0d7;
+    --ice: #d3ecf6; --ice-2: #c2e2ef; --hole: #173a52; --rock: #7f8b91; --crack: #7fb2c9;
+    --penguin: #22313a; --penguin-fg: #ffffff; --belly: #f4f7f8; --beak: #e8a317;
+    --foe: #b5482f; --foe-fg: #ffffff; --boss: #6a3d86; --bomb: #3b3f44;
+    --accent: #0c6f8f; --accent-fg: #ffffff; --danger: #c8372d; --good: #23855a; --gold: #a86e12;
+    --font: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101a20; --surface: #1a262d; --fg: #e4eef2; --muted: #93a6b0; --line: #33444d;
+      --ice: #2b5568; --ice-2: #26495a; --hole: #06121a; --rock: #9aa6ab; --crack: #5fa3bf;
+      --penguin: #0d1418; --penguin-fg: #ffffff; --belly: #e8eef0; --beak: #f2b63a;
+      --foe: #e98a72; --foe-fg: #2b0d05; --boss: #c3a2de; --bomb: #cfd4d8;
+      --accent: #5cc2e2; --accent-fg: #04202a; --danger: #ff8478; --good: #6fd6a0; --gold: #f0b54a;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101a20; --surface: #1a262d; --fg: #e4eef2; --muted: #93a6b0; --line: #33444d;
+    --ice: #2b5568; --ice-2: #26495a; --hole: #06121a; --rock: #9aa6ab; --crack: #5fa3bf;
+    --penguin: #0d1418; --penguin-fg: #ffffff; --belly: #e8eef0; --beak: #f2b63a;
+    --foe: #e98a72; --foe-fg: #2b0d05; --boss: #c3a2de; --bomb: #cfd4d8;
+    --accent: #5cc2e2; --accent-fg: #04202a; --danger: #ff8478; --good: #6fd6a0; --gold: #f0b54a;
+    color-scheme: dark;
+  }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.45;
+    display: flex; flex-direction: column; gap: 6px; box-sizing: border-box;
+    padding-block: 8px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    overscroll-behavior: contain; -webkit-user-select: none; user-select: none;
+  }
+  .top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+  .top h1 { font-size: 15px; margin: 0; font-weight: 700; }
+  .top .where { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; min-width: 0; }
+  .bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums; }
+  .hearts { font-size: 18px; letter-spacing: 2px; color: var(--danger); }
+  .turns { color: var(--muted); }
+  .turns b { color: var(--gold); }
+  .stage-wrap { flex: 1 1 auto; min-height: 0; position: relative; display: flex; justify-content: center; align-items: center; }
+  canvas { display: block; touch-action: none; max-width: 100%; border-radius: 10px; }
+  .hint { text-align: center; color: var(--muted); min-height: 2.9em; font-size: 13px; }
+  .controls { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+  button {
+    font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 4px; min-height: 44px; min-width: 0;
+  }
+  button.primary { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 700; }
+  button.on { background: var(--gold); color: var(--surface); border-color: transparent; font-weight: 700; }
+  button:disabled { opacity: .5; }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button small { display: block; font-size: 11px; color: inherit; opacity: .8; }
+  .panel {
+    position: absolute; inset: 0; display: flex; flex-direction: column; gap: 10px; align-items: stretch; justify-content: center;
+    background: color-mix(in srgb, var(--bg) 92%, transparent); border-radius: 10px; padding: 14px; overflow-y: auto;
+  }
+  .panel h2 { font-size: 20px; margin: 0; text-align: center; }
+  .panel p { margin: 0; text-align: center; color: var(--muted); }
+  .panel .big { font-size: 28px; font-weight: 800; text-align: center; color: var(--fg); }
+  .panel .rows { display: grid; grid-template-columns: auto auto; gap: 2px 14px; justify-content: center; font-variant-numeric: tabular-nums; }
+  .panel .rows span:nth-child(odd) { color: var(--muted); }
+  .panel ul { margin: 0; padding-left: 1.2em; color: var(--fg); }
+  .panel li { margin-block: 2px; }
+  .choice { text-align: left; padding: 10px 12px; }
+  .choice b { display: block; }
+  .choice span { color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>ペンギンずもう</h1>
+  <div class="where" id="where"></div>
+</div>
+<div class="bar">
+  <div class="hearts" id="hearts" aria-label="ハート"></div>
+  <div class="turns" id="turns"></div>
+</div>
+<div class="stage-wrap" id="wrap">
+  <canvas id="cv" aria-label="氷の盤面。スワイプした向きへペンギンが滑ります"></canvas>
+  <div class="panel" id="panel" hidden></div>
+</div>
+<div class="hint" id="hint"></div>
+<div class="controls" id="pad">
+  <button type="button" data-dir="left" aria-label="左へ">←</button>
+  <button type="button" data-dir="up" aria-label="上へ">↑</button>
+  <button type="button" data-dir="down" aria-label="下へ">↓</button>
+  <button type="button" data-dir="right" aria-label="右へ">→</button>
+  <button type="button" id="brake">ブレーキ<small id="brakeN"></small></button>
+  <button type="button" id="undo">1手もどす<small id="undoN"></small></button>
+  <button type="button" id="tip">ヒント<small id="tipN"></small></button>
+  <button type="button" id="skip">こうさん<small>ハート -1</small></button>
+</div>
+
+<script>(function () {
+"use strict";
+/*
+ * ペンギンずもう — ルール(描画なし・依存なし・乱数なし)
+ *
+ * 氷の盤面でペンギンを上下左右に滑らせる。何かにぶつかるまで止まらない。
+ * 敵にぶつかると 1 ダメージを与え、助走の長さに応じて押し出す。氷の外や穴に落とせば退場。
+ * ペンギン自身は氷のふちで止まる。落ちるのは、穴に入ったときと、敵に押し流されたときだけ。
+ * 敵は「あと何ターンで動くか」と「どこを狙うか」を先に見せる。
+ *
+ * 盤面は全部 JSON にできる素のデータ。同じ盤面に同じ手を打てば、必ず同じ結果になる。
+ */
+
+const W = 6, H = 7;
+const ICE = 0, HOLE = 1, ROCK = 2, CRACK = 3;
+const DIRS = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const DIR_KEYS = ['up', 'down', 'left', 'right'];
+const MELT_TURN = 50; // これを超えると氷がとけはじめ、毎ターン ハート -1(必ず終わるための保険)
+
+/** 敵の種類。weight = 押されにくさ(助走 - おもさ = 押される距離)。base = 行動までのターン数 */
+const KINDS = {
+  crab:   { ja: 'カニ',     hp: 1, weight: 0, base: 1, text: '毎ターン 1 歩近づく。となりにいるとハサミで攻撃' },
+  seal:   { ja: 'アザラシ', hp: 2, weight: 1, base: 2, text: '矢印の向きへ突進。ぶつかるまで止まらない(落ちることも)' },
+  gullH:  { ja: 'カモメ',   hp: 1, weight: 0, base: 2, text: '横一列に雪玉。岩や敵のかげには届かない' },
+  gullV:  { ja: 'カモメ',   hp: 1, weight: 0, base: 2, text: '縦一列に雪玉。岩や敵のかげには届かない' },
+  bear:   { ja: 'シロクマ', hp: 3, weight: 2, base: 3, text: 'ねらったマスの氷を割る。割れた氷は次のターンに穴になる' },
+  walrus: { ja: 'セイウチ', hp: 4, weight: 2, base: 3, brace: true, text: '重い突進。最初の 1 回は踏んばって押されない' },
+  bomb:   { ja: 'ばくだん', hp: 1, weight: 0, base: 4, object: true, text: 'カウント 0 でまわり 1 マスが爆発。押して動かせる' },
+  // ボス
+  dosukoi:    { ja: 'ドスコイ', hp: 7, weight: 3, base: 2, boss: true, text: '突進を氷のふちや岩へさそうと、勢いあまって自分が痛い' },
+  yukioroshi: { ja: 'ユキオロシ', hp: 8, weight: 9, base: 2, boss: true, anchored: true, text: '動かない。一列まるごとを 2 マス押し流す。ばくだんを近くで爆発させると大ダメージ' },
+  nushi:      { ja: '流氷のヌシ', hp: 9, weight: 3, base: 2, boss: true, text: '潮で全員を 1 マス流す番と、足もとの氷を割る番をくり返す' },
+};
+
+/** 強化。max = 重ねて取れる回数 */
+const UPGRADES = {
+  power:    { ja: 'ちからもち',   text: '押す距離 +1', max: 2 },
+  spike:    { ja: 'とげとげ',     text: '体当たりのダメージ +1', max: 1 },
+  heart:    { ja: 'たくましい',   text: 'ハートの上限 +1(1 つ回復)', max: 2 },
+  brake:    { ja: 'ブレーキ名人', text: 'ブレーキがフロアごとに +1 回', max: 2 },
+  snowball: { ja: 'ゆきだま',     text: '止まったあと、正面の敵に雪玉で 1 ダメージ', max: 1 },
+  shield:   { ja: 'こおりのたて', text: 'フロアごとに最初の 1 ダメージを防ぐ', max: 1 },
+  grip:     { ja: 'ふんばり',     text: 'フロアごとに 1 回、穴に落ちそうなときに手前で止まる', max: 1 },
+  chain:    { ja: 'たまつき',     text: '押した敵がぶつかった相手へのダメージ +1', max: 1 },
+  heal:     { ja: 'ひとやすみ',   text: 'フロアをクリアするとハートが 1 つ回復', max: 1 },
+  crusher:  { ja: 'いわくだき',   text: '敵を岩にぶつけたときのダメージ +1', max: 1 },
+  undo:     { ja: 'やりなおし',   text: '「1 手もどす」がフロアごとに +1 回', max: 1 },
+  calm:     { ja: 'しずかな朝',   text: 'フロア開始時、敵全員のカウント +1', max: 1 },
+};
+const UPGRADE_KEYS = Object.keys(UPGRADES);
+
+// ---- 盤面の道具 --------------------------------------------------------------
+
+const idx = (s, x, y) => y * s.w + x;
+const inBoard = (s, x, y) => x >= 0 && y >= 0 && x < s.w && y < s.h;
+const cellAt = (s, x, y) => (inBoard(s, x, y) ? s.cells[idx(s, x, y)] : HOLE);
+const isPit = (s, x, y) => !inBoard(s, x, y) || s.cells[idx(s, x, y)] === HOLE;
+function enemyAt(s, x, y) { for (const e of s.enemies) if (e.alive && e.x === x && e.y === y) return e; return null; }
+const penguinAt = (s, x, y) => s.p.x === x && s.p.y === y;
+const up = (s, k) => s.ups[k] || 0;
+
+/** フロアの定義から盤面を作る。def: { cells, start: [x, y], enemies: [{ kind, x, y, count?, dir? }], boss? } */
+function createFloor(def, run) {
+  const r = run || {};
+  const s = {
+    w: W, h: H, cells: def.cells.slice(), crackTimer: {},
+    p: { x: def.start[0], y: def.start[1], sx: def.start[0], sy: def.start[1], hearts: r.hearts || 3, maxHearts: r.maxHearts || 3 },
+    enemies: [], nextId: 1,
+    ups: Object.assign({}, r.ups || {}),
+    use: { brake: 0, undo: 0, hint: 0, shield: false, grip: false },
+    turn: 1, phase: 'play', boss: def.boss || null, bossStep: 0, sweep: null,
+    stats: { bumps: 0, ringOuts: 0, falls: 0, hurt: 0, selfKo: 0, by: {} }, // by = 何にハートを取られたか
+    events: [],
+  };
+  for (const e of def.enemies) addEnemy(s, e.kind, e.x, e.y, e);
+  if (up(s, 'calm')) for (const e of s.enemies) if (!KINDS[e.kind].object) e.count += 1;
+  for (const e of s.enemies) plan(s, e);
+  return s;
+}
+
+function addEnemy(s, kind, x, y, o) {
+  const K = KINDS[kind];
+  const e = { id: s.nextId++, kind, x, y, hp: K.hp, maxHp: K.hp, weight: K.weight, base: K.base, count: (o && o.count) || K.base,
+              dir: (o && o.dir) || 'down', brace: !!K.brace, boss: !!K.boss, object: !!K.object, anchored: !!K.anchored, alive: true, target: null };
+  s.enemies.push(e);
+  return e;
+}
+
+function cloneState(s) {
+  return {
+    w: s.w, h: s.h, cells: s.cells.slice(), crackTimer: Object.assign({}, s.crackTimer),
+    p: Object.assign({}, s.p), enemies: s.enemies.map((e) => Object.assign({}, e, { target: e.target ? e.target.slice() : null })), nextId: s.nextId,
+    ups: s.ups, use: Object.assign({}, s.use), turn: s.turn, phase: s.phase, boss: s.boss, bossStep: s.bossStep,
+    sweep: s.sweep ? Object.assign({}, s.sweep) : null, stats: Object.assign({}, s.stats, { by: Object.assign({}, s.stats.by) }), events: [],
+  };
+}
+
+const brakesLeft = (s) => 1 + up(s, 'brake') - s.use.brake;
+const undosLeft = (s) => 1 + up(s, 'undo') - s.use.undo;
+const foesLeft = (s) => s.enemies.filter((e) => e.alive && !e.object).length;
+
+// ---- ダメージ・退場 ----------------------------------------------------------
+
+function ko(s, e, how) {
+  if (!e.alive) return;
+  e.alive = false;
+  if (how === 'ring') s.stats.ringOuts++;
+  if (how === 'self') s.stats.selfKo++;
+  s.events.push({ t: 'ko', id: e.id, how, x: e.x, y: e.y });
+}
+
+function hurtEnemy(s, e, n, why) {
+  if (!e.alive || e.object || n <= 0) return;
+  e.hp -= n;
+  s.events.push({ t: 'hit', id: e.id, n, why });
+  if (e.hp <= 0) ko(s, e, 'hp');
+}
+
+function hurtPlayer(s, n, why) {
+  if (s.phase !== 'play' || n <= 0) return;
+  if (up(s, 'shield') && !s.use.shield) { s.use.shield = true; s.events.push({ t: 'shield' }); return; }
+  s.p.hearts -= n; s.stats.hurt += n; s.stats.by[why] = (s.stats.by[why] || 0) + n;
+  s.events.push({ t: 'hurt', n, why });
+  if (s.p.hearts <= 0) { s.p.hearts = 0; s.phase = 'lost'; }
+}
+
+/** 落ちたペンギンを戻す場所: スタート地点。ふさがっていたら一番近い空きの氷 */
+function respawnSpot(s) {
+  let best = null, bd = 0;
+  for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
+    if (s.cells[idx(s, x, y)] !== ICE || enemyAt(s, x, y)) continue;
+    const d = Math.abs(x - s.p.sx) + Math.abs(y - s.p.sy);
+    if (best === null || d < bd) { best = [x, y]; bd = d; }
+  }
+  return best;
+}
+
+function playerFalls(s) {
+  s.stats.falls++;
+  s.events.push({ t: 'fall' });
+  s.p.hearts -= 1; s.stats.hurt += 1; s.stats.by.fall = (s.stats.by.fall || 0) + 1;
+  if (s.p.hearts <= 0) { s.p.hearts = 0; s.phase = 'lost'; return; }
+  const spot = respawnSpot(s);
+  if (!spot) { s.phase = 'lost'; return; }
+  s.p.x = spot[0]; s.p.y = spot[1];
+  s.events.push({ t: 'respawn', x: spot[0], y: spot[1] });
+}
+
+// ---- 押す --------------------------------------------------------------------
+
+/** e を d の向きへ steps マス押す。途中で落ちる・岩に当たる・ほかの敵に当たる、を処理する */
+function pushEntity(s, e, d, steps, byPlayer) {
+  const from = [e.x, e.y];
+  let left = steps;
+  while (left > 0 && e.alive) {
+    const nx = e.x + d[0], ny = e.y + d[1];
+    if (isPit(s, nx, ny)) {
+      if (e.boss) { hurtEnemy(s, e, 2, 'edge'); break; } // ボスは落ちないが、ふちで踏んばって痛い
+      s.events.push({ t: 'move', id: e.id, from, to: [nx, ny] });
+      e.x = nx; e.y = ny;
+      ko(s, e, 'ring');
+      return;
+    }
+    if (s.cells[idx(s, nx, ny)] === ROCK) { if (!e.object) hurtEnemy(s, e, 1 + (byPlayer ? up(s, 'crusher') : 0), 'rock'); break; }
+    if (penguinAt(s, nx, ny)) break;
+    const f = enemyAt(s, nx, ny);
+    if (f) { // 玉突き: 残りの勢いを次の相手に渡す
+      if (f.object) pushEntity(s, f, d, left, byPlayer);
+      else {
+        const braced = f.brace;
+        if (braced) { f.brace = false; s.events.push({ t: 'brace', id: f.id }); }
+        hurtEnemy(s, f, 1 + (byPlayer ? up(s, 'chain') : 0), 'chain');
+        if (f.alive && !braced && !f.anchored && left - f.weight > 0) pushEntity(s, f, d, left - f.weight, byPlayer);
+      }
+      break;
+    }
+    e.x = nx; e.y = ny; left--;
+  }
+  if (e.alive && (e.x !== from[0] || e.y !== from[1])) s.events.push({ t: 'move', id: e.id, from, to: [e.x, e.y] });
+}
+
+/** ペンギンが助走 r マスで敵 e にぶつかった */
+function bump(s, e, d, r) {
+  s.stats.bumps++;
+  s.events.push({ t: 'bump', id: e.id, r });
+  if (e.object) { pushEntity(s, e, d, Math.max(1, r + up(s, 'power')), true); return; }
+  const braced = e.brace;
+  if (braced) { e.brace = false; s.events.push({ t: 'brace', id: e.id }); }
+  hurtEnemy(s, e, 1 + up(s, 'spike'), 'bump');
+  if (!e.alive || braced || e.anchored) return;
+  const p = r + up(s, 'power') - e.weight;
+  if (p > 0) pushEntity(s, e, d, p, true);
+}
+
+// ---- ペンギンの番 ------------------------------------------------------------
+
+function slidePenguin(s, d, brake) {
+  const p = s.p, from = [p.x, p.y];
+  let r = 0, bumped = false, fell = false;
+  for (;;) {
+    if (brake && r >= 1) break;
+    const nx = p.x + d[0], ny = p.y + d[1];
+    if (!inBoard(s, nx, ny)) break; // 自分で滑ったときは、氷のふちで踏んばって止まる(落ちるのは穴と、押されたときだけ)
+    if (isPit(s, nx, ny)) {
+      if (up(s, 'grip') && !s.use.grip) { s.use.grip = true; s.events.push({ t: 'grip' }); break; }
+      s.events.push({ t: 'move', id: 0, from, to: [nx, ny] });
+      fell = true;
+      break;
+    }
+    if (s.cells[idx(s, nx, ny)] === ROCK) break;
+    const e = enemyAt(s, nx, ny);
+    if (e) { if (r > 0) s.events.push({ t: 'move', id: 0, from, to: [p.x, p.y] }); bump(s, e, d, r); bumped = true; break; }
+    p.x = nx; p.y = ny; r++;
+  }
+  if (fell) { playerFalls(s); return; }
+  if (!bumped && r > 0) s.events.push({ t: 'move', id: 0, from, to: [p.x, p.y] });
+  if (!bumped && up(s, 'snowball')) { // 雪玉: 正面の最初の敵に 1 ダメージ(岩にさえぎられる)
+    let x = p.x + d[0], y = p.y + d[1];
+    while (inBoard(s, x, y) && s.cells[idx(s, x, y)] !== ROCK) {
+      const e = enemyAt(s, x, y);
+      if (e) { if (!e.object) { s.events.push({ t: 'snowball', id: e.id }); hurtEnemy(s, e, 1, 'snowball'); } break; }
+      x += d[0]; y += d[1];
+    }
+  }
+}
+
+// ---- 敵の番 ------------------------------------------------------------------
+
+function dirToward(e, p) {
+  const dx = p.x - e.x, dy = p.y - e.y;
+  if (Math.abs(dx) >= Math.abs(dy) && dx !== 0) return dx > 0 ? 'right' : 'left';
+  if (dy !== 0) return dy > 0 ? 'down' : 'up';
+  return 'down';
+}
+
+/** 次の行動のねらいを決める(行動した直後と、フロア開始時に呼ぶ。ここで決めた内容を予告として見せる) */
+function plan(s, e) {
+  const p = s.p;
+  if (e.kind === 'seal' || e.kind === 'walrus' || e.kind === 'dosukoi') e.dir = dirToward(e, p);
+  else if (e.kind === 'bear') e.target = [p.x, p.y];
+  else if (e.kind === 'yukioroshi') {
+    // 一列を押し流す: ペンギンのいる行と列を交互にねらう。流す向きは広いほうへ
+    const row = s.bossStep % 2 === 0;
+    s.sweep = row ? { row: p.y, dir: p.x < s.w / 2 ? 'left' : 'right' } : { col: p.x, dir: p.y < s.h / 2 ? 'up' : 'down' };
+  } else if (e.kind === 'nushi') {
+    if (s.bossStep % 2 === 0) e.dir = ['left', 'up', 'right', 'down'][(s.bossStep >> 1) % 4];
+    else e.target = [Math.min(s.w - 2, p.x), Math.min(s.h - 2, p.y)];
+  }
+}
+
+function crack(s, x, y) {
+  if (!inBoard(s, x, y) || s.cells[idx(s, x, y)] !== ICE) return;
+  s.cells[idx(s, x, y)] = CRACK;
+  s.crackTimer[idx(s, x, y)] = 2; // 次の敵の番の終わりに穴になる
+  s.events.push({ t: 'crack', x, y });
+}
+
+/** 突進: ぶつかるまで滑る */
+function charge(s, e) {
+  const d = DIRS[e.dir], from = [e.x, e.y];
+  for (;;) {
+    const nx = e.x + d[0], ny = e.y + d[1];
+    if (isPit(s, nx, ny)) {
+      if (e.boss) { s.events.push({ t: 'move', id: e.id, from, to: [e.x, e.y] }); hurtEnemy(s, e, 2, 'edge'); return; }
+      s.events.push({ t: 'move', id: e.id, from, to: [nx, ny] });
+      e.x = nx; e.y = ny; ko(s, e, 'self');
+      return;
+    }
+    if (s.cells[idx(s, nx, ny)] === ROCK) {
+      if (e.boss) { s.cells[idx(s, nx, ny)] = ICE; s.events.push({ t: 'smash', x: nx, y: ny }); hurtEnemy(s, e, 1, 'rock'); } // ボスは岩を砕くが痛い
+      break;
+    }
+    if (penguinAt(s, nx, ny)) {
+      s.events.push({ t: 'move', id: e.id, from, to: [e.x, e.y] });
+      hurtPlayer(s, 1, e.kind);
+      const px = nx + d[0], py = ny + d[1]; // 1 マス押される(行き先が空いた氷のときだけ)
+      if (s.phase === 'play' && inBoard(s, px, py) && s.cells[idx(s, px, py)] !== ROCK && s.cells[idx(s, px, py)] !== HOLE && !enemyAt(s, px, py)) {
+        s.events.push({ t: 'move', id: 0, from: [nx, ny], to: [px, py] });
+        s.p.x = px; s.p.y = py;
+      }
+      return;
+    }
+    const f = enemyAt(s, nx, ny);
+    if (f) { if (f.object) pushEntity(s, f, d, 1, false); else hurtEnemy(s, f, 1, 'charge'); break; } // 敵同士でも痛い
+    e.x = nx; e.y = ny;
+  }
+  if (e.x !== from[0] || e.y !== from[1]) s.events.push({ t: 'move', id: e.id, from, to: [e.x, e.y] });
+}
+
+function lineCells(s, e, horizontal) {
+  const out = [];
+  for (const sg of [-1, 1]) {
+    let x = e.x + (horizontal ? sg : 0), y = e.y + (horizontal ? 0 : sg);
+    while (inBoard(s, x, y) && s.cells[idx(s, x, y)] !== ROCK && !enemyAt(s, x, y)) { out.push([x, y]); x += horizontal ? sg : 0; y += horizontal ? 0 : sg; }
+  }
+  return out;
+}
+
+function explode(s, e) {
+  s.events.push({ t: 'explode', id: e.id, x: e.x, y: e.y });
+  e.alive = false;
+  for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+    const x = e.x + dx, y = e.y + dy;
+    if (!inBoard(s, x, y)) continue;
+    if (s.cells[idx(s, x, y)] === ROCK) { s.cells[idx(s, x, y)] = ICE; s.events.push({ t: 'smash', x, y }); }
+    const f = enemyAt(s, x, y);
+    if (f && f.object) { f.count = 1; continue; } // となりのばくだんは次に誘爆
+    if (f) hurtEnemy(s, f, 2, 'bomb');
+    if (penguinAt(s, x, y)) hurtPlayer(s, 1, 'bomb');
+  }
+}
+
+/** 一列(または全員)を d の向きへ steps マス流す。先頭から順に動かす */
+function drift(s, list, dirKey, steps) {
+  const d = DIRS[dirKey];
+  const order = list.slice().sort((a, b) => (b.x * d[0] + b.y * d[1]) - (a.x * d[0] + a.y * d[1]) || a.id - b.id);
+  for (const u of order) {
+    for (let k = 0; k < steps; k++) {
+      if (u.id === 0) {
+        if (s.phase !== 'play') break;
+        const nx = s.p.x + d[0], ny = s.p.y + d[1];
+        if (isPit(s, nx, ny)) { s.events.push({ t: 'move', id: 0, from: [s.p.x, s.p.y], to: [nx, ny] }); playerFalls(s); break; }
+        if (s.cells[idx(s, nx, ny)] === ROCK || enemyAt(s, nx, ny)) break;
+        s.events.push({ t: 'move', id: 0, from: [s.p.x, s.p.y], to: [nx, ny] });
+        s.p.x = nx; s.p.y = ny;
+      } else {
+        const e = u.ref;
+        if (!e.alive) break;
+        const nx = e.x + d[0], ny = e.y + d[1];
+        if (isPit(s, nx, ny)) { s.events.push({ t: 'move', id: e.id, from: [e.x, e.y], to: [nx, ny] }); e.x = nx; e.y = ny; ko(s, e, 'ring'); break; }
+        if (s.cells[idx(s, nx, ny)] === ROCK || enemyAt(s, nx, ny) || penguinAt(s, nx, ny)) break;
+        s.events.push({ t: 'move', id: e.id, from: [e.x, e.y], to: [nx, ny] });
+        e.x = nx; e.y = ny;
+      }
+    }
+  }
+}
+const driftList = (s, pred) => {
+  const l = [];
+  for (const e of s.enemies) if (e.alive && !e.anchored && !e.boss && pred(e.x, e.y)) l.push({ id: e.id, x: e.x, y: e.y, ref: e });
+  if (pred(s.p.x, s.p.y)) l.push({ id: 0, x: s.p.x, y: s.p.y });
+  return l;
+};
+
+function enemyAct(s, e) {
+  const p = s.p;
+  s.events.push({ t: 'act', id: e.id, kind: e.kind });
+  switch (e.kind) {
+    case 'crab': { // となりにいれば攻撃。いなければ 1 歩近づくだけ(近づいたターンは攻撃しない = 1 ターンの猶予)
+      const dx = p.x - e.x, dy = p.y - e.y;
+      if (Math.abs(dx) + Math.abs(dy) === 1) { hurtPlayer(s, 1, 'crab'); break; }
+      const tries = Math.abs(dx) >= Math.abs(dy) ? [[Math.sign(dx), 0], [0, Math.sign(dy)]] : [[0, Math.sign(dy)], [Math.sign(dx), 0]];
+      for (const t of tries) {
+        if (t[0] === 0 && t[1] === 0) continue;
+        const nx = e.x + t[0], ny = e.y + t[1];
+        if (isPit(s, nx, ny) || s.cells[idx(s, nx, ny)] === ROCK || enemyAt(s, nx, ny) || penguinAt(s, nx, ny)) continue;
+        s.events.push({ t: 'move', id: e.id, from: [e.x, e.y], to: [nx, ny] });
+        e.x = nx; e.y = ny;
+        break;
+      }
+      break;
+    }
+    case 'seal': case 'walrus': case 'dosukoi': charge(s, e); break;
+    case 'gullH': case 'gullV': {
+      for (const c of lineCells(s, e, e.kind === 'gullH')) if (penguinAt(s, c[0], c[1])) hurtPlayer(s, 1, 'gull');
+      break;
+    }
+    case 'bear': {
+      const t = e.target || [p.x, p.y];
+      if (penguinAt(s, t[0], t[1])) hurtPlayer(s, 1, 'bear');
+      crack(s, t[0], t[1]);
+      break;
+    }
+    case 'bomb': explode(s, e); return;
+    case 'yukioroshi': {
+      const sw = s.sweep;
+      if (sw) {
+        s.events.push({ t: 'sweep', sweep: sw });
+        drift(s, driftList(s, sw.row !== undefined ? (x, y) => y === sw.row : (x) => x === sw.col), sw.dir, 2);
+      }
+      s.bossStep++;
+      if (s.bossStep % 3 === 0) { // 3 回に 1 回、ばくだんを落とす
+        const spot = bombSpot(s);
+        if (spot) { const b = addEnemy(s, 'bomb', spot[0], spot[1], { count: 3 }); s.events.push({ t: 'spawn', id: b.id }); }
+      }
+      break;
+    }
+    case 'nushi': {
+      if (s.bossStep % 2 === 0) { s.events.push({ t: 'tide', dir: e.dir }); drift(s, driftList(s, () => true), e.dir, 1); }
+      else { const t = e.target || [0, 0]; for (let dy = 0; dy < 2; dy++) for (let dx = 0; dx < 2; dx++) crack(s, t[0] + dx, t[1] + dy); }
+      s.bossStep++;
+      break;
+    }
+    default: break;
+  }
+  if (e.alive) { e.count = e.base; plan(s, e); }
+}
+
+function bombSpot(s) {
+  // ボスからもペンギンからも 2 マス以上はなれた、空いている氷(決まった順に探す)
+  const b = s.enemies.find((e) => e.alive && e.boss);
+  for (let y = 0; y < s.h; y++) for (let x = 0; x < s.w; x++) {
+    const k = (x * 5 + y * 3 + s.bossStep * 7) % (s.w * s.h), cx = k % s.w, cy = Math.floor(k / s.w);
+    if (s.cells[idx(s, cx, cy)] !== ICE || enemyAt(s, cx, cy) || penguinAt(s, cx, cy)) continue;
+    if (Math.abs(cx - s.p.x) + Math.abs(cy - s.p.y) < 2) continue;
+    if (b && Math.abs(cx - b.x) + Math.abs(cy - b.y) < 2) continue;
+    return [cx, cy];
+  }
+  return null;
+}
+
+function enemyPhase(s) {
+  const list = s.enemies.slice(); // この番に増えた敵は動かない
+  for (const e of list) {
+    if (!e.alive || s.phase !== 'play') continue;
+    e.count -= 1;
+    if (e.count <= 0) enemyAct(s, e);
+  }
+  if (s.phase !== 'play') return;
+  // ひびの入った氷が穴になる
+  const broke = [];
+  for (const k of Object.keys(s.crackTimer)) {
+    s.crackTimer[k] -= 1;
+    if (s.crackTimer[k] <= 0) { delete s.crackTimer[k]; if (s.cells[k] === CRACK) { s.cells[k] = HOLE; broke.push(+k); } }
+  }
+  if (broke.length) {
+    s.events.push({ t: 'break', cells: broke });
+    for (const e of s.enemies) if (e.alive && broke.indexOf(idx(s, e.x, e.y)) >= 0) { if (e.boss) hurtEnemy(s, e, 1, 'hole'); else ko(s, e, 'ring'); }
+    if (broke.indexOf(idx(s, s.p.x, s.p.y)) >= 0) playerFalls(s);
+  }
+}
+
+function checkWin(s) {
+  if (s.phase !== 'play') return;
+  const boss = s.boss ? s.enemies.some((e) => e.alive && e.boss) : false;
+  if (s.boss ? !boss : foesLeft(s) === 0) s.phase = 'won';
+}
+
+/**
+ * 1 手。dir = 'up' | 'down' | 'left' | 'right'、brake = 1 マスだけ進む(回数制限あり)。
+ * 盤面 s を書き換える。出来事は s.events に溜まる。
+ */
+function act(s, dir, brake) {
+  if (s.phase !== 'play' || !DIRS[dir]) return false;
+  const useBrake = !!brake && brakesLeft(s) > 0;
+  if (useBrake) s.use.brake++;
+  slidePenguin(s, DIRS[dir], useBrake);
+  checkWin(s);
+  if (s.phase === 'play') { enemyPhase(s); checkWin(s); }
+  if (s.phase === 'play') {
+    s.turn++;
+    if (s.turn > MELT_TURN) { s.events.push({ t: 'melt' }); s.p.hearts -= 1; s.stats.by.melt = (s.stats.by.melt || 0) + 1; if (s.p.hearts <= 0) { s.p.hearts = 0; s.phase = 'lost'; } }
+  }
+  return true;
+}
+
+/** 次の敵の番で動く敵の予告。画面に描く用 */
+function intents(s) {
+  const out = [];
+  for (const e of s.enemies) {
+    if (!e.alive || e.count !== 1) continue;
+    if (e.kind === 'crab') out.push({ id: e.id, kind: 'melee', cells: [[e.x + 1, e.y], [e.x - 1, e.y], [e.x, e.y + 1], [e.x, e.y - 1]].filter((c) => inBoard(s, c[0], c[1])) });
+    else if (e.kind === 'seal' || e.kind === 'walrus' || e.kind === 'dosukoi') {
+      const d = DIRS[e.dir], cells = [];
+      let x = e.x + d[0], y = e.y + d[1];
+      while (inBoard(s, x, y) && s.cells[idx(s, x, y)] !== ROCK && s.cells[idx(s, x, y)] !== HOLE && !enemyAt(s, x, y)) { cells.push([x, y]); x += d[0]; y += d[1]; }
+      out.push({ id: e.id, kind: 'charge', dir: e.dir, cells });
+    } else if (e.kind === 'gullH' || e.kind === 'gullV') out.push({ id: e.id, kind: 'line', cells: lineCells(s, e, e.kind === 'gullH') });
+    else if (e.kind === 'bear') out.push({ id: e.id, kind: 'crack', cells: e.target ? [e.target] : [] });
+    else if (e.kind === 'bomb') {
+      const cells = [];
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (inBoard(s, e.x + dx, e.y + dy)) cells.push([e.x + dx, e.y + dy]);
+      out.push({ id: e.id, kind: 'blast', cells });
+    } else if (e.kind === 'yukioroshi' && s.sweep) {
+      const cells = [];
+      if (s.sweep.row !== undefined) for (let x = 0; x < s.w; x++) cells.push([x, s.sweep.row]); else for (let y = 0; y < s.h; y++) cells.push([s.sweep.col, y]);
+      out.push({ id: e.id, kind: 'sweep', dir: s.sweep.dir, cells });
+    } else if (e.kind === 'nushi') {
+      if (s.bossStep % 2 === 0) out.push({ id: e.id, kind: 'tide', dir: e.dir, cells: [] });
+      else { const t = e.target || [0, 0]; out.push({ id: e.id, kind: 'crack', cells: [[t[0], t[1]], [t[0] + 1, t[1]], [t[0], t[1] + 1], [t[0] + 1, t[1] + 1]].filter((c) => inBoard(s, c[0], c[1])) }); }
+    }
+  }
+  return out;
+}
+
+/** 盤面を文字列にする(同じ盤面かどうかの判定と、再現性の確認用) */
+function stateKey(s) {
+  let k = s.p.x + ',' + s.p.y + ',' + s.p.hearts + '|' + s.cells.join('') + '|' + s.bossStep + '|' + s.use.brake + (s.use.shield ? 's' : '') + (s.use.grip ? 'g' : '');
+  for (const e of s.enemies) if (e.alive) k += '|' + e.id + e.kind + e.x + ',' + e.y + ',' + e.hp + ',' + e.count + e.dir + (e.brace ? 'b' : '') + (e.target ? e.target.join(':') : '');
+  for (const c of Object.keys(s.crackTimer)) k += '|c' + c + ':' + s.crackTimer[c];
+  return k + (s.sweep ? '|w' + JSON.stringify(s.sweep) : '');
+}
+
+/** 整数だけの乱数 */
+function mulberry32(a) {
+  return function () {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// 探索(フロアが解けるかの確認、目標ターン数、ヒント、バランス確認用の打ち手)
+
+
+function moves(s) {
+  const out = [];
+  for (const d of DIR_KEYS) out.push({ dir: d, brake: false });
+  if (brakesLeft(s) > 0) for (const d of DIR_KEYS) out.push({ dir: d, brake: true });
+  return out;
+}
+
+/** 盤面の良さ(大きいほど良い) */
+function evalState(s) {
+  if (s.phase === 'won') return 100000 + s.p.hearts * 500 - s.turn * 10;
+  if (s.phase === 'lost') return -100000;
+  let v = s.p.hearts * 400 - s.turn * 2;
+  for (const e of s.enemies) {
+    if (!e.alive || e.object) continue;
+    v -= e.boss ? e.hp * 120 : 80 + e.hp * 60;
+    // 近いほど手が届きやすい
+    v -= (Math.abs(e.x - s.p.x) + Math.abs(e.y - s.p.y)) * 2;
+  }
+  for (const it of intents(s)) for (const c of it.cells) if (c[0] === s.p.x && c[1] === s.p.y) { v -= 150; break; }
+  return v;
+}
+
+/** 幅を絞った探索で勝ち筋を探す。見つかれば手順を返す */
+function solve(start, opts) {
+  const beam = (opts && opts.beam) || 80, depth = (opts && opts.depth) || 28;
+  let layer = [{ s: start, path: [] }];
+  const seen = new Set([stateKey(start)]);
+  for (let d = 0; d < depth; d++) {
+    const next = [];
+    for (const node of layer) {
+      for (const m of moves(node.s)) {
+        const c = cloneState(node.s);
+        act(c, m.dir, m.brake);
+        if (c.phase === 'won') return { won: true, path: node.path.concat([m]), state: c };
+        if (c.phase === 'lost') continue;
+        const k = stateKey(c);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        next.push({ s: c, path: node.path.concat([m]), v: evalState(c) });
+      }
+    }
+    if (!next.length) break;
+    next.sort((a, b) => b.v - a.v);
+    layer = next.slice(0, beam);
+  }
+  return { won: false, path: [], state: null };
+}
+
+/** 数手先まで読んで一番良い 1 手を返す(ヒント用、打ち手の模擬用) */
+function bestMove(s, depth) {
+  const D = depth || 3;
+  function rec(st, d) {
+    if (st.phase !== 'play' || d === 0) return evalState(st);
+    let best = -Infinity;
+    for (const m of moves(st)) {
+      const c = cloneState(st);
+      act(c, m.dir, m.brake);
+      const v = rec(c, d - 1);
+      if (v > best) best = v;
+    }
+    return best;
+  }
+  let bm = null, bv = -Infinity;
+  for (const m of moves(s)) {
+    const c = cloneState(s);
+    act(c, m.dir, m.brake);
+    const v = rec(c, D - 1) - (m.brake ? 5 : 0); // ブレーキは差が出るときだけ使う
+    if (v > bv) { bv = v; bm = m; }
+  }
+  return bm;
+}
+
+// ランの進行(フロアの自動生成、強化の候補、クリア後の処理)。画面はここを呼ぶだけ。
+
+
+
+const AREAS = [
+  { ja: 'あさせの氷', text: 'まずは押し出しのけいこ' },
+  { ja: 'いわばの氷', text: '岩とばくだんが増える' },
+  { ja: 'うすい氷',   text: '氷が割れて、足場がへっていく' },
+];
+const FLOORS_PER_AREA = 5, TOTAL_FLOORS = AREAS.length * FLOORS_PER_AREA;
+const BOSS_OF_AREA = ['dosukoi', 'yukioroshi', 'nushi'];
+// 敵の「強さの点数」。フロアが進むほど使える点数が増える
+const COST = { crab: 1, gullH: 1.5, gullV: 1.5, seal: 2, bear: 2.5, walrus: 3 };
+const POOL = [['crab', 'seal', 'gullH', 'gullV'], ['crab', 'seal', 'gullH', 'gullV', 'walrus'], ['crab', 'seal', 'gullH', 'gullV', 'walrus', 'bear']];
+
+const hash = (a, b) => { let h = (a ^ 0x9e3779b9) >>> 0; h = Math.imul(h ^ (b + 0x7f4a7c15), 0x85ebca6b) >>> 0; h ^= h >>> 13; return Math.imul(h, 0xc2b2ae35) >>> 0; };
+
+function emptyCells() { return new Array(W * H).fill(ICE); }
+
+function tryFloor(seed, floor) {
+  const rnd = mulberry32(seed), area = Math.floor(floor / FLOORS_PER_AREA), n = floor % FLOORS_PER_AREA;
+  const ri = (a, b) => a + Math.floor(rnd() * (b - a + 1));
+  const cells = emptyCells();
+  const start = [ri(1, W - 2), ri(H - 2, H - 1)];
+  const used = new Set([start[1] * W + start[0]]);
+  const free = (x, y, far) => !used.has(y * W + x) && (!far || Math.abs(x - start[0]) + Math.abs(y - start[1]) >= far);
+  const place = (far) => { for (let t = 0; t < 60; t++) { const x = ri(0, W - 1), y = ri(0, H - 1); if (free(x, y, far)) { used.add(y * W + x); return [x, y]; } } return null; };
+  const enemies = [];
+  if (n === FLOORS_PER_AREA - 1) { // ボス
+    const kind = BOSS_OF_AREA[area];
+    const bx = ri(2, 3), by = kind === 'yukioroshi' ? 2 : 1;
+    used.add(by * W + bx);
+    enemies.push({ kind, x: bx, y: by });
+    const rocks = kind === 'dosukoi' ? 4 : kind === 'yukioroshi' ? 2 : 1;
+    for (let i = 0; i < rocks; i++) { const c = place(2); if (c) cells[c[1] * W + c[0]] = ROCK; }
+    if (kind === 'nushi') for (let i = 0; i < 2; i++) { const c = place(2); if (c) cells[c[1] * W + c[0]] = HOLE; }
+    const adds = kind === 'dosukoi' ? ['crab', 'crab'] : kind === 'yukioroshi' ? ['bomb', 'bomb', 'gullH'] : ['gullH', 'gullV'];
+    for (const k of adds) { const c = place(3); if (c) enemies.push({ kind: k, x: c[0], y: c[1] }); }
+    return { cells, start, enemies, boss: kind };
+  }
+  const rocks = [ri(2, 3), ri(3, 5), ri(2, 4)][area], holes = [ri(0, 1), ri(1, 3), ri(2, 4)][area];
+  for (let i = 0; i < rocks; i++) { const c = place(1); if (c) cells[c[1] * W + c[0]] = ROCK; }
+  for (let i = 0; i < holes; i++) { const c = place(2); if (c) cells[c[1] * W + c[0]] = HOLE; }
+  let budget = 1.5 + floor * 0.5;
+  const pool = POOL[area];
+  for (let guard = 0; guard < 12 && budget >= 1 && enemies.length < 6; guard++) {
+    const k = pool[ri(0, pool.length - 1)];
+    if (COST[k] > budget) continue;
+    const c = place(3);
+    if (!c) break;
+    enemies.push({ kind: k, x: c[0], y: c[1], count: KINDS[k].base + (rnd() < 0.3 ? 1 : 0) });
+    budget -= COST[k];
+  }
+  if (area >= 1 && rnd() < 0.6) { const c = place(2); if (c) enemies.push({ kind: 'bomb', x: c[0], y: c[1], count: ri(3, 5) }); }
+  if (!enemies.some((e) => !KINDS[e.kind].object)) { const c = place(3); if (c) enemies.push({ kind: 'crab', x: c[0], y: c[1] }); }
+  return { cells, start, enemies, boss: null };
+}
+
+/**
+ * フロアを作る。探索で「ハートを 2 つ以上失わずに勝てる」ことを確かめてから出す。
+ * 返り値: { def, par(探索が見つけた手数), tries }
+ */
+function makeFloor(runSeed, floor) {
+  const boss = floor % FLOORS_PER_AREA === FLOORS_PER_AREA - 1;
+  for (let t = 0; t < 60; t++) {
+    const def = tryFloor(hash(runSeed, floor * 131 + t), floor);
+    const s = createFloor(def, { hearts: 3, maxHearts: 3, ups: {} });
+    const r = solve(s, boss ? { beam: 140, depth: 44 } : { beam: 90, depth: 30 });
+    if (r.won && r.state.p.hearts >= 2) return { def, par: r.path.length, tries: t + 1 };
+  }
+  // 見つからなければ、必ず解ける簡単なフロアにする
+  const cells = emptyCells();
+  return { def: { cells, start: [2, 5], enemies: [{ kind: 'crab', x: 1, y: 1 }, { kind: 'crab', x: 4, y: 1 }], boss: null }, par: 6, tries: 61 };
+}
+
+/** 強化の候補を 3 つ(もう上限まで取ったものは出さない) */
+function offerUpgrades(runSeed, floor, ups) {
+  const rnd = mulberry32(hash(runSeed, 9000 + floor));
+  const pool = UPGRADE_KEYS.filter((k) => (ups[k] || 0) < UPGRADES[k].max);
+  for (let i = pool.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+  return pool.slice(0, 3);
+}
+
+function newRun(seed, mode) {
+  return { seed: seed >>> 0, mode: mode || 'normal', floor: 0, hearts: 3, maxHearts: 3, ups: {}, over: null,
+           stats: { turns: 0, ringOuts: 0, falls: 0, quick: 0, skipped: 0, by: {} } };
+}
+
+/** いまのフロアを始める。返り値: { state, par, quickTurns(はやわざの目標), area, boss } */
+function startFloor(run) {
+  const f = makeFloor(run.seed, run.floor);
+  const state = createFloor(f.def, { hearts: run.hearts, maxHearts: run.maxHearts, ups: run.ups });
+  return { state, par: f.par, quickTurns: f.par + 2, area: Math.floor(run.floor / FLOORS_PER_AREA), boss: f.def.boss };
+}
+
+function tally(run, state) {
+  run.stats.turns += state.turn; run.stats.ringOuts += state.stats.ringOuts + state.stats.selfKo; run.stats.falls += state.stats.falls;
+  for (const k of Object.keys(state.stats.by)) run.stats.by[k] = (run.stats.by[k] || 0) + state.stats.by[k];
+}
+
+/** フロアに勝った後。はやわざなら回復。返り値: { quick, healed, finished, offers } */
+function winFloor(run, state, quickTurns) {
+  run.hearts = state.p.hearts;
+  tally(run, state);
+  const quick = state.turn <= quickTurns;
+  let healed = 0;
+  if (quick) { run.stats.quick++; if (run.hearts < run.maxHearts) { run.hearts++; healed++; } }
+  if ((run.ups.heal || 0) > 0 && run.hearts < run.maxHearts) { run.hearts++; healed++; }
+  if (state.boss && run.hearts < run.maxHearts) { healed += run.maxHearts - run.hearts; run.hearts = run.maxHearts; } // ボスを倒したら全回復
+  const finished = run.floor >= TOTAL_FLOORS - 1;
+  if (finished) run.over = 'won';
+  return { quick, healed, finished, offers: finished ? [] : offerUpgrades(run.seed, run.floor, run.ups) };
+}
+
+function takeUpgrade(run, key) {
+  if (key && UPGRADES[key] && (run.ups[key] || 0) < UPGRADES[key].max) {
+    run.ups = Object.assign({}, run.ups, { [key]: (run.ups[key] || 0) + 1 });
+    if (key === 'heart') { run.maxHearts++; run.hearts = Math.min(run.maxHearts, run.hearts + 1); }
+  }
+  run.floor++;
+}
+
+function loseRun(run, state) {
+  run.hearts = 0; run.over = 'lost';
+  tally(run, state);
+}
+
+/** あきらめて次へ: ハートを 1 つ失い、強化はもらえない(詰んだときの逃げ道) */
+function skipFloor(run, state) {
+  run.hearts = state.p.hearts - 1; run.stats.skipped++; tally(run, state);
+  if (run.hearts <= 0) { run.hearts = 0; run.over = 'lost'; return false; }
+  if (run.floor >= TOTAL_FLOORS - 1) { run.over = 'lost'; return false; } // 最後のボスは飛ばせない
+  run.floor++;
+  return true;
+}
+
+/** 日替わりの種(その日の日付から決まる) */
+function dailySeed(dateStr) { let h = 2166136261; for (let i = 0; i < dateStr.length; i++) { h ^= dateStr.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; } return h; }
+
+// ペンギンずもう — 画面と入力(結果を決めるのは core.js / run.js。ここは見せるだけ)
+// build.mjs が core.js / solver.js / run.js と一緒に 1 つのスクリプトにまとめる。
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('wrap'), panel = $('panel');
+  const SAVE_KEY = 'penguin-sumo.v1';
+  const DIR_JA = { up: '上', down: '下', left: '左', right: '右' };
+  const SHORT = { crab: 'カニ', seal: 'アザ', gullH: 'カモ', gullV: 'カモ', bear: 'クマ', walrus: 'セイ', bomb: '爆', dosukoi: 'ドス', yukioroshi: 'ユキ', nushi: 'ヌシ' };
+  const WHY_JA = { crab: 'カニのハサミ', seal: 'アザラシの突進', walrus: 'セイウチの突進', gull: 'カモメの雪玉', bear: 'シロクマの氷割り', bomb: 'ばくだん',
+                   dosukoi: 'ドスコイの突進', fall: '穴・場外に落ちた', melt: '氷がとけた' };
+
+  let run = null, fl = null, state = null, prev = null;   // ラン、いまのフロア、盤面、1 手前の盤面
+  let sprites = {}, queue = [], animating = false, popups = [], tipMove = null, brakeOn = false, skipArmed = false, picked = null;
+  let cell = 48, dpr = 1, colors = {}, font = 'sans-serif', swipe = null;
+  // 自動確認用の窓口(画面の状態と、探索のおすすめの手)
+  globalThis.__ps = () => ({ run, state, fl, animating, panelOpen: !panel.hidden, suggest: state && state.phase === 'play' ? bestMove(state, 3) : null });
+
+  // ---- 保存(この端末のブラウザだけ。読めなくても遊べる) ----------------------
+  function load() { try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || {}; } catch (e) { return {}; } }
+  function store(patch) { try { localStorage.setItem(SAVE_KEY, JSON.stringify(Object.assign(load(), patch))); } catch (e) { /* 保存できなくても続ける */ } }
+  const today = () => { const d = new Date(), p = (n) => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); };
+  function saveResume() { store({ resume: run && !run.over && state && state.phase === 'play' ? { run, state: Object.assign({}, state, { events: [] }), par: fl.par, quickTurns: fl.quickTurns, area: fl.area, boss: fl.boss } : null }); }
+  function recordBest() {
+    const sv = load(), cleared = run.over === 'won' ? TOTAL_FLOORS : run.floor;
+    if (run.mode === 'daily') { const d = sv.daily || {}; if (!(d.date === today() && d.floors >= cleared)) store({ daily: { date: today(), floors: cleared, won: run.over === 'won' } }); }
+    else if (!sv.best || cleared > sv.best.floors) store({ best: { floors: cleared, won: run.over === 'won' } });
+  }
+
+  // ---- 見た目の下ごしらえ ----------------------------------------------------
+  function readColors() {
+    const cs = getComputedStyle(document.documentElement);
+    for (const k of ['bg', 'surface', 'fg', 'muted', 'line', 'ice', 'ice-2', 'hole', 'rock', 'crack', 'penguin', 'penguin-fg', 'belly', 'beak', 'foe', 'foe-fg', 'boss', 'bomb', 'accent', 'danger', 'good', 'gold'])
+      colors[k] = cs.getPropertyValue('--' + k).trim();
+    font = getComputedStyle(document.body).fontFamily;
+  }
+  function resize() {
+    const w = wrap.clientWidth, h = wrap.clientHeight;
+    cell = Math.max(20, Math.floor(Math.min(w / W, h / H)));
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.style.width = cell * W + 'px'; cv.style.height = cell * H + 'px';
+    cv.width = cell * W * dpr; cv.height = cell * H * dpr;
+  }
+  function syncSprites() {
+    sprites = { 0: { x: state.p.x, y: state.p.y, alive: true } };
+    for (const e of state.enemies) if (e.alive) sprites[e.id] = { x: e.x, y: e.y, alive: true };
+  }
+
+  // ---- 上下の表示 ------------------------------------------------------------
+  function refresh() {
+    if (!state) { $('where').textContent = ''; $('hearts').textContent = ''; $('turns').textContent = ''; return; }
+    $('where').textContent = AREAS[fl.area].ja + ' ' + (run.floor % FLOORS_PER_AREA + 1) + '/' + FLOORS_PER_AREA + (run.mode === 'daily' ? ' ・ きょうの氷' : '');
+    $('hearts').textContent = '♥'.repeat(state.p.hearts) + '♡'.repeat(Math.max(0, state.p.maxHearts - state.p.hearts));
+    $('hearts').setAttribute('aria-label', 'ハート ' + state.p.hearts + ' / ' + state.p.maxHearts);
+    const t = $('turns'); t.textContent = '';
+    t.append(state.turn + ' ターン目 ・ はやわざ ');
+    const b = document.createElement('b'); b.textContent = fl.quickTurns + ' 以内'; t.append(b);
+    const playing = state.phase === 'play' && !animating && panel.hidden;
+    $('brakeN').textContent = 'あと ' + brakesLeft(state); $('brake').disabled = !playing || brakesLeft(state) <= 0;
+    $('brake').className = brakeOn ? 'on' : ''; $('brake').setAttribute('aria-pressed', brakeOn ? 'true' : 'false');
+    $('undoN').textContent = 'あと ' + undosLeft(state); $('undo').disabled = !playing || !prev || undosLeft(state) <= 0;
+    $('tipN').textContent = state.use.hint ? 'あと 0' : 'あと 1'; $('tip').disabled = !playing || !!state.use.hint;
+    $('skip').disabled = !playing; $('skip').className = skipArmed ? 'on' : '';
+    for (const b2 of document.querySelectorAll('#pad [data-dir]')) b2.disabled = !playing;
+  }
+  function setHint(text) { $('hint').textContent = text; }
+  function defaultHint() {
+    if (!state || state.phase !== 'play') return setHint('');
+    if (brakeOn) return setHint('ブレーキ中: つぎのスワイプは 1 マスだけ進みます');
+    if (skipArmed) return setHint('もう一度「こうさん」を押すと、ハートを 1 つ失って次のフロアへ進みます(強化なし)');
+    setHint(fl.boss ? KINDS[fl.boss].ja + ': ' + KINDS[fl.boss].text : 'スワイプで滑る。助走が長いほど遠くへ押せます。敵をタップすると説明が出ます');
+  }
+
+  // ---- 重ねる画面 ------------------------------------------------------------
+  function el(tag, cls, text) { const n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
+  function show(nodes) { panel.textContent = ''; for (const n of nodes) panel.append(n); panel.hidden = false; panel.scrollTop = 0; refresh(); }
+  function hide() { panel.hidden = true; refresh(); defaultHint(); }
+  function btn(text, cls, fn, sub) { const b = el('button', cls, text); b.type = 'button'; if (sub) b.append(el('small', '', sub)); b.addEventListener('click', fn); return b; }
+
+  function titleScreen() {
+    state = null; run = null; refresh(); setHint('');
+    const sv = load(), nodes = [el('h2', '', 'ペンギンずもう'), el('p', '', '氷の上を滑って、敵を外へ押し出そう')];
+    if (sv.resume && sv.resume.run && sv.resume.state) nodes.push(btn('つづきから', 'primary', () => resume(sv.resume), AREAS[sv.resume.area].ja + ' ' + (sv.resume.run.floor % FLOORS_PER_AREA + 1) + '/' + FLOORS_PER_AREA));
+    nodes.push(btn('はじめる', sv.resume ? '' : 'primary', () => begin('normal'), sv.best ? 'これまでの最高: ' + (sv.best.won ? '全 15 フロア制覇' : sv.best.floors + ' フロア') : '全 15 フロア'));
+    const d = sv.daily && sv.daily.date === today() ? sv.daily : null;
+    nodes.push(btn('きょうの氷', '', () => begin('daily'), d ? 'きょうの記録: ' + (d.won ? '制覇' : d.floors + ' フロア') : '毎日かわる同じ並びに挑戦'));
+    nodes.push(btn('あそびかた', '', howTo));
+    show(nodes);
+  }
+  function howTo() {
+    const ul = el('ul');
+    for (const t of ['スワイプ(または矢印ボタン)でペンギンが滑ります。岩・敵・氷のふちにぶつかるまで止まりません',
+      '敵にぶつかると 1 ダメージ。助走が長いほど遠くへ押せます(助走 − 相手のおもさ = 押す距離)',
+      '氷の外や穴に落とせば、体力が残っていても退場です',
+      '敵の数字は「あと何ターンで動くか」。赤いマスは次に攻撃される場所です',
+      'ペンギンは自分ではふちから落ちません。落ちるのは穴に入ったときと、押し流されたときです',
+      '「ブレーキ」で 1 マスだけ進めます。「はやわざ」の手数以内に勝つとハートが回復します',
+      'フロアに勝つたびに、3 つの強化から 1 つ選べます。5 フロアごとにボスがいます'])
+      ul.append(el('li', '', t));
+    show([el('h2', '', 'あそびかた'), ul, btn('もどる', 'primary', () => (run ? hide() : titleScreen()))]);
+  }
+  function floorIntro() {
+    const n = run.floor % FLOORS_PER_AREA + 1, nodes = [el('p', '', AREAS[fl.area].ja + ' ' + n + ' / ' + FLOORS_PER_AREA)];
+    if (fl.boss) { nodes.push(el('div', 'big', 'ボス ' + KINDS[fl.boss].ja)); nodes.push(el('p', '', KINDS[fl.boss].text)); }
+    else { nodes.push(el('div', 'big', 'フロア ' + (run.floor + 1))); if (n === 1) nodes.push(el('p', '', AREAS[fl.area].text)); }
+    nodes.push(el('p', '', 'はやわざ: ' + fl.quickTurns + ' ターン以内'));
+    nodes.push(btn('はじめる', 'primary', hide));
+    show(nodes);
+  }
+  function upgradeScreen(w) {
+    const nodes = [el('h2', '', 'フロア クリア!')];
+    nodes.push(el('p', '', (w.quick ? 'はやわざ達成! ' : '') + (w.healed ? 'ハートが ' + w.healed + ' つ回復' : state.turn + ' ターンで勝ち')));
+    nodes.push(el('p', '', '強化を 1 つ選んでください'));
+    picked = null;
+    for (const k of w.offers) {
+      const b = el('button', 'choice'); b.type = 'button';
+      b.append(el('b', '', UPGRADES[k].ja + ((run.ups[k] || 0) > 0 ? '(2 つめ)' : '')), el('span', '', UPGRADES[k].text));
+      b.addEventListener('click', () => { if (picked) return; picked = k; takeUpgrade(run, k); nextFloor(); });
+      nodes.push(b);
+    }
+    show(nodes);
+  }
+  function resultScreen() {
+    recordBest(); store({ resume: null });
+    const won = run.over === 'won', cleared = won ? TOTAL_FLOORS : run.floor;
+    const rows = el('div', 'rows');
+    const add = (a, b) => rows.append(el('span', '', a), el('span', '', b));
+    add('クリアしたフロア', cleared + ' / ' + TOTAL_FLOORS); add('かかったターン', String(run.stats.turns)); add('落とした敵', String(run.stats.ringOuts));
+    add('はやわざ', run.stats.quick + ' 回');
+    const by = Object.keys(run.stats.by).sort((a, b) => run.stats.by[b] - run.stats.by[a]);
+    if (by.length) add('いちばん痛かったもの', (WHY_JA[by[0]] || by[0]) + '(' + run.stats.by[by[0]] + ')');
+    const ups = Object.keys(run.ups).map((k) => UPGRADES[k].ja + (run.ups[k] > 1 ? '×' + run.ups[k] : ''));
+    show([el('h2', '', won ? '優勝!' : 'まけ…'), el('p', '', won ? '全 15 フロアを勝ちぬきました' : AREAS[Math.min(2, Math.floor(run.floor / FLOORS_PER_AREA))].ja + 'で力つきました'),
+          rows, el('p', '', ups.length ? '強化: ' + ups.join('、') : '強化なし'), btn('もう一回', 'primary', () => begin(run.mode)), btn('タイトルへ', '', titleScreen)]);
+  }
+
+  // ---- 進行 ------------------------------------------------------------------
+  function begin(mode) {
+    let seed;
+    if (mode === 'daily') seed = dailySeed(today());
+    else { const a = new Uint32Array(1); try { crypto.getRandomValues(a); seed = a[0]; } catch (e) { seed = (Date.now() ^ (Math.random() * 1e9)) >>> 0; } }
+    run = newRun(seed, mode);
+    nextFloor(true);
+  }
+  function nextFloor() {
+    fl = startFloor(run); state = fl.state; prev = null; tipMove = null; brakeOn = false; skipArmed = false; queue = []; popups = []; animating = false;
+    syncSprites(); saveResume(); floorIntro();
+  }
+  function resume(r) {
+    run = r.run; state = r.state; state.events = []; fl = { state, par: r.par, quickTurns: r.quickTurns, area: r.area, boss: r.boss };
+    prev = null; tipMove = null; brakeOn = false; skipArmed = false; queue = []; popups = []; animating = false;
+    syncSprites(); hide();
+  }
+  function afterAct() {
+    animating = false;
+    syncSprites();
+    if (state.phase === 'won') { const w = winFloor(run, state, fl.quickTurns); if (w.finished) resultScreen(); else { store({ resume: null }); upgradeScreen(w); } }
+    else if (state.phase === 'lost') { loseRun(run, state); resultScreen(); }
+    else { saveResume(); refresh(); defaultHint(); }
+  }
+  function move(dir) {
+    if (!state || state.phase !== 'play' || animating || !panel.hidden) return;
+    prev = cloneState(state); prev.events = [];
+    const useBrake = brakeOn && brakesLeft(state) > 0;
+    act(state, dir, useBrake);
+    brakeOn = false; skipArmed = false; tipMove = null;
+    queue = state.events.slice(); state.events = [];
+    animating = true; refresh();
+  }
+
+  // ---- 入力 ------------------------------------------------------------------
+  cv.addEventListener('pointerdown', (e) => { cv.setPointerCapture(e.pointerId); swipe = { x: e.clientX, y: e.clientY }; e.preventDefault(); });
+  cv.addEventListener('pointerup', (e) => {
+    if (!swipe || !state) { swipe = null; return; }
+    const dx = e.clientX - swipe.x, dy = e.clientY - swipe.y; swipe = null;
+    if (Math.abs(dx) < 22 && Math.abs(dy) < 22) { // タップ: そのマスの敵の説明
+      const r = cv.getBoundingClientRect(), x = Math.floor((e.clientX - r.left) / cell), y = Math.floor((e.clientY - r.top) / cell), f = enemyAt(state, x, y);
+      if (f) setHint(KINDS[f.kind].ja + '(体力 ' + f.hp + (f.object ? '' : ' ・ おもさ ' + f.weight) + ' ・ あと ' + f.count + ' ターン)' + KINDS[f.kind].text);
+      else if (x === state.p.x && y === state.p.y) setHint('ペンギン: スワイプした向きへ、ぶつかるまで滑ります');
+      else defaultHint();
+      return;
+    }
+    move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : (dy > 0 ? 'down' : 'up'));
+  });
+  cv.addEventListener('pointercancel', () => { swipe = null; });
+  for (const b of document.querySelectorAll('#pad [data-dir]')) b.addEventListener('click', () => move(b.dataset.dir));
+  window.addEventListener('keydown', (e) => { const m = { ArrowUp: 'up', ArrowDown: 'down', ArrowLeft: 'left', ArrowRight: 'right' }[e.key]; if (m && panel.hidden) { e.preventDefault(); move(m); } });
+  $('brake').addEventListener('click', () => { if (brakesLeft(state) > 0) { brakeOn = !brakeOn; skipArmed = false; refresh(); defaultHint(); } });
+  $('undo').addEventListener('click', () => {
+    if (!prev || undosLeft(state) <= 0 || animating) return;
+    const used = state.use.undo + 1;
+    state = prev; state.use.undo = used; fl.state = state; prev = null; tipMove = null; brakeOn = false; skipArmed = false;
+    syncSprites(); saveResume(); refresh(); setHint('1 手もどしました');
+  });
+  $('tip').addEventListener('click', () => {
+    if (state.use.hint || animating) return;
+    state.use.hint = 1; tipMove = bestMove(state, 4);
+    refresh(); setHint('ヒント: ' + DIR_JA[tipMove.dir] + 'へ' + (tipMove.brake ? '(ブレーキを使う)' : '') + '。数手先まで読んだおすすめです');
+  });
+  $('skip').addEventListener('click', () => {
+    if (!skipArmed) { skipArmed = true; brakeOn = false; refresh(); defaultHint(); return; }
+    skipArmed = false;
+    if (skipFloor(run, state)) nextFloor(); else resultScreen();
+  });
+
+  // ---- 出来事を順に見せる ----------------------------------------------------
+  const pop = (x, y, text, c, now) => popups.push({ x, y, text, c, t: now });
+  let cur = null;
+  function advance(now) {
+    while (animating) {
+      if (cur) {
+        const k = Math.min(1, (now - cur.t0) / cur.dur), sp = sprites[cur.id];
+        if (sp) { sp.x = cur.from[0] + (cur.to[0] - cur.from[0]) * k; sp.y = cur.from[1] + (cur.to[1] - cur.from[1]) * k; }
+        if (k < 1) return;
+        cur = null;
+      }
+      const e = queue.shift();
+      if (!e) { afterAct(); return; }
+      const sp = e.id !== undefined ? sprites[e.id] : null;
+      switch (e.t) {
+        case 'move': { const d = Math.abs(e.to[0] - e.from[0]) + Math.abs(e.to[1] - e.from[1]); cur = { id: e.id, from: e.from, to: e.to, t0: now, dur: 70 + d * 45 }; if (!sprites[e.id]) sprites[e.id] = { x: e.from[0], y: e.from[1], alive: true }; break; }
+        case 'bump': if (sp) pop(sp.x, sp.y - 0.5, e.r > 0 ? 'ドン! 助走 ' + e.r : 'コツン', 'gold', now); break;
+        case 'hit': if (sp) pop(sp.x, sp.y - 0.2, '-' + e.n, 'danger', now); break;
+        case 'brace': if (sp) pop(sp.x, sp.y - 0.5, '踏んばった', 'muted', now); break;
+        case 'ko': if (sp) { sp.alive = false; pop(e.x, e.y, e.how === 'hp' ? 'たおした' : e.how === 'self' ? '自分で落ちた!' : '場外!', 'gold', now); } break;
+        case 'hurt': pop(sprites[0].x, sprites[0].y - 0.5, 'ハート -' + e.n, 'danger', now); break;
+        case 'shield': pop(sprites[0].x, sprites[0].y - 0.5, 'たてで防いだ', 'good', now); break;
+        case 'grip': pop(sprites[0].x, sprites[0].y - 0.5, 'ふんばった', 'good', now); break;
+        case 'fall': pop(sprites[0].x, sprites[0].y, '落ちた! ハート -1', 'danger', now); cur = { id: -1, from: [0, 0], to: [0, 0], t0: now, dur: 260 }; break;
+        case 'respawn': sprites[0].x = e.x; sprites[0].y = e.y; break;
+        case 'act': if (sp && e.kind !== 'crab') cur = { id: -1, from: [0, 0], to: [0, 0], t0: now, dur: 120 }; break;
+        case 'explode': pop(e.x, e.y, 'ドカン!', 'danger', now); if (sprites[e.id]) sprites[e.id].alive = false; cur = { id: -1, from: [0, 0], to: [0, 0], t0: now, dur: 160 }; break;
+        case 'snowball': if (sp) pop(sp.x, sp.y - 0.5, '雪玉', 'accent', now); break;
+        case 'sweep': pop(W / 2 - 0.5, 0.2, '押し流し!', 'boss', now); break;
+        case 'tide': pop(W / 2 - 0.5, 0.2, '潮が ' + DIR_JA[e.dir] + ' へ!', 'boss', now); break;
+        case 'spawn': { const en = state.enemies.find((q) => q.id === e.id); if (en) sprites[e.id] = { x: en.x, y: en.y, alive: true }; break; }
+        case 'melt': pop(W / 2 - 0.5, 0.2, '氷がとけてきた! ハート -1', 'danger', now); break;
+        default: break;
+      }
+    }
+  }
+
+  // ---- 描画 ------------------------------------------------------------------
+  const cx = (x) => (x + 0.5) * cell, cy = (y) => (y + 0.5) * cell;
+  function arrow(x, y, dir, color, size) {
+    const d = DIRS[dir], s = size || cell * 0.22;
+    ctx.save(); ctx.translate(cx(x), cy(y)); ctx.fillStyle = color;
+    ctx.beginPath(); ctx.moveTo(d[0] * s * 1.6, d[1] * s * 1.6); ctx.lineTo(-d[1] * s - d[0] * s * 0.4, d[0] * s - d[1] * s * 0.4); ctx.lineTo(d[1] * s - d[0] * s * 0.4, -d[0] * s - d[1] * s * 0.4); ctx.closePath(); ctx.fill(); ctx.restore();
+  }
+  function drawBoard(view) {
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const c = view.cells[y * W + x];
+      ctx.fillStyle = c === HOLE ? colors.hole : (x + y) % 2 ? colors.ice : colors['ice-2'];
+      ctx.fillRect(x * cell, y * cell, cell, cell);
+      if (c === ROCK) { ctx.fillStyle = colors.rock; ctx.beginPath(); ctx.roundRect(x * cell + cell * 0.12, y * cell + cell * 0.12, cell * 0.76, cell * 0.76, cell * 0.16); ctx.fill(); }
+      if (c === CRACK) {
+        ctx.strokeStyle = colors.crack; ctx.lineWidth = 2; ctx.beginPath();
+        ctx.moveTo(x * cell + cell * 0.15, y * cell + cell * 0.3); ctx.lineTo(x * cell + cell * 0.5, y * cell + cell * 0.55); ctx.lineTo(x * cell + cell * 0.35, y * cell + cell * 0.85);
+        ctx.moveTo(x * cell + cell * 0.5, y * cell + cell * 0.55); ctx.lineTo(x * cell + cell * 0.88, y * cell + cell * 0.4); ctx.stroke();
+      }
+    }
+  }
+  function drawIntents(view) {
+    for (const it of intents(view)) {
+      ctx.save(); ctx.globalAlpha = it.kind === 'sweep' ? 0.22 : 0.28; ctx.fillStyle = it.kind === 'sweep' || it.kind === 'tide' ? colors.boss : colors.danger;
+      for (const c of it.cells) ctx.fillRect(c[0] * cell + 2, c[1] * cell + 2, cell - 4, cell - 4);
+      ctx.restore();
+      if (it.dir && it.cells.length) { const c = it.kind === 'sweep' ? it.cells[Math.floor(it.cells.length / 2)] : it.cells[0]; arrow(c[0], c[1], it.dir, it.kind === 'sweep' ? colors.boss : colors.danger); }
+      if (it.kind === 'tide') for (let y = 1; y < H; y += 2) for (let x = 1; x < W; x += 2) { ctx.globalAlpha = 0.35; arrow(x - 0.5, y - 0.5, it.dir, colors.boss, cell * 0.14); ctx.globalAlpha = 1; }
+    }
+  }
+  function drawPenguin(sp) {
+    const x = cx(sp.x), y = cy(sp.y), r = cell * 0.36;
+    ctx.fillStyle = colors.penguin; ctx.beginPath(); ctx.ellipse(x, y, r * 0.92, r * 1.08, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = colors.belly; ctx.beginPath(); ctx.ellipse(x, y + r * 0.22, r * 0.58, r * 0.72, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = colors.beak; ctx.beginPath(); ctx.moveTo(x - r * 0.22, y - r * 0.28); ctx.lineTo(x + r * 0.22, y - r * 0.28); ctx.lineTo(x, y - r * 0.02); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = colors.penguin; ctx.beginPath(); ctx.arc(x - r * 0.3, y - r * 0.5, r * 0.09, 0, Math.PI * 2); ctx.arc(x + r * 0.3, y - r * 0.5, r * 0.09, 0, Math.PI * 2); ctx.fill();
+    if (brakeOn) { ctx.strokeStyle = colors.gold; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, r * 1.25, 0, Math.PI * 2); ctx.stroke(); }
+  }
+  function drawEnemy(e, sp) {
+    const x = cx(sp.x), y = cy(sp.y), r = cell * (e.boss ? 0.44 : 0.3 + e.weight * 0.035);
+    ctx.fillStyle = e.boss ? colors.boss : e.object ? colors.bomb : colors.foe;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    if (e.brace) { ctx.strokeStyle = colors.fg; ctx.lineWidth = 3; ctx.stroke(); }
+    ctx.fillStyle = e.object ? colors.surface : e.boss ? colors.surface : colors['foe-fg']; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '700 ' + Math.round(cell * 0.24) + 'px ' + font; ctx.fillText(SHORT[e.kind], x, y);
+    if ((e.kind === 'seal' || e.kind === 'walrus' || e.kind === 'dosukoi') && e.count > 1) { ctx.globalAlpha = 0.55; arrow(sp.x + DIRS[e.dir][0] * 0.42, sp.y + DIRS[e.dir][1] * 0.42, e.dir, colors.danger, cell * 0.1); ctx.globalAlpha = 1; }
+    if (e.kind === 'gullH' || e.kind === 'gullV') { ctx.strokeStyle = colors['foe-fg']; ctx.lineWidth = 2; ctx.beginPath(); if (e.kind === 'gullH') { ctx.moveTo(x - r * 0.8, y + r * 0.62); ctx.lineTo(x + r * 0.8, y + r * 0.62); } else { ctx.moveTo(x + r * 0.7, y - r * 0.6); ctx.lineTo(x + r * 0.7, y + r * 0.6); } ctx.stroke(); }
+    if (!e.object) { // 体力の粒
+      const n = e.hp, gap = Math.min(cell * 0.13, cell * 0.8 / Math.max(1, n));
+      for (let i = 0; i < n; i++) { ctx.beginPath(); ctx.arc(x - (n - 1) * gap / 2 + i * gap, y + r + cell * 0.07, cell * 0.045, 0, Math.PI * 2); ctx.fillStyle = colors.good; ctx.fill(); }
+    }
+    const bx = x + r * 0.78, by = y - r * 0.78, soon = e.count === 1; // カウント
+    ctx.beginPath(); ctx.arc(bx, by, cell * 0.17, 0, Math.PI * 2); ctx.fillStyle = soon ? colors.danger : colors.surface; ctx.fill(); ctx.strokeStyle = colors.fg; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = soon ? colors.surface : colors.fg; ctx.font = '700 ' + Math.round(cell * 0.22) + 'px ' + font; ctx.fillText(String(e.count), bx, by + 1);
+  }
+  function frame(now) {
+    if (animating) advance(now);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, cell * W, cell * H);
+    if (state) {
+      drawBoard(state);
+      if (!animating) drawIntents(state); // 動いている間は予告を消す
+      const list = animating && prev ? prev.enemies.concat(state.enemies.filter((e) => !prev.enemies.some((q) => q.id === e.id))) : state.enemies;
+      for (const e of list) { const sp = sprites[e.id]; if (sp && sp.alive) drawEnemy(animating ? (state.enemies.find((q) => q.id === e.id) || e) : e, sp); }
+      if (sprites[0]) drawPenguin(sprites[0]);
+      if (tipMove && !animating) arrow(state.p.x + DIRS[tipMove.dir][0] * 0.75, state.p.y + DIRS[tipMove.dir][1] * 0.75, tipMove.dir, colors.gold, cell * 0.2);
+      popups = popups.filter((p) => now - p.t < 900);
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = '700 ' + Math.round(cell * 0.27) + 'px ' + font;
+      for (const p of popups) {
+        const k = (now - p.t) / 900, px = Math.max(cell * 0.9, Math.min(cell * (W - 0.9), cx(p.x))), py = Math.max(cell * 0.3, cy(p.y) - k * cell * 0.5);
+        ctx.globalAlpha = 1 - k * k; ctx.lineWidth = 3; ctx.strokeStyle = colors.surface; ctx.strokeText(p.text, px, py); ctx.fillStyle = colors[p.c] || colors.fg; ctx.fillText(p.text, px, py);
+      }
+      ctx.globalAlpha = 1;
+    }
+    requestAnimationFrame(frame);
+  }
+
+  readColors();
+  if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+  new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  window.addEventListener('resize', resize);
+  resize(); titleScreen();
+  requestAnimationFrame(frame);
+})();
+
+})();</script>
+</body>
+</html>
