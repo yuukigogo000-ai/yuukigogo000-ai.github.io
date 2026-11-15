@@ -64,6 +64,9 @@ exclude:
   # ペンギンずもう(機能は完成、見た目は仮。仕上げるまで配信しない)
   - penguin-sumo/
 
+  # 作業ログ(内部資料)
+  - WORKLOG.md
+
   # デスクトップ版のビルド定義(Webサイトとしては配信しない)
   - desktop/
   - pachinko/desktop/

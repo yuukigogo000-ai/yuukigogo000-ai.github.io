@@ -1,5 +1,5 @@
 // おまかせ(候補の手を全部シミュレータに通して一番良いものを選ぶ)。「いっきに勝つ」とバランス確認にも使う。
-import { cloneState, shoot, resolve, canUlt } from './engine.js';
+import { cloneState, shoot, resolve, canUlt, createBattle } from './engine.js';
 
 // 三角関数を使わずに向きの候補を作る(正方形の周上の整数点)
 export const DIRS = (function () {
@@ -68,3 +68,21 @@ export function humanShot(s, rnd, err, robust) {
   const d = DIRS[(best.dir + off + L) % L];
   return { dx: d[0], dy: d[1], power: best.power, ult: best.ult };
 }
+
+/**
+ * 「いっきに勝つ」: おまかせで最後まで回して結果だけ返す。
+ * 返り値: { won, shots, state }。同じ盤面なら必ず同じ結果になる。
+ */
+export function autoResolve(cfg, maxShots) {
+  const s = createBattle(cfg), cap = maxShots || 40;
+  while (s.phase === 'aim' && s.shots < cap) { shoot(s, bestShot(s)); resolve(s); s.events = []; }
+  return { won: s.phase === 'won', shots: s.shots, state: s };
+}
+
+/** 戦力の比(味方 ÷ 敵)。体力 × 攻撃力の合計で比べる、ごく粗い目安 */
+export function powerRatio(cfg) {
+  const sum = (list) => list.reduce((t, u) => t + (u.gauges ? u.gauges.reduce((a, b) => a + b, 0) : u.hp) * u.atk, 0);
+  return sum(cfg.allies) / Math.max(1, sum(cfg.enemies));
+}
+/** 格下かどうか(「いっきに勝つ」を出してよいか)。ボス戦では出さない */
+export function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(cfg) >= 2.5; }
