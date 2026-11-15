@@ -1,6 +1,6 @@
 // けもの天下のオフライン対応。1 回開けば、次からは通信なしで開ける。
 // 中身を更新したら CACHE の番号を上げる(古い分は自動で消える)。
-const CACHE = 'kemono-tenka-v1';
+const CACHE = 'kemono-tenka-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (e) => {

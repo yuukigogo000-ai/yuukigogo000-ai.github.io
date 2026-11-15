@@ -5,7 +5,7 @@
   const $ = (id) => document.getElementById(id);
   const cv = $('cv'), ctx = cv.getContext('2d'), wrap = $('wrap'), panel = $('panel');
   const SAVE_KEY = 'kemono-tenka.v1';
-  const INTENT_JA = { recruit: '兵', develop: '開', fortify: '城' };
+  const INTENT_JA = { recruit: '呼', develop: '灯', fortify: '結' };
 
   let state = null, sel = -1, target = -1, setup = { clan: 0, difficulty: 'normal', mode: 'normal' };
   let W = 320, H = 400, dpr = 1, colors = {}, font = 'sans-serif', tiles = [], flash = null;
@@ -21,7 +21,7 @@
   // ---- 効果音(その場で音を作る) ----------------------------------------------
   let audio = null, soundOn = load().sound !== false;
   const SFX = { tap: [[620, 620, 0.03, 'sine', 0.08]], order: [[330, 440, 0.08, 'triangle', 0.13]], win1: [[392, 588, 0.14, 'triangle', 0.15]], lose1: [[220, 150, 0.2, 'sawtooth', 0.14]],
-                turn: [[196, 196, 0.06, 'square', 0.08], [262, 262, 0.08, 'square', 0.08, 0.07]], event: [[660, 880, 0.12, 'sine', 0.12]],
+                turn: [[98, 82, 0.5, 'sine', 0.16]], event: [[440, 415, 0.5, 'sine', 0.1], [622, 587, 0.5, 'sine', 0.06, 0.02]], story: [[220, 208, 0.9, 'sine', 0.1], [330, 311, 0.9, 'sine', 0.05, 0.05]],
                 victory: [[523, 523, 0.1, 'triangle', 0.14, 0], [659, 659, 0.1, 'triangle', 0.14, 0.1], [784, 784, 0.1, 'triangle', 0.14, 0.2], [1047, 1047, 0.24, 'triangle', 0.14, 0.3]],
                 defeat: [[392, 392, 0.14, 'triangle', 0.14, 0], [311, 311, 0.14, 'triangle', 0.14, 0.14], [233, 233, 0.3, 'triangle', 0.14, 0.28]] };
   function sfx(name) {
@@ -68,35 +68,35 @@
     $('bar').hidden = !state;
     if (!state) { for (const id of ['when', 'rice', 'provs', 'pips', 'info']) $(id).textContent = ''; $('clans').textContent = ''; $('acts').textContent = ''; draw(); return; }
     const inc = incomeOf(state, state.player);
-    $('when').textContent = yearOf(state.turn) + ' 年目の' + seasonOf(state.turn) + '(' + state.turn + ' / ' + MAX_TURNS + ')';
-    $('rice').textContent = '米 ' + me().rice + '(毎ターン ' + sign(inc.net) + ')';
-    $('provs').textContent = '国 ' + countOf(state, state.player) + ' / ' + WIN_PROVS;
+    $('when').textContent = yearOf(state.turn) + ' の月・' + seasonOf(state.turn) + '(' + state.turn + ' / ' + MAX_TURNS + ' 夜)';
+    $('rice').textContent = '灯 ' + me().rice + '(毎夜 ' + sign(inc.net) + ')';
+    $('provs').textContent = '里 ' + countOf(state, state.player) + ' / ' + WIN_PROVS;
     $('pips').textContent = '●'.repeat(state.ordersLeft) + '○'.repeat(ORDERS_PER_TURN - state.ordersLeft);
     $('pips').setAttribute('aria-label', 'あと ' + state.ordersLeft + ' つ');
     const box = $('clans'); box.textContent = '';
     for (const c of state.clans) {
       const b = el('button', 'clan' + (c.alive ? '' : ' gone')); b.type = 'button'; b.style.borderLeftColor = colors['c' + c.id];
       const mine = c.id === state.player;
-      b.append(el('b', '', c.name), el('span', '', !c.alive ? 'ほろびた' : '国' + countOf(state, c.id) + (mine ? ' あなた' : ' 仲' + sign(c.rel) + (c.pact > 0 ? ' 約' + c.pact : '')) + (state.coalition === c.id ? ' 包囲' : '')));
+      b.append(el('b', '', c.name), el('span', '', !c.alive ? 'ほろびた' : '里' + countOf(state, c.id) + (mine ? ' あなた' : ' 仲' + sign(c.rel) + (c.pact > 0 ? ' 約' + c.pact : '')) + (state.coalition === c.id ? ' 包囲' : '')));
       b.addEventListener('click', () => { sfx('tap'); clanPanel(c.id); });
       box.append(b);
     }
     sheet(); draw();
   }
 
-  // ---- 選んだ国の命令 --------------------------------------------------------
+  // ---- 選んだ里の命令 --------------------------------------------------------
   function sheet() {
     const acts = $('acts'), info = $('info'); acts.textContent = ''; acts.className = 'acts';
     if (!state || state.phase !== 'orders') { info.textContent = ''; return; }
     const playing = !state.event && panel.hidden, can = playing && state.ordersLeft > 0;
     const add = (label, sub, o, cls) => { const why = whyNot(state, state.player, o); const b = btn(label, cls || '', () => doOrder(o), why ? why : sub); b.disabled = !can || !!why; acts.append(b); return b; };
-    if (sel < 0) { info.textContent = state.ordersLeft > 0 ? '国をタップして命令を選びます。迷ったら「家臣の進言」。赤い矢印は、相手が次にする攻めです' : '命令を出し切りました。「番をおえる」を押すと、相手の家が予告どおりに動きます'; return; }
+    if (sel < 0) { info.textContent = state.ordersLeft > 0 ? '里をタップして命令を選びます。迷ったら「お告げ」。赤い矢印は、相手が次の夜にしかけてくる攻めです' : '命令を出し切りました。「次の夜へ」を押すと、相手の家が予告どおりに動きます'; return; }
     const p = state.provs[sel], mine = p.owner === state.player;
-    const head = p.name + '(' + ownerName(state, p.owner) + ')兵 ' + p.troops + ' ・ 石高 ' + p.koku + (p.id === CAPITAL ? '(都 +2)' : '') + ' ・ 城 ' + p.castle + (p.unrest ? ' ・ 次のターンは米を生まない' : '');
-    if (target >= 0) { // 出陣の確かめ: 全軍か半分かを、結果を見て選ぶ
+    const head = p.name + '(' + ownerName(state, p.owner) + ')もののけ ' + p.troops + ' ・ 灯の数 ' + p.koku + (p.id === CAPITAL ? '(社 +2)' : '') + ' ・ 結界 ' + p.castle + (p.unrest ? ' ・ 次の夜は灯を生まない' : '');
+    if (target >= 0) { // 夜行の確かめ: 全軍か半分かを、結果を見て選ぶ
       const q = state.provs[target], all = p.troops - 1, half = Math.max(1, Math.floor(p.troops / 2));
-      const label = (n) => { if (q.owner === state.player) return '兵 ' + n + ' を送る'; const f = forecast(state, sel, target, n); return f.win ? '勝てる(残る兵 ' + f.attackerLeft + ')' : '負ける(失う兵 ' + f.attackerLoss + ')'; };
-      info.textContent = p.name + ' → ' + q.name + '(' + ownerName(state, q.owner) + ' 兵 ' + q.troops + ' 城 ' + q.castle + ')' + (q.owner >= 0 && q.owner !== state.player && state.clans[q.owner].pact > 0 ? ' ⚠ 不戦の約束を破ることになります' : '');
+      const label = (n) => { if (q.owner === state.player) return 'もののけ ' + n + ' を送る'; const f = forecast(state, sel, target, n); return f.win ? '勝てる(残るもののけ ' + f.attackerLeft + ')' : '負ける(失うもののけ ' + f.attackerLoss + ')'; };
+      info.textContent = p.name + ' → ' + q.name + '(' + ownerName(state, q.owner) + ' もののけ ' + q.troops + ' 結界 ' + q.castle + ')' + (q.owner >= 0 && q.owner !== state.player && state.clans[q.owner].pact > 0 ? ' ⚠ 祟らぬ約束を破ることになります' : '');
       acts.className = 'acts three';
       const f1 = q.owner === state.player || forecast(state, sel, target, all).win;
       add('全軍 ' + all, label(all), { t: 'march', from: sel, to: target, sent: all }, f1 ? 'primary' : 'warn');
@@ -105,24 +105,24 @@
       return;
     }
     if (mine) {
-      info.textContent = head + (p.troops >= 2 && !p.tired ? '。となりの国をタップすると出陣' : p.tired ? '。攻め取ったばかりで、このターンは出陣できません' : '');
+      info.textContent = head + (p.troops >= 2 && !p.tired ? '。となりの里をタップすると夜行' : p.tired ? '。攻め取ったばかりで、この夜は夜行できません' : '');
       const n = recruitSize(me().rice);
-      add('徴兵', n > 0 ? '米 ' + n + ' → 兵 ' + (n + (me().officers.includes('pyon') ? 1 : 0)) : '米がない', { t: 'recruit', at: sel });
-      add('開発', '米 ' + costOf(state, state.player, 'develop') + ' → 石高 +1', { t: 'develop', at: sel });
-      add('築城', '米 ' + costOf(state, state.player, 'fortify') + ' → 城 +1', { t: 'fortify', at: sel });
+      add('呼び寄せ', n > 0 ? '灯 ' + n + ' → もののけ ' + (n + (me().officers.includes('pyon') ? 1 : 0)) : '灯がない', { t: 'recruit', at: sel });
+      add('灯入れ', '灯 ' + costOf(state, state.player, 'develop') + ' → 灯の数 +1', { t: 'develop', at: sel });
+      add('結界張り', '灯 ' + costOf(state, state.player, 'fortify') + ' → 結界 +1', { t: 'fortify', at: sel });
       acts.append(btn('とじる', '', () => { sel = -1; refresh(); }));
     } else {
       const it = intentsOn(sel);
-      info.textContent = head + (it ? '。' + it : '') + (p.owner >= 0 ? '' : '。持ち主のいない国は動きません');
+      info.textContent = head + (it ? '。' + it : '') + (p.owner >= 0 ? '' : '。持ち主のいない里は動きません');
       if (p.owner >= 0) acts.append(btn(ownerName(state, p.owner) + ' のこと', '', () => clanPanel(p.owner)));
       acts.append(btn('とじる', '', () => { sel = -1; refresh(); }));
     }
   }
-  function intentsOn(id) { // その国にかかわる相手の予定を言葉にする
+  function intentsOn(id) { // その里にかかわる相手の予定を言葉にする
     const out = [];
     for (const c of state.clans) if (c.id !== state.player && c.alive) for (const i of c.intents) {
-      if (i.t === 'march' && (i.from === id || i.to === id)) out.push(c.name + ' が ' + state.provs[i.from].name + ' から ' + state.provs[i.to].name + ' へ兵 ' + (state.provs[i.from].troops - 1) + ' を出す予定');
-      else if (i.t !== 'march' && i.at === id) out.push(c.name + ' がここで' + { recruit: '兵を集める', develop: '開発する', fortify: '城を固める' }[i.t] + '予定');
+      if (i.t === 'march' && (i.from === id || i.to === id)) out.push(c.name + ' が ' + state.provs[i.from].name + ' から ' + state.provs[i.to].name + ' へもののけ ' + (state.provs[i.from].troops - 1) + ' を出す予定');
+      else if (i.t !== 'march' && i.at === id) out.push(c.name + ' がここで' + { recruit: 'もののけを集める', develop: '灯入れする', fortify: '結界を張る' }[i.t] + '予定');
     }
     return out.join('。');
   }
@@ -138,6 +138,7 @@
     if (state.phase === 'over') return gameOver();
     refresh();
     if (state.log.length > before && last) $('info').textContent = last.text;
+    tell(() => { if (!panel.hidden) hide(); });
   }
 
   // ---- 重ねる画面 ------------------------------------------------------------
@@ -146,8 +147,8 @@
 
   function titleScreen() {
     state = null; sel = -1; target = -1;
-    const sv = load(), nodes = [el('h2', '', 'けもの天下'), el('p', '', '12 の国を取り合う、けものたちの国盗り。' + WIN_PROVS + ' 国を取れば天下人')];
-    if (sv.resume && sv.resume.state) nodes.push(btn('つづきから', 'primary', () => { state = sv.resume.state; setup.mode = sv.resume.mode || 'normal'; sel = -1; target = -1; hide(); if (state.event) eventPanel(); }, yearOf(sv.resume.state.turn) + ' 年目の' + seasonOf(sv.resume.state.turn)));
+    const sv = load(), nodes = [el('h2', '', 'けもの天下'), el('p', '', '夜が明けなくなった山あい。12 の里の灯を、四つの怪の家が取り合う。' + WIN_PROVS + ' つの里を取れば、夜の主')];
+    if (sv.resume && sv.resume.state) nodes.push(btn('つづきから', 'primary', () => { state = sv.resume.state; setup.mode = sv.resume.mode || 'normal'; sel = -1; target = -1; hide(); if (state.event) eventPanel(); }, yearOf(sv.resume.state.turn) + ' の月・' + seasonOf(sv.resume.state.turn)));
     nodes.push(el('p', '', 'どの家ではじめますか'));
     const g = el('div', 'grid2');
     CLANS.forEach((c, i) => { const b = el('button', 'choice' + (setup.clan === i ? ' sel' : '')); b.type = 'button'; b.append(el('b', '', c.ja), el('span', '', OFFICERS[c.officer].ja + ': ' + OFFICERS[c.officer].text)); b.addEventListener('click', () => { sfx('tap'); setup.clan = i; titleScreen(); }); g.append(b); });
@@ -155,10 +156,12 @@
     const d = el('div', 'grid3');
     for (const k of Object.keys(DIFFICULTY)) { const b = el('button', 'choice' + (setup.difficulty === k ? ' sel' : '')); b.type = 'button'; b.append(el('b', '', DIFFICULTY[k].ja)); b.addEventListener('click', () => { sfx('tap'); setup.difficulty = k; titleScreen(); }); d.append(b); }
     nodes.push(d, el('p', '', DIFFICULTY[setup.difficulty].text));
-    const rec = sv.wins && sv.wins[setup.difficulty] ? 'この難しさでの天下取り: ' + sv.wins[setup.difficulty] + ' 回' + (sv.fastest && sv.fastest[setup.difficulty] ? '(最短 ' + sv.fastest[setup.difficulty] + ' ターン)' : '') : '';
+    const rec = sv.wins && sv.wins[setup.difficulty] ? 'この難しさで夜の主になった回数: ' + sv.wins[setup.difficulty] + ' 回' + (sv.fastest && sv.fastest[setup.difficulty] ? '(最短 ' + sv.fastest[setup.difficulty] + ' 夜)' : '') : '';
     nodes.push(btn('はじめる', sv.resume ? '' : 'primary', () => begin('normal'), rec || undefined));
     const dl = sv.daily && sv.daily.date === today() ? sv.daily : null;
-    nodes.push(btn('きょうの乱', '', () => begin('daily'), dl ? 'きょうの記録: ' + (dl.won ? dl.turn + ' ターンで天下取り' : '天下ならず') : '毎日かわる同じ並びに挑戦'));
+    nodes.push(btn('きょうの夜', '', () => begin('daily'), dl ? 'きょうの記録: ' + (dl.won ? dl.turn + ' 夜で夜の主に' : '夜は明けず') : '毎日かわる同じ並びに挑戦'));
+    const en = Object.keys(sv.endings || {}).length;
+    if (en) nodes.push(el('p', '', '見た結末: ' + en + ' / ' + STORY_COUNTS.endings));
     const row = el('div', 'grid2');
     row.append(btn('あそびかた', '', howTo), btn('音: ' + (soundOn ? 'オン' : 'オフ'), '', () => { soundOn = !soundOn; store({ sound: soundOn }); sfx('tap'); titleScreen(); }));
     nodes.push(row);
@@ -166,14 +169,16 @@
   }
   function howTo() {
     const ul = el('ul');
-    for (const t of ['国をタップして命令を選びます。命令は 1 ターンに 3 つまでです',
-      '自分の国を選んでから、となりの国をタップすると出陣です。勝ち負けは出す前に分かります(運はありません)',
-      '徴兵は兵 1 つにつき米 1。兵 4 つにつき毎ターン米 1 の維持費がかかります',
-      '相手の家は、次に何をするかを地図に出しています。矢印は攻め、「兵・開・城」は国の中の動きです',
-      '攻めは必ず予告されます。先に守りを固めるか、出どころの国を取ってしまえば防げます',
-      'いちばん大きな家(5 国以上)には包囲網が組まれます。あなたにも、相手にも同じ決まりです',
-      '最初の 1 年は、どの家も、ほかの家の本拠を攻められません',
-      WIN_PROVS + ' 国を取った家がその場で天下人。6 年たったら、いちばん国の多い家の勝ちです'])
+    for (const t of ['里をタップして命令を選びます。命令は 1 夜に 3 つまでです',
+      '自分の里を選んでから、となりの里をタップすると夜行(攻める・もののけを動かす)です。勝ち負けは出す前に分かります(運はありません)',
+      '里は毎夜、灯を生みます。もののけ 4 つにつき、毎夜 灯 1 がいります。灯が尽きると、もののけは去ります',
+      '呼び寄せは、もののけ 1 つにつき灯 1(1 回 4 まで)。灯入れで里の灯が増え、結界で里が守りやすくなります',
+      '相手の家は、次の夜に何をするかを地図に出しています。矢印は攻め、「呼・灯・結」は里の中の動きです',
+      '攻めは必ず前の夜に知らされます。先に守りを固めるか、出どころの里を取ってしまえば防げます',
+      'いちばん大きな家(5 つの里以上)には、ほかの家がそろって襲いかかります(百鬼夜行)。あなたにも、相手にも同じ決まりです',
+      '最初のひと月は、どの家も、ほかの家のほこらを攻められません',
+      WIN_PROVS + ' つの里を取った家が、その場で夜の主。6 つの月が過ぎたら、いちばん里の多い家の勝ちです',
+      '月が変わるとき、何かが起きたときに「夜語り」が入ります。結末は、勝ち負けと、約束を守ったかどうかで変わります'])
       ul.append(el('li', '', t));
     show([el('h2', '', 'あそびかた'), ul, btn('もどる', 'primary', () => (state ? hide() : titleScreen()))]);
   }
@@ -185,8 +190,8 @@
     state = newGame({ seed: seed || 1, clan: setup.clan, difficulty: setup.difficulty });
     sel = -1; target = -1; saveResume();
     const c = CLANS[setup.clan];
-    show([el('p', '', mode === 'daily' ? 'きょうの乱' : DIFFICULTY[setup.difficulty].ja), el('div', 'big', c.ja), el('p', '', '左下の「' + state.provs[me().home].name + '」があなたの本拠です'),
-          el('p', '', '家臣 ' + OFFICERS[c.officer].ja + ': ' + OFFICERS[c.officer].text), btn('はじめる', 'primary', hide)]);
+    show([el('p', '', mode === 'daily' ? 'きょうの夜' : DIFFICULTY[setup.difficulty].ja), el('div', 'big', c.ja), el('p', '', '左下の「' + state.provs[me().home].name + '」があなたのほこらです'),
+          el('p', '', '憑きもの ' + OFFICERS[c.officer].ja + ': ' + OFFICERS[c.officer].text), btn('はじめる', 'primary', () => tell(hide))]);
   }
   function clanPanel(id) {
     const c = state.clans[id], K = CLANS[id], mine = id === state.player, nodes = [el('h2', '', c.name + (mine ? '(あなた)' : ''))];
@@ -194,40 +199,53 @@
     else {
       if (!mine) nodes.push(el('p', '', '性格: ' + K.persona + '。' + K.personaText));
       const rows = el('div', 'rows'); const add = (a, b) => rows.append(el('span', '', a), el('span', '', b));
-      add('国', countOf(state, id) + ' / ' + WIN_PROVS); add('米', String(c.rice));
-      if (!mine) { add('あなたとの仲', sign(c.rel) + '(-5 〜 +5)'); add('不戦の約束', c.pact > 0 ? 'あと ' + c.pact + ' ターン' : 'なし'); }
-      if (state.coalition === id) add('包囲網', 'ほかの家からねらわれている');
+      add('里', countOf(state, id) + ' / ' + WIN_PROVS); add('灯', String(c.rice));
+      if (!mine) { add('あなたとの仲', sign(c.rel) + '(-5 〜 +5)'); add('祟らぬ約束', c.pact > 0 ? 'あと ' + c.pact + ' 夜' : 'なし'); }
+      if (state.coalition === id) add('百鬼夜行', 'ほかの家からねらわれている');
       nodes.push(rows);
-      const ul = el('ul'); for (const k of c.officers) ul.append(el('li', '', OFFICERS[k].ja + ': ' + OFFICERS[k].text)); nodes.push(el('p', '', '家臣'), ul);
+      const ul = el('ul'); for (const k of c.officers) ul.append(el('li', '', OFFICERS[k].ja + ': ' + OFFICERS[k].text)); nodes.push(el('p', '', '憑きもの'), ul);
       if (!mine && state.phase === 'orders' && !state.event) {
-        const mk = (label, o) => { const why = whyNot(state, state.player, o), b = btn(label, '', () => { hide(); doOrder(o); }, why || '米 ' + COST[o.t]); b.disabled = !!why || state.ordersLeft <= 0; return b; };
-        const g = el('div', 'grid2'); g.append(mk('贈り物をする', { t: 'gift', clan: id }), mk('不戦の約束', { t: 'pact', clan: id })); nodes.push(g);
+        const mk = (label, o) => { const why = whyNot(state, state.player, o), b = btn(label, '', () => { hide(); doOrder(o); }, why || '灯 ' + COST[o.t]); b.disabled = !!why || state.ordersLeft <= 0; return b; };
+        const g = el('div', 'grid2'); g.append(mk('供え物をする', { t: 'gift', clan: id }), mk('祟らぬ約束', { t: 'pact', clan: id })); nodes.push(g);
       }
     }
     nodes.push(btn('とじる', 'primary', hide));
     show(nodes);
   }
   function advicePanel() {
-    const list = advice(state, 3), nodes = [el('h2', '', '家臣の進言'), el('p', '', 'タップすると、その命令を出します')];
+    const list = advice(state, 3), nodes = [el('h2', '', '憑きもののお告げ'), el('p', '', 'タップすると、その命令を出します')];
     if (!list.length) nodes.push(el('p', '', 'いまは、これといった手がありません。番を終えてもよいでしょう'));
     for (const r of list) { const b = el('button', 'choice'); b.type = 'button'; b.append(el('b', '', orderName(r.o)), el('span', '', r.why)); b.addEventListener('click', () => { sfx('tap'); hide(); doOrder(r.o); }); nodes.push(b); }
     nodes.push(btn('とじる', '', hide));
     show(nodes);
   }
   function orderName(o) {
-    if (o.t === 'march') return state.provs[o.from].name + ' から ' + state.provs[o.to].name + ' へ出陣(兵 ' + o.sent + ')';
-    if (o.t === 'gift') return state.clans[o.clan].name + ' に贈り物'; if (o.t === 'pact') return state.clans[o.clan].name + ' と不戦の約束';
-    return state.provs[o.at].name + ' で' + { recruit: '徴兵', develop: '開発', fortify: '築城' }[o.t];
+    if (o.t === 'march') return state.provs[o.from].name + ' から ' + state.provs[o.to].name + ' へ夜行(もののけ ' + o.sent + ')';
+    if (o.t === 'gift') return state.clans[o.clan].name + ' に供え物'; if (o.t === 'pact') return state.clans[o.clan].name + ' と祟らぬ約束';
+    return state.provs[o.at].name + ' で' + { recruit: '呼び寄せ', develop: '灯入れ', fortify: '結界張り' }[o.t];
   }
   function logPanel(lines, title, next) {
     const ul = el('ul');
     for (const l of lines) ul.append(el('li', l.kind === 'good' || l.kind === 'bad' || l.kind === 'big' ? l.kind : '', (title ? '' : l.turn + ': ') + l.text));
     show([el('h2', '', title || 'きろく'), ul, btn(next ? 'つぎへ' : 'とじる', 'primary', next || hide)]);
   }
+  /** 夜語り: いま語るべき場面があれば順に見せ、終わったら next へ */
+  function tell(next) {
+    const scenes = storyDue(state);
+    if (!scenes.length) return next();
+    saveResume(); sfx('story');
+    const showOne = (i) => {
+      const sc = scenes[i], nodes = [el('p', '', '夜語り'), el('h2', '', sc.title)];
+      for (const line of sc.lines) nodes.push(el('p', 'tale', line));
+      nodes.push(btn('つぎへ', 'primary', () => (i + 1 < scenes.length ? showOne(i + 1) : next())));
+      show(nodes);
+    };
+    showOne(0);
+  }
   function eventPanel() {
     const e = state.event; sfx('event');
-    const mk = (label, ch) => btn(label, 'choice', () => { const text = answerEvent(state, ch); saveResume(); if (state.phase === 'over') return gameOver(); show([el('h2', '', e.title), el('p', '', text), btn('つぎへ', 'primary', hide)]); });
-    show([el('h2', '', e.title), el('p', '', e.text), mk(e.a, 'A'), mk(e.b, 'B')]);
+    const mk = (label, ch) => btn(label, 'choice', () => { const text = answerEvent(state, ch); saveResume(); if (state.phase === 'over') return gameOver(); show([el('h2', '', e.title), el('p', 'tale', text), btn('つぎへ', 'primary', () => tell(hide))]); });
+    show([el('h2', '', e.title), el('p', 'tale', e.text), mk(e.a, 'A'), mk(e.b, 'B')]);
   }
   function gameOver() {
     const won = state.winner === state.player, sv = load();
@@ -236,11 +254,13 @@
     else if (won) { const w = sv.wins || {}, f = sv.fastest || {}; w[state.difficulty] = (w[state.difficulty] || 0) + 1; if (!f[state.difficulty] || state.turn < f[state.difficulty]) f[state.difficulty] = state.turn; store({ wins: w, fastest: f }); }
     store({ resume: null });
     const rows = el('div', 'rows'); const add = (a, b) => rows.append(el('span', '', a), el('span', '', b));
-    add('決着', yearOf(state.turn) + ' 年目の' + seasonOf(state.turn) + '(' + state.turn + ' ターン)'); add('持っていた国', countOf(state, state.player) + '(最大 ' + state.stats.peak + ')');
-    add('いくさ', state.stats.battlesWon + ' 勝 ' + state.stats.battlesLost + ' 敗'); add('取った国 / 取られた国', state.stats.provsTaken + ' / ' + state.stats.provsLost);
-    const ul = el('ul'); for (const l of state.log.slice(-4)) ul.append(el('li', l.kind === 'good' || l.kind === 'bad' ? l.kind : '', l.text));
-    show([el('h2', '', won ? '天下を取った!' : '天下ならず'), el('p', '', state.clans[state.winner].name + ' が天下人に。' + state.endReason), rows, ul,
-          btn('もう一回', 'primary', () => begin(setup.mode)), btn('タイトルへ', '', titleScreen)]);
+    add('決着', yearOf(state.turn) + ' の月・' + seasonOf(state.turn) + '(' + state.turn + ' 夜)'); add('持っていた里', countOf(state, state.player) + '(最大 ' + state.stats.peak + ')');
+    add('あらそい', state.stats.battlesWon + ' 勝 ' + state.stats.battlesLost + ' 敗'); add('取った里 / 取られた里', state.stats.provsTaken + ' / ' + state.stats.provsLost);
+    const end = ending(state), nodes = [el('p', '', '結末'), el('h2', '', end.title)];
+    for (const line of end.lines) nodes.push(el('p', 'tale', line));
+    nodes.push(el('p', '', state.clans[state.winner].name + ' が夜の主に。' + state.endReason), rows, btn('もう一回', 'primary', () => begin(setup.mode)), btn('タイトルへ', '', titleScreen));
+    const seen = load().endings || {}; seen[end.id] = true; store({ endings: seen });
+    show(nodes);
   }
 
   // ---- 入力 ------------------------------------------------------------------
@@ -251,7 +271,7 @@
     sfx('tap');
     if (id < 0) { sel = -1; target = -1; return refresh(); }
     const cur = sel >= 0 ? state.provs[sel] : null;
-    // 自分の国を選んでいるときに、となりの国をタップしたら出陣の確かめへ
+    // 自分の里を選んでいるときに、となりの里をタップしたら夜行の確かめへ
     if (cur && cur.owner === state.player && id !== sel && cur.adj.includes(id) && cur.troops >= 2 && !cur.tired && state.ordersLeft > 0) { target = id; return refresh(); }
     sel = id === sel && target < 0 ? -1 : id; target = -1; refresh();
   });
@@ -261,9 +281,9 @@
     if (!state || state.phase !== 'orders' || state.event) return;
     const before = state.log.length, turn = state.turn;
     sfx('turn'); endTurn(state); sel = -1; target = -1; saveResume();
-    const lines = state.log.slice(before).filter((l) => !/年目の/.test(l.text) || state.phase === 'over');
-    const next = () => { if (state.phase === 'over') return gameOver(); if (state.event) return eventPanel(); hide(); };
-    if (lines.length) logPanel(lines, turn + ' ターン目に起きたこと', next); else next();
+    const lines = state.log.slice(before).filter((l) => !/の月・/.test(l.text) || state.phase === 'over');
+    const next = () => { if (state.phase === 'over') return gameOver(); tell(() => { if (state.event) return eventPanel(); hide(); }); };
+    if (lines.length) logPanel(lines, turn + ' 夜目に起きたこと', next); else next();
   });
 
   // ---- 描画 ------------------------------------------------------------------
@@ -292,11 +312,11 @@
       else if (sel >= 0 && target < 0 && state.provs[sel].owner === state.player && state.provs[sel].adj.includes(p.id) && state.provs[sel].troops >= 2 && !state.provs[sel].tired) { ctx.setLineDash([5, 4]); ctx.strokeStyle = colors.accent; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]); }
       if (flash && flash.id === p.id && performance.now() - flash.t < 500) { ctx.globalAlpha = 0.5 * (1 - (performance.now() - flash.t) / 500); ctx.fillStyle = colors.surface; ctx.fill(); ctx.globalAlpha = 1; }
       ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.font = '700 ' + fs(0.036) + 'px ' + font; ctx.fillText(p.name + (p.id === CAPITAL ? '(都)' : ''), t.x + t.w / 2, t.y + t.h * 0.2);
+      ctx.font = '700 ' + fs(0.036) + 'px ' + font; ctx.fillText(p.name + (p.id === CAPITAL ? '(社)' : ''), t.x + t.w / 2, t.y + t.h * 0.2);
       ctx.font = '800 ' + fs(0.085) + 'px ' + font; ctx.fillText(String(p.troops), t.x + t.w / 2, t.y + t.h * 0.52);
       ctx.font = '700 ' + fs(0.034) + 'px ' + font;
-      ctx.fillText('石' + p.koku + ' 城' + p.castle + (p.unrest ? ' 乱' : ''), t.x + t.w / 2, t.y + t.h * 0.84);
-      if (p.owner >= 0 && state.clans[p.owner].home === p.id) { ctx.font = '700 ' + fs(0.03) + 'px ' + font; ctx.textAlign = 'left'; ctx.fillText('本拠', t.x + 6, t.y + t.h * 0.52); }
+      ctx.fillText('灯' + p.koku + ' 結' + p.castle + (p.unrest ? ' 闇' : ''), t.x + t.w / 2, t.y + t.h * 0.84);
+      if (p.owner >= 0 && state.clans[p.owner].home === p.id) { ctx.font = '700 ' + fs(0.03) + 'px ' + font; ctx.textAlign = 'left'; ctx.fillText('ほこら', t.x + 6, t.y + t.h * 0.52); }
     }
     for (const c of state.clans) { // 相手の予告
       if (c.id === state.player || !c.alive) continue;

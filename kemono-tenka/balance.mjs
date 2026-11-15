@@ -23,8 +23,8 @@ for (const style of ['best', 'loose', 'idle']) for (const diff of ['easy', 'norm
     if (s.winner === s.player) { wins++; byClan[clan]++; }
     winnerKey[C.CLANS[s.winner].key] = (winnerKey[C.CLANS[s.winner].key] || 0) + 1;
     turns += s.turn; endTurns.push(s.turn); peak += s.stats.peak;
-    if (s.endReason.includes('6 年')) byTime++;
-    if (s.log.some((l) => l.text.includes('包囲網を組んだ'))) coalition++;
+    if (s.endReason.includes('6 つの月')) byTime++;
+    if (s.log.some((l) => l.text.includes('百鬼夜行を組んだ'))) coalition++;
   }
   endTurns.sort((a, b) => a - b);
   const r = { n: N, win: +(wins / N).toFixed(2), winByClan: byClan.map((w) => +(w / (N / 4)).toFixed(2)), avgEndTurn: +(turns / N).toFixed(1), endTurnRange: [endTurns[0], endTurns[N - 1]],

@@ -1,5 +1,6 @@
 // けもの天下の検査(node test.mjs)。--mutate で検査器自身が間違いを見つけられるか確かめる。
 import * as C from './src/core.js';
+import * as S from './src/story.js';
 
 let pass = 0, fail = 0; const failures = [];
 function ok(name, cond, extra) { if (cond) pass++; else { fail++; failures.push(name + (extra !== undefined ? ' → ' + JSON.stringify(extra) : '')); } }
@@ -141,7 +142,7 @@ const quiet = (s) => { for (const c of s.clans) c.intents = []; return s; }; // 
   ok('5 国の単独首位には包囲網が組まれ、仲が毎ターン悪くなる', s.coalition === s.player && s.clans.filter((c) => c.id !== s.player).every((c) => c.rel === -1), s.coalition);
   ok('包囲網のあいだは約束を結べない', (() => { const o = s.clans.find((c) => c.id !== s.player); o.rel = 5; s.clans[s.player].rice = 9; return C.whyNot(s, s.player, { t: 'pact', clan: o.id }) !== null; })());
   s = quiet(G({ clan: 1 })); s.turn = C.MAX_TURNS; set(s, 6, s.player, 1); C.endTurn(s);
-  ok('6 年が過ぎたら、いちばん多くの国を持つ家の勝ち', s.phase === 'over' && s.winner === s.player && s.endReason.includes('6 年'), [s.winner, s.endReason]);
+  ok('6 年が過ぎたら、いちばん多くの国を持つ家の勝ち', s.phase === 'over' && s.winner === s.player && s.endReason.includes('6 つの月'), [s.winner, s.endReason]);
   s = quiet(G({ clan: 1 })); s.turn = 5; const e = s.clans.find((c) => c.id !== s.player); set(s, 9, e.id, 5);
   C.endTurn(s); ok('自分の国がなくなったら負け', s.phase === 'over' && s.winner !== s.player);
 }
@@ -203,6 +204,51 @@ function autoPlay(seed, clan, diff, random) {
   const a2 = C.newGame({ seed: 11, clan: 2, difficulty: 'normal' }); guard = 0;
   while (a2.phase !== 'over' && guard++ < 600) { if (a2.event) C.answerEvent(a2, 'A'); else { const adv = a2.ordersLeft > 0 ? C.advice(a2, 3) : []; if (adv.length) C.order(a2, adv[0].o); else C.endTurn(a2); } }
   ok('途中で保存して読み直しても、結果は同じ', JSON.stringify(b) === JSON.stringify(a2) && a.phase === 'over');
+}
+// ---- 夜語り(物語が書き進む仕組み) ------------------------------------------
+{
+  const okScene = (sc) => typeof sc.id === 'string' && typeof sc.title === 'string' && sc.title.length > 0 && Array.isArray(sc.lines) && sc.lines.length >= 2 && sc.lines.every((l) => typeof l === 'string' && l.length > 0);
+  const pro = [0, 1, 2, 3].map((c) => S.storyDue(G({ clan: c }))[0]);
+  ok('始まりの語りは、選んだ家ごとに違う', pro.every(okScene) && new Set(pro.map((p) => p.lines[0])).size === 4, pro.map((p) => p.title));
+  const s = quiet(G({ clan: 1 }));
+  ok('同じ場面を二度語らない', S.storyDue(s).length === 1 && S.storyDue(s).length === 0);
+  s.turn = 5; const ch = S.storyDue(s);
+  ok('月が変わると、その月の語りが入る', ch.length === 1 && ch[0].id === 'ch5' && okScene(ch[0]), ch.map((c) => c.id));
+  // 優勢か、押されているかで文が変わる
+  const lead = quiet(G({ clan: 1 })); lead.story.seen.push('prologue'); lead.turn = 5; for (const id of [6, 10, 7]) set(lead, id, lead.player, 3);
+  const behind = quiet(G({ clan: 1 })); behind.story.seen.push('prologue'); behind.turn = 5; const r = behind.clans.find((c) => c.id !== behind.player); for (const id of [6, 10, 7, 3]) set(behind, id, r.id, 3);
+  ok('同じ月の語りでも、優勢のときと押されているときで文が変わる', S.storyDue(lead)[0].lines.join('') !== S.storyDue(behind)[0].lines.join(''));
+  // 出来事に応じた場面
+  const trig = (fn) => { const g = quiet(G({ clan: 1 })); g.story.seen.push('prologue'); fn(g); return S.storyDue(g).map((x) => x.id); };
+  ok('約束を結ぶと「結んだ髪」', trig((g) => { g.stats.pactsMade = 1; }).includes('pact'));
+  ok('約束を破ると「ほどいた髪」', trig((g) => { g.stats.pactsBroken = 1; }).includes('betrayal'));
+  ok('里を取ると「はじめての灯」、取られると「消えた灯」', trig((g) => { g.stats.provsTaken = 1; }).includes('firstTake') && trig((g) => { g.stats.provsLost = 1; }).includes('firstLoss'));
+  ok('ふる社を取ると語りが入る', trig((g) => set(g, C.CAPITAL, g.player, 3)).includes('shrine'));
+  ok('自分に百鬼夜行が向くと語りが入る', trig((g) => { g.coalition = g.player; }).includes('hyakkiMe'));
+  ok('相手があと 1 つで夜の主になると語りが入る', trig((g) => { const o = g.clans.find((c) => c.id !== g.player); for (const p of g.provs) { if (C.countOf(g, o.id) >= C.WIN_PROVS - 1) break; if (p.owner !== o.id && p.owner !== g.player) set(g, p.id, o.id, 2); } }).includes('danger'));
+  ok('1 度に語るのは 2 つまで', trig((g) => { g.stats.pactsMade = 1; g.stats.pactsBroken = 1; g.stats.provsTaken = 1; g.stats.provsLost = 1; g.coalition = g.player; }).length === 2);
+  // 結末 5 つ
+  const end = (fn) => { const g = quiet(G({ clan: 1 })); g.phase = 'over'; g.winner = g.player; fn(g); return S.ending(g); };
+  const ids = [end((g) => { g.stats.pactsMade = 1; }), end((g) => { g.stats.pactsMade = 1; g.stats.pactsBroken = 1; }), end(() => {}),
+               end((g) => { g.winner = (g.player + 1) % 4; g.clans[g.player].alive = false; }), end((g) => { g.winner = (g.player + 1) % 4; })];
+  ok('結末は 5 つ: 約束を守って勝つ / 破って勝つ / 約束なしで勝つ / のまれる / よその家が主になる', ids.map((e) => e.id).join() === 'dawn,cursed,lord,swallowed,endless' && ids.every(okScene), ids.map((e) => e.id));
+  ok('決着したあとは、途中の語りを出さない', (() => { const g = quiet(G({ clan: 1 })); g.phase = 'over'; return S.storyDue(g).length === 0; })());
+  // 通しで遊んで、語りがくり返されず、壊れた文がなく、保存しても続きから語れる
+  let bad = 0, total = 0; const seenIds = new Set(), endIds = new Set();
+  for (let seed = 1; seed <= 200; seed++) {
+    let g = C.newGame({ seed, clan: seed % 4, difficulty: ['easy', 'normal', 'hard'][seed % 3] }), guard = 0; const mineIds = [];
+    while (g.phase !== 'over' && guard++ < 600) {
+      for (const sc of S.storyDue(g)) { if (!okScene(sc) || mineIds.includes(sc.id)) bad++; mineIds.push(sc.id); seenIds.add(sc.id); total++; }
+      if (seed % 7 === 0) g = JSON.parse(JSON.stringify(g)); // 保存して読み直す
+      if (g.event) { C.answerEvent(g, seed % 2 ? 'A' : 'B'); continue; }
+      const adv = g.ordersLeft > 0 ? C.advice(g, 3) : [];
+      if (adv.length) C.order(g, adv[(seed + g.turn) % adv.length].o); else C.endTurn(g);
+    }
+    const e = S.ending(g); if (!okScene(e)) bad++; endIds.add(e.id);
+  }
+  ok('200 回遊んでも、語りがくり返されず、壊れた文がない(保存をはさんでも)', bad === 0, bad);
+  ok('200 回のうちに、用意した場面のほとんどが実際に語られる', seenIds.size >= 14 && endIds.size >= 3, { scenes: [...seenIds].length, endings: [...endIds], perGame: +(total / 200).toFixed(1) });
+  ok('場面の数: 始まり 4・月の語り 5・出来事の場面 11・結末 5', S.STORY_COUNTS.prologues === 4 && S.STORY_COUNTS.chapters === 5 && S.STORY_COUNTS.triggers === 11 && S.STORY_COUNTS.endings === 5, S.STORY_COUNTS);
 }
 if (process.argv.includes('--mutate')) {
   const before = fail;

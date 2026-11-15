@@ -32,11 +32,16 @@ for (const vp of [{ w: 360, h: 800 }, { w: 390, h: 844 }]) for (const scheme of 
   await page.locator('#panel .grid3 .choice', { hasText: diff }).click();
   await page.locator('#panel button', { hasText: 'はじめる' }).first().click();
   await page.locator('#panel button', { hasText: 'はじめる' }).first().click();
-  // 手で操作できるか: 本拠(左下)をタップ → 徴兵
+  // 始まりの夜語りを読み終える
+  let tales = 0;
+  await page.screenshot({ path: path.join(shots, `kt-${key}-tale.png`) });
+  const taleFits = await page.evaluate(() => { const p = document.querySelector('#panel'); return p.scrollHeight <= p.clientHeight + 1; });
+  while (await page.evaluate(() => globalThis.__kt().panelOpen)) { await page.locator('#panel button.primary').first().click(); tales++; }
+  // 手で操作できるか: ほこら(左下)をタップ → 呼び寄せ
   const box = await page.locator('#cv').boundingBox();
   await page.mouse.click(box.x + box.width / 6, box.y + box.height * 7 / 8);
   await page.screenshot({ path: path.join(shots, `kt-${key}-select.png`) });
-  await page.locator('#acts button', { hasText: '徴兵' }).click();
+  await page.locator('#acts button', { hasText: '呼び寄せ' }).click();
   const manual = await page.evaluate(() => globalThis.__kt().state.ordersLeft === 2);
   // となりの国をタップして、出陣の確かめが出るか
   await page.mouse.click(box.x + box.width / 6, box.y + box.height * 5 / 8);
@@ -56,8 +61,13 @@ for (const vp of [{ w: 360, h: 800 }, { w: 390, h: 844 }]) for (const scheme of 
     else await page.click('#end');
   }
   const end = await page.evaluate(() => { const s = globalThis.__kt().state; return { phase: s.phase, turn: s.turn, won: s.winner === s.player, reason: s.endReason, saved: !!localStorage.getItem('kemono-tenka.v1') }; });
+  // きろくのパネルを読み終えて、結末の画面まで進む
+  for (let i = 0; i < 6 && !(await page.locator('#panel button', { hasText: 'もう一回' }).count()); i++) await page.locator('#panel button.primary').first().click();
   await page.screenshot({ path: path.join(shots, `kt-${key}-end.png`) });
-  out[key] = { clan: clanIdx, diff, noHScroll: l0.sw <= l0.iw && l1.sw <= l1.iw, noVScroll: l0.sh <= l0.ih && l1.sh <= l1.ih, manualRecruit: manual, marchConfirmShown: marchUi === 1, steps, end, errors };
+  const endFits = await page.evaluate(() => { const p = document.querySelector('#panel'); return p.scrollHeight <= p.clientHeight + 1; });
+  const endingsSaved = await page.evaluate(() => Object.keys((JSON.parse(localStorage.getItem('kemono-tenka.v1') || '{}').endings) || {}).length);
+  const story = await page.evaluate(() => ({ seen: globalThis.__kt().state.story.seen.length, ending: document.querySelector('#panel h2') ? document.querySelector('#panel h2').textContent : '' }));
+  out[key] = { clan: clanIdx, diff, prologueShown: tales >= 1, taleFits, storyScenes: story.seen, ending: story.ending, endFits, endingsSaved, noHScroll: l0.sw <= l0.iw && l1.sw <= l1.iw, noVScroll: l0.sh <= l0.ih && l1.sh <= l1.ih, manualRecruit: manual, marchConfirmShown: marchUi === 1, steps, end, errors };
   await ctx.close();
 }
 // オフライン: 1 回開いてから通信を切って再読み込み。続きから再開できるか
@@ -69,6 +79,7 @@ for (const vp of [{ w: 360, h: 800 }, { w: 390, h: 844 }]) for (const scheme of 
   const controlled = await page.evaluate(() => !!navigator.serviceWorker.controller);
   await page.locator('#panel button', { hasText: 'はじめる' }).first().click();
   await page.locator('#panel button', { hasText: 'はじめる' }).first().click();
+  while (await page.evaluate(() => globalThis.__kt().panelOpen)) await page.locator('#panel button.primary').first().click();
   await page.click('#end');
   await ctx.setOffline(true);
   let offlineOk = false, resume = 0;
