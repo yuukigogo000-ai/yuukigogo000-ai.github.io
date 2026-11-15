@@ -1,0 +1,218 @@
+{
+  "best/easy": {
+    "n": 200,
+    "win": 0.95,
+    "winByClan": [
+      0.92,
+      0.96,
+      0.94,
+      0.98
+    ],
+    "avgEndTurn": 13.2,
+    "endTurnRange": [
+      4,
+      24
+    ],
+    "byTimeLimit": 0.03,
+    "avgPeakProvs": 6.8,
+    "coalitionFormed": 0.97,
+    "winners": {
+      "turtle": 52,
+      "fox": 47,
+      "rabbit": 53,
+      "bear": 48
+    }
+  },
+  "best/normal": {
+    "n": 200,
+    "win": 0.79,
+    "winByClan": [
+      0.7,
+      0.84,
+      0.76,
+      0.86
+    ],
+    "avgEndTurn": 14.8,
+    "endTurnRange": [
+      4,
+      24
+    ],
+    "byTimeLimit": 0.06,
+    "avgPeakProvs": 6.3,
+    "coalitionFormed": 0.95,
+    "winners": {
+      "turtle": 51,
+      "fox": 47,
+      "rabbit": 51,
+      "bear": 51
+    }
+  },
+  "best/hard": {
+    "n": 200,
+    "win": 0.47,
+    "winByClan": [
+      0.44,
+      0.5,
+      0.38,
+      0.58
+    ],
+    "avgEndTurn": 14.8,
+    "endTurnRange": [
+      5,
+      24
+    ],
+    "byTimeLimit": 0.05,
+    "avgPeakProvs": 5.2,
+    "coalitionFormed": 0.83,
+    "winners": {
+      "turtle": 53,
+      "rabbit": 49,
+      "fox": 40,
+      "bear": 58
+    }
+  },
+  "loose/easy": {
+    "n": 200,
+    "win": 0.23,
+    "winByClan": [
+      0.18,
+      0.32,
+      0.22,
+      0.22
+    ],
+    "avgEndTurn": 17.6,
+    "endTurnRange": [
+      4,
+      24
+    ],
+    "byTimeLimit": 0.28,
+    "avgPeakProvs": 4.3,
+    "coalitionFormed": 0.77,
+    "winners": {
+      "bear": 43,
+      "turtle": 75,
+      "rabbit": 40,
+      "fox": 42
+    }
+  },
+  "loose/normal": {
+    "n": 200,
+    "win": 0.1,
+    "winByClan": [
+      0.12,
+      0.14,
+      0.04,
+      0.1
+    ],
+    "avgEndTurn": 16,
+    "endTurnRange": [
+      4,
+      24
+    ],
+    "byTimeLimit": 0.13,
+    "avgPeakProvs": 3.6,
+    "coalitionFormed": 0.71,
+    "winners": {
+      "bear": 73,
+      "rabbit": 39,
+      "fox": 33,
+      "turtle": 55
+    }
+  },
+  "loose/hard": {
+    "n": 200,
+    "win": 0.01,
+    "winByClan": [
+      0.02,
+      0.02,
+      0,
+      0.02
+    ],
+    "avgEndTurn": 13.9,
+    "endTurnRange": [
+      4,
+      24
+    ],
+    "byTimeLimit": 0.09,
+    "avgPeakProvs": 3.1,
+    "coalitionFormed": 0.68,
+    "winners": {
+      "bear": 77,
+      "turtle": 49,
+      "fox": 35,
+      "rabbit": 39
+    }
+  },
+  "idle/easy": {
+    "n": 200,
+    "win": 0,
+    "winByClan": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "avgEndTurn": 13.3,
+    "endTurnRange": [
+      4,
+      24
+    ],
+    "byTimeLimit": 0.08,
+    "avgPeakProvs": 1,
+    "coalitionFormed": 0.51,
+    "winners": {
+      "bear": 73,
+      "turtle": 45,
+      "fox": 37,
+      "rabbit": 45
+    }
+  },
+  "idle/normal": {
+    "n": 200,
+    "win": 0,
+    "winByClan": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "avgEndTurn": 12.7,
+    "endTurnRange": [
+      3,
+      24
+    ],
+    "byTimeLimit": 0.04,
+    "avgPeakProvs": 1,
+    "coalitionFormed": 0.47,
+    "winners": {
+      "bear": 79,
+      "rabbit": 53,
+      "fox": 30,
+      "turtle": 38
+    }
+  },
+  "idle/hard": {
+    "n": 200,
+    "win": 0,
+    "winByClan": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "avgEndTurn": 10,
+    "endTurnRange": [
+      3,
+      23
+    ],
+    "byTimeLimit": 0,
+    "avgPeakProvs": 1,
+    "coalitionFormed": 0.41,
+    "winners": {
+      "rabbit": 49,
+      "turtle": 27,
+      "bear": 82,
+      "fox": 42
+    }
+  }
+}

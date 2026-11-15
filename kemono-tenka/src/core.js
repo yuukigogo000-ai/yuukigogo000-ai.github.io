@@ -61,12 +61,16 @@ const PERSONA = {
   rabbit: { margin: 1.1,  eco: 0.7, def: 0.8, neutral: 4, commit: true },
 };
 export const DIFFICULTY = {
-  easy:   { ja: 'やさしい',   incomeMul: 0.8,  aiOrders: 2, text: '相手の家の米の実りが 2 割少ない' },
-  normal: { ja: 'ふつう',     incomeMul: 1.0,  aiOrders: 2, text: '相手も同じ条件' },
-  hard:   { ja: 'むずかしい', incomeMul: 1.25, aiOrders: 3, text: '相手の家の米の実りが 25% 多く、命令も 3 つ出す' },
+  // aiOrders = 予告つきの命令の数、aiReact = その場で決める守り・国づくりの命令の数(攻めは必ず予告される)
+  easy:   { ja: 'やさしい',   incomeMul: 1.0, aiOrders: 2, aiReact: 0, text: '相手の家は、命令を 2 つしか出さない' },
+  normal: { ja: 'ふつう',     incomeMul: 1.0, aiOrders: 2, aiReact: 1, text: '相手もあなたと同じく、命令を 3 つ出す' },
+  hard:   { ja: 'むずかしい', incomeMul: 1.2, aiOrders: 3, aiReact: 1, text: '相手の家は命令を 4 つ出し、米の実りも 2 割多い' },
 };
 
-export const COST = { recruit: 3, develop: 4, fortify: 3, gift: 2, pact: 2 };
+export const COST = { recruit: 1, develop: 4, fortify: 3, gift: 2, pact: 2 }; // 徴兵は兵 1 つにつき米 1(1 回の命令で 6 まで)
+export const RECRUIT_MAX = 4;
+/** 徴兵 1 回で集まる兵の数(米が足りなければ、ある分だけ) */
+export const recruitSize = (rice) => Math.max(0, Math.min(RECRUIT_MAX, rice));
 
 // ---- 乱数(盤面の中に種を持つ) -------------------------------------------------
 function rand(s) {
@@ -92,16 +96,16 @@ export function newGame(opts) {
     const adj = [];
     PROV_DEFS.forEach((e, j) => { if (i !== j && Math.abs(d[1] - e[1]) + Math.abs(d[2] - e[2]) === 1) adj.push(j); });
     // 持ち主のいない国は、種によって守りの兵と石高が少し変わる
-    s.provs.push({ id: i, name: d[0], x: d[1], y: d[2], adj, koku: d[3] + (i === CAPITAL ? 0 : pick(s, 2)), castle: i === CAPITAL ? 1 : 0, owner: -1,
-                   troops: i === CAPITAL ? 8 : 3 + pick(s, 3), unrest: 0 });
+    s.provs.push({ id: i, name: d[0], x: d[1], y: d[2], adj, koku: d[3] + (i === CAPITAL ? 0 : pick(s, 2)), castle: i === CAPITAL ? 2 : pick(s, 2), owner: -1,
+                   troops: i === CAPITAL ? 12 : 5 + pick(s, 4), unrest: 0, tired: 0 });
   });
   // 自分は左下から。相手 3 家の並びは種で変わる
   const order = [s.player].concat([0, 1, 2, 3].filter((c) => c !== s.player));
   for (let i = order.length - 1; i > 1; i--) { const j = 1 + pick(s, i); const t = order[i]; order[i] = order[j]; order[j] = t; }
-  CLANS.forEach((c, i) => s.clans.push({ id: i, key: c.key, name: c.ja, rice: 6, alive: true, home: -1, officers: [c.officer], rel: 0, pact: 0, intents: [] }));
+  CLANS.forEach((c, i) => s.clans.push({ id: i, key: c.key, name: c.ja, rice: 5, alive: true, home: -1, officers: [c.officer], rel: 0, pact: 0, intents: [] }));
   order.forEach((c, k) => {
     const p = s.provs[HOMES[k]];
-    p.owner = c; p.troops = 6; p.castle = 1; p.koku = 3;
+    p.owner = c; p.troops = 6; p.castle = 1; p.koku = 3; p.tired = 0;
     s.clans[c].home = p.id;
   });
   for (const c of s.clans) if (c.id !== s.player) c.intents = planIntents(s, c);
@@ -140,7 +144,7 @@ export function incomeOf(s, clan) {
   for (const p of s.provs) if (p.owner === clan) { if (!p.unrest) gain += p.koku + (p.id === CAPITAL ? 2 : 0); troops += p.troops; }
   if (has(s, clan, 'kura')) gain += 1;
   if (clan !== s.player) gain = Math.round(gain * DIFFICULTY[s.difficulty].incomeMul);
-  const upkeep = Math.floor(troops / (has(s, clan, 'risu') ? 10 : 5));
+  const upkeep = Math.floor(troops / (has(s, clan, 'risu') ? 8 : 4)); // 兵 4 つにつき米 1
   return { gain, upkeep, net: gain - upkeep };
 }
 
@@ -153,7 +157,7 @@ export function forecast(s, fromId, toId, sent) {
   const defMul = wall * (has(s, d.owner, 'don') ? 1.2 : 1);
   const atk = sent * atkMul, def = d.troops * defMul;
   if (atk > def) {
-    const loss = Math.min(sent - 1, Math.ceil(def * 0.6 / atkMul));
+    const loss = Math.min(sent - 1, Math.ceil(def * 0.8 / atkMul));
     return { win: true, atk, def, attackerLeft: sent - loss, attackerLoss: loss, defenderLoss: d.troops };
   }
   const loss = Math.ceil(sent * 0.6);
@@ -188,7 +192,7 @@ function march(s, clan, fromId, toId, sent) {
   }
   if (f.win) {
     a.troops -= sent;
-    d.owner = clan; d.troops = f.attackerLeft; d.castle = Math.max(0, d.castle - 1); d.unrest = has(s, clan, 'hayate') ? 0 : 1;
+    d.owner = clan; d.troops = f.attackerLeft; d.castle = Math.max(0, d.castle - 1); d.unrest = has(s, clan, 'hayate') ? 0 : 1; d.tired = 1;
     say(s, who + ' が ' + where + ' を攻め取った(残った兵 ' + f.attackerLeft + ')', clan === s.player ? 'good' : defender === s.player ? 'bad' : 'info');
     if (clan === s.player) { s.stats.battlesWon++; s.stats.provsTaken++; } else if (defender === s.player) { s.stats.battlesLost++; s.stats.provsLost++; }
     if (defender >= 0 && countOf(s, defender) === 0) eliminate(s, defender, clan);
@@ -213,6 +217,7 @@ export function whyNot(s, clan, order) {
     if (!a || !d || a.owner !== clan) return '自分の国から出します';
     if (a.adj.indexOf(d.id) < 0) return 'となりの国にしか出せません';
     if (!(order.sent >= 1) || order.sent > a.troops - 1) return '国には兵を 1 つ残します';
+    if (a.tired) return '攻め取ったばかりの国からは、このターンは出せません';
     return null;
   }
   if (order.t === 'recruit' || order.t === 'develop' || order.t === 'fortify') {
@@ -242,8 +247,8 @@ function apply(s, clan, order) {
   const c = s.clans[clan];
   if (order.t === 'march') return march(s, clan, order.from, order.to, order.sent);
   if (order.t === 'recruit') {
-    const n = 3 + (has(s, clan, 'pyon') ? 1 : 0);
-    c.rice -= COST.recruit; s.provs[order.at].troops += n;
+    const paid = recruitSize(c.rice), n = paid + (has(s, clan, 'pyon') ? 1 : 0);
+    c.rice -= paid; s.provs[order.at].troops += n;
     if (clan === s.player) say(s, s.provs[order.at].name + ' で兵を ' + n + ' 集めた');
   } else if (order.t === 'develop') {
     c.rice -= costOf(s, clan, 'develop'); s.provs[order.at].koku += 1;
@@ -294,6 +299,7 @@ function finish(s, winner, reason) {
 function checkEnd(s) {
   if (s.phase === 'over') return true;
   s.stats.peak = Math.max(s.stats.peak, countOf(s, s.player));
+  for (const c of s.clans) if (c.alive && countOf(s, c.id) === 0) eliminate(s, c.id, -1); // 国がなくなった家はほろびる(出来事などで失った場合も)
   for (const c of s.clans) if (c.alive && countOf(s, c.id) >= WIN_PROVS) { finish(s, c.id, WIN_PROVS + ' 国を手にした'); return true; }
   if (!s.clans[s.player].alive) { // 自分がほろびた: いちばん大きい家の天下
     let w = -1, best = -1;
@@ -333,7 +339,7 @@ export function rankOrders(s, clan, opts) {
     const threat = threatTo(s, p, clan), holds = p.troops * CASTLE_MUL[p.castle] * (has(s, clan, 'don') ? 1.2 : 1);
     const danger = threat > 0 ? threat / Math.max(1, holds) : 0; // 1 を超えると落とされる
     // 攻める・動かす
-    if (p.troops >= 2) for (const j of p.adj) {
+    if (p.troops >= 2 && !p.tired) for (const j of p.adj) {
       const q = s.provs[j], sent = p.troops - 1;
       if (q.owner === clan) { // となりの自分の国があぶないなら、兵を送る
         const qt = threatTo(s, q, clan), qh = q.troops * CASTLE_MUL[q.castle];
@@ -354,7 +360,7 @@ export function rankOrders(s, clan, opts) {
       out.push({ o: { t: 'march', from: p.id, to: q.id, sent }, v, why: q.name + ' を攻め取れる(残る兵 ' + f.attackerLeft + ')' });
     }
     // 徴兵・築城・開発
-    if (rice >= COST.recruit) out.push({ o: { t: 'recruit', at: p.id }, v: (danger >= 0.8 ? 12 + danger * 6 : 3 + (threat > 0 ? 2 : 0)) * P.def + (p.troops < 3 ? 2 : 0), why: danger >= 0.8 ? p.name + ' が攻められそうなので兵を集める' : p.name + ' の兵をふやす' });
+    if (rice >= 3) out.push({ o: { t: 'recruit', at: p.id }, v: (danger >= 0.8 ? 12 + danger * 6 : 3 + (threat > 0 ? 2 : 0) + Math.min(3, rice / 6)) * P.def + (p.troops < 3 ? 2 : 0), why: danger >= 0.8 ? p.name + ' が攻められそうなので兵を集める' : p.name + ' の兵をふやす' });
     if (p.castle < 2 && rice >= costOf(s, clan, 'fortify') && threat > 0) out.push({ o: { t: 'fortify', at: p.id }, v: (danger >= 0.6 ? 8 + danger * 4 : 2.5) * P.def, why: p.name + ' の城を固めて守りやすくする' });
     if (p.koku < 6 && rice >= costOf(s, clan, 'develop') + (danger >= 0.8 ? 99 : 0)) out.push({ o: { t: 'develop', at: p.id }, v: (5.5 - p.koku * 0.5 + (MAX_TURNS - s.turn) * 0.12) * P.eco - (threat > 0 ? 1.5 : 0), why: p.name + ' を開発して米をふやす' });
   }
@@ -377,7 +383,7 @@ function planIntents(s, c) {
     if (picked.length >= n) break;
     const o = r.o;
     if (o.t === 'march') { if (usedFrom[o.from]) continue; usedFrom[o.from] = true; }
-    else { const k = o.t + o.at; if (usedAt[k] || usedFrom[o.at]) continue; const cost = costOf(s, c.id, o.t); if (rice < cost) continue; usedAt[k] = true; rice -= cost; }
+    else { const k = o.t + o.at; if (usedAt[k] || usedFrom[o.at]) continue; const cost = o.t === 'recruit' ? recruitSize(rice) : costOf(s, c.id, o.t); if (rice < Math.max(1, cost)) continue; usedAt[k] = true; rice -= cost; }
     picked.push(o);
   }
   return picked;
@@ -390,12 +396,18 @@ function runIntents(s, c) {
       const a = s.provs[o.from], d = s.provs[o.to];
       if (a.owner !== c.id) { say(s, c.name + ' の攻めは、出どころの国を失って取りやめになった', 'good'); continue; }
       if (d.owner === s.player && c.pact > 0) continue;
-      const sent = Math.min(o.sent, a.troops - 1);
-      if (sent < 1) continue;
+      const sent = a.troops - 1;
+      if (sent < 1 || a.tired) continue;
       if (d.owner !== c.id && !PERSONA[c.key].commit && !forecast(s, a.id, d.id, sent).win) { say(s, c.name + ' は ' + d.name + ' への攻めを取りやめた(勝ち目がなくなった)', d.owner === s.player ? 'good' : 'info'); continue; }
       march(s, c.id, a.id, d.id, sent);
       checkEnd(s);
     } else if (!whyNot(s, c.id, o)) apply(s, c.id, o);
+  }
+  // その場で決める命令: 守りと国づくりだけ(攻めは予告したものしか出さない)
+  for (let k = 0; k < DIFFICULTY[s.difficulty].aiReact && c.alive && s.phase !== 'over'; k++) {
+    const r = rankOrders(s, c.id).find((x) => x.o.t !== 'march' || s.provs[x.o.to].owner === c.id);
+    if (!r || whyNot(s, c.id, r.o)) break;
+    apply(s, c.id, r.o);
   }
 }
 
@@ -409,7 +421,7 @@ function collect(s, c) {
     for (const p of s.provs) if (p.owner === c.id && p.troops > 1 && (big === null || p.troops > big.troops)) big = p;
     if (big) { big.troops -= 1; if (c.id === s.player) say(s, '米が尽き、' + big.name + ' の兵が 1 つ去った', 'bad'); }
   }
-  for (const p of s.provs) if (p.owner === c.id) p.unrest = 0;
+  for (const p of s.provs) if (p.owner === c.id) { p.unrest = 0; p.tired = 0; }
   if (seasonOf(s.turn) === '春' && has(s, c.id, 'miko') && s.provs[c.home].owner === c.id) s.provs[c.home].troops += 1;
 }
 
@@ -448,11 +460,11 @@ export const EVENTS = {
     B: (s) => { const p = homeOrAny(s); if (p.koku < 6) p.koku += 1; return p.name + ' の民がよろこび、石高が ' + p.koku + ' になった'; } },
   swordsman: { title: '旅の剣豪', text: '腕の立つ者が、仕える先をさがしています。', a: '召しかかえる(米 -3)', b: '見送る',
     ok: (s, me) => me.officers.length < MAX_OFFICERS && me.rice >= 3 && !!freeOfficer(s, ['kage', 'hayate', 'miko', 'risu']),
-    A: (s, me) => { const k = freeOfficer(s, ['kage', 'hayate', 'miko', 'risu']); me.rice -= 3; gainOfficer(s, s.player, k); return OFFICERS[k].ja + ' を召しかかえた'; },
+    A: (s, me) => { const k = freeOfficer(s, ['kage', 'hayate', 'miko', 'risu']); if (!k || me.rice < 3 || me.officers.length >= MAX_OFFICERS) return '米が足りず、召しかかえられなかった'; me.rice -= 3; gainOfficer(s, s.player, k); return OFFICERS[k].ja + ' を召しかかえた'; },
     B: (s) => { const p = homeOrAny(s); p.troops += 1; return '剣豪は去ったが、けいこを見た兵がやる気を出した。' + p.name + ' の兵 +1'; } },
   scholar: { title: '物知りの旅人', text: '国づくりにくわしい者が、宿をもとめています。', a: 'もてなして召しかかえる(米 -3)', b: '一晩だけ泊める',
     ok: (s, me) => me.officers.length < MAX_OFFICERS && me.rice >= 3 && !!freeOfficer(s, ['tama', 'mogu', 'kura', 'uta']),
-    A: (s, me) => { const k = freeOfficer(s, ['tama', 'mogu', 'kura', 'uta']); me.rice -= 3; gainOfficer(s, s.player, k); return OFFICERS[k].ja + ' を召しかかえた'; },
+    A: (s, me) => { const k = freeOfficer(s, ['tama', 'mogu', 'kura', 'uta']); if (!k || me.rice < 3 || me.officers.length >= MAX_OFFICERS) return '米が足りず、召しかかえられなかった'; me.rice -= 3; gainOfficer(s, s.player, k); return OFFICERS[k].ja + ' を召しかかえた'; },
     B: (s, me) => { me.rice += 1; return '旅人はお礼に米を置いていった。米 +1'; } },
   unrest: { title: '一揆のうわさ', text: '年貢が重いと、民がさわいでいます。', a: '米をくばる(米 -3)', b: '力でおさえる',
     A: (s, me) => { me.rice = Math.max(0, me.rice - 3); return '民は落ちついた。米 -3'; },
