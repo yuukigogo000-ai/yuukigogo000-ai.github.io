@@ -1,0 +1,338 @@
+{
+  "ザコ/heavy/ずれ±6度": {
+    "n": 4,
+    "win": 1,
+    "shots": 6.8,
+    "shotsRange": [
+      6,
+      7
+    ],
+    "unfinished": 0,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.57,
+    "enemyRingShare": 0.47,
+    "ults": 0.3,
+    "bestChain": 4.3,
+    "dmgShare": {
+      "hit": 0.66,
+      "touch": 0.33,
+      "ult": 0.02
+    }
+  },
+  "ザコ/chain/ずれ±6度": {
+    "n": 4,
+    "win": 1,
+    "shots": 9.8,
+    "shotsRange": [
+      7,
+      15
+    ],
+    "unfinished": 0,
+    "allyFalls": 0,
+    "allyKo": 0.25,
+    "allyHpLeft": 3.17,
+    "enemyRingShare": 0.4,
+    "ults": 0.5,
+    "bestChain": 5.8,
+    "dmgShare": {
+      "hit": 0.5,
+      "touch": 0.47,
+      "ult": 0.03
+    }
+  },
+  "ザコ/poison/ずれ±6度": {
+    "n": 4,
+    "win": 1,
+    "shots": 9.3,
+    "shotsRange": [
+      7,
+      15
+    ],
+    "unfinished": 0,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.31,
+    "enemyRingShare": 0.53,
+    "ults": 1.5,
+    "bestChain": 5,
+    "dmgShare": {
+      "hit": 0.78,
+      "touch": 0.11,
+      "ult": 0.11
+    }
+  },
+  "ザコ/pierce/ずれ±6度": {
+    "n": 4,
+    "win": 1,
+    "shots": 6.5,
+    "shotsRange": [
+      6,
+      7
+    ],
+    "unfinished": 0,
+    "allyFalls": 0.25,
+    "allyKo": 0,
+    "allyHpLeft": 3.33,
+    "enemyRingShare": 0.07,
+    "ults": 0.3,
+    "bestChain": 6.3,
+    "dmgShare": {
+      "hit": 0.62,
+      "touch": 0.3,
+      "ult": 0.08
+    }
+  },
+  "ザコ/mixed/ずれ±6度": {
+    "n": 4,
+    "win": 1,
+    "shots": 8.3,
+    "shotsRange": [
+      5,
+      13
+    ],
+    "unfinished": 0,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.63,
+    "enemyRingShare": 0.33,
+    "ults": 0.5,
+    "bestChain": 5,
+    "dmgShare": {
+      "hit": 0.57,
+      "touch": 0.39,
+      "ult": 0.04
+    }
+  },
+  "ボス/vacuum/mixed/ずれ±6度": {
+    "n": 4,
+    "win": 0.25,
+    "shots": 56,
+    "shotsRange": [
+      44,
+      60
+    ],
+    "unfinished": 3,
+    "allyFalls": 0,
+    "allyKo": 0.75,
+    "allyHpLeft": 2.58,
+    "enemyRingShare": 0.67,
+    "ults": 6,
+    "bestChain": 4,
+    "dmgShare": {
+      "hit": 0.66,
+      "touch": 0.22,
+      "ult": 0.12
+    }
+  },
+  "ボス/washer/mixed/ずれ±6度": {
+    "n": 4,
+    "win": 0.75,
+    "shots": 36.5,
+    "shotsRange": [
+      16,
+      60
+    ],
+    "unfinished": 1,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.69,
+    "enemyRingShare": 0,
+    "ults": 5.3,
+    "bestChain": 4.5,
+    "dmgShare": {
+      "hit": 0.53,
+      "touch": 0.21,
+      "ult": 0.26
+    }
+  },
+  "ボス/fan/mixed/ずれ±6度": {
+    "n": 4,
+    "win": 0.75,
+    "shots": 40.5,
+    "shotsRange": [
+      20,
+      60
+    ],
+    "unfinished": 1,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.82,
+    "enemyRingShare": 0.09,
+    "ults": 3.5,
+    "bestChain": 4.8,
+    "dmgShare": {
+      "hit": 0.43,
+      "touch": 0.24,
+      "ult": 0.32
+    }
+  },
+  "ザコ/heavy/ずれ±11度": {
+    "n": 4,
+    "win": 1,
+    "shots": 7.8,
+    "shotsRange": [
+      6,
+      9
+    ],
+    "unfinished": 0,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.27,
+    "enemyRingShare": 0.33,
+    "ults": 0.5,
+    "bestChain": 5.3,
+    "dmgShare": {
+      "hit": 0.65,
+      "touch": 0.25,
+      "ult": 0.09
+    }
+  },
+  "ザコ/chain/ずれ±11度": {
+    "n": 4,
+    "win": 1,
+    "shots": 10.8,
+    "shotsRange": [
+      10,
+      12
+    ],
+    "unfinished": 0,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 2.98,
+    "enemyRingShare": 0.4,
+    "ults": 0.8,
+    "bestChain": 4.5,
+    "dmgShare": {
+      "hit": 0.5,
+      "touch": 0.48,
+      "ult": 0.02
+    }
+  },
+  "ザコ/poison/ずれ±11度": {
+    "n": 4,
+    "win": 1,
+    "shots": 11.5,
+    "shotsRange": [
+      9,
+      14
+    ],
+    "unfinished": 0,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.14,
+    "enemyRingShare": 0.2,
+    "ults": 2.8,
+    "bestChain": 4.3,
+    "dmgShare": {
+      "hit": 0.74,
+      "touch": 0.1,
+      "ult": 0.15
+    }
+  },
+  "ザコ/pierce/ずれ±11度": {
+    "n": 4,
+    "win": 1,
+    "shots": 7.5,
+    "shotsRange": [
+      7,
+      9
+    ],
+    "unfinished": 0,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.5,
+    "enemyRingShare": 0.47,
+    "ults": 0.8,
+    "bestChain": 4.8,
+    "dmgShare": {
+      "hit": 0.51,
+      "touch": 0.4,
+      "ult": 0.09
+    }
+  },
+  "ザコ/mixed/ずれ±11度": {
+    "n": 4,
+    "win": 1,
+    "shots": 9.8,
+    "shotsRange": [
+      9,
+      11
+    ],
+    "unfinished": 0,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.31,
+    "enemyRingShare": 0.2,
+    "ults": 1.3,
+    "bestChain": 5,
+    "dmgShare": {
+      "hit": 0.56,
+      "touch": 0.38,
+      "ult": 0.06
+    }
+  },
+  "ボス/vacuum/mixed/ずれ±11度": {
+    "n": 4,
+    "win": 0.5,
+    "shots": 46.3,
+    "shotsRange": [
+      11,
+      60
+    ],
+    "unfinished": 2,
+    "allyFalls": 0.75,
+    "allyKo": 0.25,
+    "allyHpLeft": 3.1,
+    "enemyRingShare": 0.4,
+    "ults": 6.8,
+    "bestChain": 4.5,
+    "dmgShare": {
+      "hit": 0.52,
+      "touch": 0.3,
+      "ult": 0.18
+    }
+  },
+  "ボス/washer/mixed/ずれ±11度": {
+    "n": 4,
+    "win": 0.5,
+    "shots": 51.8,
+    "shotsRange": [
+      38,
+      60
+    ],
+    "unfinished": 2,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.87,
+    "enemyRingShare": 0.1,
+    "ults": 6.5,
+    "bestChain": 4.8,
+    "dmgShare": {
+      "hit": 0.46,
+      "touch": 0.24,
+      "ult": 0.3
+    }
+  },
+  "ボス/fan/mixed/ずれ±11度": {
+    "n": 4,
+    "win": 0.5,
+    "shots": 42.3,
+    "shotsRange": [
+      18,
+      60
+    ],
+    "unfinished": 2,
+    "allyFalls": 0,
+    "allyKo": 0,
+    "allyHpLeft": 3.7,
+    "enemyRingShare": 0.2,
+    "ults": 3,
+    "bestChain": 4.3,
+    "dmgShare": {
+      "hit": 0.51,
+      "touch": 0.3,
+      "ult": 0.19
+    }
+  }
+}
