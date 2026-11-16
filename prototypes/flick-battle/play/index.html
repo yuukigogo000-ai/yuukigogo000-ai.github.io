@@ -168,7 +168,7 @@ const E_DISC = 0.8, E_RAIL = 0.75;
 const MIN_IMPACT = 40;      // これ未満の接触はダメージにしない
 const STRONG_IMPACT = 700;  // これ以上は「強打」(1.5 倍)
 const HIT_FALLOFF = [1, 0.5, 0.25]; // 1 手の中で同じ敵に当たった 1・2・3 回目の倍率(4 回目以降は押すだけ)
-const CHAIN_STEP = 0.15, CHAIN_CAP = 1.0;
+const CHAIN_STEP = 0.2, CHAIN_CAP = 0.6; // 3 れんさで足し算の上限(1.6 倍)に届き、そこからは「あふれれんさ」で掛け算
 const FALL_COST = 0.3;      // 味方が落ちたときに失う体力(最大体力比)
 const SHIELD_CAP = 0.5;
 const POISON_CAP = 5;
@@ -181,7 +181,7 @@ const BUMPER_KICK = 650;    // 輪ゴムの柱: 当たった駒をこの速さ�
 const BUMPER_MAX = 4;       // 1 回の動きで、同じ柱が弾き返す回数の上限(必ず止まるようにする)
 const PICKUP_HEAL = 0.25;   // 回復のおやつ: 最大体力のこれだけ回復
 const CHAIN_CHARGE_AT = 3;  // この数以上のれんさを出した手は、弾いた駒の必殺が 1 つ進む
-const OVERFLOW = 1.1;       // あふれれんさ: 上乗せが上限に届いたあとは、れんさ 1 つごとにダメージ × これ(掛け算で伸びる)
+const OVERFLOW = 1.15;      // あふれれんさ: 上乗せが上限に届いたあとは、れんさ 1 つごとにダメージ × これ(掛け算で伸びる)
 const RELAY_K = 0.6;        // 玉突き: 押されて動いた味方が敵に当たったときのダメージ(その味方の攻撃力 × これ × れんさ)
 const BLAST_R = 90;         // 花火(進化): 倒した敵の爆発の半径
 const PIN_OPEN_TURNS = 2; // お皿を全部倒すと、決まった柵がこのターン数だけ開く
@@ -976,6 +976,7 @@ function collide(s, a, b) {
   if (isum === 0) return;
   const pen = rr - d;
   if (pen > s.stats.maxPenetration) s.stats.maxPenetration = pen;
+  if (pen / rr > (s.stats.maxPenRatio || 0)) s.stats.maxPenRatio = pen / rr; // 半径の和に対する重なりの割合(1 に近いとすり抜けの危険)
   const vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
   if (vn < 0) {
     const j = -(1 + E_DISC) * vn / isum;
@@ -1453,7 +1454,7 @@ const ITEMS = {
   battery:      { ja: '乾電池',     on: '味方に当てられたとき',            text: 'タッチ技の効果 +30%',                mods: { touchMul: 1.3 } },
   binoculars:   { ja: '双眼鏡',     on: '狙うとき',                        text: '予測線が 2 つ目の衝突まで伸びる',    mods: { guide: 2 } },
   dumbbell:     { ja: '鉄アレイ',   on: 'いつも',                          text: 'おもさ +1',                          stat: { weight: 1 } },
-  fan:          { ja: '応援うちわ', on: 'れんさしたとき',                  text: '1 れんさの上乗せ +5%。上限を超えたあとの伸び ×1.1 → ×1.15', mods: { chainStepAdd: 0.05, overflowAdd: 0.05 } },
+  fan:          { ja: '応援うちわ', on: 'れんさしたとき',                  text: '1 れんさの上乗せ +5%。上限を超えたあとの伸び ×1.15 → ×1.2', mods: { chainStepAdd: 0.05, overflowAdd: 0.05 } },
   match:        { ja: 'マッチ',     on: '敵を倒したとき',                  text: '近くの敵に毒 3',                     mods: { onKillPoison: 3 } },
   whistle:      { ja: 'びっくり笛', on: '敵を場外に落としたとき',          text: '残りの敵全員のカウント +1',          mods: { onRingStun: 1 } },
   magnifier:    { ja: '虫めがね',   on: 'はがれかけの敵に当てたとき',      text: 'ダメージ +30%',                      mods: { peelDmgMul: 1.3 } },
@@ -1492,7 +1493,7 @@ const PASSIVE_KEYS = Object.keys(PASSIVES);
 const EVOLUTIONS = [
   { key: 'twinBlade', item: 'blade',      passive: 'strong',    ja: '二枚刃',   on: '柵で跳ね返ったとき(1 手 1 回)',   text: '小さな刃が 2 つ飛び出す(攻撃力の 40%)', mods: { splitOnRail: true } },
   { key: 'mirrors',   item: 'mirror',     passive: 'nimble',    ja: '合わせ鏡', on: '柵で跳ね返ったとき(1 手 3 回まで)', text: '勢いが増す',                            mods: { railBoost: 1.15 / 0.75, railBoostN: 3 } },
-  { key: 'bigCheer',  item: 'fan',        passive: 'cheer',     ja: '大応援',   on: 'れんさしたとき',                   text: '5 れんさ目からダメージ 1.5 倍。上限を超えたあとの伸び ×1.25', mods: { chainLateFrom: 5, chainLateMul: 1.5, overflowAdd: 0.15 } },
+  { key: 'bigCheer',  item: 'fan',        passive: 'cheer',     ja: '大応援',   on: 'れんさしたとき',                   text: '5 れんさ目からダメージ 1.5 倍。上限を超えたあとの伸び ×1.3', mods: { chainLateFrom: 5, chainLateMul: 1.5, overflowAdd: 0.15 } },
   { key: 'tank',      item: 'dumbbell',   passive: 'sturdy',    ja: '重戦車',   on: '敵を何かにぶつけたとき',           text: 'ぶつけダメージ 2 倍',                   mods: { crashMul: 2 } },
   { key: 'miasma',    item: 'poisonVial', passive: 'poisonRes', ja: '毒霧',     on: '敵に当てたとき',                   text: 'まわりの敵にも毒 1',                    mods: { onHitPoisonAoe: 1 } },
   // 2026-11-16 追加: つながるほど化ける組(壊れてもよい、と発注者)
@@ -1568,15 +1569,17 @@ function ally(lineage, opts) {
 }
 const WEIGHT_FRIC = [0, 600, 680, 760, 900, 1050]; // engine.js の WEIGHT.fric と同じ値
 
-// 敵の強さの基準(味方の同じ系統に対する倍率)。balance.mjs の結果を見て決めた値
-const FOE_HP = 1.3, FOE_ATK = 1.1;
+// 敵の強さの基準(味方の同じ系統に対する倍率)。tune.mjs / balance.mjs の結果を見て決める。
+// TUNE は調整用のつまみ(検査・集計のときだけ書き換える。ゲーム中は変えない)
+const TUNE = { foeHp: 2.1, foeAtk: 2.8, countAdj: 0, bossHp: 1.15, bossAtk: 2.6 }; // 2026-11-16 調整(tune.mjs の結果は README)
+const FOE_HP = TUNE.foeHp, FOE_ATK = TUNE.foeAtk; // 以前の名前(互換のため)
 
 /** 敵 1 体。系統から体と行動を決める */
 function foe(lineage, x, y, opts) {
   const L = LINEAGES[lineage], o = opts || {};
   const k = (100 + (o.pct || 0)) / 100;
-  return { name: o.name || L.ja, lineage, hp: Math.round(L.hp * FOE_HP * k), atk: Math.round(L.atk * FOE_ATK * k), weight: L.weight, move: 'bounce',
-           action: o.action || L.foe.action, count: o.count || L.foe.count, actR: o.actR || 105, trait: o.trait || null, x, y };
+  return { name: o.name || L.ja, lineage, hp: Math.round(L.hp * TUNE.foeHp * k), atk: Math.round(L.atk * TUNE.foeAtk * k), weight: L.weight, move: 'bounce',
+           action: o.action || L.foe.action, count: o.count || Math.max(1, L.foe.count + TUNE.countAdj), actR: o.actR || 105, trait: o.trait || null, x, y };
 }
 
 // ---- 卓 ----------------------------------------------------------------------
@@ -1622,13 +1625,13 @@ const BOSSES = {
 const BOSS_FRIC = 1500; // ボスはすぐ止まる(押しても少ししか動かない)
 
 function bossBattle(kind, allies, opts) {
-  const o = opts || {}, k = (100 + (o.pct || 0)) / 100;
-  const g = (a) => a.map((v) => Math.round(v * k));
+  const o = opts || {}, k = (100 + (o.pct || 0)) / 100, ka = k * TUNE.bossAtk;
+  const g = (a) => a.map((v) => Math.round(v * k * TUNE.bossHp));
   const minion = (l, x, y) => foe(l, x, y, { pct: o.pct || 0 });
   if (kind === 'vacuum') {
     return { gaps: { top: [], bottom: [[130, 230]], left: [[240, 340]], right: [[240, 340]] }, allies,
       pickups: [{ x: 180, y: 330 }],
-      enemies: [{ name: '掃除機', boss: 'vacuum', r: 46, mass: 9, fric: BOSS_FRIC, hp: 1, gauges: g([220, 250]), atk: Math.round(24 * k), action: 'blast', count: 3, actR: 120, x: 180, y: 120 },
+      enemies: [{ name: '掃除機', boss: 'vacuum', r: 46, mass: 9, fric: BOSS_FRIC, hp: 1, gauges: g([220, 250]), atk: Math.round(20 * ka), action: 'blast', count: 3, actR: 120, x: 180, y: 120 },
                 minion('creature', 80, 240), minion('creature', 280, 240)] };
   }
   if (kind === 'washer') {
@@ -1639,14 +1642,14 @@ function bossBattle(kind, allies, opts) {
       { top: [], bottom: [], left: [[190, 310]], right: [] },
     ];
     return { gaps: cycle[0], gapCycle: cycle, allies, obstacles: [{ obj: 'bottle', x: 180, y: 320 }],
-      enemies: [{ name: '洗濯機', boss: 'washer', r: 46, mass: 9, fric: BOSS_FRIC, hp: 1, gauges: g([240, 280]), atk: Math.round(24 * k), action: 'beamH', count: 3, actR: 120, x: 180, y: 130 },
+      enemies: [{ name: '洗濯機', boss: 'washer', r: 46, mass: 9, fric: BOSS_FRIC, hp: 1, gauges: g([170, 200]), atk: Math.round(24 * ka), action: 'beamH', count: 3, actR: 120, x: 180, y: 130 },
                 minion('bath', 90, 250), minion('clothing', 270, 250)] };
   }
   // 扇風機
   const wc = [[0, 200], [-200, 0], [0, -200], [200, 0]];
   return { gaps: { top: [[130, 230]], bottom: [[130, 230]], left: [[210, 310]], right: [[210, 310]] }, wind: { ax: wc[0][0], ay: wc[0][1] }, windCycle: wc, allies,
     obstacles: [{ obj: 'lid', x: 60, y: 380 }],
-    enemies: [{ name: '扇風機', boss: 'fan', r: 44, mass: 9, fric: BOSS_FRIC, hp: 1, gauges: g([210, 240, 210]), atk: Math.round(22 * k), action: 'gust', count: 2, actR: 90, x: 180, y: 110 },
+    enemies: [{ name: '扇風機', boss: 'fan', r: 44, mass: 9, fric: BOSS_FRIC, hp: 1, gauges: g([210, 240, 210]), atk: Math.round(22 * ka), action: 'gust', count: 2, actR: 90, x: 180, y: 110 },
               minion('stationery', 90, 230), minion('toy', 270, 230)] };
 }
 
@@ -1805,7 +1808,7 @@ function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(
   // 進化の組を持たせた編成(見本用)
   const EVO_TEAMS = {
     evo: [['kitchen', 'blade', 'strong'], ['stationery', 'mirror', 'nimble'], ['creature', 'fan', 'cheer'], ['machine', 'dumbbell', 'sturdy']],
-    evo2: [['kitchen', 'match', 'grit'], ['electronic', 'battery', 'early'], ['toy', 'whistle', 'stunRes'], ['stationery', 'magnifier', 'strong']],
+    evo2: [['machine', 'match', 'grit'], ['kitchen', 'battery', 'early'], ['furniture', 'whistle', 'stunRes'], ['food', 'magnifier', 'strong']],
   };
   const MOBS = [['kitchen', 'plant', 'creature'], ['machine', 'food', 'stationery', 'toy'], ['book', 'electronic', 'furniture', 'clothing']];
   const TRAITS = [[null, null, null], [null, null, 'back', null], ['hard', null, null, 'spike']];

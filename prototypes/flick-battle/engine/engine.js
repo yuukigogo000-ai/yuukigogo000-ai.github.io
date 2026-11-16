@@ -18,7 +18,7 @@ const E_DISC = 0.8, E_RAIL = 0.75;
 const MIN_IMPACT = 40;      // これ未満の接触はダメージにしない
 const STRONG_IMPACT = 700;  // これ以上は「強打」(1.5 倍)
 const HIT_FALLOFF = [1, 0.5, 0.25]; // 1 手の中で同じ敵に当たった 1・2・3 回目の倍率(4 回目以降は押すだけ)
-const CHAIN_STEP = 0.15, CHAIN_CAP = 1.0;
+const CHAIN_STEP = 0.2, CHAIN_CAP = 0.6; // 3 れんさで足し算の上限(1.6 倍)に届き、そこからは「あふれれんさ」で掛け算
 const FALL_COST = 0.3;      // 味方が落ちたときに失う体力(最大体力比)
 const SHIELD_CAP = 0.5;
 const POISON_CAP = 5;
@@ -31,7 +31,7 @@ const BUMPER_KICK = 650;    // 輪ゴムの柱: 当たった駒をこの速さ�
 const BUMPER_MAX = 4;       // 1 回の動きで、同じ柱が弾き返す回数の上限(必ず止まるようにする)
 const PICKUP_HEAL = 0.25;   // 回復のおやつ: 最大体力のこれだけ回復
 const CHAIN_CHARGE_AT = 3;  // この数以上のれんさを出した手は、弾いた駒の必殺が 1 つ進む
-const OVERFLOW = 1.1;       // あふれれんさ: 上乗せが上限に届いたあとは、れんさ 1 つごとにダメージ × これ(掛け算で伸びる)
+const OVERFLOW = 1.15;      // あふれれんさ: 上乗せが上限に届いたあとは、れんさ 1 つごとにダメージ × これ(掛け算で伸びる)
 const RELAY_K = 0.6;        // 玉突き: 押されて動いた味方が敵に当たったときのダメージ(その味方の攻撃力 × これ × れんさ)
 const BLAST_R = 90;         // 花火(進化): 倒した敵の爆発の半径
 export const PIN_OPEN_TURNS = 2; // お皿を全部倒すと、決まった柵がこのターン数だけ開く
@@ -826,6 +826,7 @@ function collide(s, a, b) {
   if (isum === 0) return;
   const pen = rr - d;
   if (pen > s.stats.maxPenetration) s.stats.maxPenetration = pen;
+  if (pen / rr > (s.stats.maxPenRatio || 0)) s.stats.maxPenRatio = pen / rr; // 半径の和に対する重なりの割合(1 に近いとすり抜けの危険)
   const vn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
   if (vn < 0) {
     const j = -(1 + E_DISC) * vn / isum;

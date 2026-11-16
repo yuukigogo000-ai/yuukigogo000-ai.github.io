@@ -321,12 +321,12 @@ function randomBattle(seed) {
   return { s, h };
 }
 {
-  let mismatch = 0, caps = 0, bad = 0, rejected = 0, maxPen = 0, longest = 0, chain = 0x811c9dc5;
+  let mismatch = 0, caps = 0, bad = 0, rejected = 0, maxPen = 0, maxRatio = 0, longest = 0, chain = 0x811c9dc5;
   for (let seed = 1; seed <= FUZZ; seed++) {
     const a = randomBattle(seed), b = randomBattle(seed);
     if (a.h !== b.h) mismatch++;
     chain = Math.imul(chain ^ a.h, 0x01000193) >>> 0;
-    caps += a.s.stats.capHits; maxPen = Math.max(maxPen, a.s.stats.maxPenetration); longest = Math.max(longest, a.s.stats.maxMotionSteps);
+    caps += a.s.stats.capHits; maxPen = Math.max(maxPen, a.s.stats.maxPenetration); maxRatio = Math.max(maxRatio, a.s.stats.maxPenRatio || 0); longest = Math.max(longest, a.s.stats.maxMotionSteps);
     for (const u of a.s.units) {
       if (![u.x, u.y, u.vx, u.vy, u.hp].every(Number.isFinite)) bad++;
       if (u.alive && (u.x < 0 || u.x > a.s.w || u.y < 0 || u.y > a.s.h)) bad++;
@@ -336,7 +336,7 @@ function randomBattle(seed) {
   }
   ok('再現性: 同じ手順を 2 回流すと ' + FUZZ + ' 戦すべて一致', mismatch === 0, mismatch);
   ok('停止性: 12 秒の打ち切りが 1 回も起きない', caps === 0, caps);
-  ok('すり抜けない: 重なりは 10 未満(いちばん小さいお皿と子駒の半径)', maxPen < 10, +maxPen.toFixed(2));
+  ok('すり抜けない: 重なりは、ぶつかった 2 つの半径の和の 5 割未満(中心が入れ替わらない)', maxRatio < 0.5, [+maxPen.toFixed(2), +maxRatio.toFixed(3)]);
   ok('異常値なし(盤外に残る・数値が壊れる・体力 0 で生存)', bad === 0, bad);
   ok('狙う番なのに手が受け付けられない、が起きない', rejected === 0, rejected);
   console.log('  合成ハッシュ', chain.toString(16).padStart(8, '0'), '/ 最長の動き', (longest * E.DT).toFixed(2), '秒 / 最大の重なり', maxPen.toFixed(2));

@@ -15,7 +15,7 @@
   // 進化の組を持たせた編成(見本用)
   const EVO_TEAMS = {
     evo: [['kitchen', 'blade', 'strong'], ['stationery', 'mirror', 'nimble'], ['creature', 'fan', 'cheer'], ['machine', 'dumbbell', 'sturdy']],
-    evo2: [['kitchen', 'match', 'grit'], ['electronic', 'battery', 'early'], ['toy', 'whistle', 'stunRes'], ['stationery', 'magnifier', 'strong']],
+    evo2: [['machine', 'match', 'grit'], ['kitchen', 'battery', 'early'], ['furniture', 'whistle', 'stunRes'], ['food', 'magnifier', 'strong']],
   };
   const MOBS = [['kitchen', 'plant', 'creature'], ['machine', 'food', 'stationery', 'toy'], ['book', 'electronic', 'furniture', 'clothing']];
   const TRAITS = [[null, null, null], [null, null, 'back', null], ['hard', null, null, 'spike']];

@@ -183,7 +183,7 @@ ok('頑丈・力持ち・がんばり', ally('kitchen', { passives: ['sturdy'] }
   ok('玉突き: 押された味方が敵に当たってもダメージ', s.stats.dmgRelay > 0, s.stats.dmgRelay);
   // あふれれんさ
   const cm = (n, o) => E.chainMult(Object.assign({ chain: n }, o || {}));
-  ok('あふれれんさ: 7 れんさで上乗せが上限(2 倍)に届き、そこから 1 つごとに ×1.1', Math.abs(cm(7) - 2) < 1e-9 && Math.abs(cm(8) - 2.2) < 1e-9 && Math.abs(cm(10) - 2 * 1.1 * 1.1 * 1.1) < 1e-9, [cm(6), cm(7), cm(8), cm(10)]);
+  ok('あふれれんさ: 3 れんさで上乗せが上限(1.6 倍)に届き、そこから 1 つごとに ×1.15', Math.abs(cm(3) - 1.6) < 1e-9 && Math.abs(cm(4) - 1.6 * 1.15) < 1e-9 && Math.abs(cm(6) - 1.6 * 1.15 ** 3) < 1e-9, [cm(2), cm(3), cm(4), cm(6)]);
   ok('あふれれんさ: 応援うちわ・大応援で伸びが大きくなる', cm(12, { overflowAdd: 0.15 }) > cm(12, { overflowAdd: 0.05 }) && cm(12, { overflowAdd: 0.05 }) > cm(12), [cm(12), cm(12, { overflowAdd: 0.05 }), cm(12, { overflowAdd: 0.15 })]);
   // 花火: 倒した敵が爆発し、爆発で倒れた敵も爆発する(連爆)
   s = mini([Object.assign(ally('kitchen', { item: 'match', passives: ['grit'], pct: 400 }), { name: 'A', x: 180, y: 420, touch: null })],
