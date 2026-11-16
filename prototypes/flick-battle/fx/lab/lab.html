@@ -1,0 +1,531 @@
+<title>はじきバトル 音の聴き比べ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="robots" content="noindex,nofollow">
+<style>
+  /* レイアウト: 1 列の聴き比べカード。各カードに「聴く」ボタンと「選ぶ」チップ。下に選んだ結果のまとめ。色は試作の画面と同じトークン */
+  :root {
+    --bg: #eef0ee; --surface: #ffffff; --fg: #1d2622; --muted: #5d6a64; --line: #c9d0cc;
+    --accent: #0b7a53; --accent-fg: #ffffff; --ult: #b7791f; --ult-fg: #ffffff; --table: #d9c7a3;
+    --font: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", "Yu Gothic UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #141a17; --surface: #1e2622; --fg: #e6ece8; --muted: #9aa8a1; --line: #36423c;
+      --accent: #46c493; --accent-fg: #06261a; --ult: #f0b54a; --ult-fg: #2a1c02; --table: #5b4b33;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #141a17; --surface: #1e2622; --fg: #e6ece8; --muted: #9aa8a1; --line: #36423c;
+    --accent: #46c493; --accent-fg: #06261a; --ult: #f0b54a; --ult-fg: #2a1c02; --table: #5b4b33;
+    color-scheme: dark;
+  }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--font); font-size: 15px; line-height: 1.55;
+    padding-block: 20px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  main { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+  header { display: flex; flex-direction: column; gap: 6px; }
+  h1 { font-size: 21px; margin: 0; text-wrap: balance; }
+  .lead { margin: 0; color: var(--muted); }
+  .note { margin: 0; font-size: 13px; color: var(--muted); border-left: 3px solid var(--table); padding-left: 10px; }
+  section.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  h2 { font-size: 16px; margin: 0; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+  h2 .tag { font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
+  .why { margin: 0; font-size: 13px; color: var(--muted); }
+  .plays { display: flex; flex-wrap: wrap; gap: 8px; }
+  button { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; min-height: 44px; cursor: pointer; }
+  button.play { display: inline-flex; gap: 8px; align-items: center; }
+  button.play b { display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 6px; background: var(--fg); color: var(--bg); font-size: 13px; }
+  button.play.planned b { background: var(--accent); color: var(--accent-fg); }
+  button.play[aria-pressed="true"] { border-color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  legend { font-size: 13px; color: var(--muted); padding: 0; margin-bottom: 4px; }
+  .pick { position: relative; }
+  .pick input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+  .pick span { display: inline-flex; align-items: center; min-height: 36px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 14px; }
+  .pick input:checked + span { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
+  .pick input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
+  .grid button { padding: 8px 10px; font-size: 14px; text-align: left; }
+  .summary { display: flex; flex-direction: column; gap: 8px; }
+  .summary pre { margin: 0; white-space: pre-wrap; font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-variant-numeric: tabular-nums; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .status { font-size: 13px; color: var(--muted); min-height: 1.4em; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<main>
+  <header>
+    <h1>はじきバトル 音の聴き比べ</h1>
+    <p class="lead">演出の調査で「耳で決める」とした項目です。それぞれ聴いて、よいと思うほうを選んでください。最後に、選んだ結果をまとめた文章が出ます。</p>
+    <p class="note">iPhone はマナーモードだと鳴りません。音量を上げ、できればイヤホンで聴いてください。音はすべて端末の中で作っていて、音源ファイルは使っていません。</p>
+  </header>
+  <div id="cards"></div>
+  <section class="card">
+    <h2>そのほかの音<span class="tag">参考</span></h2>
+    <p class="why">新しく作った音の一覧です。選ぶ必要はありません。気になる音があれば、その名前を教えてください。</p>
+    <div class="grid" id="others"></div>
+  </section>
+  <section class="card summary">
+    <h2>選んだ結果</h2>
+    <pre id="sum"></pre>
+    <div class="row"><button id="copy" type="button">結果をコピー</button><span class="status" id="copied" role="status"></span></div>
+  </section>
+</main>
+<script>
+(function () {
+"use strict";
+const { FXT } = (function () {
+// はじきバトル 演出の数値の置き場(正本)。演出の秒・ピクセル・倍率・音の高さ・粒の数は、ここ以外に書かない。
+// 人が読む説明は ../FX_SPEC.md。各値の右の [ ] は出典と根拠の強さ:
+//   M3 = Material Design 3 の公式トークン(@material/web 2.5.0 の tokens/_md-sys-motion.scss、Apache-2.0)
+//   R1 = reports/はじきバトルの演出と動き.md、R2 = reports/はじきバトル演出の見本帳.md
+//   今 = 仮の画面(play/ui.js)で使っている値(手触りを確かめ済み)、耳 / 目 = 発注者が聴き比べ・見比べて決める
+//   強・中・弱 = 報告書の根拠の強さ。「弱」の値は出発点で、演出ラボで見て直す
+// 時間はミリ秒、長さは卓の座標(幅 360)のピクセル。
+
+/** Material Design 3 の動きのトークン(枠の UI: 上の帯・ボタン・重ねた画面の出入りに使う) [M3] */
+const M3 = {
+  duration: {
+    short1: 50, short2: 100, short3: 150, short4: 200,
+    medium1: 250, medium2: 300, medium3: 350, medium4: 400,
+    long1: 450, long2: 500, long3: 550, long4: 600,
+    extraLong1: 700, extraLong2: 800, extraLong3: 900, extraLong4: 1000,
+  },
+  // cubic-bezier の 4 つの数
+  easing: {
+    standard: [0.2, 0, 0, 1], standardAccelerate: [0.3, 0, 1, 1], standardDecelerate: [0, 0, 0, 1],
+    emphasizedAccelerate: [0.3, 0, 0.8, 0.15], emphasizedDecelerate: [0.05, 0.7, 0.1, 1], linear: [0, 0, 1, 1],
+  },
+  // ばね(減衰比・硬さ)。spatial = 位置や大きさ、effects = 色や透明度
+  spring: {
+    fastSpatial: { damping: 0.9, stiffness: 1400 }, defaultSpatial: { damping: 0.9, stiffness: 700 }, slowSpatial: { damping: 0.9, stiffness: 300 },
+    fastEffects: { damping: 1, stiffness: 3800 }, defaultEffects: { damping: 1, stiffness: 1600 }, slowEffects: { damping: 1, stiffness: 800 },
+  },
+};
+
+const FXT = {
+  m3: M3,
+  frameMs: 1000 / 60, // 1 コマ
+
+  // ---- 演出の格表(5 段)。格は「本当に起きた結果の大きさ」だけで決める [R1 格表・R2 改訂] ----------------
+  // hitstopMs: 止める時間(駒の動きだけ止め、輪や文字は動き続ける) / shake: 揺れ(当たった向きに) / text: 文字の段
+  tiers: [
+    { ja: 'ふつう', hitstopMs: 0, firstHitStopMs: 30, shakePx: 0, shakeMs: 0, text: 4, waitCapMs: 0 },          // [今・強] 1 発目だけ 0.03 秒
+    { ja: '強い', hitstopMs: 90, shakePx: 3, shakeMs: 150, text: 3, waitCapMs: 100 },                          // [今・中] 0.06〜0.09 秒
+    { ja: '大きい', hitstopMs: 120, shakePx: 4, shakeMs: 200, text: 2, waitCapMs: 200 },                       // [今・中]
+    { ja: '山場', hitstopMs: 400, repeatMul: 0.5, shakePx: 5, shakeMs: 220, text: 2, waitCapMs: 600, skippable: true }, // [R1・中] 0.3〜0.6 秒、同じ戦闘の 2 回目から半分
+    { ja: '決着', slowRate: 0.4, slowLeadMs: 300, zoom: 1.25, zoomMs: 300, shakePx: 7, shakeMs: 250, hitstopMs: 140,
+      text: 1, totalMaxMs: 1500, skippable: true },                                                             // [R1・中、数値は弱] 0.35〜0.5 倍速・寄り 1.2〜1.3
+  ],
+  // 同じ瞬間とみなす幅(この間に起きたものは、一番上の格の止め・揺れ・和音を 1 回だけ) [R1 重なりの決まり]
+  sameMomentMs: 50,
+
+  // ---- 1 手の予算(演出の検査器が測る) [R2 WO §9 AC6] -------------------------------------------------
+  budget: {
+    addedWaitPerShotMs: 500, // 1 手で演出が足した待ち(止め・間)の合計。決着を除く
+    finaleMaxMs: 1500,       // 決着の余韻の上限(タップで飛ばせる)
+    enemyTurnMaxMs: 3000,    // 敵の番ぜんぶ
+    releaseToMoveMs: 100,    // 離してから動き出すまで
+    flashesPerSecMax: 3,     // 明暗が大きく変わる回数(1 秒あたり)。赤の点滅は 0
+    particlesMax: 200,       // 同時に出す粒の総数(実機で測って直す) [R2・弱]
+    textTiersMax: 5,         // 文字の段
+    damageMergeAt: 4,        // 同時に 4 つ以上のダメージの数字は合計 1 つにまとめる [R1]
+    frameMsAvgWarn: 20,      // 直近のコマの平均がこれを超えたら「弱」を勧める(勝手に切り替えない) [R2・推論]
+  },
+
+  // ---- 早送りと演出の強さ -------------------------------------------------------------------------
+  fastForward: { rate: 2, stopsMul: 0.5 },   // 卓をタップで 2 倍速。止め・スロー・カットインは半分 [R1・中]
+  level: {                                   // 演出の強さ「標準・弱・なし」 [R2]
+    full: { particles: 1, life: 1, shake: 1, glow: true, speedLines: true, afterimage: true, breathe: true },
+    low: { particles: 0.5, life: 0.8, shake: 0.5, glow: true, speedLines: false, afterimage: false, breathe: false },
+    off: { particles: 0, life: 1, shake: 0, glow: false, speedLines: false, afterimage: false, breathe: false }, // 文字・色・小さなつぶれは残す
+  },
+
+  // ---- 文字の 5 段(卓の中の文字も数える)。大きさは仮置きで、PC で本体のトークンに合わせる [R2 文字の段] ----
+  text: {
+    sizes: [null, 28, 20, 15, 12, 10], // 1 特大 / 2 大 / 3 中 / 4 小 / 5 最小
+    weight: 700,
+    lifeMs: { 1: 1200, 2: 950, 3: 900, 4: 800, 5: 800 }, // [今] 0.95 秒、数字は短く [R1] 0.6〜0.95
+    rise: 22,                                              // 消えるまでに上へ動く量 [今]
+    laneGap: 28,                                           // 中央の文字の段ずらし [今]
+  },
+
+  // ---- 色の役割(新しい色は足さない。CSS の今のトークンに対応づける) [R1 #12・R2 #12] ------------------
+  // 危険色(danger)は「自分(味方)に悪いこと」だけ: 味方が受けたダメージ・味方の落下・敵の予告・落ちる軌道
+  color: {
+    good: 'accent',  // 味方の手柄(強打・巻き込んだ・玉突き・敵の場外と撃破の文字)
+    great: 'ult',    // 節目・必殺・決着(必殺色はもともと金色。10 れんさの「金」はこれで出す)
+    harm: 'danger',
+    heal: 'heal', poison: 'poison', boss: 'boss',
+    plain: 'fg',     // 敵に与えたダメージの数字・合計
+    muted: 'muted',
+  },
+
+  // ---- れんさ 10 段 [R2 れんさの表] ----------------------------------------------------------------
+  // text: 文字の段(0 = 出さない) / color: 上の役割 / chord: 節目の和音の音の数 / stopMs / dim: 背景を暗くする
+  chain: {
+    1: { text: 0 },
+    2: { text: 4, color: 'plain', label: 'num' },                           // 小さな数字だけ
+    3: { text: 3, color: 'good', chord: 2, stopMs: 75, ringGrow: true, dots: 6, label: 'charge' }, // 「3 れんさ 必殺+1」
+    4: { text: 3, color: 'good', label: 'mult' },                           // 「4 れんさ ×1.8」
+    5: { text: 2, color: 'great', chord: 3, low: true, stopMs: 120, dim: { pct: 20, ms: 300 }, dots: 12, callout: 1, label: 'mult' },
+    6: { text: 2, color: 'great', label: 'mult' },                          // 6〜9 は見た目は 5 のまま、音だけ上がる
+    10: { text: 1, color: 'great', plate: true, chord: 4, low: true, preSilenceMs: 60, stopMs: 400, repeatMul: 0.5,
+          dim: { pct: 25, ms: 400 }, dots: 24, callout: 3, label: 'plate' }, // 必殺色の地に白い文字の札。呼びかけを重ねる
+    over: { addChordNote: true, chordMax: 4, calloutMax: 3, noRedim: true }, // 11 以上: 言葉は増やさない
+    multFrom: 4, // 倍率を添え始める数(掛け算が効き始める次)
+  },
+
+  // ---- 駒の動き(写真シールは形を変える動きだけで生かす) [R1 駒の表] ----------------------------------
+  body: {
+    breathe: { amp: 0.03, periodMs: 2000 },              // 番の駒と狙う敵だけ。面積一定で ±3% [弱]
+    turnRing: { amp: 2, periodMs: 1130, gap: 4, width: 3 }, // 番の駒の輪 [今] sin(now/180) ≒ 1.13 秒周期
+    stepPulse: { px: 5, ms: 160 },                       // 強さの段が変わった瞬間 [今]
+    dragSquash: [1, 0.95, 0.9, 0.85],                    // 引く向きにつぶれる(段 0〜3) [中・数値は弱]
+    stepBounce: 0.03,                                    // 段の変わり目で一瞬はずむ [弱]
+    release: { stretch: 1.2, frames: 2, spring: { damping: 0.5, stiffness: 700 } }, // 1〜2 コマで伸び、1 回だけ行き過ぎて戻る [R2 桜井氏・中]
+    speedStretch: { max: 1.2, atSpeed: 1400 },           // 速さに比例して進む向きに伸びる [弱]
+    afterimage: { fromSpeed: 900, count: 3, alpha: [0.3, 0.2, 0.1] }, // [弱]
+    hitSquash: { normal: 0.85, strong: 0.75, recoverMs: 300 }, // ぶつかった向きにつぶれ、速く入ってゆっくり戻る [中・数値は弱]
+    strongJitter: { px: 1.5, ms: 300 },                  // 強打を受けた駒だけ見た目を揺らす [中]
+    peel: { wobblePx: 1.2, alpha: 0.6, flapDeg: 4, flapPeriodMs: 1000 }, // はがれかけ [今]。めくれは見本の後 [弱]
+    ringOut: { wobbleMs: 100, shrinkTo: 0.6, ms: 500, turns: 1.5 },     // 敵の場外: 縁で一拍ぐらつき、縮みながら回る [弱]
+    allyFall: { dropMs: 300, stickMs: 300 },             // 味方の落下: 小さく落ちて元の位置にぺたっと [弱]
+    windup: { squash: 0.88, ms: 120, strongMs: 150 },    // 敵の溜め [中・数値は弱]
+    bossFlinch: { squash: 0.75, ms: 400 },               // [弱]
+    winHop: { staggerMs: 100, hopMs: 500, bowMs: 400, hops: 2 }, // [弱]
+  },
+
+  // ---- エフェクトの部品(3 層: メイン・サブ・賑やかし / 色は 1 つの効果に 4 つまで) [R2 エフェクトの表] ----
+  // life は [最短, 最長]。数は「標準」のとき。粒は使い回しの配列から出す
+  parts: {
+    glowSprite: { px: 64 },                              // 起動時に 1 回だけ描く丸い光の絵 [R2]
+    hit: { flashMs: 80, sparks: 4, sparkLife: [200, 300], sparkSpeed: [120, 260], laterMul: 0.5 }, // 2 発目からは半分
+    strong: { ringMs: 225, ringR: [12, 46], sparks: 10, sparkLife: [300, 400], dots: 6, dotLife: 400, flashMs: 80, ringsMax: 3 },
+    milestone: { ringMs: 250, dotLife: 500 },
+    ringOut: { edgeRingMs: 300, dots: 5, dotLife: 400 },
+    shatter: { pieces: [4, 6], ms: 550, dots: 8, dotLife: 400, avgColorPx: 12 }, // 写真の平均色は 8〜16px に縮めて 1 回だけ取る
+    blast: { ringMs: 250, flashMs: 100, sparks: 8, smoke: 2, smokeLife: [500, 800], staggerMs: 60, laterRingOnly: true },
+    ult: { gather: 12, gatherMs: 500, ringMs: 300, flashMs: 100, sparks: 16, speedLines: 12, speedLineMs: 150 },
+    cutin: { firstMs: 600, repeatMs: 300 },              // 構えた瞬間に出す。離した後には挟まない [R1・中]
+    gauge: { pieces: 5, sparks: 10, ms: 500 },
+    finale: { rings: 2, ringMs: 500, sparks: 14, confetti: 10, life: [800, 1000] },
+    win: { dotsPerUnit: 6, ms: 500 },
+    damageNumber: { lifeMs: 800 },
+  },
+  // 加算の光はライトの卓(明るい木の色)では白く飛んで見えない。ライトは通常の重ね方+暗い縁に切り替える [R2]
+  glowMode: { light: 'normal', dark: 'lighter' },
+
+  // ---- 音(端末の中で作る。音源ファイルは使わない) [R1 音・R2 声] -----------------------------------
+  sound: {
+    attackMs: 8,          // 立ち上がり 5〜20 ミリ秒(いきなり最大にすると「プチッ」と鳴る) [R1・弱]
+    voicesMax: 6,         // 同時に鳴る音の上限 [R1]
+    jitterSemi: 0.5,      // 毎回の高さのゆらし(±1 半音以内から) [R1・弱]
+    master: 0.9,
+    // れんさの音階。既定は 5 音階、半音と聴き比べて決める [R2 食い違い 1・耳]
+    scales: { pentatonic: [0, 2, 4, 7, 9], semitone: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+    scale: 'pentatonic',
+    chainBaseHz: 330,     // れんさ 1 の高さ(今の当たりの音と同じ)
+    chainCap: 10,         // 10 で頭打ち
+    // 引っぱりの段の音: 今は長 3 度ずつで、3 段で増三和音になる → ドミソ [R2 #8]
+    step: { baseHz: 392, semis: [0, 0, 4, 7], legacySemis: [0, 0, 4, 8] },
+    chord: [0, 4, 7, 12], // 節目の和音(3 は 2 音、5 は 3 音、10 は 4 音)
+    duck: { db: -6, ms: 250 }, // 呼びかけが鳴る間は衝突音を下げる [R2]
+    // 呼びかけ(声っぽい合成音): のこぎり波を母音の帯域の山 2 つに通す [R2・弱]
+    // a と i は R2 の出典の値。u・e・o は Peterson & Barney(1952)の男声の平均の目安 [弱・耳]
+    formants: { a: [800, 1200], i: [300, 2200], u: [300, 870], e: [530, 1840], o: [570, 840] },
+    callout: { baseHz: 220, noteMs: 140, gapMs: 30, riseSemi: 5, layerSemi: 4, layersMax: 3, maxMs: 800 },
+    // 勝ち: 上がって最後の音を伸ばす(4〜6 音・1.0〜1.5 秒) / 負け: 下がる 3 音(今のまま)
+    win: { semis: [0, 4, 7, 12], noteMs: 90, lastMs: 420 },
+    lose: { hz: [392, 311, 233], noteMs: 120 },
+  },
+};
+
+return { FXT };
+})();
+const { createAudio } = (function () {
+// はじきバトル 音の部品(端末の中で作る。音源ファイルは使わない)。数値はすべて fx/tokens.js の FXT.sound。
+// 指示表(fx/director.js)の sound / callout をそのまま鳴らせる名前にしてある。
+//  - 立ち上がりを数ミリ秒かける(いきなり最大にすると「プチッ」と鳴る)
+//  - 同時に鳴る数に上限(古いものから止める)
+//  - 呼びかけが鳴る間は、効果音を少し下げる(ダッキング)
+//  - iPhone は最初のタップの中で準備しないと鳴らない → unlock() を「はじめる」などのタップで呼ぶ
+// ctx に OfflineAudioContext を渡せば、鳴らさずに波形を作れる(fx/audio-check.mjs で数字を測る)
+
+
+function createAudio(opts) {
+  const S = FXT.sound, o = opts || {};
+  let ac = o.ctx || null, master = null, sfxBus = null, voiceBus = null, noiseBuf = null;
+  const live = []; // 鳴っている音(上限の管理)
+  let scale = o.scale || S.scale, stepSet = o.step || 'new', attackMs = o.attackMs === undefined ? S.attackMs : o.attackMs, jitter = o.jitter === undefined ? S.jitterSemi : o.jitter;
+  let seed = 12345; const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }; // 音のゆらし用(勝ち負けには関係しない)
+  let enabled = true, duckOn = o.duck !== false;
+
+  function setup() {
+    if (!ac) { const AC = globalThis.AudioContext || globalThis.webkitAudioContext; if (!AC) return false; ac = new AC(); }
+    if (master) return true;
+    master = ac.createGain(); master.gain.value = S.master;
+    master.connect(ac.destination); // 圧縮器は使わない(短い音の音量が読めなくなる)。割れないことは、同時の数の上限と audio-check で守る
+    sfxBus = ac.createGain(); sfxBus.connect(master);
+    voiceBus = ac.createGain(); voiceBus.connect(master);
+    noiseBuf = ac.createBuffer(1, Math.round(ac.sampleRate * 0.5), ac.sampleRate);
+    const d = noiseBuf.getChannelData(0); let x = 7;
+    for (let k = 0; k < d.length; k++) { x = (x * 16807) % 2147483647; d[k] = x / 1073741823.5 - 1; }
+    return true;
+  }
+  /** 最初のタップの中で呼ぶ */
+  function unlock() { if (!setup()) return false; if (ac.state === 'suspended' && ac.resume) ac.resume(); return true; }
+
+  const semi = (hz, n) => hz * Math.pow(2, n / 12);
+  const t0 = (delay) => ac.currentTime + (delay || 0) + 0.005;
+  let prio = 0; // いま作っている音の優先度(呼びかけ 2 > 節目・決着 1 > 当たり 0)。上限を超えたら、優先度の低い古い音から止める
+  function track(node, end) {
+    live.push({ node, end, prio });
+    for (let k = live.length - 1; k >= 0; k--) if (live[k].end < ac.currentTime) live.splice(k, 1);
+    while (live.length > S.voicesMax) {
+      let at = 0; for (let k = 1; k < live.length; k++) if (live[k].prio < live[at].prio) at = k;
+      const v = live.splice(at, 1)[0]; try { v.node.stop(); } catch (e) { /* もう止まっている */ }
+    }
+  }
+  const PRIO = { callout: 2, chord: 1, finale: 1, gauge: 1, ultFire: 1, win: 1, lose: 1 };
+  /** 1 音: 波形・高さ(または [始め, 終わり] の滑り)・長さ・音量・遅れ・出口 */
+  function note(type, hz, dur, vol, delay, bus, filter) {
+    const s = t0(delay), o2 = ac.createOscillator(), g = ac.createGain();
+    o2.type = type;
+    if (Array.isArray(hz)) { o2.frequency.setValueAtTime(hz[0], s); o2.frequency.exponentialRampToValueAtTime(hz[1], s + dur); }
+    else o2.frequency.setValueAtTime(hz, s);
+    const a = Math.max(0.001, attackMs / 1000);
+    g.gain.setValueAtTime(0.0001, s); g.gain.linearRampToValueAtTime(vol, s + Math.min(a, dur * 0.5));
+    g.gain.exponentialRampToValueAtTime(0.0001, s + dur);
+    let head = o2;
+    if (filter) { const f = ac.createBiquadFilter(); f.type = filter.type; f.frequency.value = filter.hz; f.Q.value = filter.q || 1; o2.connect(f); head = f; }
+    head.connect(g); g.connect(bus || sfxBus);
+    o2.start(s); o2.stop(s + dur + 0.03);
+    track(o2, s + dur);
+  }
+  function noise(dur, vol, delay, hz, q) {
+    const s = t0(delay), src = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain();
+    src.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.value = hz || 1800; f.Q.value = q || 0.8;
+    g.gain.setValueAtTime(0.0001, s); g.gain.linearRampToValueAtTime(vol, s + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, s + dur);
+    src.connect(f); f.connect(g); g.connect(sfxBus); src.start(s); src.stop(s + dur + 0.02);
+    track(src, s + dur);
+  }
+  /** れんさ n 回目の高さ(半音) */
+  function chainSemi(n) {
+    const sc = S.scales[scale] || S.scales.pentatonic, k = Math.max(0, Math.min(S.chainCap, n) - 1);
+    return sc[k % sc.length] + 12 * Math.floor(k / sc.length);
+  }
+  const jit = () => (jitter ? (rnd() * 2 - 1) * jitter : 0);
+
+  // 呼びかけ: のこぎり波を母音の帯域の山 2 つに通した、声っぽい音
+  function syllable(vowel, hz, dur, vol, delay) {
+    const f = S.formants[vowel] || S.formants.a, s = t0(delay);
+    const src = ac.createOscillator(); src.type = 'sawtooth';
+    src.frequency.setValueAtTime(hz, s); src.frequency.linearRampToValueAtTime(hz * 1.04, s + dur * 0.6); // 少し上ずる
+    const g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, s); g.gain.linearRampToValueAtTime(vol, s + 0.012); g.gain.setValueAtTime(vol, s + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, s + dur);
+    for (const [fr, q, k] of [[f[0], 6, 1], [f[1], 9, 0.6]]) {
+      const bp = ac.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = fr; bp.Q.value = q;
+      const gg = ac.createGain(); gg.gain.value = k * 3;
+      src.connect(bp); bp.connect(gg); gg.connect(g);
+    }
+    g.connect(voiceBus);
+    src.start(s); src.stop(s + dur + 0.03);
+    track(src, s + dur);
+  }
+  function duck(ms) {
+    if (!duckOn) return;
+    const s = ac.currentTime, k = Math.pow(10, S.duck.db / 20);
+    sfxBus.gain.cancelScheduledValues(s); sfxBus.gain.setValueAtTime(sfxBus.gain.value, s);
+    sfxBus.gain.linearRampToValueAtTime(k, s + 0.02); sfxBus.gain.setValueAtTime(k, s + ms / 1000); sfxBus.gain.linearRampToValueAtTime(1, s + ms / 1000 + 0.08);
+  }
+
+  const R = {
+    // 画面の操作
+    ui: () => note('sine', 660, 0.04, 0.06),
+    step: (q) => { const p = q.p || 0, set = stepSet === 'legacy' ? S.step.legacySemis : S.step.semis; note('square', semi(S.step.baseHz, set[p] || 0), 0.05, 0.05); },
+    cancel: () => note('sine', 220, 0.08, 0.06),
+    shoot: (q) => { const p = q.p || 1; note('triangle', semi(220, p * 3), 0.09, 0.1); if (p >= 3) note('sine', 110, 0.12, 0.06); },
+    // 当たり
+    tap: (q) => note('sine', 500 + Math.min(600, (q && q.v) || 300) * 0.4, 0.04, 0.035),
+    rail: (q) => noise(0.05, Math.min(0.06, ((q && q.v) || 300) / 12000), 0, 700, 1.2),
+    hit: (q) => note('triangle', semi(S.chainBaseHz, chainSemi((q && q.n) || 1) + jit()), 0.07, 0.12),
+    strong: () => { noise(0.012, 0.16, 0, 3000, 0.7); note('sawtooth', [180, 90], 0.16, 0.12); note('triangle', 220, 0.1, 0.08, 0.01); }, // 立ち上がり・胴・余韻の 3 層
+    harm: () => note('sine', [180, 120], 0.14, 0.09),
+    relay: () => { note('sine', 660, 0.05, 0.07); note('sine', 880, 0.06, 0.07, 0.05); },
+    crash: () => { noise(0.03, 0.08, 0, 900); note('square', 150, 0.08, 0.07); },
+    bumper: () => note('square', 880, 0.05, 0.05),
+    pickup: () => { note('sine', 784, 0.07, 0.08); note('sine', 1047, 0.09, 0.08, 0.06); },
+    bonus: () => { note('triangle', 523, 0.08, 0.1); note('triangle', 784, 0.14, 0.1, 0.08); },
+    ring: () => note('triangle', [523, 330], 0.22, 0.11), // 場外は下がって終わる
+    blast: (q) => { const k = (q && q.k2) || 1; noise(0.12, k > 1 ? 0.05 : 0.1, 0, 500, 0.6); note('sine', [140, 70], 0.18, k > 1 ? 0.06 : 0.11); },
+    chord: (q) => { // 節目の和音(3 は 2 音、5 は 3 音、10 は 4 音)。高さはそのときのれんさの音から
+      const n = (q && q.notes) || 2, base = semi(S.chainBaseHz, chainSemi(Math.min(S.chainCap, (q && q.n) || 3)));
+      for (let k = 0; k < n; k++) note('triangle', semi(base, S.chord[k]), 0.22 + k * 0.03, 0.08, k * 0.035);
+      if (q && q.low) note('sine', 110, 0.3, 0.1);
+    },
+    ultFire: () => { note('sawtooth', [300, 1200], 0.25, 0.06, 0, null, { type: 'lowpass', hz: 2400 }); noise(0.02, 0.12, 0.25, 2500); R.chord({ notes: 3, n: 8, low: true }); },
+    gauge: () => { note('triangle', [392, 784], 0.3, 0.07); noise(0.03, 0.12, 0.3, 2000); for (let k = 0; k < 3; k++) note('triangle', semi(784, S.chord[k]), 0.35, 0.07, 0.3 + k * 0.04); note('sine', 98, 0.4, 0.1, 0.3); },
+    finale: (q) => {
+      noise(0.03, 0.16, 0, 2200); note('sawtooth', [220, 110], 0.25, 0.1);
+      for (let k = 0; k < 4; k++) note('triangle', semi(523, S.chord[k]), 0.5, 0.07, 0.05 + k * 0.05);
+      if (q && q.special) for (let k = 0; k < 6; k++) note('sine', semi(1047, [0, 4, 7, 12, 16, 19][k]), 0.12, 0.05, 0.3 + k * 0.06);
+    },
+    win: () => { const W = S.win; W.semis.forEach((n, k) => note('triangle', semi(523, n), k === W.semis.length - 1 ? W.lastMs / 1000 : 0.2, 0.1, k * W.noteMs / 1000)); },
+    lose: () => S.lose.hz.forEach((hz, k) => note('triangle', hz, 0.25, 0.09, k * S.lose.noteMs / 1000)),
+    // 呼びかけ: 5 れんさは 1 回、10 れんさは重ねる(重ねるたびに高く)
+    callout: (q) => {
+      const C = S.callout, layers = Math.max(1, Math.min(C.layersMax, (q && q.layers) || 1));
+      const word = layers === 1 ? ['a', 'i'] : ['a', 'a', 'o', 'e'];
+      let t = 0;
+      for (let L = 0; L < layers; L++) {
+        const base = semi(C.baseHz, L * C.layerSemi);
+        word.forEach((v, k) => syllable(v, semi(base, k === word.length - 1 ? C.riseSemi : k), (k === word.length - 1 ? 2.2 : 1) * C.noteMs / 1000, 0.09, (t + k * (C.noteMs + C.gapMs)) / 1000));
+        t += layers === 1 ? 0 : (C.noteMs + C.gapMs) * 1.5;
+      }
+      duck(Math.min(C.maxMs, t + word.length * (C.noteMs + C.gapMs)));
+    },
+  };
+
+  return {
+    unlock,
+    get ready() { return !!(ac && master && ac.state !== 'suspended'); },
+    get context() { return ac; },
+    /** 指示表の sound / callout を鳴らす。名前のない音は鳴らさない */
+    play(id, q) { if (!enabled) return false; if (!setup()) return false; const f = R[id]; if (!f) return false; prio = PRIO[id] || 0; try { f(q || {}); } catch (e) { return false; } finally { prio = 0; } return true; },
+    names: () => Object.keys(R),
+    set(k, v) { if (k === 'scale') scale = v; else if (k === 'step') stepSet = v; else if (k === 'attackMs') attackMs = v; else if (k === 'jitter') jitter = v; else if (k === 'duck') duckOn = v; else if (k === 'enabled') enabled = v; },
+    chainSemi,
+    liveCount: () => live.filter((v) => v.end >= (ac ? ac.currentTime : 0)).length,
+  };
+}
+
+return { createAudio };
+})();
+// 音の聴き比べ台(fx/lab/build.mjs が tokens.js・audio.js と 1 つにまとめる)
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  let NEW = null, OLD = null; // 新しい音(予定)と、今の仮の画面の音に近い設定
+  const mk = (o) => createAudio(o);
+  function ensure() {
+    if (!NEW) { NEW = mk({}); OLD = mk({ attackMs: 0, scale: 'semitone', step: 'legacy', jitter: 0, duck: false }); }
+    NEW.unlock(); OLD.unlock();
+  }
+  const at = (ms, fn) => setTimeout(fn, ms);
+  // れんさの手を 1 本まねる: 当たり 1 つごとに音が上がり、3・5・10 で和音、最高の節目で 1 回だけ呼びかけ
+  function chainShot(a, upto, opt) {
+    let t = 0;
+    const top = upto >= 10 ? 10 : upto >= 5 ? 5 : 0;
+    for (let n = 1; n <= upto; n++) {
+      if (n === 10) t += FXT.chain[10].preSilenceMs;
+      const tn = t;
+      at(tn, () => {
+        a.play('hit', { n });
+        if (n === 3) a.play('chord', { notes: 2, n });
+        if (n === 5) a.play('chord', { notes: 3, n, low: true });
+        if (n >= 10) a.play('chord', { notes: 4, n, low: true });
+        if (opt && opt.callout !== false && n === top) a.play('callout', { layers: top === 10 ? (upto > 10 ? 3 : 2) : 1 });
+      });
+      t += 170;
+    }
+  }
+  const legacyStrong = () => { // 今の仮の画面の強打(2 つの音を同時に、立ち上がりなし)
+    const ac = OLD.context, s = ac.currentTime + 0.005;
+    for (const [hz, dur, type, vol] of [[110, 0.16, 'sawtooth', 0.12], [220, 0.1, 'triangle', 0.1]]) {
+      const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(hz, s);
+      g.gain.setValueAtTime(vol, s); g.gain.exponentialRampToValueAtTime(0.001, s + dur); o.connect(g); g.connect(ac.destination); o.start(s); o.stop(s + dur + 0.02);
+    }
+  };
+  const legacyWin = () => { const ac = OLD.context; [523, 659, 784, 1047].forEach((hz, k) => { const s = ac.currentTime + 0.005 + k * 0.09, o = ac.createOscillator(), g = ac.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(hz, s); g.gain.setValueAtTime(0.11, s); g.gain.exponentialRampToValueAtTime(0.001, s + 0.22); o.connect(g); g.connect(ac.destination); o.start(s); o.stop(s + 0.24); }); };
+  const steps = (a) => { [1, 2, 3].forEach((p, k) => at(k * 260, () => a.play('step', { p }))); at(900, () => a.play('shoot', { p: 3 })); };
+  const hits = (a, n) => { for (let k = 0; k < (n || 6); k++) at(k * 150, () => a.play('hit', { n: 2 })); };
+
+  const CARDS = [
+    { id: 'scale', title: 'れんさの音の上がり方', tag: '10 れんさの手', why: '当たるたびに音が上がります。Candy Crush は半音ずつ、Tetris Effect などは音階で上がります。予定は 5 音階(ドレミソラ)です。',
+      plays: [['A', '5 音階(予定)', () => chainShot(NEW, 10), true], ['B', '半音ずつ', () => { NEW.set('scale', 'semitone'); chainShot(NEW, 10); at(2400, () => NEW.set('scale', FXT.sound.scale)); }]],
+      picks: ['A', 'B', 'どちらでも'] },
+    { id: 'callout', title: '呼びかけ(声っぽい合成音)', tag: '5・10・12 れんさ', why: '1 手に 1 回だけ、その手で届いた一番上の節目で鳴ります。10 以上は重ねて高くします。録音の声は使っていません。',
+      plays: [['5', '5 れんさの手', () => chainShot(NEW, 7), true], ['10', '10 れんさの手', () => chainShot(NEW, 10), true], ['12', '12 れんさの手', () => chainShot(NEW, 12), true], ['×', '呼びかけなし', () => chainShot(NEW, 10, { callout: false })]],
+      picks: ['このままでよい', 'もっと声らしく', 'もっと控えめに', 'なくてよい(文字だけ)'] },
+    { id: 'step', title: '引っぱりの段の音', tag: '弱 → 中 → 強 → 発射', why: '今の音は段ごとに長 3 度上がり、3 段そろうと落ち着かない響き(増三和音)になります。予定はドミソです。',
+      plays: [['A', 'ドミソ(予定)', () => steps(NEW), true], ['B', '今の音', () => steps(OLD)]],
+      picks: ['A', 'B', 'どちらでも'] },
+    { id: 'attack', title: '音の立ち上がり', tag: '当たり 6 回', why: '今の音は音量をいきなり最大にしているので、「プチッ」という雑音が混じりやすくなっています。予定は 8 ミリ秒かけて立ち上げます。',
+      plays: [['A', '8 ミリ秒(予定)', () => hits(NEW), true], ['B', '0(今の音)', () => { NEW.set('attackMs', 0); hits(NEW); at(1100, () => NEW.set('attackMs', FXT.sound.attackMs)); }], ['C', '20 ミリ秒', () => { NEW.set('attackMs', 20); hits(NEW); at(1100, () => NEW.set('attackMs', FXT.sound.attackMs)); }]],
+      picks: ['A', 'B', 'C', 'ちがいが分からない'] },
+    { id: 'jitter', title: '同じ音の高さのゆらし', tag: '当たり 6 回', why: '同じ音が続くと機械的に聞こえるので、毎回わずかに高さをずらします。解説記事の目安は ±2 半音ですが、大きめなので ±0.5 から試します。',
+      plays: [['A', '±0.5 半音(予定)', () => hits(NEW), true], ['B', 'ゆらさない', () => { NEW.set('jitter', 0); hits(NEW); at(1100, () => NEW.set('jitter', FXT.sound.jitterSemi)); }], ['C', '±1 半音', () => { NEW.set('jitter', 1); hits(NEW); at(1100, () => NEW.set('jitter', FXT.sound.jitterSemi)); }]],
+      picks: ['A', 'B', 'C', 'ちがいが分からない'] },
+    { id: 'strong', title: '強打の音', tag: '1 回', why: '予定は「立ち上がりの短い雑音・高さが下がる胴・短い余韻」の 3 層です。今の音は 2 つの音を同時に鳴らしています。',
+      plays: [['A', '3 層(予定)', () => NEW.play('strong'), true], ['B', '今の音', () => legacyStrong()]],
+      picks: ['A', 'B', 'どちらでも'] },
+    { id: 'duck', title: '呼びかけの間に効果音を下げる', tag: '5 れんさの手', why: '声が鳴る 0.1〜0.3 秒だけ、当たりの音を 6dB 下げます(ダッキング)。声が埋もれないようにするためです。',
+      plays: [['A', '下げる(予定)', () => chainShot(NEW, 7), true], ['B', '下げない', () => { NEW.set('duck', false); chainShot(NEW, 7); at(1500, () => NEW.set('duck', true)); }]],
+      picks: ['A', 'B', 'ちがいが分からない'] },
+    { id: 'win', title: '勝ちの音', tag: '勝敗の画面', why: '予定は 4 音で上がり、最後の音を長く伸ばします。今の音は 4 音とも同じ長さです。',
+      plays: [['A', '最後を伸ばす(予定)', () => NEW.play('win'), true], ['B', '今の音', () => legacyWin()]],
+      picks: ['A', 'B', 'どちらでも'] },
+    { id: 'finale', title: '決着の音', tag: 'ふつう・特別版', why: '最後の敵を倒した瞬間に鳴ります。1 手で 3 体以上をまとめて倒したときは、上がっていく粒の音を足します(特別版)。',
+      plays: [['1', 'ふつう', () => NEW.play('finale', {}), true], ['2', '特別版', () => NEW.play('finale', { special: true }), true]],
+      picks: ['このままでよい', 'もっと派手に', 'もっと控えめに'] },
+  ];
+  const OTHERS = [['当たり', 'hit', { n: 1 }], ['場外', 'ring'], ['花火(1 発目)', 'blast', { k2: 1 }], ['花火(2 発目から)', 'blast', { k2: 2 }], ['必殺を撃つ', 'ultFire'], ['ゲージ割り', 'gauge'],
+                  ['ぶつけ', 'crash'], ['玉突き', 'relay'], ['もう 1 手', 'bonus'], ['おやつ', 'pickup'], ['輪ゴムの柱', 'bumper'], ['味方がやられた', 'harm'], ['柵に当たる', 'rail', { v: 900 }], ['駒どうしが触れる', 'tap', { v: 500 }], ['負け', 'lose']];
+
+  const KEY = 'flick-lab-picks';
+  let picks = {};
+  try { picks = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { picks = {}; }
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(picks)); } catch (e) { /* 覚えられなくても続ける */ } };
+
+  const cards = $('cards');
+  cards.style.display = 'flex'; cards.style.flexDirection = 'column'; cards.style.gap = '14px';
+  for (const c of CARDS) {
+    const sec = document.createElement('section'); sec.className = 'card'; sec.setAttribute('aria-labelledby', 'h-' + c.id);
+    const h = document.createElement('h2'); h.id = 'h-' + c.id; h.textContent = c.title;
+    const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = c.tag; h.append(tag);
+    const why = document.createElement('p'); why.className = 'why'; why.textContent = c.why;
+    const plays = document.createElement('div'); plays.className = 'plays';
+    for (const [k, label, fn, planned] of c.plays) {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'play' + (planned ? ' planned' : ''); b.id = 'p-' + c.id + '-' + k;
+      const badge = document.createElement('b'); badge.textContent = k; b.append(badge, document.createTextNode('聴く: ' + label));
+      b.addEventListener('click', () => { ensure(); fn(); });
+      plays.append(b);
+    }
+    const fs = document.createElement('fieldset');
+    const lg = document.createElement('legend'); lg.textContent = '選ぶ'; fs.append(lg);
+    for (const p of c.picks) {
+      const lab = document.createElement('label'); lab.className = 'pick';
+      const inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'pick-' + c.id; inp.id = 'pick-' + c.id + '-' + p; inp.value = p; inp.checked = picks[c.id] === p;
+      inp.addEventListener('change', () => { picks[c.id] = p; save(); summary(); });
+      const sp = document.createElement('span'); sp.textContent = p;
+      lab.append(inp, sp); fs.append(lab);
+    }
+    sec.append(h, why, plays, fs);
+    cards.append(sec);
+  }
+  for (const [label, id, q] of OTHERS) {
+    const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.id = 'o-' + id + (q && q.k2 ? q.k2 : '');
+    b.addEventListener('click', () => { ensure(); NEW.play(id, q || {}); });
+    $('others').append(b);
+  }
+  function summary() {
+    const lines = CARDS.map((c) => c.title + ': ' + (picks[c.id] || '(まだ)'));
+    $('sum').textContent = '音の聴き比べの結果\n' + lines.join('\n');
+  }
+  summary();
+  $('copy').addEventListener('click', () => {
+    const t = $('sum').textContent;
+    const done = () => { $('copied').textContent = 'コピーしました。会話に貼り付けてください。'; };
+    const fallback = () => { const r = document.createRange(); r.selectNodeContents($('sum')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $('copied').textContent = '選択しました。長押しでコピーしてください。'; };
+    try { navigator.clipboard.writeText(t).then(done, fallback); } catch (e) { fallback(); }
+  });
+})();
+
+})();
+</script>
