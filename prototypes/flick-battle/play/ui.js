@@ -34,6 +34,21 @@
   globalThis.__flickPerf = perf;
   globalThis.__flickState = () => state;
 
+  // ---- 撮影台のためのフック(URL に付けたときだけ働く。ふだんの動きは変えない) --------
+  //  ?scene=<場面>     : fx/scenes.js の場面を開く(state の場面は止まった状態、shot の場面は __fx.fire() で弾く)
+  //  ?clock=manual    : 時計を止める。__fx.advance(ms) で 1 コマずつ進める(同じ画面を何度でも撮れる)
+  //  ?state=<状態>     : UI 発注書 §2 の状態を開いて、その瞬間で止める(uicheck --state 用)
+  const Q = new URLSearchParams(location.search);
+  const STATE_TO_SCENE = { aim: ['aim'], drag: ['drag'], dragDanger: ['dragDanger'], ultReady: ['ultArmed', null, true], ultArmed: ['ultArmed'],
+                           moving: ['hit', 'ms:150'], enemy: ['enemyTurn', 'ev:act'], chain: ['chain5', 'chain:5'], boss: ['gauge'],
+                           gauge: ['gauge', 'ev:gaugeBreak'], chain10: ['chain10', 'chain:10'], finale: ['finale', 'ev:ko'], won: ['finale', 'end'], lost: ['lost', 'end'] };
+  const ST = Q.get('state') && STATE_TO_SCENE[Q.get('state')];
+  const SCENE = typeof sceneById === 'function' ? sceneById(ST ? ST[0] : Q.get('scene')) || null : null;
+  const MANUAL = Q.get('clock') === 'manual' || !!ST;
+  let manualNow = 1000;
+  // 測るもの: 1 手で演出が足した待ち・敵の番の待ち・スローで伸びた時間・決着の余韻・離してから動くまで・同時に出た演出の数・文字
+  const fxm = { shotWait: 0, enemyWait: 0, slowMs: 0, finaleMs: 0, finaleT: null, fireT: null, moveT: null, firePos: null, maxFx: 0, texts: new Map(), logText: false, events: [] };
+
   // ---- 設定(この端末だけに覚える。読めなくても動く) --------------------------
   const store = { get(k, d) { try { const v = localStorage.getItem('flick.' + k); return v === null ? d : v; } catch (e) { return d; } },
                   set(k, v) { try { localStorage.setItem('flick.' + k, v); } catch (e) { /* 覚えられなくても続ける */ } } };
@@ -93,10 +108,13 @@
   }
   function newGame() {
     const st = $('stage').value.split(':');
-    cfgNow = st[0] === 'boss' ? bossBattle(st[1], makeTeam()) : mobBattle(st[1], makeTeam(), MOBS[+st[2]], { traits: TRAITS[+st[2]] });
-    state = createBattle(cfgNow);
-    state.label = st[0] === 'boss' ? BOSSES[st[1]].rule : TABLES[st[1]].ja;
-    goal = pickGoal(++gameNo, cfgNow);
+    if (SCENE) { cfgNow = SCENE.cfg(); state = sceneState(SCENE); state.label = '場面: ' + SCENE.ja; goal = null; }
+    else {
+      cfgNow = st[0] === 'boss' ? bossBattle(st[1], makeTeam()) : mobBattle(st[1], makeTeam(), MOBS[+st[2]], { traits: TRAITS[+st[2]] });
+      state = createBattle(cfgNow);
+      state.label = st[0] === 'boss' ? BOSSES[st[1]].rule : TABLES[st[1]].ja;
+      goal = pickGoal(++gameNo, cfgNow);
+    }
     popups = []; rings = []; bolts = []; aim = null; armed = false; busy = false; replaying = false; lastShot = null;
     acc = 0; pauseUntil = 0; freezeUntil = 0; slowUntil = 0; shakeUntil = 0; shotOpen = false;
     $('overlay').hidden = true;
@@ -163,6 +181,7 @@
   function powerOf(len) { return len < 18 ? 0 : len < 60 ? 1 : len < 115 ? 2 : 3; } // 0 = 取り消し
   function shotFromAim() {
     if (!aim) return null;
+    if (aim.exact) return Object.assign({}, aim.exact, { ult: armed }); // 撮影台: 場面の手をそのまま
     const dx = aim.sx - aim.cx, dy = aim.sy - aim.cy; // 引いた向きの反対に飛ぶ
     const p = powerOf(Math.sqrt(dx * dx + dy * dy));
     if (!p) return null;
@@ -183,6 +202,7 @@
   });
   function doShot(sh) {
     lastShot = { st: cloneState(state), input: sh };
+    const me = state.units[state.active]; fxm.fireT = MANUAL ? manualNow : performance.now(); fxm.moveT = null; fxm.firePos = me ? [me.id, me.x, me.y] : null;
     if (shoot(state, sh)) { armed = false; shotOpen = true; shotDmg = 0; sfx.shoot(sh.power); refresh(); }
   }
   cv.addEventListener('pointerup', () => { const sh = shotFromAim(); const was = !!aim; aim = null; if (sh && state.phase === 'aim') doShot(sh); else { if (was) sfx.cancel(); refresh(); } });
@@ -292,6 +312,7 @@
   }
   function consumeEvents(now) {
     for (const e of state.events) {
+      if (fxm.events.length < 4000) fxm.events.push([Math.round(now - (fxm.fireT || now)), e.t, e.n]);
       const by = e.by >= 0 ? state.units[e.by] : null, to = e.to !== undefined && e.to >= 0 ? state.units[e.to] : null;
       switch (e.t) {
         case 'hit':
@@ -322,6 +343,7 @@
           if (u.kind === 'mini') break;
           pop(u, e.how === 'ring' ? '場外!' : 'たおれた', 'danger', 0, now);
           if (u.side === 1 && enemiesLeft() === 0) { // 決着の 1 発だけ、長めのスローと大きな揺れ
+            fxm.finaleT = now;
             slowUntil = now + 600 * fx(); slowRate = 0.35; shake(now, 7, 250); freeze(now, 140); buzz(60);
           } else if (u.side === 1) { freeze(now, 120); if (e.how === 'ring') sfx.ring(); buzz(25); }
           break;
@@ -562,6 +584,13 @@
   function frame(now) {
     const dtMs = last ? now - last : 16; last = now;
     perf.frames++; if (dtMs > 25) perf.slow++; if (dtMs > perf.maxMs && perf.frames > 5) perf.maxMs = dtMs;
+    if (state.phase === 'resolving') { // 撮影台の物差し(見るだけ。進み方は変えない)
+      const held = now < pauseUntil || now < freezeUntil;
+      if (fxm.finaleT !== null) fxm.finaleMs += dtMs;
+      else if (held) { if (shotOpen) fxm.shotWait += dtMs; else fxm.enemyWait += dtMs; }
+      if (now < slowUntil && fxm.finaleT === null) fxm.slowMs += dtMs * (1 - slowRate);
+    }
+    if (fxm.firePos && fxm.moveT === null) { const u = state.units[fxm.firePos[0]]; if (u && (u.x !== fxm.firePos[1] || u.y !== fxm.firePos[2])) fxm.moveT = now - fxm.fireT; }
     if (state.phase === 'resolving' && now >= pauseUntil && now >= freezeUntil) {
       const t0 = performance.now();
       acc += Math.min(dtMs, 50) / 1000 * (now < slowUntil ? slowRate : 1);
@@ -583,13 +612,56 @@
     if (state.phase === 'aim' && !replaying) drawAim(now);
     drawFx(now);
     drawDemo(now);
-    requestAnimationFrame(frame);
+    fxm.maxFx = Math.max(fxm.maxFx, rings.length + popups.length + bolts.length);
+    if (!MANUAL) requestAnimationFrame(frame);
   }
 
   readColors();
+  { // 撮影台: 卓に書いた文字(大きさ・色)を数える。logText のときだけ
+    const fill = ctx.fillText.bind(ctx);
+    ctx.fillText = (t, x, y, w) => { if (fxm.logText) { const k = ctx.font.match(/(\d+(?:\.\d+)?)px/)[1] + '|' + ctx.fillStyle + '|' + t; fxm.texts.set(k, (fxm.texts.get(k) || 0) + 1); } return w === undefined ? fill(t, x, y) : fill(t, x, y, w); };
+  }
+  globalThis.__fx = {
+    scene: SCENE ? SCENE.id : null,
+    scenes: typeof SCENES !== 'undefined' ? SCENES.map((s) => ({ id: s.id, ja: s.ja, kind: s.kind, tier: s.tier })) : [],
+    colors: () => Object.assign({}, colors),
+    fire() { const inp = SCENE && SCENE_INPUTS[SCENE.id]; if (!inp || state.phase !== 'aim') return false; aim = null; doShot(Object.assign({}, inp)); return true; },
+    advance(ms) { const n = Math.max(1, Math.round(ms / (1000 / 60))); for (let k = 0; k < n; k++) { manualNow += 1000 / 60; frame(manualNow); } return this.info(); },
+    hold(ms) { const now = MANUAL ? manualNow : performance.now(); pauseUntil = Math.max(pauseUntil, now + ms); }, // 検査器の自己検査用(わざと待たせる)
+    info: () => ({ phase: state.phase, motion: !!state.motion, overlay: !$('overlay').hidden, shotOpen, chain: state.chain, shots: state.shots }),
+    metrics: () => ({ shotWait: Math.round(fxm.shotWait), enemyWait: Math.round(fxm.enemyWait), slowMs: Math.round(fxm.slowMs), finaleMs: Math.round(fxm.finaleMs),
+                      releaseToMove: fxm.moveT === null ? null : Math.round(fxm.moveT), maxFx: fxm.maxFx, events: fxm.events.slice() }),
+    textLog(on) { fxm.logText = on; if (on) fxm.texts.clear(); return Array.from(fxm.texts.entries()).map(([k, n]) => { const [px, fill, t] = k.split('|'); return { px: +px, fill, t, n }; }); },
+    lum() { // 卓の平均の明るさ(0〜1)。明滅を数えるため
+      const c = document.createElement('canvas'); c.width = 24; c.height = 35; const g = c.getContext('2d'); g.drawImage(cv, 0, 0, 24, 35);
+      const d = g.getImageData(0, 0, 24, 35).data; let s = 0;
+      for (let k = 0; k < d.length; k += 4) { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; s += 0.2126 * f(d[k]) + 0.7152 * f(d[k + 1]) + 0.0722 * f(d[k + 2]); }
+      return s / (d.length / 4);
+    },
+  };
   if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
   new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   window.addEventListener('resize', resize);
   newGame(); resize();
-  requestAnimationFrame(frame);
+  if (SCENE && SCENE.kind === 'state') { // 止まった状態の場面
+    const inp = SCENE_INPUTS[SCENE.id];
+    if (SCENE.armed && !(ST && ST[2])) armed = true;
+    if (SCENE.drag && inp) { aim = { sx: 0, sy: 0, cx: 0, cy: 0, pulse: 0, exact: inp }; }
+    refresh();
+  }
+  if (!MANUAL) requestAnimationFrame(frame);
+  else {
+    frame(manualNow);
+    if (ST && ST[1]) { // ?state= の瞬間まで進めて止める
+      const [kind, arg] = ST[1].split(':');
+      if (kind !== 'end' || SCENE.kind === 'shot') globalThis.__fx.fire();
+      for (let k = 0; k < 60 * 30; k++) {
+        globalThis.__fx.advance(1000 / 60);
+        if (kind === 'ms' && k * 1000 / 60 >= +arg) break;
+        if (kind === 'chain' && state.chain >= +arg) break;
+        if (kind === 'ev' && fxm.events.some((e) => e[1] === arg)) break;
+        if (kind === 'end' && !$('overlay').hidden) break;
+      }
+    }
+  }
 })();

@@ -1,0 +1,2454 @@
+{
+ "summary": {
+  "label": "before",
+  "date": "2026-11-16",
+  "textSizesAll": [
+   9,
+   10,
+   11,
+   12,
+   13,
+   16,
+   19,
+   20,
+   20.5,
+   22,
+   23.5,
+   25,
+   26,
+   26.5,
+   28,
+   30
+  ],
+  "textTiersOk": false,
+  "red": 64,
+  "total": 72,
+  "perf": {
+   "chain10": {
+    "frames": 237,
+    "slowFrames": 5,
+    "maxFrameMs": 33
+   },
+   "blast": {
+    "frames": 239,
+    "slowFrames": 2,
+    "maxFrameMs": 33
+   },
+   "special": {
+    "frames": 237,
+    "slowFrames": 3,
+    "maxFrameMs": 50
+   }
+  },
+  "sheets": [
+   "fx/baseline/before-390-light.jpg",
+   "fx/baseline/before-390-dark.jpg"
+  ]
+ },
+ "results": [
+  {
+   "scene": "hit",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 17,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 4,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    20
+   ],
+   "misuse": [
+    "-19"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1983,
+   "bad": [
+    "危険色の誤用 -19"
+   ]
+  },
+  {
+   "scene": "strong",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 83,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 5,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20
+   ],
+   "misuse": [
+    "-29",
+    "-20"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 2150,
+   "bad": [
+    "危険色の誤用 -29 -20"
+   ]
+  },
+  {
+   "scene": "chain3",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 10,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-34"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 550,
+   "bad": [
+    "危険色の誤用 -34"
+   ]
+  },
+  {
+   "scene": "crash",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 19,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5,
+    22,
+    23.5,
+    25
+   ],
+   "misuse": [
+    "-49",
+    "-32",
+    "-25",
+    "-50",
+    "-29"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1150,
+   "bad": [
+    "危険色の誤用 -49 -32 -25 -50"
+   ]
+  },
+  {
+   "scene": "relay",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 16,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-15",
+    "-52"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1533,
+   "bad": [
+    "危険色の誤用 -15 -52"
+   ]
+  },
+  {
+   "scene": "ringout",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 6,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-27",
+    "場外!"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 700,
+   "bad": [
+    "危険色の誤用 -27 場外!"
+   ]
+  },
+  {
+   "scene": "shatter",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 400,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 14,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-29",
+    "-20",
+    "場外!",
+    "-30",
+    "たおれた"
+   ],
+   "banned": [
+    "あと少し!"
+   ],
+   "errors": [],
+   "durationMs": 1283,
+   "bad": [
+    "危険色の誤用 -29 -20 場外! -30",
+    "借りない言葉 あと少し!"
+   ]
+  },
+  {
+   "scene": "chain5",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 12,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22,
+    23.5
+   ],
+   "misuse": [
+    "-17",
+    "-9",
+    "-18"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1067,
+   "bad": [
+    "危険色の誤用 -17 -9 -18"
+   ]
+  },
+  {
+   "scene": "blast",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 26,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    20,
+    28
+   ],
+   "misuse": [
+    "-32",
+    "たおれた",
+    "-40",
+    "-46",
+    "-53",
+    "-60"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 800,
+   "bad": [
+    "危険色の誤用 -32 たおれた -40 -46"
+   ]
+  },
+  {
+   "scene": "ult",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 650,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 10,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-57",
+    "-80",
+    "-46",
+    "-91"
+   ],
+   "banned": [
+    "あと少し!"
+   ],
+   "errors": [],
+   "durationMs": 3083,
+   "bad": [
+    "1手の待ち 650ms",
+    "危険色の誤用 -57 -80 -46 -91",
+    "借りない言葉 あと少し!"
+   ]
+  },
+  {
+   "scene": "gauge",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 683,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 9,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5,
+    26
+   ],
+   "misuse": [
+    "-41",
+    "-24",
+    "-19",
+    "場外!"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1517,
+   "bad": [
+    "1手の待ち 683ms",
+    "危険色の誤用 -41 -24 -19 場外!"
+   ]
+  },
+  {
+   "scene": "chain10",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 25,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22,
+    23.5,
+    26.5,
+    28,
+    30
+   ],
+   "misuse": [
+    "-20",
+    "-15",
+    "-10",
+    "-13",
+    "-18",
+    "11 れんさ!",
+    "12 れんさ!",
+    "-54"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 967,
+   "bad": [
+    "危険色の誤用 -20 -15 -10 -13"
+   ]
+  },
+  {
+   "scene": "finale",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 550,
+   "releaseToMove": 33,
+   "maxFx": 5,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20
+   ],
+   "misuse": [
+    "-29",
+    "たおれた"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 783,
+   "bad": [
+    "危険色の誤用 -29 たおれた"
+   ]
+  },
+  {
+   "scene": "finaleBoss",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 750,
+   "releaseToMove": 33,
+   "maxFx": 9,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    26
+   ],
+   "misuse": [
+    "-34",
+    "たおれた"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 833,
+   "bad": [
+    "危険色の誤用 -34 たおれた"
+   ]
+  },
+  {
+   "scene": "special",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 683,
+   "releaseToMove": 33,
+   "maxFx": 14,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20
+   ],
+   "misuse": [
+    "-41",
+    "たおれた",
+    "同士討ち!",
+    "-32"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1217,
+   "bad": [
+    "危険色の誤用 -41 たおれた 同士討ち! -32"
+   ]
+  },
+  {
+   "scene": "enemyTurn",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 950,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 12,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-13",
+    "同士討ち!",
+    "-45"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 2250,
+   "bad": [
+    "危険色の誤用 -13 同士討ち! -45"
+   ]
+  },
+  {
+   "scene": "allyFall",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 3,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13
+   ],
+   "misuse": [],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1333,
+   "bad": []
+  },
+  {
+   "scene": "lost",
+   "vp": "360x800",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 2,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13
+   ],
+   "misuse": [],
+   "banned": [],
+   "errors": [],
+   "durationMs": 400,
+   "bad": []
+  },
+  {
+   "scene": "hit",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 17,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 4,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    20
+   ],
+   "misuse": [
+    "-19"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1983,
+   "bad": [
+    "危険色の誤用 -19"
+   ]
+  },
+  {
+   "scene": "strong",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 83,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 5,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20
+   ],
+   "misuse": [
+    "-29",
+    "-20"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 2150,
+   "bad": [
+    "危険色の誤用 -29 -20"
+   ]
+  },
+  {
+   "scene": "chain3",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 10,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-34"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 550,
+   "bad": [
+    "危険色の誤用 -34"
+   ]
+  },
+  {
+   "scene": "crash",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 19,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5,
+    22,
+    23.5,
+    25
+   ],
+   "misuse": [
+    "-49",
+    "-32",
+    "-25",
+    "-50",
+    "-29"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1150,
+   "bad": [
+    "危険色の誤用 -49 -32 -25 -50"
+   ]
+  },
+  {
+   "scene": "relay",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 16,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-15",
+    "-52"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1533,
+   "bad": [
+    "危険色の誤用 -15 -52"
+   ]
+  },
+  {
+   "scene": "ringout",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 6,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-27",
+    "場外!"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 700,
+   "bad": [
+    "危険色の誤用 -27 場外!"
+   ]
+  },
+  {
+   "scene": "shatter",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 400,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 14,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-29",
+    "-20",
+    "場外!",
+    "-30",
+    "たおれた"
+   ],
+   "banned": [
+    "あと少し!"
+   ],
+   "errors": [],
+   "durationMs": 1283,
+   "bad": [
+    "危険色の誤用 -29 -20 場外! -30",
+    "借りない言葉 あと少し!"
+   ]
+  },
+  {
+   "scene": "chain5",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 12,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22,
+    23.5
+   ],
+   "misuse": [
+    "-17",
+    "-9",
+    "-18"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1067,
+   "bad": [
+    "危険色の誤用 -17 -9 -18"
+   ]
+  },
+  {
+   "scene": "blast",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 26,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    20,
+    28
+   ],
+   "misuse": [
+    "-32",
+    "たおれた",
+    "-40",
+    "-46",
+    "-53",
+    "-60"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 800,
+   "bad": [
+    "危険色の誤用 -32 たおれた -40 -46"
+   ]
+  },
+  {
+   "scene": "ult",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 650,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 10,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-57",
+    "-80",
+    "-46",
+    "-91"
+   ],
+   "banned": [
+    "あと少し!"
+   ],
+   "errors": [],
+   "durationMs": 3083,
+   "bad": [
+    "1手の待ち 650ms",
+    "危険色の誤用 -57 -80 -46 -91",
+    "借りない言葉 あと少し!"
+   ]
+  },
+  {
+   "scene": "gauge",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 683,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 9,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5,
+    26
+   ],
+   "misuse": [
+    "-41",
+    "-24",
+    "-19",
+    "場外!"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1517,
+   "bad": [
+    "1手の待ち 683ms",
+    "危険色の誤用 -41 -24 -19 場外!"
+   ]
+  },
+  {
+   "scene": "chain10",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 25,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22,
+    23.5,
+    26.5,
+    28,
+    30
+   ],
+   "misuse": [
+    "-20",
+    "-15",
+    "-10",
+    "-13",
+    "-18",
+    "11 れんさ!",
+    "12 れんさ!",
+    "-54"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 967,
+   "bad": [
+    "危険色の誤用 -20 -15 -10 -13"
+   ]
+  },
+  {
+   "scene": "finale",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 550,
+   "releaseToMove": 33,
+   "maxFx": 5,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20
+   ],
+   "misuse": [
+    "-29",
+    "たおれた"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 783,
+   "bad": [
+    "危険色の誤用 -29 たおれた"
+   ]
+  },
+  {
+   "scene": "finaleBoss",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 750,
+   "releaseToMove": 33,
+   "maxFx": 9,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    26
+   ],
+   "misuse": [
+    "-34",
+    "たおれた"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 833,
+   "bad": [
+    "危険色の誤用 -34 たおれた"
+   ]
+  },
+  {
+   "scene": "special",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 683,
+   "releaseToMove": 33,
+   "maxFx": 14,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20
+   ],
+   "misuse": [
+    "-41",
+    "たおれた",
+    "同士討ち!",
+    "-32"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1217,
+   "bad": [
+    "危険色の誤用 -41 たおれた 同士討ち! -32"
+   ]
+  },
+  {
+   "scene": "enemyTurn",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 950,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 12,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-13",
+    "同士討ち!",
+    "-45"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 2250,
+   "bad": [
+    "危険色の誤用 -13 同士討ち! -45"
+   ]
+  },
+  {
+   "scene": "allyFall",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 3,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13
+   ],
+   "misuse": [],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1333,
+   "bad": []
+  },
+  {
+   "scene": "lost",
+   "vp": "360x800",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 2,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13
+   ],
+   "misuse": [],
+   "banned": [],
+   "errors": [],
+   "durationMs": 400,
+   "bad": []
+  },
+  {
+   "scene": "hit",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 17,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 4,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    20
+   ],
+   "misuse": [
+    "-19"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1983,
+   "bad": [
+    "危険色の誤用 -19"
+   ]
+  },
+  {
+   "scene": "strong",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 83,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 5,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20
+   ],
+   "misuse": [
+    "-29",
+    "-20"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 2150,
+   "bad": [
+    "危険色の誤用 -29 -20"
+   ]
+  },
+  {
+   "scene": "chain3",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 10,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-34"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 550,
+   "bad": [
+    "危険色の誤用 -34"
+   ]
+  },
+  {
+   "scene": "crash",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 19,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5,
+    22,
+    23.5,
+    25
+   ],
+   "misuse": [
+    "-49",
+    "-32",
+    "-25",
+    "-50",
+    "-29"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1150,
+   "bad": [
+    "危険色の誤用 -49 -32 -25 -50"
+   ]
+  },
+  {
+   "scene": "relay",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 16,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-15",
+    "-52"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1533,
+   "bad": [
+    "危険色の誤用 -15 -52"
+   ]
+  },
+  {
+   "scene": "ringout",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 6,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-27",
+    "場外!"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 700,
+   "bad": [
+    "危険色の誤用 -27 場外!"
+   ]
+  },
+  {
+   "scene": "shatter",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 400,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 14,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-29",
+    "-20",
+    "場外!",
+    "-30",
+    "たおれた"
+   ],
+   "banned": [
+    "あと少し!"
+   ],
+   "errors": [],
+   "durationMs": 1283,
+   "bad": [
+    "危険色の誤用 -29 -20 場外! -30",
+    "借りない言葉 あと少し!"
+   ]
+  },
+  {
+   "scene": "chain5",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 12,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22,
+    23.5
+   ],
+   "misuse": [
+    "-17",
+    "-9",
+    "-18"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1067,
+   "bad": [
+    "危険色の誤用 -17 -9 -18"
+   ]
+  },
+  {
+   "scene": "blast",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 26,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    20,
+    28
+   ],
+   "misuse": [
+    "-32",
+    "たおれた",
+    "-40",
+    "-46",
+    "-53",
+    "-60"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 800,
+   "bad": [
+    "危険色の誤用 -32 たおれた -40 -46"
+   ]
+  },
+  {
+   "scene": "ult",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 650,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 10,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-57",
+    "-80",
+    "-46",
+    "-91"
+   ],
+   "banned": [
+    "あと少し!"
+   ],
+   "errors": [],
+   "durationMs": 3083,
+   "bad": [
+    "1手の待ち 650ms",
+    "危険色の誤用 -57 -80 -46 -91",
+    "借りない言葉 あと少し!"
+   ]
+  },
+  {
+   "scene": "gauge",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 683,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 9,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5,
+    26
+   ],
+   "misuse": [
+    "-41",
+    "-24",
+    "-19",
+    "場外!"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1517,
+   "bad": [
+    "1手の待ち 683ms",
+    "危険色の誤用 -41 -24 -19 場外!"
+   ]
+  },
+  {
+   "scene": "chain10",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 25,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22,
+    23.5,
+    26.5,
+    28,
+    30
+   ],
+   "misuse": [
+    "-20",
+    "-15",
+    "-10",
+    "-13",
+    "-18",
+    "11 れんさ!",
+    "12 れんさ!",
+    "-54"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 967,
+   "bad": [
+    "危険色の誤用 -20 -15 -10 -13"
+   ]
+  },
+  {
+   "scene": "finale",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 550,
+   "releaseToMove": 33,
+   "maxFx": 5,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20
+   ],
+   "misuse": [
+    "-29",
+    "たおれた"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 783,
+   "bad": [
+    "危険色の誤用 -29 たおれた"
+   ]
+  },
+  {
+   "scene": "finaleBoss",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 750,
+   "releaseToMove": 33,
+   "maxFx": 9,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    26
+   ],
+   "misuse": [
+    "-34",
+    "たおれた"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 833,
+   "bad": [
+    "危険色の誤用 -34 たおれた"
+   ]
+  },
+  {
+   "scene": "special",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 683,
+   "releaseToMove": 33,
+   "maxFx": 14,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20
+   ],
+   "misuse": [
+    "-41",
+    "たおれた",
+    "同士討ち!",
+    "-32"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1217,
+   "bad": [
+    "危険色の誤用 -41 たおれた 同士討ち! -32"
+   ]
+  },
+  {
+   "scene": "enemyTurn",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 950,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 12,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-13",
+    "同士討ち!",
+    "-45"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 2250,
+   "bad": [
+    "危険色の誤用 -13 同士討ち! -45"
+   ]
+  },
+  {
+   "scene": "allyFall",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 3,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13
+   ],
+   "misuse": [],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1333,
+   "bad": []
+  },
+  {
+   "scene": "lost",
+   "vp": "390x844",
+   "scheme": "light",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 2,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13
+   ],
+   "misuse": [],
+   "banned": [],
+   "errors": [],
+   "durationMs": 400,
+   "bad": []
+  },
+  {
+   "scene": "hit",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 17,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 4,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    20
+   ],
+   "misuse": [
+    "-19"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1983,
+   "bad": [
+    "危険色の誤用 -19"
+   ]
+  },
+  {
+   "scene": "strong",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 83,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 5,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20
+   ],
+   "misuse": [
+    "-29",
+    "-20"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 2150,
+   "bad": [
+    "危険色の誤用 -29 -20"
+   ]
+  },
+  {
+   "scene": "chain3",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 10,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-34"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 550,
+   "bad": [
+    "危険色の誤用 -34"
+   ]
+  },
+  {
+   "scene": "crash",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 19,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5,
+    22,
+    23.5,
+    25
+   ],
+   "misuse": [
+    "-49",
+    "-32",
+    "-25",
+    "-50",
+    "-29"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1150,
+   "bad": [
+    "危険色の誤用 -49 -32 -25 -50"
+   ]
+  },
+  {
+   "scene": "relay",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 16,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-15",
+    "-52"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1533,
+   "bad": [
+    "危険色の誤用 -15 -52"
+   ]
+  },
+  {
+   "scene": "ringout",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 6,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-27",
+    "場外!"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 700,
+   "bad": [
+    "危険色の誤用 -27 場外!"
+   ]
+  },
+  {
+   "scene": "shatter",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 400,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 14,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-29",
+    "-20",
+    "場外!",
+    "-30",
+    "たおれた"
+   ],
+   "banned": [
+    "あと少し!"
+   ],
+   "errors": [],
+   "durationMs": 1283,
+   "bad": [
+    "危険色の誤用 -29 -20 場外! -30",
+    "借りない言葉 あと少し!"
+   ]
+  },
+  {
+   "scene": "chain5",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 12,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22,
+    23.5
+   ],
+   "misuse": [
+    "-17",
+    "-9",
+    "-18"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1067,
+   "bad": [
+    "危険色の誤用 -17 -9 -18"
+   ]
+  },
+  {
+   "scene": "blast",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 26,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    20,
+    28
+   ],
+   "misuse": [
+    "-32",
+    "たおれた",
+    "-40",
+    "-46",
+    "-53",
+    "-60"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 800,
+   "bad": [
+    "危険色の誤用 -32 たおれた -40 -46"
+   ]
+  },
+  {
+   "scene": "ult",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 650,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 10,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22
+   ],
+   "misuse": [
+    "-57",
+    "-80",
+    "-46",
+    "-91"
+   ],
+   "banned": [
+    "あと少し!"
+   ],
+   "errors": [],
+   "durationMs": 3083,
+   "bad": [
+    "1手の待ち 650ms",
+    "危険色の誤用 -57 -80 -46 -91",
+    "借りない言葉 あと少し!"
+   ]
+  },
+  {
+   "scene": "gauge",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 683,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 9,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    20.5,
+    26
+   ],
+   "misuse": [
+    "-41",
+    "-24",
+    "-19",
+    "場外!"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1517,
+   "bad": [
+    "1手の待ち 683ms",
+    "危険色の誤用 -41 -24 -19 場外!"
+   ]
+  },
+  {
+   "scene": "chain10",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 83,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 25,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5,
+    22,
+    23.5,
+    26.5,
+    28,
+    30
+   ],
+   "misuse": [
+    "-20",
+    "-15",
+    "-10",
+    "-13",
+    "-18",
+    "11 れんさ!",
+    "12 れんさ!",
+    "-54"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 967,
+   "bad": [
+    "危険色の誤用 -20 -15 -10 -13"
+   ]
+  },
+  {
+   "scene": "finale",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 550,
+   "releaseToMove": 33,
+   "maxFx": 5,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20
+   ],
+   "misuse": [
+    "-29",
+    "たおれた"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 783,
+   "bad": [
+    "危険色の誤用 -29 たおれた"
+   ]
+  },
+  {
+   "scene": "finaleBoss",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 750,
+   "releaseToMove": 33,
+   "maxFx": 9,
+   "flashes": 0,
+   "sizes": [
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20,
+    26
+   ],
+   "misuse": [
+    "-34",
+    "たおれた"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 833,
+   "bad": [
+    "危険色の誤用 -34 たおれた"
+   ]
+  },
+  {
+   "scene": "special",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 117,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 683,
+   "releaseToMove": 33,
+   "maxFx": 14,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    16,
+    19,
+    20
+   ],
+   "misuse": [
+    "-41",
+    "たおれた",
+    "同士討ち!",
+    "-32"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1217,
+   "bad": [
+    "危険色の誤用 -41 たおれた 同士討ち! -32"
+   ]
+  },
+  {
+   "scene": "enemyTurn",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 950,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 12,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13,
+    19,
+    20,
+    20.5
+   ],
+   "misuse": [
+    "-13",
+    "同士討ち!",
+    "-45"
+   ],
+   "banned": [],
+   "errors": [],
+   "durationMs": 2250,
+   "bad": [
+    "危険色の誤用 -13 同士討ち! -45"
+   ]
+  },
+  {
+   "scene": "allyFall",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 317,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 3,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13
+   ],
+   "misuse": [],
+   "banned": [],
+   "errors": [],
+   "durationMs": 1333,
+   "bad": []
+  },
+  {
+   "scene": "lost",
+   "vp": "390x844",
+   "scheme": "dark",
+   "shotWait": 0,
+   "enemyWait": 0,
+   "slowMs": 0,
+   "finaleMs": 0,
+   "releaseToMove": 33,
+   "maxFx": 2,
+   "flashes": 0,
+   "sizes": [
+    9,
+    10,
+    11,
+    12,
+    13
+   ],
+   "misuse": [],
+   "banned": [],
+   "errors": [],
+   "durationMs": 400,
+   "bad": []
+  }
+ ]
+}

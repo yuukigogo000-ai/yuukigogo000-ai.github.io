@@ -332,7 +332,7 @@ function cloneState(s) {
                                        hits: Object.assign({}, m.hits), pairs: m.pairs.slice(), kicks: Object.assign({}, m.kicks),
                                        crashed: m.crashed.slice(), lastBy: Object.assign({}, m.lastBy), bankHits: m.bankHits.slice(), relay: m.relay.slice() }) : null,
     pendingAfter: s.pendingAfter, events: [], team: Object.assign({}, s.team),
-    stats: Object.assign({}, s.stats),
+    stats: Object.assign({}, s.stats), fx: false, // 演出用の出来事は複製に持ち越さない(予測線・おまかせを軽く保つ)
   });
 }
 
@@ -925,28 +925,39 @@ function rails(s, u) {
   const shooter = !!m && !m.foeShot && u.id === m.shooter;
   // 手鏡: 跳ね返っても勢いが落ちない(合わせ鏡は増す)。1 手に決まった回数まで
   const boost = shooter && m.railBoostLeft > 0 ? md(u, 'railBoost', 1) : 1;
-  let hitV = 0; // 柵に当たった速さ(柵に垂直な成分)
+  let hitV = 0, rnx = 0, rny = 0; // 柵に当たった速さ(柵に垂直な成分)と、卓の内向き(演出用)
   if (u.x < u.r) {
     if (open && gapOpen(s, 'left', u.y)) { if (u.x < 0) return fallOff(s, u); }
-    else { u.x = u.r; if (u.vx < 0) { hitV = Math.max(hitV, -u.vx); u.vx = -u.vx * E_RAIL * boost; } }
+    else { u.x = u.r; if (u.vx < 0) { hitV = Math.max(hitV, -u.vx); rnx = 1; u.vx = -u.vx * E_RAIL * boost; } }
   } else if (u.x > s.w - u.r) {
     if (open && gapOpen(s, 'right', u.y)) { if (u.x > s.w) return fallOff(s, u); }
-    else { u.x = s.w - u.r; if (u.vx > 0) { hitV = Math.max(hitV, u.vx); u.vx = -u.vx * E_RAIL * boost; } }
+    else { u.x = s.w - u.r; if (u.vx > 0) { hitV = Math.max(hitV, u.vx); rnx = -1; u.vx = -u.vx * E_RAIL * boost; } }
   }
   if (u.y < u.r) {
     if (open && gapOpen(s, 'top', u.x)) { if (u.y < 0) return fallOff(s, u); }
-    else { u.y = u.r; if (u.vy < 0) { hitV = Math.max(hitV, -u.vy); u.vy = -u.vy * E_RAIL * boost; } }
+    else { u.y = u.r; if (u.vy < 0) { if (-u.vy > hitV) { rnx = 0; rny = 1; } hitV = Math.max(hitV, -u.vy); u.vy = -u.vy * E_RAIL * boost; } }
   } else if (u.y > s.h - u.r) {
     if (open && gapOpen(s, 'bottom', u.x)) { if (u.y > s.h) return fallOff(s, u); }
-    else { u.y = s.h - u.r; if (u.vy > 0) { hitV = Math.max(hitV, u.vy); u.vy = -u.vy * E_RAIL * boost; } }
+    else { u.y = s.h - u.r; if (u.vy > 0) { if (u.vy > hitV) { rnx = 0; rny = -1; } hitV = Math.max(hitV, u.vy); u.vy = -u.vy * E_RAIL * boost; } }
   }
   if (hitV === 0 || !m) return;
+  if (s.fx) s.events.push({ t: 'rail', id: u.id, x: u.x - rnx * u.r, y: u.y - rny * u.r, nx: rnx, ny: rny, v: hitV });
   if (u.side === 1) crash(s, u, hitV, 12288 + u.id, 'rail'); // 敵を柵にぶつけた
   if (u.id === m.shooter) {
     m.bounces++;
     if (boost !== 1) { m.railBoostLeft--; s.events.push({ t: 'mirror', by: u.id }); }
     if (shooter && !m.splitDone && md(u, 'splitOnRail', false)) spawnSplit(s, u);
   }
+}
+
+// 演出用の出来事(s.fx が真のときだけ。勝ち負けの計算には一切使わない)
+//  contact: 2 つの駒・物がぶつかった。x,y = 接点、nx,ny = a から b への向き(長さ 1)、v = 近づく速さ
+//  rail:    駒が柵で跳ね返った。x,y = 柵の上の点、nx,ny = 卓の内向き、v = 柵に垂直な速さ
+function fxContact(s, a, b, dx, dy, d, v, pierce) {
+  let nx = 1, ny = 0;
+  if (d > 0) { nx = dx / d; ny = dy / d; }
+  const k = a.r - (a.r + b.r - d) / 2; // 重なりの真ん中
+  s.events.push({ t: 'contact', a: a.id, b: b.id, x: a.x + nx * k, y: a.y + ny * k, nx, ny, v, pierce });
 }
 
 function collide(s, a, b) {
@@ -963,7 +974,11 @@ function collide(s, a, b) {
   if (sh >= 0 && !m.foeShot && (a.id === sh || b.id === sh)) {
     const me = a.id === sh ? a : b, other = me === a ? b : a;
     if ((me.move === 'pierce' || m.pierce) && isFoe(other)) {
-      if (entered) onContact(s, a, b, Math.sqrt(me.vx * me.vx + me.vy * me.vy));
+      if (entered) {
+        const sp = Math.sqrt(me.vx * me.vx + me.vy * me.vy);
+        if (s.fx) fxContact(s, a, b, dx, dy, Math.sqrt(d2), sp, true);
+        onContact(s, a, b, sp);
+      }
       m.inside = true;
       return;
     }
@@ -982,6 +997,7 @@ function collide(s, a, b) {
     const j = -(1 + E_DISC) * vn / isum;
     a.vx -= j * ia * nx; a.vy -= j * ia * ny;
     b.vx += j * ib * nx; b.vy += j * ib * ny;
+    if (s.fx) fxContact(s, a, b, dx, dy, d, -vn, false);
     onContact(s, a, b, -vn);
     // 輪ゴムの柱: 当たった駒を、柱から外向きに決まった速さ以上で弾き返す(同じ柱は 1 回の動きで BUMPER_MAX 回まで)
     const bump = a.obj === 'bumper' && a.alive ? a : b.obj === 'bumper' && b.alive ? b : null;
@@ -1791,6 +1807,759 @@ function powerRatio(cfg) {
 /** 格下かどうか(「オート戦闘」を出してよいか)。ボス戦では出さない */
 function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(cfg) >= 2.5; }
 
+const { FXT } = (function () {
+// はじきバトル 演出の数値の置き場(正本)。演出の秒・ピクセル・倍率・音の高さ・粒の数は、ここ以外に書かない。
+// 人が読む説明は ../FX_SPEC.md。各値の右の [ ] は出典と根拠の強さ:
+//   M3 = Material Design 3 の公式トークン(@material/web 2.5.0 の tokens/_md-sys-motion.scss、Apache-2.0)
+//   R1 = reports/はじきバトルの演出と動き.md、R2 = reports/はじきバトル演出の見本帳.md
+//   今 = 仮の画面(play/ui.js)で使っている値(手触りを確かめ済み)、耳 / 目 = 発注者が聴き比べ・見比べて決める
+//   強・中・弱 = 報告書の根拠の強さ。「弱」の値は出発点で、演出ラボで見て直す
+// 時間はミリ秒、長さは卓の座標(幅 360)のピクセル。
+
+/** Material Design 3 の動きのトークン(枠の UI: 上の帯・ボタン・重ねた画面の出入りに使う) [M3] */
+const M3 = {
+  duration: {
+    short1: 50, short2: 100, short3: 150, short4: 200,
+    medium1: 250, medium2: 300, medium3: 350, medium4: 400,
+    long1: 450, long2: 500, long3: 550, long4: 600,
+    extraLong1: 700, extraLong2: 800, extraLong3: 900, extraLong4: 1000,
+  },
+  // cubic-bezier の 4 つの数
+  easing: {
+    standard: [0.2, 0, 0, 1], standardAccelerate: [0.3, 0, 1, 1], standardDecelerate: [0, 0, 0, 1],
+    emphasizedAccelerate: [0.3, 0, 0.8, 0.15], emphasizedDecelerate: [0.05, 0.7, 0.1, 1], linear: [0, 0, 1, 1],
+  },
+  // ばね(減衰比・硬さ)。spatial = 位置や大きさ、effects = 色や透明度
+  spring: {
+    fastSpatial: { damping: 0.9, stiffness: 1400 }, defaultSpatial: { damping: 0.9, stiffness: 700 }, slowSpatial: { damping: 0.9, stiffness: 300 },
+    fastEffects: { damping: 1, stiffness: 3800 }, defaultEffects: { damping: 1, stiffness: 1600 }, slowEffects: { damping: 1, stiffness: 800 },
+  },
+};
+
+const FXT = {
+  m3: M3,
+  frameMs: 1000 / 60, // 1 コマ
+
+  // ---- 演出の格表(5 段)。格は「本当に起きた結果の大きさ」だけで決める [R1 格表・R2 改訂] ----------------
+  // hitstopMs: 止める時間(駒の動きだけ止め、輪や文字は動き続ける) / shake: 揺れ(当たった向きに) / text: 文字の段
+  tiers: [
+    { ja: 'ふつう', hitstopMs: 0, firstHitStopMs: 30, shakePx: 0, shakeMs: 0, text: 4, waitCapMs: 0 },          // [今・強] 1 発目だけ 0.03 秒
+    { ja: '強い', hitstopMs: 90, shakePx: 3, shakeMs: 150, text: 3, waitCapMs: 100 },                          // [今・中] 0.06〜0.09 秒
+    { ja: '大きい', hitstopMs: 120, shakePx: 4, shakeMs: 200, text: 2, waitCapMs: 200 },                       // [今・中]
+    { ja: '山場', hitstopMs: 400, repeatMul: 0.5, shakePx: 5, shakeMs: 220, text: 2, waitCapMs: 600, skippable: true }, // [R1・中] 0.3〜0.6 秒、同じ戦闘の 2 回目から半分
+    { ja: '決着', slowRate: 0.4, slowLeadMs: 300, zoom: 1.25, zoomMs: 300, shakePx: 7, shakeMs: 250, hitstopMs: 140,
+      text: 1, totalMaxMs: 1500, skippable: true },                                                             // [R1・中、数値は弱] 0.35〜0.5 倍速・寄り 1.2〜1.3
+  ],
+  // 同じ瞬間とみなす幅(この間に起きたものは、一番上の格の止め・揺れ・和音を 1 回だけ) [R1 重なりの決まり]
+  sameMomentMs: 50,
+
+  // ---- 1 手の予算(演出の検査器が測る) [R2 WO §9 AC6] -------------------------------------------------
+  budget: {
+    addedWaitPerShotMs: 500, // 1 手で演出が足した待ち(止め・間)の合計。決着を除く
+    finaleMaxMs: 1500,       // 決着の余韻の上限(タップで飛ばせる)
+    enemyTurnMaxMs: 3000,    // 敵の番ぜんぶ
+    releaseToMoveMs: 100,    // 離してから動き出すまで
+    flashesPerSecMax: 3,     // 明暗が大きく変わる回数(1 秒あたり)。赤の点滅は 0
+    particlesMax: 200,       // 同時に出す粒の総数(実機で測って直す) [R2・弱]
+    textTiersMax: 5,         // 文字の段
+    damageMergeAt: 4,        // 同時に 4 つ以上のダメージの数字は合計 1 つにまとめる [R1]
+    frameMsAvgWarn: 20,      // 直近のコマの平均がこれを超えたら「弱」を勧める(勝手に切り替えない) [R2・推論]
+  },
+
+  // ---- 早送りと演出の強さ -------------------------------------------------------------------------
+  fastForward: { rate: 2, stopsMul: 0.5 },   // 卓をタップで 2 倍速。止め・スロー・カットインは半分 [R1・中]
+  level: {                                   // 演出の強さ「標準・弱・なし」 [R2]
+    full: { particles: 1, life: 1, shake: 1, glow: true, speedLines: true, afterimage: true, breathe: true },
+    low: { particles: 0.5, life: 0.8, shake: 0.5, glow: true, speedLines: false, afterimage: false, breathe: false },
+    off: { particles: 0, life: 1, shake: 0, glow: false, speedLines: false, afterimage: false, breathe: false }, // 文字・色・小さなつぶれは残す
+  },
+
+  // ---- 文字の 5 段(卓の中の文字も数える)。大きさは仮置きで、PC で本体のトークンに合わせる [R2 文字の段] ----
+  text: {
+    sizes: [null, 28, 20, 15, 12, 10], // 1 特大 / 2 大 / 3 中 / 4 小 / 5 最小
+    weight: 700,
+    lifeMs: { 1: 1200, 2: 950, 3: 900, 4: 800, 5: 800 }, // [今] 0.95 秒、数字は短く [R1] 0.6〜0.95
+    rise: 22,                                              // 消えるまでに上へ動く量 [今]
+    laneGap: 28,                                           // 中央の文字の段ずらし [今]
+  },
+
+  // ---- 色の役割(新しい色は足さない。CSS の今のトークンに対応づける) [R1 #12・R2 #12] ------------------
+  // 危険色(danger)は「自分(味方)に悪いこと」だけ: 味方が受けたダメージ・味方の落下・敵の予告・落ちる軌道
+  color: {
+    good: 'accent',  // 味方の手柄(強打・巻き込んだ・玉突き・敵の場外と撃破の文字)
+    great: 'ult',    // 節目・必殺・決着(必殺色はもともと金色。10 れんさの「金」はこれで出す)
+    harm: 'danger',
+    heal: 'heal', poison: 'poison', boss: 'boss',
+    plain: 'fg',     // 敵に与えたダメージの数字・合計
+    muted: 'muted',
+  },
+
+  // ---- れんさ 10 段 [R2 れんさの表] ----------------------------------------------------------------
+  // text: 文字の段(0 = 出さない) / color: 上の役割 / chord: 節目の和音の音の数 / stopMs / dim: 背景を暗くする
+  chain: {
+    1: { text: 0 },
+    2: { text: 4, color: 'plain', label: 'num' },                           // 小さな数字だけ
+    3: { text: 3, color: 'good', chord: 2, stopMs: 75, ringGrow: true, dots: 6, label: 'charge' }, // 「3 れんさ 必殺+1」
+    4: { text: 3, color: 'good', label: 'mult' },                           // 「4 れんさ ×1.8」
+    5: { text: 2, color: 'great', chord: 3, low: true, stopMs: 120, dim: { pct: 20, ms: 300 }, dots: 12, callout: 1, label: 'mult' },
+    6: { text: 2, color: 'great', label: 'mult' },                          // 6〜9 は見た目は 5 のまま、音だけ上がる
+    10: { text: 1, color: 'great', plate: true, chord: 4, low: true, preSilenceMs: 60, stopMs: 400, repeatMul: 0.5,
+          dim: { pct: 25, ms: 400 }, dots: 24, callout: 3, label: 'plate' }, // 必殺色の地に白い文字の札。呼びかけを重ねる
+    over: { addChordNote: true, chordMax: 4, calloutMax: 3, noRedim: true }, // 11 以上: 言葉は増やさない
+    multFrom: 4, // 倍率を添え始める数(掛け算が効き始める次)
+  },
+
+  // ---- 駒の動き(写真シールは形を変える動きだけで生かす) [R1 駒の表] ----------------------------------
+  body: {
+    breathe: { amp: 0.03, periodMs: 2000 },              // 番の駒と狙う敵だけ。面積一定で ±3% [弱]
+    turnRing: { amp: 2, periodMs: 1130, gap: 4, width: 3 }, // 番の駒の輪 [今] sin(now/180) ≒ 1.13 秒周期
+    stepPulse: { px: 5, ms: 160 },                       // 強さの段が変わった瞬間 [今]
+    dragSquash: [1, 0.95, 0.9, 0.85],                    // 引く向きにつぶれる(段 0〜3) [中・数値は弱]
+    stepBounce: 0.03,                                    // 段の変わり目で一瞬はずむ [弱]
+    release: { stretch: 1.2, frames: 2, spring: { damping: 0.5, stiffness: 700 } }, // 1〜2 コマで伸び、1 回だけ行き過ぎて戻る [R2 桜井氏・中]
+    speedStretch: { max: 1.2, atSpeed: 1400 },           // 速さに比例して進む向きに伸びる [弱]
+    afterimage: { fromSpeed: 900, count: 3, alpha: [0.3, 0.2, 0.1] }, // [弱]
+    hitSquash: { normal: 0.85, strong: 0.75, recoverMs: 300 }, // ぶつかった向きにつぶれ、速く入ってゆっくり戻る [中・数値は弱]
+    strongJitter: { px: 1.5, ms: 300 },                  // 強打を受けた駒だけ見た目を揺らす [中]
+    peel: { wobblePx: 1.2, alpha: 0.6, flapDeg: 4, flapPeriodMs: 1000 }, // はがれかけ [今]。めくれは見本の後 [弱]
+    ringOut: { wobbleMs: 100, shrinkTo: 0.6, ms: 500, turns: 1.5 },     // 敵の場外: 縁で一拍ぐらつき、縮みながら回る [弱]
+    allyFall: { dropMs: 300, stickMs: 300 },             // 味方の落下: 小さく落ちて元の位置にぺたっと [弱]
+    windup: { squash: 0.88, ms: 120, strongMs: 150 },    // 敵の溜め [中・数値は弱]
+    bossFlinch: { squash: 0.75, ms: 400 },               // [弱]
+    winHop: { staggerMs: 100, hopMs: 500, bowMs: 400, hops: 2 }, // [弱]
+  },
+
+  // ---- エフェクトの部品(3 層: メイン・サブ・賑やかし / 色は 1 つの効果に 4 つまで) [R2 エフェクトの表] ----
+  // life は [最短, 最長]。数は「標準」のとき。粒は使い回しの配列から出す
+  parts: {
+    glowSprite: { px: 64 },                              // 起動時に 1 回だけ描く丸い光の絵 [R2]
+    hit: { flashMs: 80, sparks: 4, sparkLife: [200, 300], sparkSpeed: [120, 260], laterMul: 0.5 }, // 2 発目からは半分
+    strong: { ringMs: 225, ringR: [12, 46], sparks: 10, sparkLife: [300, 400], dots: 6, dotLife: 400, flashMs: 80, ringsMax: 3 },
+    milestone: { ringMs: 250, dotLife: 500 },
+    ringOut: { edgeRingMs: 300, dots: 5, dotLife: 400 },
+    shatter: { pieces: [4, 6], ms: 550, dots: 8, dotLife: 400, avgColorPx: 12 }, // 写真の平均色は 8〜16px に縮めて 1 回だけ取る
+    blast: { ringMs: 250, flashMs: 100, sparks: 8, smoke: 2, smokeLife: [500, 800], staggerMs: 60, laterRingOnly: true },
+    ult: { gather: 12, gatherMs: 500, ringMs: 300, flashMs: 100, sparks: 16, speedLines: 12, speedLineMs: 150 },
+    cutin: { firstMs: 600, repeatMs: 300 },              // 構えた瞬間に出す。離した後には挟まない [R1・中]
+    gauge: { pieces: 5, sparks: 10, ms: 500 },
+    finale: { rings: 2, ringMs: 500, sparks: 14, confetti: 10, life: [800, 1000] },
+    win: { dotsPerUnit: 6, ms: 500 },
+    damageNumber: { lifeMs: 800 },
+  },
+  // 加算の光はライトの卓(明るい木の色)では白く飛んで見えない。ライトは通常の重ね方+暗い縁に切り替える [R2]
+  glowMode: { light: 'normal', dark: 'lighter' },
+
+  // ---- 音(端末の中で作る。音源ファイルは使わない) [R1 音・R2 声] -----------------------------------
+  sound: {
+    attackMs: 8,          // 立ち上がり 5〜20 ミリ秒(いきなり最大にすると「プチッ」と鳴る) [R1・弱]
+    voicesMax: 6,         // 同時に鳴る音の上限 [R1]
+    jitterSemi: 0.5,      // 毎回の高さのゆらし(±1 半音以内から) [R1・弱]
+    master: 0.9,
+    // れんさの音階。既定は 5 音階、半音と聴き比べて決める [R2 食い違い 1・耳]
+    scales: { pentatonic: [0, 2, 4, 7, 9], semitone: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+    scale: 'pentatonic',
+    chainBaseHz: 330,     // れんさ 1 の高さ(今の当たりの音と同じ)
+    chainCap: 10,         // 10 で頭打ち
+    // 引っぱりの段の音: 今は長 3 度ずつで、3 段で増三和音になる → ドミソ [R2 #8]
+    step: { baseHz: 392, semis: [0, 0, 4, 7], legacySemis: [0, 0, 4, 8] },
+    chord: [0, 4, 7, 12], // 節目の和音(3 は 2 音、5 は 3 音、10 は 4 音)
+    duck: { db: -6, ms: 250 }, // 呼びかけが鳴る間は衝突音を下げる [R2]
+    // 呼びかけ(声っぽい合成音): のこぎり波を母音の帯域の山 2 つに通す [R2・弱]
+    // a と i は R2 の出典の値。u・e・o は Peterson & Barney(1952)の男声の平均の目安 [弱・耳]
+    formants: { a: [800, 1200], i: [300, 2200], u: [300, 870], e: [530, 1840], o: [570, 840] },
+    callout: { baseHz: 220, noteMs: 140, gapMs: 30, riseSemi: 5, layerSemi: 4, layersMax: 3, maxMs: 800 },
+    // 勝ち: 上がって最後の音を伸ばす(4〜6 音・1.0〜1.5 秒) / 負け: 下がる 3 音(今のまま)
+    win: { semis: [0, 4, 7, 12], noteMs: 90, lastMs: 420 },
+    lose: { hz: [392, 311, 233], noteMs: 120 },
+  },
+};
+
+return { FXT };
+})();
+const { scriptShot } = (function () {
+// はじきバトル 1 手の台本(先読み)。
+// 離した瞬間に、盤面の複製で手を最後まで計算する。エンジンは同じ手なら必ず同じ結果になるので、
+// 本物の盤面を 1 刻みずつ進めたときに起きることが、この台本と 1 刻み単位で一致する(fx/test.mjs で確認)。
+// 演出はこの台本を見て、「この手の最大れんさ」「決着になる当たり」「1 手でまとめて倒した数」を先に知ってから組む。
+
+
+const ENEMY_ACTIONS = { table: 1, dot: 1, tick: 1, endEnemy: 1 };
+
+/** 出来事が指す駒の、その瞬間の位置と速さ(演出の置き場所) */
+function fxSnap(c, e) {
+  const at = {};
+  for (const k of ['by', 'to', 'id', 'a', 'b', 'from']) {
+    const id = e[k];
+    if (id === undefined || id < 0 || at[id]) continue;
+    const u = c.units[id];
+    if (u) at[id] = { x: u.x, y: u.y, vx: u.vx, vy: u.vy, r: u.r, side: u.side, kind: u.kind, hp: u.hp, maxHp: u.maxHp };
+  }
+  return at;
+}
+
+/**
+ * state: 狙う番の盤面(変えない) / input: shoot() と同じ { dx, dy, power, ult }
+ * 返す: null(受け付けられない手)または
+ *  { events: [{ i, e, at, phase }], steps, shotEnd, end: 最後の盤面の複製, summary }
+ *  i: その出来事が起きた刻み(-1 = 離した瞬間)。phase: 'shot'(自分の手)/ 'enemy'(敵の番)
+ */
+function scriptShot(state, input, opts) {
+  const limit = (opts && opts.limit) || 240 * 30;
+  const c = cloneState(state);
+  c.fx = true;
+  const before = c.units.map((u) => ({ alive: u.alive, side: u.side, kind: u.kind, hp: u.hp, maxHp: u.maxHp }));
+  if (!shoot(c, input)) return null;
+  const events = [];
+  for (const e of c.events) events.push({ i: -1, e, at: fxSnap(c, e), phase: 'shot' });
+  c.events = [];
+  let i = 0, shotEnd = -1;
+  while (c.phase === 'resolving' && i < limit) {
+    let phase;
+    if (c.motion) phase = c.motion.foeShot ? 'enemy' : 'shot';
+    else phase = c.queue.length && ENEMY_ACTIONS[c.queue[0].t] ? 'enemy' : 'shot';
+    step(c);
+    for (const e of c.events) {
+      const rec = { i, e, at: fxSnap(c, e), phase };
+      if (e.t === 'chain') rec.mult = chainMult(Object.assign({}, c, { chain: e.n })); // その瞬間の倍率(表示用)
+      events.push(rec);
+    }
+    c.events = [];
+    if (phase === 'shot') shotEnd = i;
+    i++;
+  }
+  return { events, steps: i, shotEnd, end: c, summary: summarize(events, before, c) };
+}
+
+function summarize(events, before, end) {
+  let maxChain = 0, dmg = 0, strong = 0, bonusShot = false, chainCharge = false, ult = false;
+  const kos = [], gauges = [], blasts = [];
+  let lastEnemyKo = null;
+  for (const r of events) {
+    const e = r.e;
+    if (e.t === 'chain' && r.phase === 'shot') maxChain = Math.max(maxChain, e.n);
+    if (e.t === 'hit' && r.phase === 'shot' && before[e.to] && before[e.to].side === 1 && e.kind !== 'dot' && e.kind !== 'foe') dmg += e.dmg;
+    if (e.t === 'strong' && r.phase === 'shot') strong++;
+    if (e.t === 'bonusShot') bonusShot = true;
+    if (e.t === 'chainCharge') chainCharge = true;
+    if (e.t === 'ult') ult = true;
+    if (e.t === 'gaugeBreak') gauges.push(r.i);
+    if (e.t === 'blast') blasts.push(r.i);
+    if (e.t === 'ko' && before[e.id] && before[e.id].side === 1) { kos.push({ i: r.i, id: e.id, how: e.how, phase: r.phase }); lastEnemyKo = r; }
+  }
+  const won = end.phase === 'won', lost = end.phase === 'lost';
+  let finale = null;
+  if (won && lastEnemyKo) {
+    const id = lastEnemyKo.e.id;
+    // 決着の当たり: 最後の敵が倒れる前の、その敵に触れた最後の接触(なければ倒れた瞬間そのもの)
+    let hit = null;
+    for (const r of events) {
+      if (r.i > lastEnemyKo.i) break;
+      if (r.e.t === 'contact' && (r.e.a === id || r.e.b === id)) hit = r;
+    }
+    const pt = hit ? { x: hit.e.x, y: hit.e.y } : { x: lastEnemyKo.at[id].x, y: lastEnemyKo.at[id].y };
+    const inShot = kos.filter((k) => k.phase === 'shot').length;
+    finale = {
+      koI: lastEnemyKo.i, hitI: hit ? hit.i : lastEnemyKo.i, id, how: lastEnemyKo.e.how, x: pt.x, y: pt.y,
+      boss: before[id].kind === 'boss', phase: lastEnemyKo.phase,
+      special: lastEnemyKo.phase === 'shot' && inShot >= 3, // 1 手でまとめて 3 体以上(特別版)
+      kosInShot: inShot,
+    };
+  }
+  let allyHp = 0, allyMax = 0;
+  for (const u of end.units) if (u.side === 0 && u.kind === 'ally') { allyHp += Math.max(0, u.alive ? u.hp : 0); allyMax += u.maxHp; }
+  return { maxChain, dmg, strong, bonusShot, chainCharge, ult, kos, gauges, blasts, won, lost, finale,
+           allyHpRatio: allyMax ? allyHp / allyMax : 0 };
+}
+
+return { scriptShot };
+})();
+const { planShot, auditPlan } = (function () {
+// はじきバトル 演出の割り振り(ディレクター)。
+// 1 手の台本(fx/script.js)を受け取り、格表(fx/tokens.js)に従って「どの刻みで、何を、どれだけ」出すかの
+// 指示表(cue)を返す。描画も音も持たない純粋な関数なので、node で検査できる(fx/test.mjs)。
+// 画面側は、本物の盤面を 1 刻みずつ進めながら、同じ刻みの指示を実行するだけにする。
+//
+// 指示の種類(k):
+//  stop   { ms, tier }            その刻みのあと、駒の動きだけ止める(輪・文字・粒は動き続ける)
+//  pause  { ms, why, pre }        間を置く。pre なら、その刻みを進める前に置く(敵の溜め・10 れんさ前の一瞬の静けさ)
+//  shake  { px, ms, nx, ny }      卓を揺らす(当たった向きに)
+//  text   { str, size, color, who, x, y, center, key, plate }  文字。size は文字の段(1〜5)、color は色の役割
+//  sound  { id, ... }             音(fx/audio.js の部品名)
+//  part   { id, x, y, nx, ny, mul } エフェクトの部品(fx/tokens.js の parts)
+//  body   { id, anim, ... }       駒の変形(つぶれ・揺れ・場外の回転・割れる・溜め・ひるみ)
+//  dim    { pct, ms }             背景を少し暗くする
+//  callout{ layers }              呼びかけ(声っぽい合成音)。1 手に 1 回
+//  buzz   { ms }                  振動(Android だけ。格に比例した短い 1 回)
+//  slow   { i0, i1, rate }        決着のスロー(刻み i0〜i1)
+//  zoom   { i0, i1, x, y, scale } 決着の寄り
+
+
+
+const STEP_MS = 1000 / 240; // エンジンの 1 刻み
+const TRICK_TEXT = { crashRing: 'ぶつけ落とし!', bankDouble: '柵返し 2 体!' };
+const RULE_TEXT = { pull: '吸い寄せ!', blow: '吹き出し!', spin: '卓が回った!', wind: '風向きが変わった!' };
+const ENEMY_ACT_MS = 300; // 敵 1 体の間(R1: 1 体 0.3 秒・全体 3 秒以内)
+const RULE_MS = 380;      // ボスのルールの発動を読む間 [今]
+const ACCENT_RANK = { chord: 5, gauge: 5, ultFire: 4, ring: 3, blast: 3, strong: 2, crash: 1, bonus: 1, bumper: 0, pickup: 0 };
+
+/** 小数 1 桁の倍率表示(エンジンの値をそのまま丸める) */
+const fmtMult = (m) => '×' + (Math.round(m * 10) / 10).toFixed(1);
+
+/**
+ * script: scriptShot() の戻り値
+ * ctx: { level: 'full'|'low'|'off', fast: bool, reduceMotion: bool, memory: { chain10, gauge, ult } }
+ * 返す: { cues, finale, stats: { shotWaitMs, enemyTurnMs, finaleMs, callouts, peakTier }, memory }
+ */
+function planShot(script, ctx) {
+  ctx = ctx || {};
+  const T = FXT, lv = T.level[ctx.level || 'full'] || T.level.full;
+  const fast = !!ctx.fast, stopMul = fast ? T.fastForward.stopsMul : 1;
+  const memory = Object.assign({ chain10: 0, gauge: 0, ult: 0 }, ctx.memory || {});
+  const sum = script.summary;
+  const cues = [];
+  const add = (c) => { cues.push(c); return c; };
+  const posOf = (r, id, dy) => { const a = r.at[id]; return a ? { x: clampX(a.x), y: Math.max(16, a.y + (dy || 0)) } : { x: 180, y: 140 }; };
+  const byStep = new Map(); // 刻み → その刻みの出来事
+  for (const r of script.events) { if (!byStep.has(r.i)) byStep.set(r.i, []); byStep.get(r.i).push(r); }
+  const contactAt = (i, p, q) => { // 同じ刻みの、2 駒の接触(火花の場所と向き)。向きは p から q へ
+    for (const r of byStep.get(i) || []) {
+      const e = r.e;
+      if (e.t !== 'contact') continue;
+      if (e.a === p && e.b === q) return e;
+      if (e.a === q && e.b === p) return Object.assign({}, e, { nx: -e.nx, ny: -e.ny });
+    }
+    return null;
+  };
+  const contactFor = (r) => contactAt(r.i, r.e.by, r.e.to);
+  let firstHitDone = false, blastN = 0, peak = 0, calloutDone = false;
+  const calloutAt = sum.maxChain >= 10 ? 10 : sum.maxChain >= 5 ? 5 : 0;
+  const chainOf = (n) => T.chain[n] || (n >= 10 ? T.chain[10] : n >= 6 ? T.chain[6] : T.chain[1]);
+  const fin = sum.finale;
+
+  for (const r of script.events) {
+    const e = r.e, i = r.i, enemyPhase = r.phase === 'enemy';
+    const tgt = e.to !== undefined ? r.at[e.to] : null;
+    const tier = (t) => { if (!enemyPhase && t > peak) peak = t; return t; };
+    switch (e.t) {
+      case 'contact': { // ゲームの出来事を伴わない接触(味方どうし・物・敵どうし)は、小さな音と粒だけ
+        if (e.v < 200) break;
+        add({ i, k: 'sound', id: 'tap', v: e.v });
+        if (e.v > 500) add({ i, k: 'part', id: 'tap', x: e.x, y: e.y, nx: e.nx, ny: e.ny, mul: lv.particles * 0.5 });
+        break;
+      }
+      case 'rail': if (e.v > 300) add({ i, k: 'sound', id: 'rail', v: e.v }); break;
+      case 'hit': {
+        if (!tgt) break;
+        const toEnemy = tgt.side === 1, mine = toEnemy && (e.kind === 'hit' || e.kind === 'ult');
+        add({ i, k: 'text', str: '-' + e.dmg, size: 4, color: e.kind === 'dot' ? 'poison' : toEnemy ? 'plain' : 'harm', who: toEnemy ? 'enemy' : 'ally',
+              ...posOf(r, e.to, -tgt.r), key: 'dmg' });
+        if (mine && !enemyPhase) {
+          tier(0);
+          const c = contactFor(r);
+          add({ i, k: 'sound', id: 'hit', n: Math.min(T.sound.chainCap, Math.max(1, cueChain(script, r))), v: c ? c.v : 0 });
+          if (c) add({ i, k: 'part', id: 'hit', x: c.x, y: c.y, nx: c.nx, ny: c.ny, mul: lv.particles * (firstHitDone ? T.parts.hit.laterMul : 1) });
+          add({ i, k: 'body', id: e.to, anim: 'squash', amt: T.body.hitSquash.normal, nx: c ? c.nx : 0, ny: c ? c.ny : -1 });
+          if (e.by >= 0) add({ i, k: 'body', id: e.by, anim: 'squash', amt: T.body.hitSquash.normal, nx: c ? -c.nx : 0, ny: c ? -c.ny : 1 });
+          if (!firstHitDone) add({ i, k: 'stop', ms: T.tiers[0].firstHitStopMs, tier: 0, why: 'first' });
+          firstHitDone = true;
+        } else if (!toEnemy && e.kind !== 'dot') {
+          add({ i, k: 'sound', id: 'harm' });
+          add({ i, k: 'body', id: e.to, anim: 'squash', amt: T.body.hitSquash.normal, nx: 0, ny: 1 });
+        }
+        break;
+      }
+      case 'strong': {
+        if (!tgt) break;
+        const h = (byStep.get(i) || []).find((q) => q.e.t === 'hit' && q.e.to === e.to);
+        const c = h ? contactAt(i, h.e.by, e.to) : null;
+        tier(1);
+        add({ i, k: 'text', str: '強打!', size: T.tiers[1].text, color: 'good', who: 'enemy', ...posOf(r, e.to, -tgt.r - 16) });
+        add({ i, k: 'stop', ms: T.tiers[1].hitstopMs, tier: 1, why: 'strong' });
+        add({ i, k: 'shake', px: T.tiers[1].shakePx * lv.shake, ms: T.tiers[1].shakeMs, nx: c ? c.nx : 0, ny: c ? c.ny : -1 });
+        add({ i, k: 'sound', id: 'strong' });
+        add({ i, k: 'part', id: 'strong', x: c ? c.x : tgt.x, y: c ? c.y : tgt.y, nx: c ? c.nx : 0, ny: c ? c.ny : -1, mul: lv.particles });
+        add({ i, k: 'body', id: e.to, anim: 'squash', amt: T.body.hitSquash.strong, nx: c ? c.nx : 0, ny: c ? c.ny : -1 });
+        add({ i, k: 'body', id: e.to, anim: 'jitter', px: T.body.strongJitter.px, ms: T.body.strongJitter.ms });
+        add({ i, k: 'buzz', ms: 20 });
+        break;
+      }
+      case 'chain': {
+        if (enemyPhase) break;
+        const n = e.n, L = chainOf(n);
+        if (n >= 2) {
+          let str = String(n), size = L.text, plate = !!L.plate;
+          if (n === 3) str = '3 れんさ' + (sum.chainCharge ? ' 必殺+1' : '');
+          else if (n >= 10) str = n + ' れんさ';
+          else if (n >= T.chain.multFrom) str = n + ' れんさ ' + fmtMult(r.mult || 1);
+          add({ i, k: 'text', str, size, color: n === 2 ? 'plain' : L.color, who: 'enemy', center: true, key: 'chain', plate });
+        }
+        if (n === 3) { tier(1); add({ i, k: 'stop', ms: L.stopMs, tier: 1, why: 'chain3' }); add({ i, k: 'sound', id: 'chord', notes: 2, n }); }
+        if (n === 5) {
+          tier(2);
+          add({ i, k: 'stop', ms: L.stopMs, tier: 2, why: 'chain5' }); add({ i, k: 'sound', id: 'chord', notes: 3, low: true, n });
+          if (lv.particles > 0) add({ i, k: 'dim', pct: L.dim.pct, ms: L.dim.ms });
+        }
+        if (n === 10) {
+          tier(3);
+          const seen = memory.chain10++;
+          add({ i, k: 'pause', ms: L.preSilenceMs, why: 'preSilence', pre: true });
+          add({ i, k: 'stop', ms: L.stopMs * (seen ? L.repeatMul : 1), tier: 3, why: 'chain10' });
+          add({ i, k: 'sound', id: 'chord', notes: 4, low: true, n });
+          if (lv.particles > 0) add({ i, k: 'dim', pct: L.dim.pct, ms: L.dim.ms });
+        }
+        if (n > 10) add({ i, k: 'sound', id: 'chord', notes: Math.min(T.chain.over.chordMax, 4), n });
+        if (L.dots && r.at && lv.particles > 0) add({ i, k: 'part', id: 'milestone', n, mul: lv.particles, dots: L.dots });
+        if (!calloutDone && calloutAt && n === calloutAt) {
+          calloutDone = true;
+          const layers = calloutAt >= 10 ? Math.min(T.chain.over.calloutMax, sum.maxChain > 10 ? 3 : 2) : 1;
+          add({ i, k: 'callout', layers });
+        }
+        break;
+      }
+      case 'touch': if (r.at[e.by]) { add({ i, k: 'text', str: TOUCH_JA[e.kind] || e.kind, size: 4, color: 'good', who: 'enemy', ...posOf(r, e.by, r.at[e.by].r + 16) }); add({ i, k: 'part', id: 'touch', ...posOf(r, e.by, 0), mul: lv.particles }); } break;
+      case 'relay': if (tgt) { tier(1); add({ i, k: 'text', str: '玉突き!', size: 3, color: 'good', who: 'enemy', ...posOf(r, e.to, -tgt.r - 16) }); add({ i, k: 'part', id: 'touch', ...posOf(r, e.to, 0), mul: lv.particles }); add({ i, k: 'sound', id: 'relay' }); } break;
+      case 'crash': if (tgt) { tier(1); add({ i, k: 'text', str: 'ぶつけ!', size: 3, color: 'good', who: 'enemy', ...posOf(r, e.to, -tgt.r - 14) }); add({ i, k: 'sound', id: 'crash' }); add({ i, k: 'shake', px: 2 * lv.shake, ms: 110, nx: 0, ny: 0 }); } break;
+      case 'friendly': if (tgt) { tier(1); add({ i, k: 'text', str: '巻き込んだ!', size: 3, color: 'good', who: 'enemy', ...posOf(r, e.to, -tgt.r - 14) }); } break;
+      case 'split': if (r.at[e.by]) { tier(1); add({ i, k: 'text', str: '二枚刃!', size: 3, color: 'good', who: 'enemy', ...posOf(r, e.by, -r.at[e.by].r - 16) }); } break;
+      case 'execute': if (tgt) { tier(1); add({ i, k: 'text', str: 'とどめ!', size: 3, color: 'great', who: 'enemy', ...posOf(r, e.to, -tgt.r - 16) }); } break;
+      case 'ko': {
+        const u = r.at[e.id];
+        if (!u || u.kind === 'mini') break;
+        const isFinal = fin && fin.koI === i && fin.id === e.id;
+        if (u.side === 1) {
+          tier(isFinal ? 4 : 2);
+          add({ i, k: 'text', str: e.how === 'ring' ? '場外!' : 'たおれた', size: isFinal ? T.tiers[4].text : T.tiers[2].text, color: 'good', who: 'enemy', ...posOf(r, e.id, 0) });
+          add({ i, k: 'body', id: e.id, anim: e.how === 'ring' ? 'ringOut' : 'shatter', x: u.x, y: u.y, vx: u.vx, vy: u.vy });
+          add({ i, k: 'part', id: e.how === 'ring' ? 'ringOut' : 'shatter', x: u.x, y: u.y, mul: lv.particles });
+          if (!isFinal) { add({ i, k: 'stop', ms: T.tiers[2].hitstopMs, tier: 2, why: 'ko' }); add({ i, k: 'sound', id: 'ring' }); add({ i, k: 'buzz', ms: 25 }); }
+        } else {
+          add({ i, k: 'text', str: 'たおれた', size: 3, color: 'harm', who: 'ally', ...posOf(r, e.id, 0) });
+          add({ i, k: 'sound', id: 'harm' });
+        }
+        break;
+      }
+      case 'fall': if (r.at[e.id]) { add({ i, k: 'text', str: '落ちた(戻る)', size: 3, color: 'harm', who: 'ally', ...posOf(r, e.id, -20) }); add({ i, k: 'body', id: e.id, anim: 'allyFall' }); add({ i, k: 'sound', id: 'harm' }); } break;
+      case 'bonusShot': tier(2); add({ i, k: 'text', str: '場外: もう 1 手!', size: 2, color: 'great', who: 'enemy', center: true }); add({ i, k: 'sound', id: 'bonus' }); break;
+      case 'blast': {
+        tier(2);
+        const first = blastN++ === 0; // 海物語の型: 同じ演出を大きさで格づける。2 発目からは輪だけ
+        add({ i, k: 'part', id: first ? 'blast' : 'blastRing', x: e.x, y: e.y, r: e.r, delayMs: (blastN - 1) * T.parts.blast.staggerMs, mul: lv.particles });
+        if (first) { add({ i, k: 'stop', ms: 60, tier: 2, why: 'blast' }); add({ i, k: 'shake', px: 3 * lv.shake, ms: 140, nx: 0, ny: 0 }); }
+        add({ i, k: 'sound', id: 'blast', k2: blastN });
+        break;
+      }
+      case 'ult': if (r.at[e.by]) { tier(3); memory.ult++; add({ i, k: 'text', str: (ULT_JA[e.kind] || e.kind) + '!', size: 2, color: 'great', who: 'enemy', ...posOf(r, e.by, -r.at[e.by].r - 18) }); add({ i, k: 'part', id: 'ultFire', ...posOf(r, e.by, 0), mul: lv.particles }); add({ i, k: 'sound', id: 'ultFire' }); } break;
+      case 'ultAfter': if (r.at[e.by]) add({ i, k: 'part', id: 'ultAfter', ...posOf(r, e.by, 0), mul: lv.particles }); break;
+      case 'gaugeBreak': {
+        tier(3);
+        const seen = memory.gauge++;
+        add({ i, k: 'text', str: 'ゲージを割った!', size: 2, color: 'great', who: 'enemy', ...posOf(r, e.id, -60) });
+        add({ i, k: 'stop', ms: T.tiers[3].hitstopMs * (seen ? T.tiers[3].repeatMul : 1), tier: 3, why: 'gauge' });
+        add({ i, k: 'shake', px: T.tiers[3].shakePx * lv.shake, ms: T.tiers[3].shakeMs, nx: 0, ny: 0 });
+        add({ i, k: 'part', id: 'gauge', ...posOf(r, e.id, -40), mul: lv.particles });
+        add({ i, k: 'body', id: e.id, anim: 'flinch', amt: T.body.bossFlinch.squash, ms: T.body.bossFlinch.ms });
+        add({ i, k: 'sound', id: 'gauge' });
+        break;
+      }
+      case 'trick': tier(2); add({ i, k: 'text', str: TRICK_TEXT[e.kind] || '', size: 2, color: 'great', who: 'enemy', center: true }); break;
+      case 'pinOpen': tier(2); add({ i, k: 'text', str: 'お皿を全部倒した: 柵が開いた!', size: 3, color: 'great', who: 'enemy', center: true }); break;
+      case 'bumper': add({ i, k: 'sound', id: 'bumper' }); add({ i, k: 'part', id: 'bumper', ...posOf(r, e.id, 0), mul: lv.particles }); break;
+      case 'pickup': if (tgt) { add({ i, k: 'text', str: 'おやつ', size: 4, color: 'heal', who: 'ally', ...posOf(r, e.to, -tgt.r - 16) }); add({ i, k: 'sound', id: 'pickup' }); } break;
+      case 'lid': add({ i, k: 'text', str: 'おやつが出た', size: 4, color: 'heal', who: 'ally', x: clampX(e.x), y: Math.max(16, e.y - 20) }); break;
+      case 'heal': if (tgt) add({ i, k: 'text', str: '+' + e.amt, size: 4, color: 'heal', who: tgt.side === 0 ? 'ally' : 'enemy', ...posOf(r, e.to, -tgt.r) }); break;
+      case 'shield': if (tgt) add({ i, k: 'text', str: '盾+' + e.amt, size: 4, color: 'good', who: 'ally', ...posOf(r, e.to, -tgt.r - 14) }); break;
+      case 'block': if (tgt) add({ i, k: 'text', str: '盾で防いだ', size: 4, color: 'good', who: 'ally', ...posOf(r, e.to, -tgt.r - 14) }); break;
+      case 'stun': if (tgt) add({ i, k: 'text', str: 'カウント+', size: 4, color: 'good', who: 'enemy', ...posOf(r, e.to, -tgt.r - 14) }); break;
+      case 'poison': if (tgt) add({ i, k: 'text', str: '毒' + e.n, size: 4, color: 'poison', who: tgt.side === 1 ? 'enemy' : 'ally', ...posOf(r, e.to, tgt.r + 14) }); break;
+      case 'charge': if (tgt) add({ i, k: 'text', str: '必殺が進んだ', size: 4, color: 'great', who: 'ally', ...posOf(r, e.to, -tgt.r - 14) }); break;
+      case 'chainCharge': break; // 3 れんさの文字にまとめて出した
+      case 'act': {
+        const u = r.at[e.by];
+        if (!u) break;
+        const strong = e.kind === 'charge' || e.kind === 'blast' || e.kind === 'bomb';
+        add({ i, k: 'body', id: e.by, anim: 'windup', amt: T.body.windup.squash, ms: strong ? T.body.windup.strongMs : T.body.windup.ms });
+        add({ i, k: 'pause', ms: strong ? T.body.windup.strongMs : T.body.windup.ms, why: 'windup', pre: true });
+        add({ i, k: 'text', str: ACTION_JA[e.kind] || e.kind, size: 4, color: 'harm', who: 'ally', ...posOf(r, e.by, u.r + 16) });
+        add({ i, k: 'pause', ms: ENEMY_ACT_MS, why: 'act' });
+        break;
+      }
+      case 'bossRule': add({ i, k: 'text', str: RULE_TEXT[e.kind] || '', size: 3, color: 'boss', who: 'ally', center: true }); add({ i, k: 'pause', ms: RULE_MS, why: 'rule' }); break;
+      case 'explode': add({ i, k: 'part', id: 'explode', x: (r.at[e.by] || {}).x, y: (r.at[e.by] || {}).y, r: e.r, mul: lv.particles }); break;
+      default: break;
+    }
+  }
+
+  // ---- 手の終わり: 合計と、倒しきれなかった敵の本当の残り -------------------------
+  if (sum.dmg > 0 && script.shotEnd >= 0) add({ i: script.shotEnd, k: 'text', str: '合計 ' + sum.dmg, size: peak >= 2 ? 2 : 4, color: 'plain', who: 'enemy', center: true });
+  if (!sum.won && script.shotEnd >= 0) {
+    for (const u of script.end.units) {
+      if (u.alive && u.side === 1 && u.kind !== 'boss' && u.hp > 0 && u.hp <= u.maxHp * 0.08)
+        add({ i: script.shotEnd, k: 'text', str: 'のこり ' + u.hp, size: 4, color: 'plain', who: 'enemy', x: clampX(u.x), y: Math.max(16, u.y - u.r - 26) });
+    }
+  }
+
+  // ---- 決着: 当たる前から減速して寄る(本当に決着するときだけ) -----------------------
+  let finale = null;
+  if (fin) {
+    const F = T.tiers[4];
+    add({ i: fin.koI, k: 'stop', ms: F.hitstopMs * stopMul, tier: 4, why: 'finale' });
+    add({ i: fin.koI, k: 'shake', px: F.shakePx * lv.shake, ms: F.shakeMs, nx: 0, ny: 0, why: 'finale' });
+    add({ i: fin.koI, k: 'sound', id: 'finale', boss: fin.boss, special: fin.special });
+    add({ i: fin.koI, k: 'part', id: 'finale', x: fin.x, y: fin.y, mul: lv.particles });
+    add({ i: fin.koI, k: 'buzz', ms: 60 });
+    if (fin.special) add({ i: fin.koI, k: 'text', str: fin.kosInShot + ' 体まとめて!', size: 1, color: 'great', who: 'enemy', center: true });
+    if (fin.phase === 'shot') {
+      const lead = Math.round(F.slowLeadMs / STEP_MS), tail = Math.round(100 / STEP_MS);
+      let i0 = Math.max(0, fin.hitI - lead), i1 = Math.min(fin.koI, fin.hitI + lead) + tail;
+      // 余韻の上限に収める(スロー中の実時間 + 止め)
+      const realMs = () => (i1 - i0) * STEP_MS / (F.slowRate) * stopMul + F.hitstopMs * stopMul;
+      while (realMs() > F.totalMaxMs && i0 < fin.hitI) i0++;
+      while (realMs() > F.totalMaxMs && i1 > fin.hitI + 1) i1--;
+      add({ i: i0, k: 'slow', i0, i1, rate: F.slowRate });
+      const close = sum.allyHpRatio < 0.35;
+      if ((fin.boss || close || fin.special) && !ctx.reduceMotion && lv.shake > 0) add({ i: i0, k: 'zoom', i0, i1, x: fin.x, y: fin.y, scale: F.zoom });
+      finale = { i0, i1, koI: fin.koI, ms: realMs(), special: fin.special, boss: fin.boss };
+    }
+  }
+
+  // ---- ダメージの数字: 同じ瞬間に 4 つ以上なら、合計 1 つにまとめる [R1] ----------------------
+  mergeDamage(cues);
+  // ---- 重なりの決まり: 同じ瞬間の止め・揺れ・目立つ音は、一番上のものを 1 回だけ -----------
+  mergeMoments(cues);
+  // ---- 予算: 1 手で足す待ちの合計を上限に収める(決着は別枠)。下の格から削る -----------------
+  enforceBudget(cues, stopMul);
+  cues.sort((a, b) => a.i - b.i);
+  return { cues, finale, memory, stats: planStats(cues, script, finale) };
+}
+
+const clampX = (x) => Math.max(24, Math.min(336, x));
+
+/** その当たりの時点のれんさ数(音の高さに使う) */
+function cueChain(script, r) {
+  let n = 0;
+  for (const q of script.events) { if (q === r) break; if (q.e.t === 'chain' && q.phase === 'shot') n = q.e.n; }
+  return n || 1;
+}
+
+function mergeDamage(cues) {
+  const W = Math.round(FXT.sameMomentMs / STEP_MS), at = FXT.budget.damageMergeAt;
+  const list = cues.filter((c) => c.k === 'text' && c.key === 'dmg' && c.who === 'enemy').sort((a, b) => a.i - b.i);
+  let g = [];
+  const flush = () => {
+    if (g.length >= at) {
+      let sum = 0, x = 0, y = 0;
+      for (const c of g) { sum += +c.str.slice(1); x += c.x; y += c.y; c.drop = true; }
+      cues.push({ i: g[0].i, k: 'text', str: '-' + sum, size: 4, color: 'plain', who: 'enemy', x: clampX(x / g.length), y: Math.max(16, y / g.length), key: 'dmg', merged: g.length });
+    }
+    g = [];
+  };
+  for (const c of list) { if (g.length && c.i - g[0].i > W) flush(); g.push(c); }
+  flush();
+  for (let k = cues.length - 1; k >= 0; k--) if (cues[k].drop) cues.splice(k, 1);
+}
+
+function mergeMoments(cues) {
+  const W = Math.round(FXT.sameMomentMs / STEP_MS);
+  // 決着の瞬間は決着だけ(近くの止め・揺れは決着に吸収する)
+  for (const f of cues.filter((c) => c.k === 'stop' && c.why === 'finale'))
+    for (const c of cues) if ((c.k === 'stop' || c.k === 'shake') && c.why !== 'finale' && Math.abs(c.i - f.i) <= W) c.drop = true;
+  const pick = (kind, score) => {
+    const list = cues.filter((c) => c.k === kind && !c.pre && c.why !== 'finale' && c.why !== 'act' && c.why !== 'rule').sort((a, b) => a.i - b.i);
+    let g = [];
+    const flush = () => {
+      if (g.length > 1) { let best = g[0]; for (const c of g) if (score(c) > score(best)) best = c; for (const c of g) if (c !== best) c.drop = true; }
+      g = [];
+    };
+    for (const c of list) { if (g.length && c.i - g[0].i > W) flush(); g.push(c); }
+    flush();
+  };
+  pick('stop', (c) => c.tier * 10000 + c.ms);
+  pick('shake', (c) => (c.why === 'finale' ? 1e9 : c.px));
+  // 目立つ音(強打・和音・場外など)は 1 瞬間に 1 つ。当たりの音階・小さな音は残す
+  const accents = cues.filter((c) => c.k === 'sound' && ACCENT_RANK[c.id] !== undefined).sort((a, b) => a.i - b.i);
+  let g = [];
+  const flush = () => { if (g.length > 1) { let best = g[0]; for (const c of g) if (ACCENT_RANK[c.id] > ACCENT_RANK[best.id]) best = c; for (const c of g) if (c !== best) c.drop = true; } g = []; };
+  for (const c of accents) { if (g.length && c.i - g[0].i > W) flush(); g.push(c); }
+  flush();
+  for (let k = cues.length - 1; k >= 0; k--) if (cues[k].drop) cues.splice(k, 1);
+}
+
+function enforceBudget(cues, stopMul) {
+  const cap = FXT.budget.addedWaitPerShotMs;
+  for (const c of cues) if ((c.k === 'stop' || c.k === 'pause') && c.why !== 'finale') c.ms *= stopMul; // 早送りは止め・間を半分
+  const own = () => cues.filter((c) => (c.k === 'stop' || (c.k === 'pause' && c.why === 'preSilence')) && c.why !== 'finale');
+  const total = () => own().reduce((a, c) => a + c.ms, 0);
+  // 下の格から: 格 0 → 0、格 1・2 → 2 コマまで縮める、格 3 → 半分
+  if (total() > cap) for (const c of own()) if (c.tier === 0) c.ms = 0;
+  for (const t of [1, 2]) {
+    const list = own().filter((c) => c.tier === t);
+    while (total() > cap && list.some((c) => c.ms > FXT.frameMs * 2 + 0.01)) for (const c of list) c.ms = Math.max(FXT.frameMs * 2, c.ms * 0.8);
+  }
+  for (const c of own()) if (c.tier === 3 && total() > cap) c.ms = Math.max(c.ms * FXT.tiers[3].repeatMul, c.ms - (total() - cap)); // 山場は必要な分だけ削る(半分まで)
+  if (total() > cap) { const k = cap / total(); for (const c of own()) c.ms *= k; }
+  // 敵の番: 全体を上限に収める
+  const ecap = FXT.budget.enemyTurnMaxMs;
+  const en = cues.filter((c) => c.k === 'pause' && (c.why === 'act' || c.why === 'windup' || c.why === 'rule'));
+  const et = en.reduce((a, c) => a + c.ms, 0);
+  if (et > ecap) { const k = ecap / et; for (const c of en) c.ms *= k; }
+}
+
+function planStats(cues, script, finale) {
+  let shotWaitMs = 0, enemyTurnMs = 0, callouts = 0, peakTier = 0;
+  for (const c of cues) {
+    if ((c.k === 'stop' || (c.k === 'pause' && c.why === 'preSilence')) && c.why !== 'finale') shotWaitMs += c.ms;
+    if (c.k === 'pause' && (c.why === 'act' || c.why === 'windup' || c.why === 'rule')) enemyTurnMs += c.ms;
+    if (c.k === 'callout') callouts++;
+    if (c.k === 'stop' && c.tier > peakTier) peakTier = c.tier;
+  }
+  return { shotWaitMs, enemyTurnMs, finaleMs: finale ? finale.ms : 0, callouts, peakTier, maxChain: script.summary.maxChain };
+}
+
+/**
+ * 指示表が演出の決まりを守っているかを調べる(検査器と画面の両方から使う)。違反の一覧を返す(空なら合格)
+ */
+function auditPlan(plan) {
+  const v = [];
+  const B = FXT.budget;
+  const sizes = new Set();
+  for (const c of plan.cues) {
+    if (c.k === 'text') {
+      sizes.add(c.size);
+      if (!(c.size >= 1 && c.size <= 5 && Number.isInteger(c.size))) v.push('文字の段が 1〜5 の外: ' + c.str + ' ' + c.size);
+      if (c.color === 'harm' && c.who !== 'ally') v.push('危険色を、味方に悪いこと以外に使った: ' + c.str);
+      if (!FXT.color[c.color]) v.push('色の役割が未定義: ' + c.color);
+    }
+    if ((c.k === 'stop' || c.k === 'pause') && c.i < 0) v.push('離した瞬間に止めている(入力への反応が遅れる): ' + c.why);
+  }
+  if (sizes.size > B.textTiersMax) v.push('文字の段が ' + sizes.size + ' 種類');
+  if (plan.stats.callouts > 1) v.push('呼びかけが 1 手に ' + plan.stats.callouts + ' 回');
+  if (plan.stats.shotWaitMs > B.addedWaitPerShotMs + 0.5) v.push('1 手の待ちが ' + Math.round(plan.stats.shotWaitMs) + 'ms');
+  if (plan.stats.enemyTurnMs > B.enemyTurnMaxMs + 0.5) v.push('敵の番の間が ' + Math.round(plan.stats.enemyTurnMs) + 'ms');
+  if (plan.stats.finaleMs > B.finaleMaxMs + 0.5) v.push('決着の余韻が ' + Math.round(plan.stats.finaleMs) + 'ms');
+  const W = Math.round(FXT.sameMomentMs / STEP_MS);
+  const stops = plan.cues.filter((c) => c.k === 'stop' && c.why !== 'finale').map((c) => c.i).sort((a, b) => a - b);
+  for (let k = 1; k < stops.length; k++) if (stops[k] - stops[k - 1] <= W && stops[k] !== stops[k - 1]) { v.push('同じ瞬間に止めが 2 回(刻み ' + stops[k - 1] + ' と ' + stops[k] + ')'); break; }
+  for (let k = 1; k < stops.length; k++) if (stops[k] === stops[k - 1]) { v.push('同じ刻みに止めが 2 つ'); break; }
+  // 明暗の変化(暗転・閃光)は 1 秒に 3 回まで(刻みの近さで見積もる)
+  const flashes = plan.cues.filter((c) => c.k === 'dim' || (c.k === 'part' && (c.id === 'finale' || c.id === 'ultFire'))).map((c) => c.i).sort((a, b) => a - b);
+  for (let k = 0; k + FXT.budget.flashesPerSecMax < flashes.length; k++) if (flashes[k + FXT.budget.flashesPerSecMax] - flashes[k] < 240) { v.push('明暗の変化が 1 秒に ' + (FXT.budget.flashesPerSecMax + 1) + ' 回以上'); break; }
+  return v;
+}
+
+return { planShot, auditPlan };
+})();
+const { SCENES, sceneState, sceneById } = (function () {
+// はじきバトル 演出の場面カタログ。格表の各段と、場面表の各行を、いつでも同じ形で起こせるようにしたもの。
+// 場面 = 盤面の作り方(cfg)+ 作ったあとの手直し(prep)+ 弾く手(入力)。入力は find-scenes.mjs が探して
+// scenes-inputs.js に書き出す(同じ手なら必ず同じ結果になるので、何度でも同じ場面が撮れる)。
+// 使い道: 演出ラボで 1 場面ずつ見る / 撮影台(fx-check.mjs)で before・after を撮って測る / 検査で場面が崩れていないか確かめる
+
+
+
+const NOGAP = { top: [], bottom: [], left: [], right: [] };
+const TEAM = {
+  mixed: () => ['kitchen', 'food', 'creature', 'machine'].map((l) => ally(l)),
+  chain: () => ['creature', 'toy', 'book', 'kitchen'].map((l) => ally(l)),
+  hanabi: () => [ally('machine', { item: 'match', passives: ['grit'] }), ally('kitchen'), ally('furniture'), ally('food')],
+  heavy: () => ['machine', 'furniture', 'bath', 'kitchen'].map((l) => ally(l)),
+};
+const MOB0 = ['kitchen', 'plant', 'creature'];
+const enemies = (s) => s.units.filter((u) => u.side === 1);
+const lowHp = (u, pct) => { u.hp = Math.max(1, Math.round(u.maxHp * pct)); };
+const ev = (sc, t) => sc.events.filter((r) => r.e.t === t && r.phase === 'shot');
+const evAll = (sc, t) => sc.events.filter((r) => r.e.t === t);
+const quick = (sc) => -sc.steps / 2000; // 同じ条件なら短い手を選ぶ
+
+/**
+ * kind: 'shot'(手を 1 つ弾いて見る)/ 'state'(止まった状態を撮る)
+ * tier: 格表の段(状態の場面は null) / want(sc): 台本を見て、この場面として使えるなら点数(大きいほどよい)、使えないなら -1
+ */
+const SCENES = [
+  // ---- 止まった状態(WO §2 の状態一覧) ----
+  { id: 'aim', ja: '狙い待ち', kind: 'state', cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0) },
+  { id: 'drag', ja: '引っぱり中(強さ 強)', kind: 'state', drag: true, cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    want: (sc) => (!sc.summary.kos.length && sc.summary.dmg > 0 ? 1 + quick(sc) : -1), powers: [3] },
+  { id: 'dragDanger', ja: '引っぱり中(落ちる軌道の警告)', kind: 'state', drag: true, cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    prep: (s) => { lowHp(s.units[s.active], 0.4); }, // 体力が半分以下だと落ちうる
+    want: (sc) => (ev(sc, 'fall').length ? 1 + quick(sc) : -1) },
+  { id: 'ultArmed', ja: '必殺を構えた', kind: 'state', armed: true, cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    prep: (s) => { s.units[s.active].ultCharge = s.units[s.active].ultNeed; } },
+  // ---- 格 0〜4(1 手を弾いて見る) ----
+  { id: 'hit', ja: 'ふつうの当たり', tier: 0, kind: 'shot', cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    want: (sc) => { const m = sc.summary; return m.strong === 0 && m.maxChain === 1 && !m.kos.length && m.dmg > 0 && !ev(sc, 'fall').length ? 1 + quick(sc) : -1; }, powers: [1, 2] },
+  { id: 'strong', ja: '強打', tier: 1, kind: 'shot', cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    want: (sc) => { const m = sc.summary; return m.strong >= 1 && m.maxChain <= 2 && !m.kos.length && !ev(sc, 'fall').length ? 1 + quick(sc) : -1; }, powers: [3] },
+  { id: 'chain3', ja: '3 れんさ(必殺+1)', tier: 1, kind: 'shot', cfg: () => mobBattle('living', TEAM.chain(), ['kitchen', 'food', 'stationery', 'toy']),
+    want: (sc) => { const m = sc.summary; return m.maxChain === 3 && !m.kos.length && m.chainCharge && !ev(sc, 'fall').length ? 1 + quick(sc) : -1; } },
+  { id: 'crash', ja: 'ぶつけ(敵どうし)', tier: 1, kind: 'shot', cfg: () => mobBattle('attic', TEAM.heavy(), ['book', 'electronic', 'furniture', 'clothing']),
+    want: (sc) => (ev(sc, 'crash').length && !sc.summary.kos.length && !ev(sc, 'fall').length ? 1 + ev(sc, 'crash').length * 0.1 + quick(sc) : -1) },
+  { id: 'relay', ja: '玉突き(味方のタッチ技が続く)', tier: 1, kind: 'shot', cfg: () => mobBattle('kitchen', TEAM.chain(), MOB0),
+    want: (sc) => (evAll(sc, 'relay').length && !ev(sc, 'fall').length ? 1 + evAll(sc, 'relay').length * 0.2 + quick(sc) : -1) },
+  { id: 'ringout', ja: '敵の場外 → もう 1 手', tier: 2, kind: 'shot', cfg: () => mobBattle('kitchen', TEAM.heavy(), MOB0),
+    prep: (s) => { for (const u of enemies(s)) lowHp(u, 0.45); },
+    want: (sc) => { const m = sc.summary; return m.kos.some((k) => k.how === 'ring' && k.phase === 'shot') && m.bonusShot && !m.won ? 1 + quick(sc) : -1; } },
+  { id: 'shatter', ja: '撃破(体力 0)', tier: 2, kind: 'shot', cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    prep: (s) => { lowHp(enemies(s)[0], 0.08); lowHp(enemies(s)[1], 0.08); },
+    want: (sc) => { const m = sc.summary; return m.kos.some((k) => k.how === 'hp' && k.phase === 'shot') && !m.won && !ev(sc, 'fall').length ? 1 + quick(sc) : -1; } },
+  { id: 'chain5', ja: '5 れんさ(呼びかけ 1 回)', tier: 2, kind: 'shot', cfg: () => mobBattle('living', TEAM.chain(), ['kitchen', 'food', 'stationery', 'toy']),
+    prep: (s) => { for (const u of enemies(s)) u.hp = u.maxHp = 400; },
+    want: (sc) => { const m = sc.summary; return m.maxChain >= 5 && m.maxChain <= 9 && !m.kos.length ? 1 + quick(sc) : -1; } },
+  { id: 'blast', ja: '花火の連鎖(爆発が続く)', tier: 2, kind: 'shot',
+    cfg: () => ({ gaps: NOGAP, allies: TEAM.hanabi(),
+                  enemies: [[150, 200], [200, 170], [120, 150], [240, 210], [180, 120]].map(([x, y]) => foe('plant', x, y)).concat([foe('furniture', 320, 60)]) }),
+    prep: (s) => { const es = enemies(s); for (let k = 0; k < es.length - 1; k++) lowHp(es[k], 0.05); u0(s).x = 180; u0(s).y = 420; }, // 奥の 1 体は満タン(決着にしない)
+    want: (sc) => (sc.summary.blasts.length >= 2 && !sc.summary.won ? 1 + sc.summary.blasts.length * 0.1 + quick(sc) : -1) },
+  { id: 'ult', ja: '必殺', tier: 3, kind: 'shot', ult: true, cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    prep: (s) => { s.units[s.active].ultCharge = s.units[s.active].ultNeed; },
+    want: (sc) => (sc.summary.ult && !sc.summary.won && sc.summary.dmg > 0 ? 1 + sc.summary.dmg / 1000 + quick(sc) : -1) },
+  { id: 'gauge', ja: 'ボスのゲージ割り', tier: 3, kind: 'shot', cfg: () => bossBattle('vacuum', TEAM.heavy()),
+    prep: (s) => { const b = s.units.find((u) => u.kind === 'boss'); lowHp(b, 0.06); },
+    want: (sc) => (sc.summary.gauges.length && !sc.summary.won ? 1 + quick(sc) : -1) },
+  { id: 'chain10', ja: '10 れんさ(札・呼びかけを重ねる)', tier: 3, kind: 'shot',
+    cfg: () => ({ gaps: NOGAP, allies: TEAM.chain(),
+                  enemies: grid(5, 4, 60, 50, 56, 66).map(([x, y]) => Object.assign(foe('toy', x, y), { weight: 1 })), obstacles: [{ obj: 'bumper', x: 40, y: 330 }, { obj: 'bumper', x: 320, y: 330 }] }),
+    prep: (s) => { for (const u of enemies(s)) u.hp = u.maxHp = 2000; },
+    want: (sc) => (sc.summary.maxChain >= 10 ? 1 + sc.summary.maxChain * 0.01 + quick(sc) : -1) },
+  { id: 'finale', ja: '決着(ザコ戦)', tier: 4, kind: 'shot', cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    prep: (s) => { const es = enemies(s); for (let k = 1; k < es.length; k++) { es[k].alive = false; } lowHp(es[0], 0.1); },
+    want: (sc) => { const m = sc.summary; return m.won && m.finale && m.finale.phase === 'shot' && !m.finale.special ? 1 + quick(sc) : -1; } },
+  { id: 'finaleBoss', ja: '決着(ボス戦・寄りあり)', tier: 4, kind: 'shot', cfg: () => bossBattle('washer', TEAM.heavy()),
+    prep: (s) => { const b = s.units.find((u) => u.kind === 'boss'); b.gaugeIdx = b.gauges.length - 1; b.maxHp = b.gauges[b.gaugeIdx]; lowHp(b, 0.05);
+                   for (const u of enemies(s)) if (u.kind !== 'boss') u.alive = false; },
+    want: (sc) => (sc.summary.won && sc.summary.finale && sc.summary.finale.boss && sc.summary.finale.phase === 'shot' ? 1 + quick(sc) : -1) },
+  { id: 'special', ja: '決着の特別版(1 手で 3 体以上)', tier: 4, kind: 'shot', cfg: () => mobBattle('kitchen', TEAM.heavy(), ['kitchen', 'plant', 'creature', 'toy']),
+    prep: (s) => { for (const u of enemies(s)) lowHp(u, 0.04); },
+    want: (sc) => (sc.summary.won && sc.summary.finale && sc.summary.finale.special ? 1 + sc.summary.finale.kosInShot * 0.1 + quick(sc) : -1) },
+  { id: 'enemyTurn', ja: '敵の番(巻き込みあり)', tier: null, kind: 'shot', cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    prep: (s) => { for (const u of enemies(s)) { u.count = 1; u.hp = u.maxHp; } const es = enemies(s); es[0].action = 'blast'; es[0].actR = 110; es[1].x = es[0].x + 60; es[1].y = es[0].y + 10; },
+    want: (sc) => (evAll(sc, 'act').length >= 2 && evAll(sc, 'friendly').length && !sc.summary.kos.length && !sc.summary.lost ? 1 + quick(sc) : -1), powers: [1] },
+  { id: 'allyFall', ja: '味方の落下(短く)', tier: null, kind: 'shot', cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    prep: (s) => { lowHp(s.units[s.active], 0.4); },
+    want: (sc) => (ev(sc, 'fall').length && !sc.summary.kos.length && !sc.summary.lost ? 1 + quick(sc) : -1) },
+  { id: 'lost', ja: '負け', tier: null, kind: 'shot', cfg: () => mobBattle('kitchen', TEAM.mixed(), MOB0),
+    prep: (s) => { const as = s.units.filter((u) => u.side === 0 && u.kind === 'ally'); for (const u of as) if (u.id !== s.active) u.alive = false; lowHp(s.units[s.active], 0.03);
+                   for (const u of enemies(s)) { u.count = 1; u.action = 'blast'; u.actR = 400; } },
+    want: (sc) => (sc.summary.lost && !sc.summary.kos.length ? 1 + quick(sc) : -1), powers: [1] },
+];
+const u0 = (s) => s.units[s.active];
+function grid(cols, rows, x0, y0, dx, dy) { const out = []; for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) out.push([x0 + c * dx + (r % 2) * dx / 2, y0 + r * dy]); return out; }
+
+/** 場面の盤面を作る(prep まで済ませた状態) */
+function sceneState(sc) {
+  const s = createBattle(sc.cfg());
+  if (sc.prep) sc.prep(s);
+  return s;
+}
+const sceneById = (id) => SCENES.find((s) => s.id === id);
+
+return { SCENES, sceneState, sceneById };
+})();
+const { SCENE_INPUTS } = (function () {
+// find-scenes.mjs が書き出した、場面ごとの手(手で直さない。場面やエンジンを変えたら作り直す)
+const SCENE_INPUTS = { "drag": { "dx": -629, "dy": -777, "power": 3, "ult": false }, "dragDanger": { "dx": -500, "dy": -866, "power": 3, "ult": false }, "hit": { "dx": 545, "dy": -839, "power": 2, "ult": false }, "strong": { "dx": -588, "dy": -809, "power": 3, "ult": false }, "chain3": { "dx": 988, "dy": 156, "power": 1, "ult": false }, "crash": { "dx": 407, "dy": -914, "power": 3, "ult": false }, "relay": { "dx": 707, "dy": -707, "power": 3, "ult": false }, "ringout": { "dx": -545, "dy": -839, "power": 2, "ult": false }, "shatter": { "dx": -669, "dy": -743, "power": 3, "ult": false }, "chain5": { "dx": 105, "dy": -995, "power": 3, "ult": false }, "blast": { "dx": -839, "dy": -545, "power": 3, "ult": false }, "ult": { "dx": -588, "dy": -809, "power": 3, "ult": true }, "gauge": { "dx": -208, "dy": -978, "power": 2, "ult": false }, "chain10": { "dx": 629, "dy": -777, "power": 3, "ult": false }, "finale": { "dx": -545, "dy": -839, "power": 3, "ult": false }, "finaleBoss": { "dx": 454, "dy": 891, "power": 1, "ult": false }, "special": { "dx": 259, "dy": -966, "power": 3, "ult": false }, "enemyTurn": { "dx": 777, "dy": -629, "power": 1, "ult": false }, "allyFall": { "dx": -500, "dy": -866, "power": 3, "ult": false }, "lost": { "dx": -500, "dy": -866, "power": 1, "ult": false } };
+
+return { SCENE_INPUTS };
+})();
 // はじきバトル 仮の戦闘画面(結果を決めるのは engine.js だけ。ここは見せるだけ)
 // build.mjs が engine.js / data.js / ai.js と一緒に 1 つのスクリプトにまとめる。
 // 2026-11-16: 手触りの演出(reports/はじきバトルの進化案.md の案 M〜U)を足した
@@ -1826,6 +2595,21 @@ function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(
   const perf = { frames: 0, slow: 0, maxMs: 0, simMsMax: 0, aiMs: 0 };
   globalThis.__flickPerf = perf;
   globalThis.__flickState = () => state;
+
+  // ---- 撮影台のためのフック(URL に付けたときだけ働く。ふだんの動きは変えない) --------
+  //  ?scene=<場面>     : fx/scenes.js の場面を開く(state の場面は止まった状態、shot の場面は __fx.fire() で弾く)
+  //  ?clock=manual    : 時計を止める。__fx.advance(ms) で 1 コマずつ進める(同じ画面を何度でも撮れる)
+  //  ?state=<状態>     : UI 発注書 §2 の状態を開いて、その瞬間で止める(uicheck --state 用)
+  const Q = new URLSearchParams(location.search);
+  const STATE_TO_SCENE = { aim: ['aim'], drag: ['drag'], dragDanger: ['dragDanger'], ultReady: ['ultArmed', null, true], ultArmed: ['ultArmed'],
+                           moving: ['hit', 'ms:150'], enemy: ['enemyTurn', 'ev:act'], chain: ['chain5', 'chain:5'], boss: ['gauge'],
+                           gauge: ['gauge', 'ev:gaugeBreak'], chain10: ['chain10', 'chain:10'], finale: ['finale', 'ev:ko'], won: ['finale', 'end'], lost: ['lost', 'end'] };
+  const ST = Q.get('state') && STATE_TO_SCENE[Q.get('state')];
+  const SCENE = typeof sceneById === 'function' ? sceneById(ST ? ST[0] : Q.get('scene')) || null : null;
+  const MANUAL = Q.get('clock') === 'manual' || !!ST;
+  let manualNow = 1000;
+  // 測るもの: 1 手で演出が足した待ち・敵の番の待ち・スローで伸びた時間・決着の余韻・離してから動くまで・同時に出た演出の数・文字
+  const fxm = { shotWait: 0, enemyWait: 0, slowMs: 0, finaleMs: 0, finaleT: null, fireT: null, moveT: null, firePos: null, maxFx: 0, texts: new Map(), logText: false, events: [] };
 
   // ---- 設定(この端末だけに覚える。読めなくても動く) --------------------------
   const store = { get(k, d) { try { const v = localStorage.getItem('flick.' + k); return v === null ? d : v; } catch (e) { return d; } },
@@ -1886,10 +2670,13 @@ function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(
   }
   function newGame() {
     const st = $('stage').value.split(':');
-    cfgNow = st[0] === 'boss' ? bossBattle(st[1], makeTeam()) : mobBattle(st[1], makeTeam(), MOBS[+st[2]], { traits: TRAITS[+st[2]] });
-    state = createBattle(cfgNow);
-    state.label = st[0] === 'boss' ? BOSSES[st[1]].rule : TABLES[st[1]].ja;
-    goal = pickGoal(++gameNo, cfgNow);
+    if (SCENE) { cfgNow = SCENE.cfg(); state = sceneState(SCENE); state.label = '場面: ' + SCENE.ja; goal = null; }
+    else {
+      cfgNow = st[0] === 'boss' ? bossBattle(st[1], makeTeam()) : mobBattle(st[1], makeTeam(), MOBS[+st[2]], { traits: TRAITS[+st[2]] });
+      state = createBattle(cfgNow);
+      state.label = st[0] === 'boss' ? BOSSES[st[1]].rule : TABLES[st[1]].ja;
+      goal = pickGoal(++gameNo, cfgNow);
+    }
     popups = []; rings = []; bolts = []; aim = null; armed = false; busy = false; replaying = false; lastShot = null;
     acc = 0; pauseUntil = 0; freezeUntil = 0; slowUntil = 0; shakeUntil = 0; shotOpen = false;
     $('overlay').hidden = true;
@@ -1956,6 +2743,7 @@ function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(
   function powerOf(len) { return len < 18 ? 0 : len < 60 ? 1 : len < 115 ? 2 : 3; } // 0 = 取り消し
   function shotFromAim() {
     if (!aim) return null;
+    if (aim.exact) return Object.assign({}, aim.exact, { ult: armed }); // 撮影台: 場面の手をそのまま
     const dx = aim.sx - aim.cx, dy = aim.sy - aim.cy; // 引いた向きの反対に飛ぶ
     const p = powerOf(Math.sqrt(dx * dx + dy * dy));
     if (!p) return null;
@@ -1976,6 +2764,7 @@ function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(
   });
   function doShot(sh) {
     lastShot = { st: cloneState(state), input: sh };
+    const me = state.units[state.active]; fxm.fireT = MANUAL ? manualNow : performance.now(); fxm.moveT = null; fxm.firePos = me ? [me.id, me.x, me.y] : null;
     if (shoot(state, sh)) { armed = false; shotOpen = true; shotDmg = 0; sfx.shoot(sh.power); refresh(); }
   }
   cv.addEventListener('pointerup', () => { const sh = shotFromAim(); const was = !!aim; aim = null; if (sh && state.phase === 'aim') doShot(sh); else { if (was) sfx.cancel(); refresh(); } });
@@ -2085,6 +2874,7 @@ function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(
   }
   function consumeEvents(now) {
     for (const e of state.events) {
+      if (fxm.events.length < 4000) fxm.events.push([Math.round(now - (fxm.fireT || now)), e.t, e.n]);
       const by = e.by >= 0 ? state.units[e.by] : null, to = e.to !== undefined && e.to >= 0 ? state.units[e.to] : null;
       switch (e.t) {
         case 'hit':
@@ -2115,6 +2905,7 @@ function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(
           if (u.kind === 'mini') break;
           pop(u, e.how === 'ring' ? '場外!' : 'たおれた', 'danger', 0, now);
           if (u.side === 1 && enemiesLeft() === 0) { // 決着の 1 発だけ、長めのスローと大きな揺れ
+            fxm.finaleT = now;
             slowUntil = now + 600 * fx(); slowRate = 0.35; shake(now, 7, 250); freeze(now, 140); buzz(60);
           } else if (u.side === 1) { freeze(now, 120); if (e.how === 'ring') sfx.ring(); buzz(25); }
           break;
@@ -2355,6 +3146,13 @@ function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(
   function frame(now) {
     const dtMs = last ? now - last : 16; last = now;
     perf.frames++; if (dtMs > 25) perf.slow++; if (dtMs > perf.maxMs && perf.frames > 5) perf.maxMs = dtMs;
+    if (state.phase === 'resolving') { // 撮影台の物差し(見るだけ。進み方は変えない)
+      const held = now < pauseUntil || now < freezeUntil;
+      if (fxm.finaleT !== null) fxm.finaleMs += dtMs;
+      else if (held) { if (shotOpen) fxm.shotWait += dtMs; else fxm.enemyWait += dtMs; }
+      if (now < slowUntil && fxm.finaleT === null) fxm.slowMs += dtMs * (1 - slowRate);
+    }
+    if (fxm.firePos && fxm.moveT === null) { const u = state.units[fxm.firePos[0]]; if (u && (u.x !== fxm.firePos[1] || u.y !== fxm.firePos[2])) fxm.moveT = now - fxm.fireT; }
     if (state.phase === 'resolving' && now >= pauseUntil && now >= freezeUntil) {
       const t0 = performance.now();
       acc += Math.min(dtMs, 50) / 1000 * (now < slowUntil ? slowRate : 1);
@@ -2376,15 +3174,58 @@ function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(
     if (state.phase === 'aim' && !replaying) drawAim(now);
     drawFx(now);
     drawDemo(now);
-    requestAnimationFrame(frame);
+    fxm.maxFx = Math.max(fxm.maxFx, rings.length + popups.length + bolts.length);
+    if (!MANUAL) requestAnimationFrame(frame);
   }
 
   readColors();
+  { // 撮影台: 卓に書いた文字(大きさ・色)を数える。logText のときだけ
+    const fill = ctx.fillText.bind(ctx);
+    ctx.fillText = (t, x, y, w) => { if (fxm.logText) { const k = ctx.font.match(/(\d+(?:\.\d+)?)px/)[1] + '|' + ctx.fillStyle + '|' + t; fxm.texts.set(k, (fxm.texts.get(k) || 0) + 1); } return w === undefined ? fill(t, x, y) : fill(t, x, y, w); };
+  }
+  globalThis.__fx = {
+    scene: SCENE ? SCENE.id : null,
+    scenes: typeof SCENES !== 'undefined' ? SCENES.map((s) => ({ id: s.id, ja: s.ja, kind: s.kind, tier: s.tier })) : [],
+    colors: () => Object.assign({}, colors),
+    fire() { const inp = SCENE && SCENE_INPUTS[SCENE.id]; if (!inp || state.phase !== 'aim') return false; aim = null; doShot(Object.assign({}, inp)); return true; },
+    advance(ms) { const n = Math.max(1, Math.round(ms / (1000 / 60))); for (let k = 0; k < n; k++) { manualNow += 1000 / 60; frame(manualNow); } return this.info(); },
+    hold(ms) { const now = MANUAL ? manualNow : performance.now(); pauseUntil = Math.max(pauseUntil, now + ms); }, // 検査器の自己検査用(わざと待たせる)
+    info: () => ({ phase: state.phase, motion: !!state.motion, overlay: !$('overlay').hidden, shotOpen, chain: state.chain, shots: state.shots }),
+    metrics: () => ({ shotWait: Math.round(fxm.shotWait), enemyWait: Math.round(fxm.enemyWait), slowMs: Math.round(fxm.slowMs), finaleMs: Math.round(fxm.finaleMs),
+                      releaseToMove: fxm.moveT === null ? null : Math.round(fxm.moveT), maxFx: fxm.maxFx, events: fxm.events.slice() }),
+    textLog(on) { fxm.logText = on; if (on) fxm.texts.clear(); return Array.from(fxm.texts.entries()).map(([k, n]) => { const [px, fill, t] = k.split('|'); return { px: +px, fill, t, n }; }); },
+    lum() { // 卓の平均の明るさ(0〜1)。明滅を数えるため
+      const c = document.createElement('canvas'); c.width = 24; c.height = 35; const g = c.getContext('2d'); g.drawImage(cv, 0, 0, 24, 35);
+      const d = g.getImageData(0, 0, 24, 35).data; let s = 0;
+      for (let k = 0; k < d.length; k += 4) { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; s += 0.2126 * f(d[k]) + 0.7152 * f(d[k + 1]) + 0.0722 * f(d[k + 2]); }
+      return s / (d.length / 4);
+    },
+  };
   if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
   new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   window.addEventListener('resize', resize);
   newGame(); resize();
-  requestAnimationFrame(frame);
+  if (SCENE && SCENE.kind === 'state') { // 止まった状態の場面
+    const inp = SCENE_INPUTS[SCENE.id];
+    if (SCENE.armed && !(ST && ST[2])) armed = true;
+    if (SCENE.drag && inp) { aim = { sx: 0, sy: 0, cx: 0, cy: 0, pulse: 0, exact: inp }; }
+    refresh();
+  }
+  if (!MANUAL) requestAnimationFrame(frame);
+  else {
+    frame(manualNow);
+    if (ST && ST[1]) { // ?state= の瞬間まで進めて止める
+      const [kind, arg] = ST[1].split(':');
+      if (kind !== 'end' || SCENE.kind === 'shot') globalThis.__fx.fire();
+      for (let k = 0; k < 60 * 30; k++) {
+        globalThis.__fx.advance(1000 / 60);
+        if (kind === 'ms' && k * 1000 / 60 >= +arg) break;
+        if (kind === 'chain' && state.chain >= +arg) break;
+        if (kind === 'ev' && fxm.events.some((e) => e[1] === arg)) break;
+        if (kind === 'end' && !$('overlay').hidden) break;
+      }
+    }
+  }
 })();
 
 })();</script>

@@ -8,6 +8,8 @@ import { DIRS, POWERS } from '../engine/ai.js';
 import { scriptShot } from './script.js';
 import { planShot, auditPlan } from './director.js';
 import { FXT } from './tokens.js';
+import { SCENES, sceneState } from './scenes.js';
+import { SCENE_INPUTS } from './scenes-inputs.js';
 
 let pass = 0, fail = 0;
 const failures = [];
@@ -149,6 +151,28 @@ function fakeScript(n, extra) {
   const p = planShot(sc, {});
   ok('敵の番の間は 3 秒以内', p.stats.enemyTurnMs <= FXT.budget.enemyTurnMaxMs + 0.5, p.stats.enemyTurnMs);
   ok('敵の行動の文字は危険色(味方への脅威)', p.cues.filter((c) => c.k === 'text').every((c) => c.color === 'harm' && c.who === 'ally'));
+}
+
+// ---- 場面カタログ: どの場面も、記録した手で今も同じ場面になる(エンジンを変えたら find-scenes.mjs で作り直す) ----
+{
+  let broken = [], bad = [];
+  const rows = [];
+  for (const sc of SCENES) {
+    if (!sc.want) continue;
+    const inp = SCENE_INPUTS[sc.id];
+    if (!inp) { broken.push(sc.id + '(手がない)'); continue; }
+    const s = scriptShot(sceneState(sc), inp);
+    if (!s || !(sc.want(s) > 0)) { broken.push(sc.id); continue; }
+    if (sc.kind !== 'shot') continue;
+    const plan = planShot(s, {});
+    const v = auditPlan(plan);
+    if (v.length) bad.push(sc.id + ': ' + v[0]);
+    rows.push(sc.id.padEnd(11) + ' 格' + (sc.tier === null || sc.tier === undefined ? '-' : sc.tier) + ' 待ち ' + String(Math.round(plan.stats.shotWaitMs)).padStart(3) + 'ms 敵 ' + String(Math.round(plan.stats.enemyTurnMs)).padStart(4) +
+              'ms 決着 ' + String(Math.round(plan.stats.finaleMs)).padStart(4) + 'ms 呼びかけ ' + plan.stats.callouts + ' 最大れんさ ' + plan.stats.maxChain);
+  }
+  ok('場面カタログ: すべての場面が記録した手で再現する', broken.length === 0, broken);
+  ok('場面カタログ: すべての場面で指示表が決まりを守る', bad.length === 0, bad);
+  if (process.env.SCENES) console.log(rows.join('\n'));
 }
 
 // ---- 検査器の自己検査: わざと決まりを破った指示表を、auditPlan が落とせるか --------------
