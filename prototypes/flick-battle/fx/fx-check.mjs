@@ -10,6 +10,7 @@ import path from 'node:path';
 import { SCENES, sceneState } from './scenes.js';
 import { SCENE_INPUTS } from './scenes-inputs.js';
 import { scriptShot } from './script.js';
+import { threatPreview } from '../engine/engine.js';
 import { FXT } from './tokens.js';
 
 const { chromium } = createRequire(import.meta.url)('playwright');
@@ -31,6 +32,8 @@ for (const sc of SCENES) {
   const s = scriptShot(sceneState(sc), inp);
   allyDmg[sc.id] = new Set(s.events.filter((r) => r.e.t === 'hit' && r.at[r.e.to] && r.at[r.e.to].side === 0).map((r) => '-' + r.e.dmg));
   if (s.events.some((r) => r.e.t === 'ko' && r.at[r.e.id] && r.at[r.e.id].side === 0 && r.at[r.e.id].kind === 'ally')) allyDmg[sc.id].add('たおれた'); // 味方が倒れた場面なら正しい使い方
+  // 予想ダメージ(このまま何もしなければ、次の敵の番に味方が受ける)は、味方に悪いことなので危険色が正しい
+  for (const st of [sceneState(sc), s.end]) { const tv = threatPreview(st); for (const id of Object.keys(tv.dmg)) allyDmg[sc.id].add('-' + tv.dmg[id] + (tv.ko.indexOf(+id) >= 0 ? ' たおれる' : '')); }
 }
 
 const browser = await chromium.launch();

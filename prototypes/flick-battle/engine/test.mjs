@@ -382,6 +382,25 @@ function randomBattle(seed, fx, log) {
   const cl = E.cloneState(r);
   ok('複製には演出用の出来事の印を持ち越さない(予測線・おまかせを軽く保つ)', cl.fx === false);
 }
+// ---- 予想ダメージ: このまま何もしなければ受けるダメージが、本物の敵の番と一致する --------------
+{
+  // 範囲攻撃の敵(カウント 1)の隣に味方 B。A は遠くの空いた所へ弱く弾く(誰にも当たらない)
+  const s = mini([Object.assign(ally('kitchen'), { name: 'A', x: 40, y: 480, touch: null }), Object.assign(ally('furniture'), { name: 'B', x: 200, y: 300, touch: null })],
+                 [dummy(200, 230, { action: 'blast', count: 1, actR: 110, atk: 30, hp: 400 }), dummy(320, 60, { count: 5 })]);
+  const before = E.hashState(s);
+  const pv = E.threatPreview(s);
+  ok('予想ダメージを計算しても盤面は変わらない', E.hashState(s) === before);
+  const B = U(s, 'B'), hp0 = B.hp;
+  E.shoot(s, { dx: -1, dy: 0, power: 1 }); E.resolve(s);
+  ok('予想ダメージ = 本物の敵の番で受けたダメージ', pv.dmg[B.id] > 0 && pv.dmg[B.id] === hp0 - B.hp, [pv.dmg[B.id], hp0 - B.hp]);
+  ok('カウント 1 でない敵は予想に入らない', Object.keys(pv.by).every((id) => +id !== U(s, 'まと').id + 1));
+}
+// ---- 1 手の最高ダメージは、その手で勝敗が決まっても数える -------------------------------
+{
+  const s = mini([Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 400, touch: null })], [dummy(180, 250, { hp: 10 })]);
+  fire(s, 0, -1, 2);
+  ok('勝った手のダメージも「1 手の最高」に入る', s.phase === 'won' && s.stats.bestShotDmg >= 10, [s.phase, s.stats.bestShotDmg]);
+}
 // ---- おまかせで勝てる(遊びとして成立しているかの最低線) --------------------
 {
   const team = [ally('kitchen'), ally('creature'), ally('machine'), ally('food')];

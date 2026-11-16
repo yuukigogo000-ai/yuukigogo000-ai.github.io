@@ -174,7 +174,7 @@ G5 uicheck --baseline GREEN + 既存テスト + `fx-check`・`fx/test.mjs`・`au
 | AC4 | 状態のスクショ | §2 の状態 × 360×800・390×844 × ライト・ダーク(`?state=` で撮る) |
 | AC5 | 既存テストとエンジンの検査 | 緑(`engine/test.mjs` 119 件・自己検査 6/6、`engine/test-build.mjs` 81 件、`fx/test.mjs` 38 件・自己検査 7/7、`fx/audio-check.mjs` 自己検査 4/4) |
 | AC6 | 動き(`fx/fx-check.mjs` の数字。before は `fx/baseline/metrics-before.json`) | 全場面 × 4 条件で: 1 手の待ち ≤500ms(決着を除く)/ 決着の余韻 ≤1.5 秒 / 敵の番 ≤3 秒 / 離して動くまで ≤100ms / 明滅 ≤3 回/秒・赤の点滅 0 / 卓の文字 ≤5 段 / 危険色の誤用 0 / 借りない言葉 0 / 同時の粒 ≤200 / 重い場面(CPU 4 倍遅い模擬)の平均コマ ≤20ms / 「動きを減らす」で揺れ・スロー・点滅が止まる |
-| AC7 | 横並び画像に発注者の一言 | 未(before の場面一覧は `fx/baseline/before-390-*.jpg`) |
+| AC7 | 横並び画像に発注者の一言 | 未(仮の画面の before / after の場面一覧は `fx/baseline/before-390-*.jpg` / `after-390-*.jpg`。AC6 の数字は仮の画面では全場面 × 4 条件で満たした: `fx/baseline/metrics-after.json`) |
 | AC8 | 実機で弾いて気持ちいいか(発注者)。特に: 決着の減速と寄りが「気持ちいい」か「長い」か / 駒のつぶれが見えるか / 1 手の待ち | 未 |
 
 ## 11. 完了報告

@@ -1,6 +1,7 @@
 // はじきバトル 仮の戦闘画面(結果を決めるのは engine.js だけ。ここは見せるだけ)
 // build.mjs が engine.js / data.js / ai.js と一緒に 1 つのスクリプトにまとめる。
 // 2026-11-16: 手触りの演出(reports/はじきバトルの進化案.md の案 M〜U)を足した
+// 2026-11-16: 演出を指示表(fx/director.js)で動かす形に作り替えた。描画は fx/render.js、音は fx/audio.js(FX_SPEC.md §8)
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
@@ -28,11 +29,11 @@
 
   let state, cfgNow = null, goal = null, gameNo = 0, scale = 1, dpr = 1, colors = {}, font = 'sans-serif';
   let aim = null, armed = false, busy = false, replaying = false, lastShot = null, lastPower = 0;
-  let popups = [], rings = [], bolts = [], pauseUntil = 0, freezeUntil = 0, acc = 0, last = 0, slowUntil = 0, slowRate = 1;
-  let shakeUntil = 0, shakeAmp = 0, shotOpen = false, shotDmg = 0;
+  let pauseUntil = 0, freezeUntil = 0, acc = 0, last = 0, shotOpen = false;
   const perf = { frames: 0, slow: 0, maxMs: 0, simMsMax: 0, aiMs: 0 };
   globalThis.__flickPerf = perf;
   globalThis.__flickState = () => state;
+  const TS = FXT.text.sizes; // 文字の 5 段(1 特大・2 大・3 中・4 小・5 最小)。卓の中の文字はこの 5 つだけ
 
   // ---- 撮影台のためのフック(URL に付けたときだけ働く。ふだんの動きは変えない) --------
   //  ?scene=<場面>     : fx/scenes.js の場面を開く(state の場面は止まった状態、shot の場面は __fx.fire() で弾く)
@@ -55,12 +56,16 @@
   const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   $('fx').value = store.get('fx', reduce ? 'low' : 'full');
   $('snd').value = store.get('snd', 'on');
-  const fx = () => FX[$('fx').value] === undefined ? 1 : FX[$('fx').value];
-  $('fx').addEventListener('change', () => store.set('fx', $('fx').value));
+  const fxKey = () => (FX[$('fx').value] === undefined ? 'full' : $('fx').value);
+  const fx = () => FX[fxKey()];
+  const R = createFxRender({ width: W, height: H }); // 演出の描画(fx/render.js)
+  $('fx').addEventListener('change', () => { store.set('fx', $('fx').value); R.setLevel(fxKey(), reduce); });
   $('snd').addEventListener('change', () => store.set('snd', $('snd').value));
+  R.setLevel(fxKey(), reduce);
 
   // ---- 音(最終版の部品 fx/audio.js。すべて端末の中で作る。音源ファイルは使わない) ----------------
   const AUD = createAudio({});
+  let shotStep = 0;
   // 同じ刻みに同じ音が重なったら 2 つまで(ぶつけの両方・花火の連鎖などで音が積み上がって割れないように)
   let sameKey = '', sameN = 0;
   const play = (id, q) => {
@@ -69,30 +74,62 @@
     if ($('snd').value === 'on') AUD.play(id, q);
   };
   window.addEventListener('pointerdown', () => AUD.unlock(), { passive: true }); // iPhone は最初のタップの中で音を準備する(2 回目からは何もしない)
-  const sfx = {
-    tap: () => play('ui'), step: (p) => play('step', { p }), cancel: () => play('cancel'), shoot: (p) => play('shoot', { p }),
-    hit: (n) => play('hit', { n }), strong: () => play('strong'), harm: () => play('harm'),
-    milestone: (n) => play('chord', { notes: n >= 10 ? 4 : n >= 5 ? 3 : 2, n, low: n >= 5 }), // 3・5・10 れんさの節目
-    ring: () => play('ring'), brk: () => play('break'), crash: () => play('crash'), bumper: () => play('bumper'), pickup: () => play('pickup'),
-    bonus: () => play('bonus'), blast: (k) => play('blast', { k2: k }), relay: () => play('relay'), ult: () => play('ultFire'), gauge: () => play('gauge'),
-    finale: (special) => play('finale', { special }), riser: (ms, top) => play('riser', { ms, top }),
-    win: () => play('win'), lose: () => play('lose'),
-  };
-  // 溜め: 離した瞬間に台本(fx/script.js)で 1 手を先に計算し、10 れんさ・決着になる当たりの直前に「キュイーン」を鳴らす(必ず起きるときだけ)
-  let shotStep = 0, risers = [], shotKos = 0, shotBlasts = 0;
-  function armShot(st, input) {
-    shotStep = 0; risers = []; shotKos = 0; shotBlasts = 0;
-    let sc = null; try { sc = scriptShot(st, input); } catch (e) { sc = null; }
-    if (!sc) return;
-    const lead = Math.round(FXT.sound.riser.leadMs / 1000 / DT), ms = (n) => n * DT * 1000;
-    const fin = sc.summary.finale;
-    if (fin && fin.phase === 'shot') risers.push({ at: Math.max(0, fin.hitI - lead), to: fin.hitI, top: 2093 });
-    const c10 = sc.events.find((r) => r.e.t === 'chain' && r.e.n === 10 && r.phase === 'shot');
-    if (c10 && !(fin && Math.abs(fin.hitI - c10.i) < lead * 2)) risers.push({ at: Math.max(0, c10.i - lead), to: c10.i, top: 1760 });
-    for (const r of risers) r.ms = ms(r.to - r.at);
-  }
   // 振動はおまけ(iPhone のブラウザでは使えない。音と見た目だけで手応えが分かるように作ってある)
   const buzz = (ms) => { if (fx() > 0 && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* なし */ } } };
+
+  // ---- 1 手の演出: 離した瞬間に台本(fx/script.js)で 1 手を先に計算し、指示表(fx/director.js)を作る -----
+  // 画面は本物の盤面を 1 刻みずつ進め、同じ刻みの指示を実行するだけ(同じ手なら必ず同じ結果になる)
+  let cueAt = new Map(), preAt = new Map(), slowWin = null, zoomEnd = -1, memory = {}, ff = 1, skipping = false, longStopUntil = 0, cutinSeen = 0;
+  function startShot(st, input) {
+    shotStep = 0; cueAt = new Map(); preAt = new Map(); slowWin = null; zoomEnd = -1; skipping = false;
+    let plan = null;
+    try { const sc = scriptShot(st, input); if (sc) plan = planShot(sc, { level: fxKey(), fast: false, reduceMotion: reduce, memory }); } catch (e) { plan = null; }
+    if (!plan) return [];
+    memory = plan.memory;
+    const now = [];
+    for (const c of plan.cues) {
+      if (c.i < 0) { now.push(c); continue; }
+      const pre = c.pre || (c.k === 'body' && c.anim === 'windup');
+      const m = pre ? preAt : cueAt;
+      if (!m.has(c.i)) m.set(c.i, []);
+      m.get(c.i).push(c);
+    }
+    return now; // 離した瞬間に出す指示(必殺の閃光など)
+  }
+  function runCue(c, now) {
+    const stopMul = ff > 1 ? FXT.fastForward.stopsMul : 1;
+    switch (c.k) {
+      case 'stop':
+        if (skipping) break;
+        freezeUntil = Math.max(freezeUntil, now + c.ms * stopMul);
+        if (c.tier >= 3 || c.why === 'finale') longStopUntil = freezeUntil;
+        if (c.why === 'finale') fxm.finaleT = now;
+        break;
+      case 'pause': if (!skipping) pauseUntil = Math.max(pauseUntil, now + c.ms * stopMul); break;
+      case 'shake': R.shake(c); break;
+      case 'text': R.text(c, now); break;
+      case 'sound': play(c.id, c.id === 'riser' ? { ms: c.ms / (skipping ? 6 : ff), top: c.top } : c); break;
+      case 'part': R.part(c, state.units); break;
+      case 'body': {
+        const u = state.units[c.id];
+        if (u && (c.anim === 'ringOut' || c.anim === 'shatter')) c = Object.assign({}, c, { unit: { r: u.r, color: u.kind === 'boss' ? colors.boss : u.side === 0 ? colors.ally : colors.enemy, fg: colors[u.side === 0 ? 'ally-fg' : 'enemy-fg'], label: u.kind === 'boss' ? u.name : (SHORT[u.lineage] || u.name.slice(0, 2)) } });
+        R.body(c);
+        break;
+      }
+      case 'dim': R.dim(c); break;
+      case 'buzz': buzz(c.ms); break;
+      case 'slow': if (!skipping) slowWin = { i0: c.i0, i1: c.i1, rate: c.rate }; break;
+      case 'zoom': if (!skipping) { zoomEnd = c.i1; R.zoom(c); } break;
+      default: break;
+    }
+  }
+  /** いまの進む速さ(早送り × 決着のスロー) */
+  function rateNow() {
+    let r = skipping ? 6 : ff;
+    if (slowWin) { if (shotStep > slowWin.i1) slowWin = null; else if (shotStep >= slowWin.i0) r *= slowWin.rate; }
+    if (zoomEnd >= 0 && shotStep > zoomEnd) { zoomEnd = -1; R.zoomOut(); }
+    return r;
+  }
 
   function readColors() {
     const cs = getComputedStyle(document.documentElement);
@@ -100,6 +137,9 @@
                      'accent', 'danger', 'heal', 'ult', 'ult-fg', 'wet', 'mat', 'stove', 'poison', 'snack'])
       colors[k] = cs.getPropertyValue('--' + k).trim();
     font = getComputedStyle(document.body).fontFamily;
+    const th = document.documentElement.getAttribute('data-theme');
+    const isDark = th === 'dark' || (!th && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    R.setColors(colors, isDark, font);
   }
 
   function makeTeam() {
@@ -116,8 +156,8 @@
       state.label = st[0] === 'boss' ? BOSSES[st[1]].rule : TABLES[st[1]].ja;
       goal = pickGoal(++gameNo, cfgNow);
     }
-    popups = []; rings = []; bolts = []; aim = null; armed = false; busy = false; replaying = false; lastShot = null;
-    acc = 0; pauseUntil = 0; freezeUntil = 0; slowUntil = 0; shakeUntil = 0; shotOpen = false;
+    R.clear(); aim = null; armed = false; busy = false; replaying = false; lastShot = null;
+    acc = 0; pauseUntil = 0; freezeUntil = 0; shotOpen = false; memory = {}; cutinSeen = 0; slowWin = null; skipping = false; threat = null; trails.clear();
     $('overlay').hidden = true;
     refresh();
   }
@@ -135,7 +175,7 @@
   // ---- 上下の表示 ------------------------------------------------------------
   function refresh() {
     const u = state.units[state.active];
-    $('status').textContent = state.shots + ' 手 ・ ' + state.turnNo + ' ターン目';
+    $('status').textContent = state.shots + ' 手 ・ ' + state.turnNo + ' ターン目' + (ff > 1 ? ' ・ 2 倍速' : '');
     $('goal').textContent = goal ? 'おまけ目標: ' + goal.text : '';
     const order = $('order');
     order.textContent = '';
@@ -150,7 +190,7 @@
       sp.textContent = !a.alive ? 'たおれた' : '重' + a.weight + '・' + (ready ? '必殺OK' : '必殺' + (a.ultNeed - a.ultCharge));
       chip.append(b, sp);
       chip.setAttribute('aria-label', a.name + 'のくわしい説明と技の見本');
-      chip.addEventListener('click', () => { sfx.tap(); openInfo(a.id); });
+      chip.addEventListener('click', () => { play('ui'); openInfo(a.id); });
       order.append(chip);
     }
     const ub = $('ult'), can = state.phase === 'aim' && !busy && canUlt(state);
@@ -161,6 +201,7 @@
     ub.setAttribute('aria-pressed', armed ? 'true' : 'false');
     let hint = state.label || '';
     if (state.phase === 'aim' && u) hint = u.name + ' の番 ・ ' + (state.label || '');
+    if (state.phase === 'resolving') hint = '卓をタップで ' + (ff > 1 ? 'ふつうの速さ' : '2 倍速') + '(決着とゲージ割りは飛ばせる)';
     if (replaying) hint = '決め手を再生中';
     $('hint').textContent = hint;
     $('auto').disabled = state.phase !== 'aim' || busy;
@@ -168,7 +209,9 @@
 
   function finish() {
     const won = state.phase === 'won';
-    if (!replaying) (won ? sfx.win : sfx.lose)();
+    if (!replaying) play(won ? 'win' : 'lose');
+    if (won) { let k = 0; for (const u of state.units) if (u.alive && u.side === 0 && u.kind === 'ally') R.body({ id: u.id, anim: 'hop', delay: (k++) * FXT.body.winHop.staggerMs }); } // 勝ち: 残った駒が順に跳ねる(負けは動かさない)
+    R.zoomOut();
     $('ovTitle').textContent = won ? '勝ち!' : '負け…';
     const g = goal ? (goalMet(goal, state) ? 'おまけ目標 達成!' : 'おまけ目標 ならず') : '';
     $('ovSub').textContent = state.shots + ' 手 ・ 最大 ' + state.bestChain + ' れんさ ・ 1 手の最高 ' + state.stats.bestShotDmg + ' ダメージ' + (replaying ? '(再生)' : '');
@@ -188,7 +231,15 @@
     if (!p) return null;
     return { dx: Math.round(dx), dy: Math.round(dy), power: p, ult: armed };
   }
+  const nowMs = () => (MANUAL ? manualNow : performance.now());
   cv.addEventListener('pointerdown', (e) => {
+    if (R.cutting) R.skipCut(); // カットインはタップで飛ばせる
+    if (state.phase === 'resolving') { // 動いている最中: 決着・ゲージ割りは飛ばす、それ以外は 2 倍速の切り替え
+      const now = nowMs();
+      if (slowWin || now < longStopUntil) { skipping = true; slowWin = null; freezeUntil = 0; pauseUntil = 0; longStopUntil = 0; R.zoomOut(); }
+      else { ff = ff > 1 ? 1 : FXT.fastForward.rate; refresh(); }
+      e.preventDefault(); return;
+    }
     if (state.phase !== 'aim' || busy) return;
     cv.setPointerCapture(e.pointerId);
     aim = { sx: e.clientX, sy: e.clientY, cx: e.clientX, cy: e.clientY, pulse: 0 };
@@ -199,33 +250,46 @@
     if (!aim) return;
     aim.cx = e.clientX; aim.cy = e.clientY;
     const dx = aim.sx - aim.cx, dy = aim.sy - aim.cy, p = powerOf(Math.sqrt(dx * dx + dy * dy));
-    if (p !== lastPower) { if (p > 0) sfx.step(p); else if (lastPower > 0) sfx.cancel(); aim.pulse = performance.now(); lastPower = p; } // 強さの段が変わった瞬間の手応え
+    if (p !== lastPower) { if (p > 0) play('step', { p }); else if (lastPower > 0) play('cancel'); aim.pulse = nowMs(); lastPower = p; } // 強さの段が変わった瞬間の手応え
   });
   function doShot(sh) {
     lastShot = { st: cloneState(state), input: sh };
-    const me = state.units[state.active]; fxm.fireT = MANUAL ? manualNow : performance.now(); fxm.moveT = null; fxm.firePos = me ? [me.id, me.x, me.y] : null;
-    armShot(state, sh);
-    if (shoot(state, sh)) { armed = false; shotOpen = true; shotDmg = 0; sfx.shoot(sh.power); refresh(); }
+    const me = state.units[state.active]; fxm.fireT = nowMs(); fxm.moveT = null; fxm.firePos = me ? [me.id, me.x, me.y] : null;
+    const first = startShot(state, sh);
+    if (shoot(state, sh)) {
+      armed = false; shotOpen = true; play('shoot', { p: sh.power });
+      const L = Math.hypot(sh.dx, sh.dy) || 1;
+      if (me) R.body({ id: me.id, anim: 'release', nx: sh.dx / L, ny: sh.dy / L }); // 1〜2 コマで伸びて、ばねで戻る
+      state.events = [];
+      const now = nowMs(); for (const c of first) runCue(c, now);
+      refresh();
+    }
   }
-  cv.addEventListener('pointerup', () => { const sh = shotFromAim(); const was = !!aim; aim = null; if (sh && state.phase === 'aim') doShot(sh); else { if (was) sfx.cancel(); refresh(); } });
+  cv.addEventListener('pointerup', () => { const sh = shotFromAim(); const was = !!aim; aim = null; if (sh && state.phase === 'aim') doShot(sh); else { if (was) play('cancel'); refresh(); } });
   cv.addEventListener('pointercancel', () => { aim = null; });
 
-  $('ult').addEventListener('click', () => { if (state.phase === 'aim' && canUlt(state)) { sfx.tap(); armed = !armed; refresh(); } });
+  $('ult').addEventListener('click', () => {
+    if (state.phase !== 'aim' || !canUlt(state)) return;
+    play('ui'); armed = !armed; refresh();
+    const u = state.units[state.active];
+    if (armed && u) { R.cutin({ name: u.name, ult: ULT_JA[u.ult], ms: cutinSeen++ ? FXT.parts.cutin.repeatMs : FXT.parts.cutin.firstMs, x: u.x, y: u.y }); play('riser', { ms: 260, top: 1568 }); } // 構えた瞬間にカットイン(離した後には挟まない)
+  });
   $('auto').addEventListener('click', () => {
     if (state.phase !== 'aim' || busy) return;
     busy = true; $('hint').textContent = '考え中…'; refresh();
     setTimeout(() => { const t0 = performance.now(); const b = bestShot(state); perf.aiMs = performance.now() - t0; busy = false; doShot(b); }, 30);
   });
-  for (const id of ['reset', 'again']) $(id).addEventListener('click', () => { sfx.tap(); newGame(); });
+  for (const id of ['reset', 'again']) $(id).addEventListener('click', () => { play('ui'); newGame(); });
   for (const id of ['stage', 'team']) $(id).addEventListener('change', newGame);
   // 決め手の再生: 最後の 1 手の直前の盤面から、同じ入力をもう一度流す(同じ手なら必ず同じ結果になる)
   $('replay').addEventListener('click', () => {
     if (!lastShot) return;
-    sfx.tap();
+    play('ui');
     state = cloneState(lastShot.st); state.label = lastShot.st.label;
-    replaying = true; busy = true; popups = []; rings = []; acc = 0;
+    replaying = true; busy = true; R.clear(); acc = 0;
     $('overlay').hidden = true;
-    armShot(state, lastShot.input); shoot(state, lastShot.input); shotOpen = true; shotDmg = 0;
+    const first = startShot(state, lastShot.input); shoot(state, lastShot.input); shotOpen = true; state.events = [];
+    const now = nowMs(); for (const c of first) runCue(c, now);
     refresh();
   });
 
@@ -261,8 +325,8 @@
     demo = null;
     $('info').hidden = false;
   }
-  $('dex').addEventListener('click', () => { sfx.tap(); openDex(); });
-  $('infoClose').addEventListener('click', () => { sfx.tap(); $('info').hidden = true; demo = null; });
+  $('dex').addEventListener('click', () => { play('ui'); openDex(); });
+  $('infoClose').addEventListener('click', () => { play('ui'); $('info').hidden = true; demo = null; });
   function demoBattle(lin) {
     const NOGAP = { top: [], bottom: [], left: [], right: [] };
     const dummy = (x, y, name) => ({ name, hp: 100, atk: 10, weight: 3, action: 'blast', count: 9, actR: 10, x, y });
@@ -293,90 +357,19 @@
     g.globalAlpha = 1;
   }
 
-  // ---- 出来事を画面に出す(強弱をつける: 毎手は短く、決着の 1 発だけ大きく) ------
-  // 卓の上の中央に出す大きな文字は、重ならないように段をずらす
-  const center = (text, c, now, size) => {
-    const busyLanes = popups.filter((p) => p.lane !== undefined && now - p.t < 700).map((p) => p.lane);
-    let lane = 0; while (busyLanes.indexOf(lane) >= 0) lane++;
-    popups.push({ x: W / 2, y: 34 + lane * 28, text, c, t: now, big: true, size, lane });
-  };
-  const pop = (u, text, c, dy, now, big) => popups.push({ x: Math.max(24, Math.min(W - 24, u.x)), y: Math.max(16, Math.min(H - 8, u.y + (dy || 0))), text, c, t: now, big });
-  const freeze = (now, ms) => { freezeUntil = Math.max(freezeUntil, now + ms * fx()); };
-  const shake = (now, amp, ms) => { if (fx() === 0) return; shakeAmp = Math.max(now < shakeUntil ? shakeAmp : 0, amp * fx()); shakeUntil = Math.max(shakeUntil, now + ms); };
-  function enemiesLeft() { let n = 0; for (const u of state.units) if (u.alive && u.side === 1) n++; return n; }
-  function flushShot(now) {
-    if (!shotOpen) return;
-    shotOpen = false;
-    if (shotDmg > 0) center('合計 ' + shotDmg, 'fg', now);
-    // 惜しい: あと少しで倒せた敵がいる(大きく見せて、もう 1 回を誘う)
-    const near = state.units.find((u) => u.alive && u.side === 1 && u.kind !== 'boss' && u.hp > 0 && u.hp <= u.maxHp * 0.08);
-    if (near && state.phase !== 'won') pop(near, 'あと少し!', 'ult', -near.r - 26, now, true); // 音は鳴らさない(惜しく見せる演出は借りない。文字の直しは演出の順 1 で)
+  // ---- 予想ダメージと前兆(このまま何もしなければ、次の敵の番に味方が受けるダメージ) ------------
+  let threat = null;
+  function threatNow() {
+    const key = state.shots + ':' + state.turnNo + ':' + state.active;
+    if (!threat || threat.key !== key) { threat = { key, v: state.phase === 'aim' ? threatPreview(state) : { dmg: {}, ko: [], by: {} } }; }
+    return threat.v;
   }
-  function consumeEvents(now) {
-    for (const e of state.events) {
-      if (fxm.events.length < 4000) fxm.events.push([Math.round(now - (fxm.fireT || now)), e.t, e.n]);
-      const by = e.by >= 0 ? state.units[e.by] : null, to = e.to !== undefined && e.to >= 0 ? state.units[e.to] : null;
-      switch (e.t) {
-        case 'hit':
-          if (!to) break;
-          pop(to, '-' + e.dmg, e.kind === 'dot' ? 'poison' : 'danger', -to.r, now);
-          if (shotOpen && to.side === 1 && e.kind !== 'dot' && e.kind !== 'foe') shotDmg += e.dmg;
-          if (shotOpen && to.side === 1 && (e.kind === 'hit' || e.kind === 'ult')) { sfx.hit(state.chain); freeze(now, state.chain <= 1 ? 30 : 0); } // 普通の当たりは止めないか、ごく短く
-          if (to.side === 0 && to.kind === 'ally' && e.kind !== 'dot') sfx.harm();
-          break;
-        case 'strong': pop(to, '強打!', 'ult', -to.r - 16, now); freeze(now, 90); shake(now, 3, 150); sfx.strong(); buzz(20); break;
-        case 'heal': pop(to, '+' + e.amt, 'heal', -to.r, now); break;
-        case 'shield': pop(to, '盾+' + e.amt, 'accent', -to.r - 14, now); break;
-        case 'block': pop(to, '盾で防いだ', 'accent', -to.r - 14, now); break;
-        case 'touch': pop(by, TOUCH_JA[e.kind], 'accent', by.r + 16, now); rings.push({ x: by.x, y: by.y, r: by.r + 8, c: 'accent', t: now }); break;
-        case 'ult': pop(by, ULT_JA[e.kind] + '!', 'ult', -by.r - 18, now); rings.push({ x: by.x, y: by.y, r: by.r + 16, c: 'ult', t: now }); pauseUntil = now + 320; sfx.ult(); break;
-        case 'ultAfter': rings.push({ x: by.x, y: by.y, r: 220, c: 'ult', t: now }); break;
-        case 'chain': // れんさの三層: 1 つごとに音が上がる / 5・10 れんさで色と音が変わる / 手の最後に合計
-          if (e.n >= 2) { popups = popups.filter((p) => !p.chain); center(e.n + ' れんさ!', e.n >= 10 ? 'danger' : e.n >= 5 ? 'ult' : 'accent', now, Math.min(30, 16 + e.n * 1.5)); popups[popups.length - 1].chain = true; }
-          if (e.n === 3) sfx.milestone(3);
-          if (e.n === 5 || e.n === 10) { sfx.milestone(e.n); rings.push({ x: W / 2, y: H / 2, r: 260, c: e.n >= 10 ? 'danger' : 'ult', t: now }); }
-          break;
-        case 'stun': pop(to, 'カウント+', 'accent', -to.r - 14, now); break;
-        case 'poison': pop(to, '毒' + e.n, 'poison', to.r + 14, now); break;
-        case 'charge': pop(to, '必殺が進んだ', 'ult', -to.r - 14, now); break;
-        case 'chainCharge': pop(to, '3 れんさ: 必殺+1', 'ult', -to.r - 16, now); break;
-        case 'execute': pop(to, 'とどめ!', 'ult', -to.r - 16, now); break;
-        case 'bolt': bolts.push({ a: state.units[e.from], b: to, t: now }); break;
-        case 'ko': {
-          const u = state.units[e.id];
-          if (u.kind === 'mini') break;
-          pop(u, e.how === 'ring' ? '場外!' : 'たおれた', 'danger', 0, now);
-          if (u.side === 1) shotKos++;
-          if (u.side === 1 && enemiesLeft() === 0) { // 決着の 1 発だけ、長めのスローと大きな揺れ
-            fxm.finaleT = now; sfx.finale(shotKos >= 3);
-            slowUntil = now + 600 * fx(); slowRate = 0.35; shake(now, 7, 250); freeze(now, 140); buzz(60);
-          } else if (u.side === 1) { freeze(now, 120); if (e.how === 'ring') sfx.ring(); else sfx.brk(); buzz(25); }
-          break;
-        }
-        case 'fall': pop(state.units[e.id], '落ちた(戻る)', 'danger', -20, now); break;
-        case 'gaugeBreak': pop(state.units[e.id], 'ゲージを割った!', 'ult', -60, now); pauseUntil = now + 500; shake(now, 5, 220); sfx.gauge(); break;
-        case 'act': { rings.push({ x: by.x, y: by.y, r: by.action === 'blast' || by.action === 'bomb' ? by.actR : by.r + 14, c: 'danger', t: now, fill: by.action === 'blast' });
-                      pop(by, ACTION_JA[e.kind] || e.kind, 'danger', by.r + 16, now); pauseUntil = now + 330; break; }
-        case 'explode': rings.push({ x: by.x, y: by.y, r: e.r, c: 'danger', t: now, fill: true }); break;
-        case 'bossRule': center({ pull: '吸い寄せ!', blow: '吹き出し!', spin: '卓が回った!', wind: '風向きが変わった!' }[e.kind], 'boss', now); pauseUntil = now + 380; break;
-        // 2026-11-16 の追加
-        case 'crash': pop(to, 'ぶつけ!', 'ult', -to.r - 14, now); sfx.crash(); shake(now, 2, 110); break;
-        case 'friendly': pop(to, '同士討ち!', 'danger', -to.r - 14, now); break;
-        case 'bumper': { const b = state.units[e.id]; rings.push({ x: b.x, y: b.y, r: b.r + 10, c: 'accent', t: now }); sfx.bumper(); break; }
-        case 'lid': popups.push({ x: e.x, y: e.y - 20, text: 'おやつが出た', c: 'heal', t: now }); break;
-        case 'pin': { const p = state.units[e.id]; rings.push({ x: p.x, y: p.y, r: 16, c: 'fg', t: now }); break; }
-        case 'pinOpen': center('お皿を全部倒した: 柵が開いた!', 'ult', now, 16); break;
-        case 'pickup': pop(to, 'おやつ', 'heal', -to.r - 16, now); sfx.pickup(); break;
-        case 'split': pop(by, '二枚刃!', 'ult', -by.r - 16, now); break;
-        case 'relay': pop(to, '玉突き!', 'accent', -to.r - 16, now); rings.push({ x: to.x, y: to.y, r: to.r + 10, c: 'accent', t: now }); sfx.relay(); break;
-        case 'blast': rings.push({ x: e.x, y: e.y, r: e.r, c: 'ult', t: now, fill: true }); freeze(now, 60); shake(now, 3, 140); sfx.blast(++shotBlasts); break;
-        case 'mirror': rings.push({ x: by.x, y: by.y, r: by.r + 6, c: 'accent', t: now }); break;
-        case 'bonusShot': center('場外: もう 1 手!', 'ult', now); sfx.bonus(); break;
-        case 'trick': pop(to || { x: W / 2, y: 140 }, TRICK_JA[e.kind] || '', 'ult', -40, now, true); break;
-        default: break;
-      }
-    }
-    state.events = [];
+  /** 味方を倒す・大きく削る攻撃をする敵(1 ターン前からゆっくり脈打つ) */
+  function lethalFoes(tv) {
+    const out = new Set();
+    let minHp = Infinity; for (const u of state.units) if (u.alive && u.side === 0 && u.kind === 'ally') minHp = Math.min(minHp, u.maxHp);
+    for (const id of Object.keys(tv.by)) if (tv.ko.length || tv.by[id] >= minHp * 0.3) out.add(+id);
+    return out;
   }
 
   // ---- 描画 ------------------------------------------------------------------
@@ -385,12 +378,12 @@
     for (const p of state.patches) {
       ctx.save(); ctx.globalAlpha = 0.34; ctx.fillStyle = colors[p.kind === 'wet' ? 'wet' : p.kind === 'mat' ? 'mat' : 'stove'];
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
-      ctx.fillStyle = colors.fg; ctx.globalAlpha = 0.6; ctx.font = '700 10px ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = colors.fg; ctx.globalAlpha = 0.6; ctx.font = '700 ' + TS[5] + 'px ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillText(p.kind === 'wet' ? 'すべる' : p.kind === 'mat' ? 'とまる' : 'あつい', p.x, p.y); ctx.globalAlpha = 1;
     }
     for (const p of state.pickups) { // 回復のおやつ
       ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fillStyle = colors.snack; ctx.fill();
-      ctx.fillStyle = colors.surface; ctx.font = '700 13px ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+', p.x, p.y + 0.5);
+      ctx.fillStyle = colors.surface; ctx.font = '700 ' + TS[4] + 'px ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('+', p.x, p.y + 0.5);
     }
     if (state.slickTurns > 0) { ctx.save(); ctx.globalAlpha = 0.14; ctx.fillStyle = colors.wet; ctx.fillRect(0, 0, W, H); ctx.restore(); }
     const g = state.gaps;
@@ -407,7 +400,7 @@
     };
     side('top', W, (a, b, o) => seg(a, 0, b, 0, o)); side('bottom', W, (a, b, o) => seg(a, H, b, H, o));
     side('left', H, (a, b, o) => seg(0, a, 0, b, o)); side('right', H, (a, b, o) => seg(W, a, W, b, o));
-    ctx.fillStyle = colors.gap; ctx.font = '700 11px ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = colors.gap; ctx.font = '700 ' + TS[5] + 'px ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     for (const gp of g.top) ctx.fillText('落ちる', (gp[0] + gp[1]) / 2, 12);
     for (const gp of g.bottom) ctx.fillText('落ちる', (gp[0] + gp[1]) / 2, H - 12);
     for (const gp of g.left) ctx.fillText('落', 12, (gp[0] + gp[1]) / 2);
@@ -422,16 +415,18 @@
       ctx.save(); ctx.strokeStyle = colors.boss; ctx.fillStyle = colors.boss; ctx.lineWidth = 3;
       ctx.beginPath(); ctx.moveTo(cx - wx / l * 14, cy - wy / l * 14); ctx.lineTo(cx + wx / l * 14, cy + wy / l * 14); ctx.stroke();
       ctx.beginPath(); ctx.arc(cx + wx / l * 14, cy + wy / l * 14, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.font = '700 10px ' + font; ctx.fillText('風', cx, cy - 22); ctx.restore();
+      ctx.font = '700 ' + TS[5] + 'px ' + font; ctx.fillText('風', cx, cy - 22); ctx.restore();
     }
   }
 
+  // 予告: 点滅させず、ゆっくり濃淡を変える(約 1.2 秒。動きを減らす設定・演出なしでは止める)
   function drawTelegraphs(now) {
     if (state.phase === 'won' || state.phase === 'lost') return;
+    const breathe = !reduce && fx() > 0 ? 0.5 + 0.5 * Math.sin(now / 1200 * Math.PI * 2) : 0.5;
     for (const t of telegraphs(state)) {
       ctx.save(); ctx.fillStyle = colors.danger; ctx.strokeStyle = colors.danger;
-      if (t.shape === 'circle') { ctx.globalAlpha = 0.18; ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2); ctx.fill(); }
-      else if (t.shape === 'band') { ctx.globalAlpha = 0.18; ctx.fillRect(t.x, t.y, t.w, t.h); }
+      if (t.shape === 'circle') { ctx.globalAlpha = 0.13 + 0.08 * breathe; ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2); ctx.fill(); }
+      else if (t.shape === 'band') { ctx.globalAlpha = 0.13 + 0.08 * breathe; ctx.fillRect(t.x, t.y, t.w, t.h); }
       else if (t.shape === 'line') { ctx.globalAlpha = 0.6; ctx.setLineDash([4, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(t.x, t.y); ctx.lineTo(t.x2, t.y2); ctx.stroke(); }
       else if (t.shape === 'gust' || t.shape === 'pull') { ctx.globalAlpha = 0.5; ctx.setLineDash([2, 6]); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2); ctx.stroke(); }
       ctx.restore();
@@ -439,7 +434,7 @@
         const o = state.units[id];
         ctx.save(); ctx.strokeStyle = colors.ult; ctx.lineWidth = 3; ctx.setLineDash([5, 4]); ctx.lineDashOffset = -now / 60;
         ctx.beginPath(); ctx.arc(o.x, o.y, o.r + 7, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-        ctx.fillStyle = colors.ult; ctx.font = '700 9px ' + font; ctx.textAlign = 'center'; ctx.fillText('巻き込む', o.x, o.y + o.r + 26);
+        ctx.fillStyle = colors.ult; ctx.font = '700 ' + TS[5] + 'px ' + font; ctx.textAlign = 'center'; ctx.fillText('巻き込む', o.x, o.y + o.r + 26);
       }
     }
   }
@@ -463,32 +458,70 @@
     if (m) { ctx.fillStyle = u.obj === 'bumper' ? colors.accent : colors.surface; ctx.font = '700 10px ' + font; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(m, u.x, u.obj === 'lid' ? u.y + 11 : u.y); }
   }
 
-  function drawUnit(u, now) {
+  // ---- 駒の見た目(形を変える動き) ------------------------------------------------
+  const trails = new Map(); // 速いときの残像(駒 id → 直近の位置)
+  function unitLook(u) { return { base: u.kind === 'boss' ? colors.boss : u.side === 0 ? colors.ally : colors.enemy, fg: u.side === 0 ? colors['ally-fg'] : colors['enemy-fg'] }; }
+  /** 駒の体(変形あり)。体力の棒・カウントなどの情報は drawInfo で、演出より手前に描く */
+  function drawBody(u, now, lethal) {
     if (u.kind === 'obstacle') return drawObstacle(u);
-    const ally_ = u.side === 0, base = u.kind === 'boss' ? colors.boss : ally_ ? colors.ally : colors.enemy;
-    const fg = ally_ ? colors['ally-fg'] : colors['enemy-fg'];
+    const L = FXT.level[fxKey()], Bd = FXT.body;
     if (u.kind === 'mini') { ctx.beginPath(); ctx.arc(u.x, u.y, u.r, 0, Math.PI * 2); ctx.fillStyle = colors.ult; ctx.fill(); return; }
+    const ally_ = u.side === 0, look = unitLook(u);
     const peel = u.kind !== 'boss' && u.hp * 2 <= u.maxHp;
-    if (ally_ && u.id === state.active && state.phase === 'aim') {
-      const pulse = aim && aim.pulse && now - aim.pulse < 160 ? 5 : 0; // 強さの段が変わった瞬間に一度ふくらむ
-      ctx.beginPath(); ctx.arc(u.x, u.y, u.r + 4 + pulse + 2 * Math.sin(now / 180), 0, Math.PI * 2); ctx.strokeStyle = armed ? colors.ult : colors.accent; ctx.lineWidth = 3; ctx.stroke();
+    const sp = Math.hypot(u.vx, u.vy);
+    // 残像(速いときだけ。動きを減らす設定では出さない)
+    if (L.afterimage && !reduce) {
+      let tr = trails.get(u.id); if (!tr) { tr = []; trails.set(u.id, tr); }
+      if (sp > Bd.afterimage.fromSpeed) { tr.unshift([u.x, u.y]); if (tr.length > 7) tr.pop(); } else if (tr.length) tr.pop();
+      for (let k = 0; k < Bd.afterimage.count; k++) { const p = tr[(k + 1) * 2]; if (!p) break; ctx.globalAlpha = Bd.afterimage.alpha[k]; ctx.beginPath(); ctx.arc(p[0], p[1], u.r, 0, Math.PI * 2); ctx.fillStyle = look.base; ctx.fill(); }
+      ctx.globalAlpha = 1;
     }
-    const wob = peel ? Math.sin(now / 90 + u.id) * 1.2 : 0; // はがれかけは小さく揺れる
-    ctx.globalAlpha = peel ? 0.6 : 1;
-    ctx.beginPath(); ctx.arc(u.x + wob, u.y, u.r, 0, Math.PI * 2); ctx.fillStyle = base; ctx.fill();
+    // 番の駒の輪(ゆっくり脈打つ。強さの段が変わった瞬間に一度ふくらむ)
+    if (ally_ && u.id === state.active && state.phase === 'aim') {
+      const pulse = aim && aim.pulse && now - aim.pulse < Bd.stepPulse.ms ? Bd.stepPulse.px : 0;
+      ctx.beginPath(); ctx.arc(u.x, u.y, u.r + Bd.turnRing.gap + pulse + Bd.turnRing.amp * Math.sin(now / Bd.turnRing.periodMs * Math.PI * 2), 0, Math.PI * 2);
+      ctx.strokeStyle = armed ? colors.ult : colors.accent; ctx.lineWidth = Bd.turnRing.width; ctx.stroke();
+    }
+    const b = R.bodyOf(u.id);
+    ctx.save();
+    const wob = peel ? Math.sin(now / 90 + u.id) * Bd.peel.wobblePx : 0; // はがれかけは小さく揺れる
+    ctx.translate(u.x + b.ox + wob, u.y + b.oy);
+    ctx.scale(b.s, b.s);
+    if (b.sx !== 1 || b.sy !== 1) { ctx.rotate(b.ang); ctx.scale(b.sx, b.sy); ctx.rotate(-b.ang); }
+    // 生きた変形: 引っぱり中のつぶれ / 動いている最中の伸び / 番の駒と狙う敵の呼吸 / 前兆の脈
+    let ls = 1, la = 0;
+    if (ally_ && u.id === state.active && state.phase === 'aim' && aim && !aim.exact) {
+      const dx = aim.cx - aim.sx, dy = aim.cy - aim.sy, p = powerOf(Math.hypot(dx, dy));
+      ls = Bd.dragSquash[p] - (aim.pulse && now - aim.pulse < 90 ? Bd.stepBounce : 0); la = Math.atan2(dy, dx);
+    } else if (state.phase === 'resolving' && sp > 60) {
+      ls = 1 + (Bd.speedStretch.max - 1) * Math.min(1, sp / Bd.speedStretch.atSpeed); la = Math.atan2(u.vy, u.vx);
+    }
+    if (ls !== 1) { ctx.rotate(la); ctx.scale(ls, 1 / ls); ctx.rotate(-la); }
+    if (L.breathe && !reduce && state.phase === 'aim') {
+      const target = aim && aim.pred && aim.pred.marks.find((m) => m.c === 'danger');
+      if ((ally_ && u.id === state.active) || (target && target.id === u.id)) { const k = 1 + Bd.breathe.amp * Math.sin(now / Bd.breathe.periodMs * Math.PI * 2 + u.id); ctx.scale(k, 1 / k); }
+    }
+    if (lethal && lethal.has(u.id) && !reduce) { const k = 1 + 0.045 * Math.max(0, Math.sin(now / 1200 * Math.PI * 2)); ctx.scale(k, k); }
+    ctx.globalAlpha = peel ? Bd.peel.alpha : 1;
+    ctx.beginPath(); ctx.arc(0, 0, u.r, 0, Math.PI * 2); ctx.fillStyle = look.base; ctx.fill();
     ctx.globalAlpha = 1;
-    if (u.move === 'pierce' && ally_) { ctx.setLineDash([3, 3]); ctx.strokeStyle = fg; ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]); }
+    if (u.move === 'pierce' && ally_) { ctx.setLineDash([3, 3]); ctx.strokeStyle = look.fg; ctx.lineWidth = 1.5; ctx.stroke(); ctx.setLineDash([]); }
     if (u.hold) { ctx.strokeStyle = colors.fg; ctx.lineWidth = 3; ctx.stroke(); }
-    if (u.shield > 0) { ctx.beginPath(); ctx.arc(u.x, u.y, u.r + 3, 0, Math.PI * 2); ctx.strokeStyle = colors.accent; ctx.lineWidth = 2; ctx.stroke(); }
-    ctx.fillStyle = fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    ctx.font = '700 ' + Math.max(9, Math.round(u.r * 0.56)) + 'px ' + font;
-    ctx.fillText(u.kind === 'boss' ? u.name : (SHORT[u.lineage] || u.name.slice(0, 2)), u.x + wob, u.y);
-    // 体力
+    if (u.shield > 0) { ctx.beginPath(); ctx.arc(0, 0, u.r + 3, 0, Math.PI * 2); ctx.strokeStyle = colors.accent; ctx.lineWidth = 2; ctx.stroke(); }
+    ctx.fillStyle = look.fg; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.font = '700 ' + (u.kind === 'boss' ? TS[3] : TS[4]) + 'px ' + font; // 駒の大きさに比例させず、文字の段に寄せる
+    ctx.fillText(u.kind === 'boss' ? u.name : (SHORT[u.lineage] || u.name.slice(0, 2)), 0, 0);
+    ctx.restore();
+  }
+  /** 情報(体力の棒・カウント・特性・ゲージ・予想ダメージ)。演出より手前に描いて、演出に隠させない */
+  function drawInfo(u, tv) {
+    if (u.kind === 'obstacle' || u.kind === 'mini') return;
+    const ally_ = u.side === 0;
     const ratio = Math.max(0, u.hp / u.maxHp), w = Math.max(30, u.r * 1.8), hx = u.x - w / 2, hy = u.y + u.r + 3;
     ctx.fillStyle = colors.line; ctx.fillRect(hx, hy, w, 6);
     ctx.fillStyle = ratio > 0.5 ? colors.heal : colors.danger; ctx.fillRect(hx, hy, w * ratio, 6);
     ctx.fillStyle = colors.fg; ctx.fillRect(hx + w / 2 - 0.5, hy - 1, 1, 8); // 半分の目印(ここを切ると落とせる)
-    ctx.font = '700 10px ' + font; ctx.lineWidth = 3; ctx.strokeStyle = colors.table;
+    ctx.font = '700 ' + TS[5] + 'px ' + font; ctx.lineWidth = 3; ctx.strokeStyle = colors.table; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     const label = String(Math.max(0, u.hp)) + (u.poison > 0 ? ' 毒' + u.poison : '');
     ctx.strokeText(label, u.x, hy + 13); ctx.fillStyle = u.poison > 0 ? colors.poison : colors.fg; ctx.fillText(label, u.x, hy + 13);
     if (u.kind === 'boss') { // 残りのゲージ
@@ -498,20 +531,26 @@
       const bx = u.x + u.r * 0.72, by = u.y - u.r * 0.72, soon = u.count === 1 && u.stagger === 0;
       ctx.beginPath(); ctx.arc(bx, by, 9, 0, Math.PI * 2); ctx.fillStyle = soon ? colors.danger : colors.surface; ctx.fill();
       ctx.strokeStyle = colors.fg; ctx.lineWidth = 1; ctx.stroke();
-      ctx.fillStyle = soon ? colors.surface : colors.fg; ctx.font = '700 11px ' + font; ctx.fillText(u.stagger > 0 ? '…' : String(u.count), bx, by + 0.5);
-      if (u.trait) { ctx.font = '700 9px ' + font; ctx.fillStyle = colors.fg; ctx.fillText(TRAIT_JA[u.trait], u.x, u.y - u.r - 6); }
-    } else if (u.ultCharge >= u.ultNeed) { // 必殺が使える
-      ctx.beginPath(); ctx.arc(u.x + u.r * 0.72, u.y - u.r * 0.72, 6, 0, Math.PI * 2); ctx.fillStyle = colors.ult; ctx.fill();
+      ctx.fillStyle = soon ? colors.surface : colors.fg; ctx.font = '700 ' + TS[4] + 'px ' + font; ctx.fillText(u.stagger > 0 ? '…' : String(u.count), bx, by + 0.5);
+      if (u.trait) { ctx.font = '700 ' + TS[5] + 'px ' + font; ctx.fillStyle = colors.fg; ctx.fillText(TRAIT_JA[u.trait], u.x, u.y - u.r - 6); }
+    } else {
+      if (u.ultCharge >= u.ultNeed) { ctx.beginPath(); ctx.arc(u.x + u.r * 0.72, u.y - u.r * 0.72, 6, 0, Math.PI * 2); ctx.fillStyle = colors.ult; ctx.fill(); } // 必殺が使える
+      const d = tv && tv.dmg[u.id];
+      if (d && state.phase === 'aim') { // 予想ダメージ(このまま何もしなければ、次の敵の番に受ける)
+        const ko = tv.ko.indexOf(u.id) >= 0, s = '-' + d + (ko ? ' たおれる' : '');
+        ctx.font = '700 ' + TS[4] + 'px ' + font; ctx.lineWidth = 3; ctx.strokeStyle = colors.surface; ctx.strokeText(s, u.x, u.y - u.r - 12);
+        ctx.fillStyle = colors.danger; ctx.fillText(s, u.x, u.y - u.r - 12);
+      }
     }
   }
 
   // 予測線: 本番と同じ計算で、最初に当たる相手まで描く(双眼鏡なら 2 つ目まで)。
   // 当たる相手が味方なら、出るタッチ技の名前と、その技が狙う相手を示す。途中で落ちる・倒れるなら赤
-  function drawAim(now) {
+  function drawAim() {
     const sh = shotFromAim(), u = state.units[state.active];
     if (!aim || !u) return;
     if (!sh) { // 取り消しの範囲
-      ctx.fillStyle = colors.muted; ctx.font = '700 12px ' + font; ctx.textAlign = 'center'; ctx.fillText('ここで離すと取り消し', u.x, u.y - u.r - 18);
+      ctx.fillStyle = colors.muted; ctx.font = '700 ' + TS[4] + 'px ' + font; ctx.textAlign = 'center'; ctx.fillText('ここで離すと取り消し', u.x, u.y - u.r - 18);
       $('hint').textContent = '引っぱって強さを決める(戻して離すと取り消し)';
       return;
     }
@@ -525,7 +564,7 @@
     for (const m of marks) {
       const o = state.units[m.id]; if (!o || !o.alive) continue;
       ctx.beginPath(); ctx.arc(o.x, o.y, o.r + 5, 0, Math.PI * 2); ctx.strokeStyle = colors[m.c]; ctx.lineWidth = 2; ctx.setLineDash([3, 3]); ctx.stroke(); ctx.setLineDash([]);
-      if (m.txt) { ctx.fillStyle = colors[m.c]; ctx.font = '700 11px ' + font; ctx.textAlign = 'center'; ctx.fillText(m.txt, o.x, o.y - o.r - 10); }
+      if (m.txt) { ctx.fillStyle = colors[m.c === 'danger' ? 'fg' : m.c]; ctx.font = '700 ' + TS[4] + 'px ' + font; ctx.textAlign = 'center'; ctx.fillText(m.txt, o.x, o.y - o.r - 10); }
     }
     const len = Math.sqrt(sh.dx * sh.dx + sh.dy * sh.dy), k = (u.r + 8 + sh.power * 16) / len;
     ctx.beginPath(); ctx.moveTo(u.x, u.y); ctx.lineTo(u.x + sh.dx * k, u.y + sh.dy * k);
@@ -563,29 +602,6 @@
     return { key, pts, marks, bad, info };
   }
 
-  function drawFx(now) {
-    rings = rings.filter((r) => now - r.t < 450);
-    for (const r of rings) {
-      const p = (now - r.t) / 450;
-      ctx.save(); ctx.globalAlpha = (1 - p) * (r.fill ? 0.35 : 0.9);
-      ctx.beginPath(); ctx.arc(r.x, r.y, r.r * (0.6 + 0.4 * p), 0, Math.PI * 2);
-      if (r.fill) { ctx.fillStyle = colors[r.c]; ctx.fill(); } else { ctx.strokeStyle = colors[r.c]; ctx.lineWidth = 3; ctx.stroke(); }
-      ctx.restore();
-    }
-    bolts = bolts.filter((b) => now - b.t < 260);
-    for (const b of bolts) { ctx.save(); ctx.globalAlpha = 1 - (now - b.t) / 260; ctx.strokeStyle = colors.ult; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(b.a.x, b.a.y); ctx.lineTo(b.b.x, b.b.y); ctx.stroke(); ctx.restore(); }
-    popups = popups.filter((p) => now - p.t < 950);
-    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-    for (const p of popups) {
-      const k = (now - p.t) / 950;
-      ctx.globalAlpha = 1 - k * k;
-      ctx.font = '700 ' + (p.size || (p.big ? 20 : 13)) + 'px ' + font;
-      ctx.lineWidth = 3; ctx.strokeStyle = colors.surface; ctx.strokeText(p.text, p.x, p.y - k * 22);
-      ctx.fillStyle = colors[p.c] || colors.fg; ctx.fillText(p.text, p.x, p.y - k * 22);
-    }
-    ctx.globalAlpha = 1;
-  }
-
   function frame(now) {
     const dtMs = last ? now - last : 16; last = now;
     perf.frames++; if (dtMs > 25) perf.slow++; if (dtMs > perf.maxMs && perf.frames > 5) perf.maxMs = dtMs;
@@ -593,32 +609,49 @@
       const held = now < pauseUntil || now < freezeUntil;
       if (fxm.finaleT !== null) fxm.finaleMs += dtMs;
       else if (held) { if (shotOpen) fxm.shotWait += dtMs; else fxm.enemyWait += dtMs; }
-      if (now < slowUntil && fxm.finaleT === null) fxm.slowMs += dtMs * (1 - slowRate);
+      if (slowWin && shotStep >= slowWin.i0 && fxm.finaleT === null) fxm.slowMs += dtMs * (1 - slowWin.rate);
     }
     if (fxm.firePos && fxm.moveT === null) { const u = state.units[fxm.firePos[0]]; if (u && (u.x !== fxm.firePos[1] || u.y !== fxm.firePos[2])) fxm.moveT = now - fxm.fireT; }
     if (state.phase === 'resolving' && now >= pauseUntil && now >= freezeUntil) {
       const t0 = performance.now();
-      acc += Math.min(dtMs, 50) / 1000 * (now < slowUntil ? slowRate : 1);
+      acc += Math.min(dtMs, 50) / 1000 * rateNow();
       let n = 0;
-      while (acc >= DT && state.phase === 'resolving' && n < 16) {
-        for (const r of risers) if (!r.done && shotStep >= r.at) { r.done = true; sfx.riser(Math.max(120, r.ms - (shotStep - r.at) * DT * 1000), r.top); }
-        step(state); acc -= DT; n++; shotStep++;
-        if (state.events.length) { consumeEvents(now); if (now < pauseUntil || now < freezeUntil) break; }
-        if (shotOpen && !state.motion) flushShot(now);
+      while (acc >= DT && state.phase === 'resolving' && n < (skipping ? 120 : 16)) {
+        const pre = preAt.get(shotStep);
+        if (pre) { preAt.delete(shotStep); for (const c of pre) runCue(c, now); if (now < pauseUntil || now < freezeUntil) break; }
+        step(state); acc -= DT; n++;
+        for (const e of state.events) if (fxm.events.length < 4000) fxm.events.push([Math.round(now - (fxm.fireT || now)), e.t, e.n]);
+        state.events = [];
+        const list = cueAt.get(shotStep); shotStep++;
+        if (list) for (const c of list) runCue(c, now);
+        if (shotOpen && !state.motion) shotOpen = false;
+        if (now < pauseUntil || now < freezeUntil) break;
+        rateNow();
       }
       const sm = performance.now() - t0; if (sm > perf.simMsMax) perf.simMsMax = sm;
-      if (state.phase !== 'resolving') { acc = 0; consumeEvents(now); flushShot(now); refresh(); if (state.phase === 'won' || state.phase === 'lost') finish(); else if (replaying) finish(); }
+      if (state.phase !== 'resolving') { acc = 0; skipping = false; slowWin = null; refresh(); if (state.phase === 'won' || state.phase === 'lost') finish(); else if (replaying) finish(); }
     }
+    R.update(Math.min(dtMs, 50));
+    const tv = state.phase === 'aim' ? threatNow() : null, lethal = tv ? lethalFoes(tv) : null;
     ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    if (now < shakeUntil) { const a = shakeAmp * (shakeUntil - now) / 250; ctx.translate(Math.sin(now / 17) * a, Math.cos(now / 23) * a); }
+    const cam = R.camera();
+    ctx.save();
+    ctx.translate(cam.tx, cam.ty);
+    if (cam.s !== 1) { ctx.translate(W / 2, H / 2); ctx.scale(cam.s, cam.s); ctx.translate(-cam.cx, -cam.cy); }
     drawTable();
+    R.drawUnder(ctx);            // 暗転・敵の攻撃の形・煙・場外と撃破の片
     drawTelegraphs(now);
-    for (const u of state.units) if (u.alive) drawUnit(u, now);
-    if (state.phase === 'aim' && !replaying) drawAim(now);
-    drawFx(now);
+    for (const u of state.units) if (u.alive) drawBody(u, now, lethal);
+    if (state.phase === 'aim' && !replaying) drawAim();
+    R.drawOver(ctx);             // 輪・光・火花・粒
+    for (const u of state.units) if (u.alive) drawInfo(u, tv); // 情報は演出より手前
+    R.drawTexts(ctx);
+    ctx.restore();
+    R.drawScreen(ctx);           // 集中線・カットイン(画面に固定)
+    if (ff > 1 && state.phase === 'resolving') { ctx.fillStyle = colors.fg; ctx.globalAlpha = 0.7; ctx.font = '700 ' + TS[4] + 'px ' + font; ctx.textAlign = 'right'; ctx.textBaseline = 'top'; ctx.fillText('×2', W - 8, 8); ctx.globalAlpha = 1; }
     drawDemo(now);
-    fxm.maxFx = Math.max(fxm.maxFx, rings.length + popups.length + bolts.length);
+    const st = R.stats(); fxm.maxFx = Math.max(fxm.maxFx, st.particles + st.rings + st.texts);
     if (!MANUAL) requestAnimationFrame(frame);
   }
 
@@ -634,6 +667,7 @@
     fire() { const inp = SCENE && SCENE_INPUTS[SCENE.id]; if (!inp || state.phase !== 'aim') return false; aim = null; doShot(Object.assign({}, inp)); return true; },
     advance(ms) { const n = Math.max(1, Math.round(ms / (1000 / 60))); for (let k = 0; k < n; k++) { manualNow += 1000 / 60; frame(manualNow); } return this.info(); },
     hold(ms) { const now = MANUAL ? manualNow : performance.now(); pauseUntil = Math.max(pauseUntil, now + ms); }, // 検査器の自己検査用(わざと待たせる)
+    fxstate: () => ({ cam: R.camera(), cutting: R.cutting, ff, skipping, slow: !!slowWin, stats: R.stats(), body: state ? R.bodyOf(state.active) : null }), // 撮影台: 演出の中の状態
     info: () => ({ phase: state.phase, motion: !!state.motion, overlay: !$('overlay').hidden, shotOpen, chain: state.chain, shots: state.shots }),
     metrics: () => ({ shotWait: Math.round(fxm.shotWait), enemyWait: Math.round(fxm.enemyWait), slowMs: Math.round(fxm.slowMs), finaleMs: Math.round(fxm.finaleMs),
                       releaseToMove: fxm.moveT === null ? null : Math.round(fxm.moveT), maxFx: fxm.maxFx, events: fxm.events.slice(), sounds: fxm.sounds.slice() }),
@@ -649,6 +683,11 @@
   new MutationObserver(readColors).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
   window.addEventListener('resize', resize);
   newGame(); resize();
+  // 起動の直後に、音の準備と、先読み・割り振りの初回の重さを済ませておく(最初の 1 手で画面が止まらないように)
+  setTimeout(() => {
+    AUD.prepare();
+    try { const w = cloneState(state); if (w.phase === 'aim') { const sc = scriptShot(w, { dx: 0, dy: -1, power: 2 }); if (sc) planShot(sc, { memory: {} }); } } catch (e) { /* 試しの計算なので失敗しても続ける */ }
+  }, 50);
   if (SCENE && SCENE.kind === 'state') { // 止まった状態の場面
     const inp = SCENE_INPUTS[SCENE.id];
     if (SCENE.armed && !(ST && ST[2])) armed = true;

@@ -131,7 +131,7 @@ export function planShot(script, ctx) {
           if (lv.particles > 0) add({ i, k: 'dim', pct: L.dim.pct, ms: L.dim.ms });
         }
         if (n > 10) add({ i, k: 'sound', id: 'chord', notes: Math.min(T.chain.over.chordMax, 4), n });
-        if (L.dots && r.at && lv.particles > 0) add({ i, k: 'part', id: 'milestone', n, mul: lv.particles, dots: L.dots });
+        if (L.dots && lv.particles > 0) add({ i, k: 'part', id: 'milestone', n, unit: sum.shooter, mul: lv.particles, dots: L.dots, color: L.color });
         if (n === 10) chain10At = i;
         break;
       }
@@ -199,9 +199,14 @@ export function planShot(script, ctx) {
         add({ i, k: 'body', id: e.by, anim: 'windup', amt: T.body.windup.squash, ms: strong ? T.body.windup.strongMs : T.body.windup.ms });
         add({ i, k: 'pause', ms: strong ? T.body.windup.strongMs : T.body.windup.ms, why: 'windup', pre: true });
         add({ i, k: 'text', str: ACTION_JA[e.kind] || e.kind, size: 4, color: 'harm', who: 'ally', ...posOf(r, e.by, u.r + 16) });
+        add({ i, k: 'part', id: 'act', by: e.by, kind: e.kind, x: u.x, y: u.y, r: u.r });
         add({ i, k: 'pause', ms: ENEMY_ACT_MS, why: 'act' });
         break;
       }
+      case 'bolt': if (r.at[e.from] && tgt) add({ i, k: 'part', id: 'bolt', x: r.at[e.from].x, y: r.at[e.from].y, x2: tgt.x, y2: tgt.y }); break;
+      case 'mirror': if (r.at[e.by]) add({ i, k: 'part', id: 'ring', ...posOf(r, e.by, 0), r: r.at[e.by].r + 6, color: 'good', mul: lv.particles }); break;
+      case 'pin': if (r.at[e.id]) add({ i, k: 'part', id: 'ring', ...posOf(r, e.id, 0), r: 16, color: 'plain', mul: lv.particles }); break;
+      case 'spawn': if (r.at[e.id]) add({ i, k: 'part', id: 'ring', ...posOf(r, e.id, 0), r: r.at[e.id].r + 8, color: 'harm', mul: lv.particles }); break;
       case 'bossRule': add({ i, k: 'text', str: RULE_TEXT[e.kind] || '', size: 3, color: 'boss', who: 'ally', center: true }); add({ i, k: 'pause', ms: RULE_MS, why: 'rule' }); break;
       case 'explode': add({ i, k: 'part', id: 'explode', x: (r.at[e.by] || {}).x, y: (r.at[e.by] || {}).y, r: e.r, mul: lv.particles }); break;
       default: break;

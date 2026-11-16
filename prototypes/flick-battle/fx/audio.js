@@ -40,10 +40,12 @@ export function createAudio(opts) {
     for (let c = 0; c < ch; c++) {
       const d = ir.getChannelData(c); let x = 99 + c * 7919, y = 0;
       const pre = Math.round(ac.sampleRate * R.preDelayMs / 1000), tau = R.seconds / 6.91;
+      const decay = Math.exp(-1 / (tau * ac.sampleRate)), dstep = 0.65 / Math.max(1, len - pre); // 指数は掛け算で進める(起動を軽く)
+      let amp = 1, damp = 0.85;
       for (let k = pre; k < len; k++) {
-        x = (x * 16807) % 2147483647; const n = x / 1073741823.5 - 1, t = (k - pre) / ac.sampleRate;
-        const damp = 0.85 - 0.65 * Math.min(1, t / R.seconds); y += damp * (n - y); // 時間とともに高音が先に消える
-        d[k] = y * Math.exp(-t / tau);
+        x = (x * 16807) % 2147483647; const n = x / 1073741823.5 - 1;
+        y += damp * (n - y); damp -= dstep; // 時間とともに高音が先に消える
+        d[k] = y * amp; amp *= decay;
       }
     }
     const conv = ac.createConvolver(); conv.buffer = ir;
@@ -58,6 +60,8 @@ export function createAudio(opts) {
     return true;
   }
   function unlock() { if (!setup()) return false; if (ac.state === 'suspended' && ac.resume) ac.resume(); return true; }
+  /** 音の準備だけ先にする(タップ前でもよい。鳴らすのは unlock の後)。最初の 1 音で画面が止まらないように */
+  function prepare() { try { return setup(); } catch (e) { return false; } }
 
   // ---- 1 回の音のまとまり(出口・左右・響きへの送り) -----------------------------------
   function begin(prio, rev, pan) {
@@ -131,7 +135,7 @@ export function createAudio(opts) {
   /** ガラス・陶器の「チン」: 調和しない倍音を、それぞれ違う速さで消す */
   function clink(f, vol, q) {
     q = q || {};
-    const P = q.partials || [[1, 1, 0.09], [2.76, 0.55, 0.05], [5.4, 0.3, 0.03], [8.93, 0.15, 0.02]];
+    const P = q.partials || [[1, 1, 0.09], [2.76, 0.55, 0.05], [5.4, 0.3, 0.03]]; // 倍音 3 つ(音の部品の数を抑えて、一度に鳴っても重くしない)
     for (const [r, a, dd] of P) tone('sine', f * r, dd * (q.len || 1), vol * a, { at: q.at, a: 1.5, pan: q.pan });
   }
   /** 低い「ドン」: 高さが落ちるサイン波をひずませる(倍音でスマホでも聞こえる) */
@@ -244,7 +248,7 @@ export function createAudio(opts) {
       noise(0.22, 0.3 * L.break, { type: 'highpass', f: 3000, a: 1.5 });
       clap(0.2 * L.break);
       thump(200, 70, 0.14, 0.38 * L.break);
-      for (let k = 0; k < 8; k++) clink(2500 + rnd() * 3500, 0.07 * L.break, { at: 0.01 + rnd() * 0.18, len: 0.6 + rnd() * 0.6, pan: rnd() * 1.2 - 0.6 });
+      for (let k = 0; k < 5; k++) clink(2500 + rnd() * 3500, 0.08 * L.break, { at: 0.01 + rnd() * 0.18, len: 0.6 + rnd() * 0.6, pan: rnd() * 1.2 - 0.6 });
       fm(1568, 0.4, 0.12 * L.break, { at: 0.12, ratio: 2, index: 1.2 }); fm(2093, 0.5, 0.12 * L.break, { at: 0.19, ratio: 2, index: 1.2 });
     },
     blast: (q) => { // 花火: ドン+ザーッ+パチパチ。2 発目からは小さく
@@ -274,7 +278,7 @@ export function createAudio(opts) {
     gauge: () => { // ゲージ割り: 割れる音+金属の大きな響き+和音
       begin(1, S.reverbSend.gauge);
       noise(0.25, 0.32 * L.gauge, { type: 'highpass', f: 2500 }); clap(0.22 * L.gauge);
-      for (let k = 0; k < 6; k++) clink(2200 + rnd() * 3000, 0.07 * L.gauge, { at: rnd() * 0.15, pan: rnd() * 1.2 - 0.6 });
+      for (let k = 0; k < 4; k++) clink(2200 + rnd() * 3000, 0.08 * L.gauge, { at: rnd() * 0.15, pan: rnd() * 1.2 - 0.6 });
       fm(392, 1.0, 0.2 * L.gauge, { ratio: 1.41, index: 3.5, idxD: 0.5 });
       thump(200, 50, 0.35, 0.5 * L.gauge);
       for (let k = 0; k < 3; k++) saw(semi(392, S.chord[k]), 0.6, 0.12 * L.gauge, { at: 0.05, lp: 6500, lp1: 1500, wide: 0.5 });
@@ -287,12 +291,12 @@ export function createAudio(opts) {
       noise(0.18, 0.35 * L.finale, { type: 'bandpass', f: 2400, f1: 600, q: 1 });
       noise(1.5, 0.2 * L.finale, { type: 'highpass', f: 6000, a: 3 });                      // シンバルのシャーン
       fm(3200, 1.2, 0.05 * L.finale, { ratio: 1.47, index: 3, idxD: 0.8 });
-      for (let k = 0; k < 4; k++) saw(semi(262, S.chord[k]), 1.4, 0.15 * L.finale, { at: 0.04, lp: 1200, lp1: 7000, a: 30, wide: 0.6 }); // 閉じた音から開いていく
-      sparkle(1047, 10, 45, 0.08 * L.finale, 0.08);
+      for (let k = 0; k < 4; k++) saw(semi(262, S.chord[k]), 1.4, 0.15 * L.finale, { at: 0.04, lp: 1200, lp1: 7000, a: 30, wide: 0.6, voices: 2, spread: 16 }); // 閉じた音から開いていく
+      sparkle(1047, 8, 50, 0.08 * L.finale, 0.08);
       if (q.special) {
         thump(200, 45, 0.45, 0.55 * L.finale, 0.35); clap(0.3 * L.finale, 0.35);
-        sparkle(2093, 10, 35, 0.07 * L.finale, 0.4);
-        for (let k = 0; k < 4; k++) saw(semi(523, S.chord[k]), 1.1, 0.08 * L.finale, { at: 0.35, lp: 3000, lp1: 9000, a: 40, wide: 0.8 });
+        sparkle(2093, 7, 40, 0.07 * L.finale, 0.4);
+        for (let k = 0; k < 4; k++) saw(semi(523, S.chord[k]), 1.1, 0.08 * L.finale, { at: 0.35, lp: 3000, lp1: 9000, a: 40, wide: 0.8, voices: 2, spread: 16 });
       }
     },
     win: () => { // 勝ち: 鈴の 4 音で上がり、最後の音を伸ばして和音で支える
@@ -307,7 +311,7 @@ export function createAudio(opts) {
   R.explode = (q) => R.blast(Object.assign({ k2: 2 }, q || {}));
 
   return {
-    unlock,
+    unlock, prepare,
     get ready() { return !!(ac && master && ac.state !== 'suspended'); },
     get context() { return ac; },
     /** 指示表の sound / callout を鳴らす。名前のない音は鳴らさない */

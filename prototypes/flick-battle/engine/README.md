@@ -38,6 +38,7 @@ while (s.phase === 'resolving') step(s);
 - `shoot(s, input, { preview: true })` … 敵の番を回さずに止める(予測線用)
 - `cloneState(s)` … 盤面の写し(予測線・おまかせ用)
 - `hashState(s)` … 盤面のハッシュ(再現性の確認用)
+- `threatPreview(s)` … 予想ダメージ。狙う番の盤面で、このまま何もしなければ次の敵の番に味方が受けるダメージ `{ dmg: {味方 id: 合計}, ko: [倒れる味方], by: {敵 id: 与える合計} }`。複製で計算するので盤面は変えない(2026-11-16)
 - `OBJ`(engine.js)… 卓の物 5 種。`cfg.obstacles: [{ obj: 'bumper', x, y }]`、回復のおやつは `cfg.pickups: [{ x, y }]`、お皿で開く柵は `cfg.pinOpen: { side, range }`
 - `EVOLUTIONS` / `findEvolution(item, passives)`(data.js)… 進化の組。`ally()` が自動で反映し、返り値の `evo` に入る
 - `rewardChoices(team, seed, owned)`(data.js)… 戦闘後の持ち物 3 択。噛み合う候補を必ず 1 つ入れる(本体の報酬画面で使う)

@@ -1094,8 +1094,7 @@ function foeAct(s, u) {
 function runAction(s, a) {
   if (a.t === 'afterShot') {
     if (s.pendingAfter) { const p = s.pendingAfter; s.pendingAfter = null; s.queue.unshift({ t: 'afterShot' }); runAfter(s, p); return; }
-    const dealt = s.stats.dmgHit + s.stats.dmgTouch + s.stats.dmgUlt + s.stats.dmgCrash + s.stats.dmgBlast + s.stats.dmgRelay;
-    if (dealt - (s.dealtMark || 0) > s.stats.bestShotDmg) s.stats.bestShotDmg = dealt - (s.dealtMark || 0);
+    noteBestShot(s);
     // 3 れんさ以上つなげた手は、弾いた駒の必殺が 1 つ進む
     const sh = s.units[s.active];
     if (s.chain >= CHAIN_CHARGE_AT && sh && sh.alive && sh.ult && sh.ultCharge < sh.ultNeed) {
@@ -1150,8 +1149,12 @@ function runAction(s, a) {
   }
 }
 
+function noteBestShot(s) { // 1 手で与えたダメージの最高(勝敗がその手で決まったときも数える)
+  const dealt = s.stats.dmgHit + s.stats.dmgTouch + s.stats.dmgUlt + s.stats.dmgCrash + s.stats.dmgBlast + s.stats.dmgRelay;
+  if (dealt - (s.dealtMark || 0) > s.stats.bestShotDmg) s.stats.bestShotDmg = dealt - (s.dealtMark || 0);
+}
 function checkEnd(s) {
-  if (aliveCount(s, 1) === 0) { s.phase = 'won'; s.queue = []; s.motion = null; return true; }
+  if (aliveCount(s, 1) === 0) { noteBestShot(s); s.phase = 'won'; s.queue = []; s.motion = null; return true; }
   if (aliveCount(s, 0) === 0) { s.phase = 'lost'; s.queue = []; s.motion = null; return true; }
   return false;
 }
@@ -1211,6 +1214,28 @@ export function shoot(s, input, opts) {
   s.phase = 'resolving';
   s.queue.push(opts && opts.preview ? { t: 'stop' } : { t: 'afterShot' });
   return true;
+}
+
+// ---- 予想ダメージ: このまま何もしなければ、次の敵の番で味方が受けるダメージ -----------------
+// 盤面の複製で、カウント 1 の敵だけを今の位置のまま動かして測る(本物の盤面は変えない)。
+// 返す: { dmg: { 味方の id: 合計 }, ko: [倒れる味方の id], by: { 敵の id: その敵が与える合計 } }
+export function threatPreview(s) {
+  const out = { dmg: {}, ko: [], by: {} };
+  if (s.phase !== 'aim') return out;
+  const c = cloneState(s);
+  c.events = []; c.motion = null; c.phase = 'resolving';
+  c.queue = s.units.filter((u) => u.alive && u.side === 1 && u.count === 1 && u.stagger === 0).map((u) => ({ t: 'tick', id: u.id }));
+  if (!c.queue.length) return out;
+  for (let k = 0; k < 240 * 20 && c.phase === 'resolving'; k++) {
+    step(c);
+    for (const e of c.events) {
+      const to = e.to !== undefined ? c.units[e.to] : null;
+      if (e.t === 'hit' && to && to.side === 0 && to.kind === 'ally') { out.dmg[e.to] = (out.dmg[e.to] || 0) + e.dmg; if (e.by >= 0) out.by[e.by] = (out.by[e.by] || 0) + e.dmg; }
+      if (e.t === 'ko' && c.units[e.id] && c.units[e.id].side === 0 && c.units[e.id].kind === 'ally') out.ko.push(e.id);
+    }
+    c.events = [];
+  }
+  return out;
 }
 
 // ---- 予告(次の敵の番で動く敵の、攻撃の形) -----------------------------------

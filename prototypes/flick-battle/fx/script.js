@@ -48,7 +48,9 @@ export function scriptShot(state, input, opts) {
     if (phase === 'shot') shotEnd = i;
     i++;
   }
-  return { events, steps: i, shotEnd, end: c, summary: summarize(events, before, c) };
+  const summary = summarize(events, before, c);
+  summary.shooter = state.active; // 弾いた駒(節目の輪や粒を、この駒のまわりに出す)
+  return { events, steps: i, shotEnd, end: c, summary };
 }
 
 function summarize(events, before, end) {
