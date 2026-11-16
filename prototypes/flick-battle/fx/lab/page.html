@@ -49,8 +49,15 @@
   .pick span { display: inline-flex; align-items: center; min-height: 36px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 14px; }
   .pick input:checked + span { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
   .pick input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap: 8px; }
-  .grid button { padding: 8px 10px; font-size: 14px; text-align: left; }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+  .pairs { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+  .pair { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: center; border-top: 1px solid var(--line); padding-top: 6px; }
+  .pair span { font-size: 14px; }
+  .pair button { padding: 6px 12px; min-height: 40px; font-size: 14px; }
+  .pair button.planned-mini { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 700; }
+  .applied { font-size: 13px; color: var(--muted); }
+  .applied summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
+  .applied ul { margin: 4px 0 0; padding-left: 1.2em; }
   .summary { display: flex; flex-direction: column; gap: 8px; }
   .summary pre { margin: 0; white-space: pre-wrap; font: 13px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 10px; font-variant-numeric: tabular-nums; }
   .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -61,14 +68,15 @@
 <main>
   <header>
     <h1>はじきバトル 音の聴き比べ</h1>
-    <p class="lead">演出の調査で「耳で決める」とした項目です。それぞれ聴いて、よいと思うほうを選んでください。最後に、選んだ結果をまとめた文章が出ます。</p>
-    <p class="note">iPhone はマナーモードだと鳴りません。音量を上げ、できればイヤホンで聴いてください。音はすべて端末の中で作っていて、音源ファイルは使っていません。</p>
+    <p class="lead">第 2 版です。前回選んでもらった結果を反映し、「音色がショボい」を受けて、すべての音を作り直しました。前回の音とも聴き比べられます。</p>
+    <p class="note">iPhone はマナーモードだと鳴りません。音量を上げてください。スマホのスピーカーでも聞こえるように作っていますが、イヤホンだと響きまで分かります。音はすべて端末の中で作っていて、音源ファイルは使っていません。</p>
+    <details class="applied"><summary>前回の選択で決めたこと(反映済み)</summary><ul id="applied"></ul></details>
   </header>
-  <div id="cards"></div>
+  <div id="cards" class="stack"></div>
   <section class="card">
-    <h2>そのほかの音<span class="tag">参考</span></h2>
-    <p class="why">新しく作った音の一覧です。選ぶ必要はありません。気になる音があれば、その名前を教えてください。</p>
-    <div class="grid" id="others"></div>
+    <h2>そのほかの音<span class="tag">新と前回</span></h2>
+    <p class="why">作り直したほかの音です。選ぶ必要はありません。気になる音があれば、その名前と「もっとこう」を教えてください。</p>
+    <div class="pairs" id="others"></div>
   </section>
   <section class="card summary">
     <h2>選んだ結果</h2>

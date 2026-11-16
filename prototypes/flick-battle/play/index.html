@@ -1949,26 +1949,41 @@ const FXT = {
   // 加算の光はライトの卓(明るい木の色)では白く飛んで見えない。ライトは通常の重ね方+暗い縁に切り替える [R2]
   glowMode: { light: 'normal', dark: 'lighter' },
 
-  // ---- 音(端末の中で作る。音源ファイルは使わない) [R1 音・R2 声] -----------------------------------
+  // ---- 音(端末の中で作る。音源ファイルは使わない) [R1 音・R2 声・耳 = 聴き比べ台] ---------------------
+  // 2026-11-16 発注者の選択: れんさ=半音 / 段=ドミソ / 立ち上がり=8ms / ゆらし=±0.5 / ダッキング=あり / 勝ち=最後を伸ばす /
+  //   強打=どちらでも / 呼びかけ=「もっと声らしく」/ 決着=「もっと派手に」/ 全体に「音色がショボい。もっと爽快感を」→ 第 2 版(層で作る)
   sound: {
-    attackMs: 8,          // 立ち上がり 5〜20 ミリ秒(いきなり最大にすると「プチッ」と鳴る) [R1・弱]
-    voicesMax: 6,         // 同時に鳴る音の上限 [R1]
-    jitterSemi: 0.5,      // 毎回の高さのゆらし(±1 半音以内から) [R1・弱]
+    attackMs: 8,          // 立ち上がり(いきなり最大にすると「プチッ」と鳴る) [R1・耳 A]
+    voicesMax: 6,         // 同時に鳴る音の上限(1 回の play を 1 つと数える) [R1]
+    jitterSemi: 0.5,      // 毎回の高さのゆらし [耳 A]
     master: 0.9,
-    // れんさの音階。既定は 5 音階、半音と聴き比べて決める [R2 食い違い 1・耳]
+    limiter: { thresholdDb: -4 }, // 割れ止め(大きな音が重なったときだけ効く)
+    reverb: { seconds: 1.3, preDelayMs: 15, level: 0.9 },   // 部屋の響き(音ごとの送り量は reverbSend)
+    reverbSend: { hit: 0.22, strong: 0.25, ring: 0.3, break: 0.35, blast: 0.3, chord: 0.4, ult: 0.45, gauge: 0.45, finale: 0.55, win: 0.45, voice: 0.25 },
+    // 音ごとの大きさ(1 = 標準)。実機で聴いて直す
+    level: { ui: 1, step: 1.3, shoot: 1.6, tap: 1, rail: 1, hit: 1.7, strong: 1.8, harm: 1, relay: 1.3, crash: 1.3, bumper: 1, pickup: 1.5, bonus: 1.5,
+             ring: 1, break: 1, blast: 1, chord: 1, ult: 1, gauge: 1, finale: 1, win: 1, lose: 1, voice: 1.8 },
+    // れんさの音階。発注者が聴き比べて半音を選んだ(Candy Crush の型)。5 音階も残す
     scales: { pentatonic: [0, 2, 4, 7, 9], semitone: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
-    scale: 'pentatonic',
-    chainBaseHz: 330,     // れんさ 1 の高さ(今の当たりの音と同じ)
+    scale: 'semitone',
+    chainBaseHz: 523,     // れんさ 1 の高さ(ド。第 1 版の 330Hz はスマホで細く聞こえた)
     chainCap: 10,         // 10 で頭打ち
-    // 引っぱりの段の音: 今は長 3 度ずつで、3 段で増三和音になる → ドミソ [R2 #8]
-    step: { baseHz: 392, semis: [0, 0, 4, 7], legacySemis: [0, 0, 4, 8] },
+    timbre: 'glass',      // 当たりの音色: glass(おはじきのガラス)/ marimba(木琴)/ bell(鈴)。発注者が選ぶ
+    // 引っぱりの段の音: ドミソ [耳 A]。旧は長 3 度ずつで増三和音
+    step: { baseHz: 523, semis: [0, 0, 4, 7], legacySemis: [0, 0, 4, 8] },
     chord: [0, 4, 7, 12], // 節目の和音(3 は 2 音、5 は 3 音、10 は 4 音)
-    duck: { db: -6, ms: 250 }, // 呼びかけが鳴る間は衝突音を下げる [R2]
-    // 呼びかけ(声っぽい合成音): のこぎり波を母音の帯域の山 2 つに通す [R2・弱]
-    // a と i は R2 の出典の値。u・e・o は Peterson & Barney(1952)の男声の平均の目安 [弱・耳]
-    formants: { a: [800, 1200], i: [300, 2200], u: [300, 870], e: [530, 1840], o: [570, 840] },
-    callout: { baseHz: 220, noteMs: 140, gapMs: 30, riseSemi: 5, layerSemi: 4, layersMax: 3, maxMs: 800 },
-    // 勝ち: 上がって最後の音を伸ばす(4〜6 音・1.0〜1.5 秒) / 負け: 下がる 3 音(今のまま)
+    duck: { db: -6, ms: 250 }, // 呼びかけが鳴る間は効果音を下げる [耳 A]
+    // 呼びかけ: voice = words(合成の声で短い言葉)/ vowel(母音だけ)/ tts(端末の読み上げ)。発注者が選ぶ
+    voice: 'words',
+    voiceSynth: {
+      f0: 300,               // 声の高さ(子どもっぽい明るい声)
+      formantScale: 1.15,    // 声道を短く(高めの声に合う母音の響き) [弱・耳]
+      // 日本語の母音の帯域の山 F1・F2・F3(成人男性の一般的な目安)[弱・耳]
+      formants: { a: [750, 1200, 2600], i: [300, 2300, 3000], u: [350, 1300, 2400], e: [500, 1900, 2600], o: [500, 850, 2500] },
+      q: [8, 11, 14], amp: [1, 0.65, 0.3], vibratoHz: 5.5, vibratoDepth: 0.015, breath: 0.12,
+    },
+    callout: { layerSemi: 4, layersMax: 3, maxMs: 800, text1: 'ナイス!', text2: 'すごい!' },
+    // 勝ち: 上がって最後の音を伸ばす [耳 A] / 負け: 下がる 3 音(静かに)
     win: { semis: [0, 4, 7, 12], noteMs: 90, lastMs: 420 },
     lose: { hz: [392, 311, 233], noteMs: 120 },
   },
@@ -2100,7 +2115,7 @@ const TRICK_TEXT = { crashRing: 'ぶつけ落とし!', bankDouble: '柵返し 2 
 const RULE_TEXT = { pull: '吸い寄せ!', blow: '吹き出し!', spin: '卓が回った!', wind: '風向きが変わった!' };
 const ENEMY_ACT_MS = 300; // 敵 1 体の間(R1: 1 体 0.3 秒・全体 3 秒以内)
 const RULE_MS = 380;      // ボスのルールの発動を読む間 [今]
-const ACCENT_RANK = { chord: 5, gauge: 5, ultFire: 4, ring: 3, blast: 3, strong: 2, crash: 1, bonus: 1, bumper: 0, pickup: 0 };
+const ACCENT_RANK = { chord: 5, gauge: 5, ultFire: 4, ring: 3, break: 3, blast: 3, strong: 2, crash: 1, bonus: 1, bumper: 0, pickup: 0 };
 
 /** 小数 1 桁の倍率表示(エンジンの値をそのまま丸める) */
 const fmtMult = (m) => '×' + (Math.round(m * 10) / 10).toFixed(1);
@@ -2231,7 +2246,7 @@ function planShot(script, ctx) {
           add({ i, k: 'text', str: e.how === 'ring' ? '場外!' : 'たおれた', size: isFinal ? T.tiers[4].text : T.tiers[2].text, color: 'good', who: 'enemy', ...posOf(r, e.id, 0) });
           add({ i, k: 'body', id: e.id, anim: e.how === 'ring' ? 'ringOut' : 'shatter', x: u.x, y: u.y, vx: u.vx, vy: u.vy });
           add({ i, k: 'part', id: e.how === 'ring' ? 'ringOut' : 'shatter', x: u.x, y: u.y, mul: lv.particles });
-          if (!isFinal) { add({ i, k: 'stop', ms: T.tiers[2].hitstopMs, tier: 2, why: 'ko' }); add({ i, k: 'sound', id: 'ring' }); add({ i, k: 'buzz', ms: 25 }); }
+          if (!isFinal) { add({ i, k: 'stop', ms: T.tiers[2].hitstopMs, tier: 2, why: 'ko' }); add({ i, k: 'sound', id: e.how === 'ring' ? 'ring' : 'break' }); add({ i, k: 'buzz', ms: 25 }); }
         } else {
           add({ i, k: 'text', str: 'たおれた', size: 3, color: 'harm', who: 'ally', ...posOf(r, e.id, 0) });
           add({ i, k: 'sound', id: 'harm' });

@@ -24,7 +24,7 @@ const TRICK_TEXT = { crashRing: 'ぶつけ落とし!', bankDouble: '柵返し 2 
 const RULE_TEXT = { pull: '吸い寄せ!', blow: '吹き出し!', spin: '卓が回った!', wind: '風向きが変わった!' };
 const ENEMY_ACT_MS = 300; // 敵 1 体の間(R1: 1 体 0.3 秒・全体 3 秒以内)
 const RULE_MS = 380;      // ボスのルールの発動を読む間 [今]
-const ACCENT_RANK = { chord: 5, gauge: 5, ultFire: 4, ring: 3, blast: 3, strong: 2, crash: 1, bonus: 1, bumper: 0, pickup: 0 };
+const ACCENT_RANK = { chord: 5, gauge: 5, ultFire: 4, ring: 3, break: 3, blast: 3, strong: 2, crash: 1, bonus: 1, bumper: 0, pickup: 0 };
 
 /** 小数 1 桁の倍率表示(エンジンの値をそのまま丸める) */
 const fmtMult = (m) => '×' + (Math.round(m * 10) / 10).toFixed(1);
@@ -155,7 +155,7 @@ export function planShot(script, ctx) {
           add({ i, k: 'text', str: e.how === 'ring' ? '場外!' : 'たおれた', size: isFinal ? T.tiers[4].text : T.tiers[2].text, color: 'good', who: 'enemy', ...posOf(r, e.id, 0) });
           add({ i, k: 'body', id: e.id, anim: e.how === 'ring' ? 'ringOut' : 'shatter', x: u.x, y: u.y, vx: u.vx, vy: u.vy });
           add({ i, k: 'part', id: e.how === 'ring' ? 'ringOut' : 'shatter', x: u.x, y: u.y, mul: lv.particles });
-          if (!isFinal) { add({ i, k: 'stop', ms: T.tiers[2].hitstopMs, tier: 2, why: 'ko' }); add({ i, k: 'sound', id: 'ring' }); add({ i, k: 'buzz', ms: 25 }); }
+          if (!isFinal) { add({ i, k: 'stop', ms: T.tiers[2].hitstopMs, tier: 2, why: 'ko' }); add({ i, k: 'sound', id: e.how === 'ring' ? 'ring' : 'break' }); add({ i, k: 'buzz', ms: 25 }); }
         } else {
           add({ i, k: 'text', str: 'たおれた', size: 3, color: 'harm', who: 'ally', ...posOf(r, e.id, 0) });
           add({ i, k: 'sound', id: 'harm' });

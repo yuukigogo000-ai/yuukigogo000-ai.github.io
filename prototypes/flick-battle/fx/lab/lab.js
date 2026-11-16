@@ -1,98 +1,105 @@
-// 音の聴き比べ台(fx/lab/build.mjs が tokens.js・audio.js と 1 つにまとめる)
+// 音の聴き比べ台 第 2 版(fx/lab/build.mjs が tokens.js・audio.js・audio-v1.js と 1 つにまとめる)
+// 第 1 版で選んでもらった結果を反映し、音色を層で作り直した(発注者「音色がショボい。もっと爽快感」2026-11-16)
 (function () {
   'use strict';
   const $ = (id) => document.getElementById(id);
-  let NEW = null, OLD = null; // 新しい音(予定)と、今の仮の画面の音に近い設定
-  const mk = (o) => createAudio(o);
+  let NEW = null, OLD = null; // 第 2 版と、第 1 版(前回の音)
   function ensure() {
-    if (!NEW) { NEW = mk({}); OLD = mk({ attackMs: 0, scale: 'semitone', step: 'legacy', jitter: 0, duck: false }); }
+    if (!NEW) { NEW = createAudio({}); OLD = createAudioV1({ scale: 'semitone' }); }
     NEW.unlock(); OLD.unlock();
   }
   const at = (ms, fn) => setTimeout(fn, ms);
+  const with_ = (k, v, ms, fn) => { const prev = NEW.get(k); NEW.set(k, v); fn(); at(ms, () => NEW.set(k, prev)); };
   // れんさの手を 1 本まねる: 当たり 1 つごとに音が上がり、3・5・10 で和音、最高の節目で 1 回だけ呼びかけ
   function chainShot(a, upto, opt) {
     let t = 0;
     const top = upto >= 10 ? 10 : upto >= 5 ? 5 : 0;
     for (let n = 1; n <= upto; n++) {
       if (n === 10) t += FXT.chain[10].preSilenceMs;
-      const tn = t;
-      at(tn, () => {
-        a.play('hit', { n });
+      at(t, () => {
+        a.play('hit', { n, pan: ((n * 37) % 9 - 4) / 10 });
         if (n === 3) a.play('chord', { notes: 2, n });
         if (n === 5) a.play('chord', { notes: 3, n, low: true });
         if (n >= 10) a.play('chord', { notes: 4, n, low: true });
-        if (opt && opt.callout !== false && n === top) a.play('callout', { layers: top === 10 ? (upto > 10 ? 3 : 2) : 1 });
+        if (!(opt && opt.callout === false) && n === top) a.play('callout', { layers: top === 10 ? (upto > 10 ? 3 : 2) : 1 });
       });
       t += 170;
     }
+    return t;
   }
-  const legacyStrong = () => { // 今の仮の画面の強打(2 つの音を同時に、立ち上がりなし)
-    const ac = OLD.context, s = ac.currentTime + 0.005;
-    for (const [hz, dur, type, vol] of [[110, 0.16, 'sawtooth', 0.12], [220, 0.1, 'triangle', 0.1]]) {
-      const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(hz, s);
-      g.gain.setValueAtTime(vol, s); g.gain.exponentialRampToValueAtTime(0.001, s + dur); o.connect(g); g.connect(ac.destination); o.start(s); o.stop(s + dur + 0.02);
+  // 1 手を通しで: 引っぱり(段 3 回)→ 発射 → 当たり 6 つ(2 発目が強打)→ 和音 → 呼びかけ → 最後に場外 → もう 1 手
+  function fullShot(a) {
+    [1, 2, 3].forEach((p, k) => at(k * 240, () => a.play('step', { p })));
+    at(820, () => a.play('shoot', { p: 3 }));
+    let t = 1000;
+    for (let n = 1; n <= 6; n++) {
+      const tn = t;
+      at(tn, () => {
+        a.play('hit', { n, pan: ((n * 37) % 9 - 4) / 10 });
+        if (n === 2) a.play('strong');
+        if (n === 3) a.play('chord', { notes: 2, n });
+        if (n === 5) { a.play('chord', { notes: 3, n, low: true }); a.play('callout', { layers: 1 }); }
+      });
+      t += n === 5 ? 320 : 180;
     }
-  };
-  const legacyWin = () => { const ac = OLD.context; [523, 659, 784, 1047].forEach((hz, k) => { const s = ac.currentTime + 0.005 + k * 0.09, o = ac.createOscillator(), g = ac.createGain(); o.type = 'triangle'; o.frequency.setValueAtTime(hz, s); g.gain.setValueAtTime(0.11, s); g.gain.exponentialRampToValueAtTime(0.001, s + 0.22); o.connect(g); g.connect(ac.destination); o.start(s); o.stop(s + 0.24); }); };
-  const steps = (a) => { [1, 2, 3].forEach((p, k) => at(k * 260, () => a.play('step', { p }))); at(900, () => a.play('shoot', { p: 3 })); };
-  const hits = (a, n) => { for (let k = 0; k < (n || 6); k++) at(k * 150, () => a.play('hit', { n: 2 })); };
+    at(t, () => a.play('ring'));
+    at(t + 650, () => a.play('bonus'));
+  }
 
   const CARDS = [
-    { id: 'scale', title: 'れんさの音の上がり方', tag: '10 れんさの手', why: '当たるたびに音が上がります。Candy Crush は半音ずつ、Tetris Effect などは音階で上がります。予定は 5 音階(ドレミソラ)です。',
-      plays: [['A', '5 音階(予定)', () => chainShot(NEW, 10), true], ['B', '半音ずつ', () => { NEW.set('scale', 'semitone'); chainShot(NEW, 10); at(2400, () => NEW.set('scale', FXT.sound.scale)); }]],
-      picks: ['A', 'B', 'どちらでも'] },
-    { id: 'callout', title: '呼びかけ(声っぽい合成音)', tag: '5・10・12 れんさ', why: '1 手に 1 回だけ、その手で届いた一番上の節目で鳴ります。10 以上は重ねて高くします。録音の声は使っていません。',
-      plays: [['5', '5 れんさの手', () => chainShot(NEW, 7), true], ['10', '10 れんさの手', () => chainShot(NEW, 10), true], ['12', '12 れんさの手', () => chainShot(NEW, 12), true], ['×', '呼びかけなし', () => chainShot(NEW, 10, { callout: false })]],
-      picks: ['このままでよい', 'もっと声らしく', 'もっと控えめに', 'なくてよい(文字だけ)'] },
-    { id: 'step', title: '引っぱりの段の音', tag: '弱 → 中 → 強 → 発射', why: '今の音は段ごとに長 3 度上がり、3 段そろうと落ち着かない響き(増三和音)になります。予定はドミソです。',
-      plays: [['A', 'ドミソ(予定)', () => steps(NEW), true], ['B', '今の音', () => steps(OLD)]],
-      picks: ['A', 'B', 'どちらでも'] },
-    { id: 'attack', title: '音の立ち上がり', tag: '当たり 6 回', why: '今の音は音量をいきなり最大にしているので、「プチッ」という雑音が混じりやすくなっています。予定は 8 ミリ秒かけて立ち上げます。',
-      plays: [['A', '8 ミリ秒(予定)', () => hits(NEW), true], ['B', '0(今の音)', () => { NEW.set('attackMs', 0); hits(NEW); at(1100, () => NEW.set('attackMs', FXT.sound.attackMs)); }], ['C', '20 ミリ秒', () => { NEW.set('attackMs', 20); hits(NEW); at(1100, () => NEW.set('attackMs', FXT.sound.attackMs)); }]],
-      picks: ['A', 'B', 'C', 'ちがいが分からない'] },
-    { id: 'jitter', title: '同じ音の高さのゆらし', tag: '当たり 6 回', why: '同じ音が続くと機械的に聞こえるので、毎回わずかに高さをずらします。解説記事の目安は ±2 半音ですが、大きめなので ±0.5 から試します。',
-      plays: [['A', '±0.5 半音(予定)', () => hits(NEW), true], ['B', 'ゆらさない', () => { NEW.set('jitter', 0); hits(NEW); at(1100, () => NEW.set('jitter', FXT.sound.jitterSemi)); }], ['C', '±1 半音', () => { NEW.set('jitter', 1); hits(NEW); at(1100, () => NEW.set('jitter', FXT.sound.jitterSemi)); }]],
-      picks: ['A', 'B', 'C', 'ちがいが分からない'] },
-    { id: 'strong', title: '強打の音', tag: '1 回', why: '予定は「立ち上がりの短い雑音・高さが下がる胴・短い余韻」の 3 層です。今の音は 2 つの音を同時に鳴らしています。',
-      plays: [['A', '3 層(予定)', () => NEW.play('strong'), true], ['B', '今の音', () => legacyStrong()]],
-      picks: ['A', 'B', 'どちらでも'] },
-    { id: 'duck', title: '呼びかけの間に効果音を下げる', tag: '5 れんさの手', why: '声が鳴る 0.1〜0.3 秒だけ、当たりの音を 6dB 下げます(ダッキング)。声が埋もれないようにするためです。',
-      plays: [['A', '下げる(予定)', () => chainShot(NEW, 7), true], ['B', '下げない', () => { NEW.set('duck', false); chainShot(NEW, 7); at(1500, () => NEW.set('duck', true)); }]],
-      picks: ['A', 'B', 'ちがいが分からない'] },
-    { id: 'win', title: '勝ちの音', tag: '勝敗の画面', why: '予定は 4 音で上がり、最後の音を長く伸ばします。今の音は 4 音とも同じ長さです。',
-      plays: [['A', '最後を伸ばす(予定)', () => NEW.play('win'), true], ['B', '今の音', () => legacyWin()]],
-      picks: ['A', 'B', 'どちらでも'] },
-    { id: 'finale', title: '決着の音', tag: 'ふつう・特別版', why: '最後の敵を倒した瞬間に鳴ります。1 手で 3 体以上をまとめて倒したときは、上がっていく粒の音を足します(特別版)。',
-      plays: [['1', 'ふつう', () => NEW.play('finale', {}), true], ['2', '特別版', () => NEW.play('finale', { special: true }), true]],
-      picks: ['このままでよい', 'もっと派手に', 'もっと控えめに'] },
+    { id: 'whole', title: '1 手を通しで', tag: '引っぱり → 発射 → 6 れんさ → 場外 → もう 1 手', why: '前回の音と、作り直した音(第 2 版)を同じ流れで比べます。第 2 版は 1 つの音を「カチッという立ち上がり・音の芯・きらめき・部屋の響き」の層で作り、スマホのスピーカーでも聞こえるように低い音をひずませて倍音を足しています。',
+      plays: [['新', '第 2 版', () => fullShot(NEW), true], ['前', '前回', () => fullShot(OLD)]],
+      picks: ['第 2 版がよい', '前回がよい', 'まだ物足りない'] },
+    { id: 'timbre', title: '当たりの音色', tag: '一番よく鳴る音 ・ れんさ 1 → 10', why: 'おはじきはガラスの玉なので、予定は「ガラス」です。木琴は柔らかく、鈴は長く響きます。高さは選んでもらったとおり半音ずつ上がります。',
+      plays: [['A', 'ガラス(予定)', () => with_('timbre', 'glass', 2600, () => chainShot(NEW, 10, { callout: false })), true],
+              ['B', '木琴', () => with_('timbre', 'marimba', 2600, () => chainShot(NEW, 10, { callout: false }))],
+              ['C', '鈴', () => with_('timbre', 'bell', 2600, () => chainShot(NEW, 10, { callout: false }))]],
+      picks: ['A', 'B', 'C'] },
+    { id: 'voice', title: '呼びかけ(声)', tag: '5 れんさ「ナイス!」・10 れんさ「すごい!」', why: '「もっと声らしく」を受けて、声の作りを変えました。母音の響きを 3 つの山で作り、ビブラートと息の音を足し、子音(ス・ゴ・ナ)も短い無音や息で作っています。録音の声ではありません。C は端末に入っている読み上げの声で、機種によって声が変わります。',
+      plays: [['A', '合成の声で言葉(5 れんさ)', () => with_('voice', 'words', 2000, () => chainShot(NEW, 7)), true],
+              ['A', '合成の声で言葉(10 れんさ)', () => with_('voice', 'words', 2600, () => chainShot(NEW, 10)), true],
+              ['B', '合成の声・母音だけ(10 れんさ)', () => with_('voice', 'vowel', 2600, () => chainShot(NEW, 10))],
+              ['C', '端末の読み上げ(10 れんさ)', () => with_('voice', 'tts', 2600, () => chainShot(NEW, 10))],
+              ['前', '前回(10 れんさ)', () => chainShot(OLD, 10)]],
+      picks: ['A', 'B', 'C', 'どれもまだ声らしくない'] },
+    { id: 'finale', title: '決着の音', tag: '最後の敵を倒した瞬間', why: '「もっと派手に」を受けて、大きな一撃・シンバル・開いていく和音・上がるきらめきを重ねました。1 手で 3 体以上まとめて倒した特別版は、もう一段の低音・きらめき・歓声の「あー」を足します。',
+      plays: [['1', 'ふつう', () => NEW.play('finale', {}), true], ['2', '特別版', () => NEW.play('finale', { special: true }), true], ['前', '前回', () => OLD.play('finale', {})]],
+      picks: ['このままでよい', 'もっと派手に', '派手すぎる'] },
+    { id: 'strong', title: '強打の音', tag: '1 回', why: '「カッ」という立ち上がり、ひずませた低い「ドン」、割れる帯域の「バキッ」、ガラスの響きを重ねました。',
+      plays: [['新', '第 2 版', () => NEW.play('strong'), true], ['前', '前回', () => OLD.play('strong')]],
+      picks: ['第 2 版がよい', '前回がよい', 'まだ物足りない'] },
   ];
-  const OTHERS = [['当たり', 'hit', { n: 1 }], ['場外', 'ring'], ['花火(1 発目)', 'blast', { k2: 1 }], ['花火(2 発目から)', 'blast', { k2: 2 }], ['必殺を撃つ', 'ultFire'], ['ゲージ割り', 'gauge'],
-                  ['ぶつけ', 'crash'], ['玉突き', 'relay'], ['もう 1 手', 'bonus'], ['おやつ', 'pickup'], ['輪ゴムの柱', 'bumper'], ['味方がやられた', 'harm'], ['柵に当たる', 'rail', { v: 900 }], ['駒どうしが触れる', 'tap', { v: 500 }], ['負け', 'lose']];
+  const OTHERS = [['場外', 'ring'], ['撃破(割れる)', 'break'], ['花火(1 発目)', 'blast', { k2: 1 }], ['花火(2 発目から)', 'blast', { k2: 2 }], ['必殺を撃つ', 'ultFire'], ['ゲージ割り', 'gauge'],
+                  ['勝ち', 'win'], ['負け', 'lose'], ['もう 1 手', 'bonus'], ['おやつ', 'pickup'], ['ぶつけ', 'crash'], ['玉突き', 'relay'], ['輪ゴムの柱', 'bumper'],
+                  ['発射(強)', 'shoot', { p: 3 }], ['味方がやられた', 'harm'], ['柵に当たる', 'rail', { v: 900 }]];
+  const APPLIED = ['れんさの音の上がり方: 半音ずつ(B)', '引っぱりの段の音: ドミソ(A)', '音の立ち上がり: 8 ミリ秒(A)', '同じ音の高さのゆらし: ±0.5 半音(A)',
+                   '呼びかけの間に効果音を下げる: 下げる(A)', '勝ちの音: 最後を伸ばす(A)'];
 
-  const KEY = 'flick-lab-picks';
+  const KEY = 'flick-lab-picks-v2';
   let picks = {};
   try { picks = JSON.parse(localStorage.getItem(KEY) || '{}') || {}; } catch (e) { picks = {}; }
   const save = () => { try { localStorage.setItem(KEY, JSON.stringify(picks)); } catch (e) { /* 覚えられなくても続ける */ } };
 
+  const ap = $('applied');
+  for (const t of APPLIED) { const li = document.createElement('li'); li.textContent = t; ap.append(li); }
   const cards = $('cards');
-  cards.style.display = 'flex'; cards.style.flexDirection = 'column'; cards.style.gap = '14px';
   for (const c of CARDS) {
     const sec = document.createElement('section'); sec.className = 'card'; sec.setAttribute('aria-labelledby', 'h-' + c.id);
     const h = document.createElement('h2'); h.id = 'h-' + c.id; h.textContent = c.title;
     const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = c.tag; h.append(tag);
     const why = document.createElement('p'); why.className = 'why'; why.textContent = c.why;
     const plays = document.createElement('div'); plays.className = 'plays';
-    for (const [k, label, fn, planned] of c.plays) {
-      const b = document.createElement('button'); b.type = 'button'; b.className = 'play' + (planned ? ' planned' : ''); b.id = 'p-' + c.id + '-' + k;
+    c.plays.forEach(([k, label, fn, planned], idx) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'play' + (planned ? ' planned' : ''); b.id = 'p-' + c.id + '-' + idx;
       const badge = document.createElement('b'); badge.textContent = k; b.append(badge, document.createTextNode('聴く: ' + label));
       b.addEventListener('click', () => { ensure(); fn(); });
       plays.append(b);
-    }
+    });
     const fs = document.createElement('fieldset');
     const lg = document.createElement('legend'); lg.textContent = '選ぶ'; fs.append(lg);
     for (const p of c.picks) {
       const lab = document.createElement('label'); lab.className = 'pick';
-      const inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'pick-' + c.id; inp.id = 'pick-' + c.id + '-' + p; inp.value = p; inp.checked = picks[c.id] === p;
+      const inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'pick-' + c.id; inp.id = 'pick-' + c.id + '-' + c.picks.indexOf(p); inp.value = p; inp.checked = picks[c.id] === p;
       inp.addEventListener('change', () => { picks[c.id] = p; save(); summary(); });
       const sp = document.createElement('span'); sp.textContent = p;
       lab.append(inp, sp); fs.append(lab);
@@ -101,13 +108,19 @@
     cards.append(sec);
   }
   for (const [label, id, q] of OTHERS) {
-    const b = document.createElement('button'); b.type = 'button'; b.textContent = label; b.id = 'o-' + id + (q && q.k2 ? q.k2 : '');
-    b.addEventListener('click', () => { ensure(); NEW.play(id, q || {}); });
-    $('others').append(b);
+    const row = document.createElement('div'); row.className = 'pair';
+    const name = document.createElement('span'); name.textContent = label;
+    const bn = document.createElement('button'); bn.type = 'button'; bn.textContent = '新'; bn.className = 'planned-mini'; bn.setAttribute('aria-label', label + '(第 2 版)');
+    bn.addEventListener('click', () => { ensure(); NEW.play(id, q || {}); });
+    row.append(name, bn);
+    const b1 = document.createElement('button'); b1.type = 'button'; b1.textContent = '前回'; b1.setAttribute('aria-label', label + '(前回)');
+    b1.addEventListener('click', () => { ensure(); if (!OLD.play(id, q || {})) { $('copied').textContent = label + 'は前回の音がありません(第 2 版で新しく作った音です)'; } });
+    row.append(b1);
+    $('others').append(row);
   }
   function summary() {
     const lines = CARDS.map((c) => c.title + ': ' + (picks[c.id] || '(まだ)'));
-    $('sum').textContent = '音の聴き比べの結果\n' + lines.join('\n');
+    $('sum').textContent = '音の聴き比べ 第 2 版の結果\n' + lines.join('\n');
   }
   summary();
   $('copy').addEventListener('click', () => {
