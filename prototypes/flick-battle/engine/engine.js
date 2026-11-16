@@ -405,10 +405,14 @@ function spawnSplit(s, sh) {
     const k = i === 0 ? 1 : -1, mi = slots[i];
     let dx = ux + px * 0.6 * k, dy = uy + py * 0.6 * k;
     const l = Math.sqrt(dx * dx + dy * dy); dx /= l; dy /= l;
+    const x = Math.max(mi.r, Math.min(s.w - mi.r, sh.x + px * (sh.r + mi.r + 1) * k));
+    const y = Math.max(mi.r, Math.min(s.h - mi.r, sh.y + py * (sh.r + mi.r + 1) * k));
+    // 敵や物に重なる場所には出さない(味方とはすり抜けるので重なってよい)
+    let blocked = false;
+    for (const o of s.units) { if (!o.alive || o.side === 0) continue; const ox = o.x - x, oy = o.y - y, rr = o.r + mi.r; if (ox * ox + oy * oy < rr * rr) { blocked = true; break; } }
+    if (blocked) continue;
     mi.alive = true; mi.hp = mi.maxHp = 1; mi.atk = Math.max(1, Math.round(sh.atk * 0.4));
-    mi.x = Math.max(mi.r, Math.min(s.w - mi.r, sh.x + px * (sh.r + mi.r + 1) * k));
-    mi.y = Math.max(mi.r, Math.min(s.h - mi.r, sh.y + py * (sh.r + mi.r + 1) * k));
-    mi.vx = dx * sp * 0.85; mi.vy = dy * sp * 0.85;
+    mi.x = x; mi.y = y; mi.vx = dx * sp * 0.85; mi.vy = dy * sp * 0.85;
     s.motion.subs.push(mi.id);
   }
   s.motion.splitDone = true; s.stats.splits++;
@@ -852,6 +856,7 @@ function physStep(s) {
       const b = us[j];
       if (!b.alive || !a.alive) continue;
       if (aStill && b.vx === 0 && b.vy === 0) continue;
+      if ((a.kind === 'mini' && b.side === 0) || (b.kind === 'mini' && a.side === 0)) continue; // 子駒は味方をすり抜ける
       collide(s, a, b);
     }
   }

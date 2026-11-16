@@ -31,28 +31,31 @@ export const ACTION_JA = { charge: 'たいあたり', blast: 'はんい攻撃', 
 
 // ---- 持ち物(20 種)とパッシブ(12 種) -----------------------------------------
 // 名前は今のゲームのまま。効果を新しい戦闘の言葉に置き換えた。
+// 説明は「きっかけ(on)→ 結果(text)」の 2 つに分けて書く(reports/はじきバトルの進化案.md の案J)。
+// 仕分けの物差し: 当てたときの見返りを増やす持ち物は足してよい。狙いを不要にする持ち物(強い自動追尾など)は足さない。
 // stat = 作るときに体力・攻撃力・おもさ・すべりへ反映するもの、mods = 戦闘中に効くもの(engine.js が読む)。
+// 2026-11-16 に効果を変えたもの: 応援うちわ(上限も上がる)・びっくり笛(場外で発動)・手鏡(跳ね返りで勢いが落ちない)
 export const ITEMS = {
-  blade:        { ja: '研いだ刃',   text: '攻撃力 +20%',                               stat: { atkPct: 20 } },
-  clock:        { ja: '早起き時計', text: '必殺に必要な回数 -1',                        mods: { ultNeedAdj: -1 } },
-  poisonVial:   { ja: '毒の小瓶',   text: '当てた敵に毒 1',                             mods: { onHitPoison: 1 } },
-  battery:      { ja: '乾電池',     text: 'タッチ技の効果 +30%',                        mods: { touchMul: 1.3 } },
-  binoculars:   { ja: '双眼鏡',     text: '予測線が 2 倍の長さになる',                  mods: { guide: 2 } },
-  dumbbell:     { ja: '鉄アレイ',   text: 'おもさ +1',                                  stat: { weight: 1 } },
-  fan:          { ja: '応援うちわ', text: 'れんさ 1 つあたりの上乗せ +5%',              mods: { chainStepAdd: 0.05 } },
-  match:        { ja: 'マッチ',     text: '敵を倒すと、近くの敵に毒 3',                 mods: { onKillPoison: 3 } },
-  whistle:      { ja: 'びっくり笛', text: '開始時、一番近い敵のカウント +1',            mods: { startStun: 1 } },
-  magnifier:    { ja: '虫めがね',   text: 'はがれかけの敵へのダメージ +30%',            mods: { peelDmgMul: 1.3 } },
-  potLid:       { ja: '鍋のフタ',   text: '開始時に盾 25%',                             mods: { startShield: 0.25 } },
-  blanket:      { ja: '毛布',       text: '受けるダメージ -12%',                        mods: { takenMul: 0.88 } },
-  firstAid:     { ja: '救急箱',     text: 'はがれかけたら 1 回だけ体力 30% 回復',       mods: { firstAid: true } },
-  gum:          { ja: '解毒ガム',   text: '毒が効かない',                               mods: { poisonImmune: true } },
-  earplugs:     { ja: '耳栓',       text: '敵に吹き飛ばされない・引き寄せられない',     mods: { forceImmune: true } },
-  cushion:      { ja: '座布団',     text: '落ちたときに失う体力が半分',                 mods: { fallCostMul: 0.5 } },
-  spareBattery: { ja: '予備電池',   text: '倒れたとき、味方全員の必殺が 1 つ進む',      mods: { onDownCharge: 1 } },
-  charm:        { ja: 'お守り',     text: '1 回だけ体力 1 で耐える',                    mods: { charm: true } },
-  bento:        { ja: 'お弁当',     text: '体力 +25%',                                  stat: { hpPct: 25 } },
-  mirror:       { ja: '手鏡',       text: '敵から受けたダメージの 30% を返す',          mods: { reflect: 0.3 } },
+  blade:        { ja: '研いだ刃',   on: 'いつも',                          text: '攻撃力 +20%',                       stat: { atkPct: 20 } },
+  clock:        { ja: '早起き時計', on: 'いつも',                          text: '必殺に必要な回数 -1',                mods: { ultNeedAdj: -1 } },
+  poisonVial:   { ja: '毒の小瓶',   on: '敵に当てたとき',                  text: 'その敵に毒 1',                       mods: { onHitPoison: 1 } },
+  battery:      { ja: '乾電池',     on: '味方に当てられたとき',            text: 'タッチ技の効果 +30%',                mods: { touchMul: 1.3 } },
+  binoculars:   { ja: '双眼鏡',     on: '狙うとき',                        text: '予測線が 2 つ目の衝突まで伸びる',    mods: { guide: 2 } },
+  dumbbell:     { ja: '鉄アレイ',   on: 'いつも',                          text: 'おもさ +1',                          stat: { weight: 1 } },
+  fan:          { ja: '応援うちわ', on: 'れんさしたとき',                  text: '1 れんさの上乗せ +5%、上限 +50%',    mods: { chainStepAdd: 0.05, chainCapAdd: 0.5 } },
+  match:        { ja: 'マッチ',     on: '敵を倒したとき',                  text: '近くの敵に毒 3',                     mods: { onKillPoison: 3 } },
+  whistle:      { ja: 'びっくり笛', on: '敵を場外に落としたとき',          text: '残りの敵全員のカウント +1',          mods: { onRingStun: 1 } },
+  magnifier:    { ja: '虫めがね',   on: 'はがれかけの敵に当てたとき',      text: 'ダメージ +30%',                      mods: { peelDmgMul: 1.3 } },
+  potLid:       { ja: '鍋のフタ',   on: '戦闘の始め',                      text: '盾 25%',                             mods: { startShield: 0.25 } },
+  blanket:      { ja: '毛布',       on: '敵の攻撃を受けたとき',            text: 'ダメージ -12%',                      mods: { takenMul: 0.88 } },
+  firstAid:     { ja: '救急箱',     on: 'はがれかけたとき(1 回)',        text: '体力 30% 回復',                      mods: { firstAid: true } },
+  gum:          { ja: '解毒ガム',   on: 'いつも',                          text: '毒が効かない',                       mods: { poisonImmune: true } },
+  earplugs:     { ja: '耳栓',       on: '敵に吹き飛ばされる・引き寄せられるとき', text: '動かされない',              mods: { forceImmune: true } },
+  cushion:      { ja: '座布団',     on: '落ちたとき',                      text: '失う体力が半分',                     mods: { fallCostMul: 0.5 } },
+  spareBattery: { ja: '予備電池',   on: '倒れたとき',                      text: '味方全員の必殺が 1 つ進む',          mods: { onDownCharge: 1 } },
+  charm:        { ja: 'お守り',     on: '倒れそうなとき(1 回)',          text: '体力 1 で耐える',                    mods: { charm: true } },
+  bento:        { ja: 'お弁当',     on: 'いつも',                          text: '体力 +25%',                          stat: { hpPct: 25 } },
+  mirror:       { ja: '手鏡',       on: '柵で跳ね返ったとき(1 手 3 回まで)', text: '勢いが落ちない',                 mods: { railBoost: 1 / 0.75, railBoostN: 3 } },
 };
 export const ITEM_KEYS = Object.keys(ITEMS);
 
@@ -71,6 +74,22 @@ export const PASSIVES = {
   tryhard:   { ja: 'がんばり',   text: '体力 +3%・攻撃力 +3%',             stat: { hpPct: 3, atkPct: 3 } },
 };
 export const PASSIVE_KEYS = Object.keys(PASSIVES);
+
+// ---- 進化: 同じ駒が「持ち物」と「パッシブ」の決まった組を持つと、持ち物が化ける ----
+// 組は図鑑で最初から見せる(ランの途中で狙う目標にする。Vampire Survivors の進化と同じ考え)。
+// 効果は持ち物の効果を上書きする。どれも「当てたときの見返り」を増やすもので、狙いを不要にはしない
+export const EVOLUTIONS = [
+  { key: 'twinBlade', item: 'blade',      passive: 'strong',    ja: '二枚刃',   on: '柵で跳ね返ったとき(1 手 1 回)',   text: '小さな刃が 2 つ飛び出す(攻撃力の 40%)', mods: { splitOnRail: true } },
+  { key: 'mirrors',   item: 'mirror',     passive: 'nimble',    ja: '合わせ鏡', on: '柵で跳ね返ったとき(1 手 3 回まで)', text: '勢いが増す',                            mods: { railBoost: 1.15 / 0.75, railBoostN: 3 } },
+  { key: 'bigCheer',  item: 'fan',        passive: 'cheer',     ja: '大応援',   on: 'れんさしたとき',                   text: 'れんさの上限 +200%、5 れんさ目からダメージ 1.5 倍', mods: { chainCapAdd: 2, chainLateFrom: 5, chainLateMul: 1.5 } },
+  { key: 'tank',      item: 'dumbbell',   passive: 'sturdy',    ja: '重戦車',   on: '敵を何かにぶつけたとき',           text: 'ぶつけダメージ 2 倍',                   mods: { crashMul: 2 } },
+  { key: 'miasma',    item: 'poisonVial', passive: 'poisonRes', ja: '毒霧',     on: '敵に当てたとき',                   text: 'まわりの敵にも毒 1',                    mods: { onHitPoisonAoe: 1 } },
+];
+export function findEvolution(item, passives) {
+  if (!item) return null;
+  for (const e of EVOLUTIONS) if (e.item === item && (passives || []).indexOf(e.passive) >= 0) return e;
+  return null;
+}
 
 // 2 体ボーナス(同じ系統が 2 体以上)と純血ボーナス(4 体全員が同じ系統)。効果の実装は engine.js。
 export const PAIR_TEXT = {
@@ -122,9 +141,11 @@ export function ally(lineage, opts) {
   };
   take(ITEMS[o.item]);
   for (const p of o.passives || []) take(PASSIVES[p]);
+  const evo = findEvolution(o.item, o.passives);
+  if (evo) Object.assign(mods, evo.mods); // 進化した持ち物の効果で上書き
   weight = Math.max(1, Math.min(5, weight));
   const base = LINEAGES[lineage].weight;
-  return { name: o.name || L.ja, lineage, objectId: o.objectId || null, item: o.item || null, passives: (o.passives || []).slice(),
+  return { name: o.name || L.ja, lineage, objectId: o.objectId || null, item: o.item || null, passives: (o.passives || []).slice(), evo: evo ? evo.key : null,
            hp: Math.round(L.hp * k * (o.hpMul || 1) * (100 + hpPct) / 100), atk: Math.round(L.atk * k * (o.atkMul || 1) * (100 + atkPct) / 100),
            weight, baseWeight: base, fric: fricPct ? Math.round(WEIGHT_FRIC[weight] * (100 + fricPct) / 100) : undefined,
            move: L.move, touch: L.touch, ult: L.ult, ultNeed: L.ultNeed, mods };
@@ -220,14 +241,44 @@ export const GOALS = {
   allRing: { text: () => '敵を全員、場外で倒す',        ok: (s) => s.stats.enemyKo === 0 && s.stats.enemyRing > 0 },
   chain:   { text: (n) => n + ' れんさ以上を出す',      ok: (s, n) => s.bestChain >= n },
   noHurt:  { text: () => '味方が 1 体も倒れずに勝つ',   ok: (s) => s.stats.allyKo === 0 },
+  // 名前のついた技(2026-11-16)
+  crashRing:  { text: () => 'ぶつけ落とし: 敵にぶつけて別の敵を落とす', ok: (s) => s.stats.crashRing >= 1 },
+  bankDouble: { text: () => '柵返し: 柵で跳ね返ってから 2 体に当てる',   ok: (s) => s.stats.bankDouble >= 1 },
 };
 /** 戦闘ごとの目標を 1 つ決める(同じ種なら同じ目標)。ボス戦では全員場外は出さない */
 export function pickGoal(seed, cfg) {
   const foes = cfg.enemies.length, boss = cfg.enemies.some((e) => e.boss);
-  const list = boss ? [['quick', 16], ['noFall', 0], ['chain', 5], ['noHurt', 0]] : [['quick', 4 + foes * 2], ['noFall', 0], ['allRing', 0], ['chain', 4]];
+  const list = boss ? [['quick', 16], ['noFall', 0], ['chain', 5], ['noHurt', 0], ['bankDouble', 0]]
+                    : [['quick', 4 + foes * 2], ['noFall', 0], ['allRing', 0], ['chain', 4], ['crashRing', 0], ['bankDouble', 0]];
   const g = list[(seed >>> 0) % list.length];
   return { kind: g[0], n: g[1], text: GOALS[g[0]].text(g[1]) };
 }
 export function goalMet(goal, s) { return s.phase === 'won' && GOALS[goal.kind].ok(s, goal.n); }
+
+// ---- 戦闘後の持ち物 3 択(案K) ------------------------------------------------
+// 今の編成と噛み合う候補を必ず 1 つ入れる。進化の組を完成させる持ち物が最優先、なければ系統の向きに合う持ち物。
+// 選ぶのは本体の報酬の流れ(この関数は候補を返すだけ)。同じ種なら同じ結果
+export const LINEAGE_FIT = {
+  kitchen: ['blade', 'magnifier'], food: ['bento', 'battery'], stationery: ['magnifier', 'mirror'], book: ['whistle', 'clock'],
+  plant: ['poisonVial', 'match'], creature: ['fan', 'clock'], machine: ['dumbbell', 'blade'], electronic: ['battery', 'clock'],
+  clothing: ['potLid', 'blanket'], furniture: ['dumbbell', 'cushion'], toy: ['whistle', 'fan'], bath: ['gum', 'earplugs'],
+};
+/** team: [{ lineage, item, passives }]、owned: 手持ちの(まだ誰にも持たせていない)持ち物。返り値 { choices: [3 つ], fit, why } */
+export function rewardChoices(team, seed, owned) {
+  const has = {}; for (const a of team) if (a.item) has[a.item] = true; for (const k of owned || []) has[k] = true;
+  const pool = ITEM_KEYS.filter((k) => !has[k]);
+  let fit = [], why = '';
+  for (const a of team) if (!a.item) for (const e of EVOLUTIONS) if ((a.passives || []).indexOf(e.passive) >= 0 && pool.indexOf(e.item) >= 0 && fit.indexOf(e.item) < 0) fit.push(e.item);
+  if (fit.length) why = 'evolution';
+  else { for (const a of team) for (const k of LINEAGE_FIT[a.lineage] || []) if (pool.indexOf(k) >= 0 && fit.indexOf(k) < 0) fit.push(k); if (fit.length) why = 'lineage'; }
+  let h = seed >>> 0;
+  const rnd = () => { h = (h + 0x6d2b79f5) >>> 0; let x = Math.imul(h ^ (h >>> 15), 1 | h); x = (x + Math.imul(x ^ (x >>> 7), 61 | x)) ^ x; return ((x ^ (x >>> 14)) >>> 0) / 4294967296; };
+  const out = [];
+  const pick = fit.length ? fit[Math.floor(rnd() * fit.length)] : null;
+  if (pick) out.push(pick);
+  while (out.length < 3 && out.length < pool.length) { const k = pool[Math.floor(rnd() * pool.length)]; if (out.indexOf(k) < 0) out.push(k); }
+  for (let i = out.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); const x = out[i]; out[i] = out[j]; out[j] = x; } // 保証枠の位置も混ぜる
+  return { choices: out, fit: pick, why };
+}
 
 export { W, H };

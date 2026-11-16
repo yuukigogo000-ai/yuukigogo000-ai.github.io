@@ -17,7 +17,7 @@ ok('持ち物は 20 種', D.ITEM_KEYS.length === 20, D.ITEM_KEYS.length);
 ok('パッシブは 12 種', D.PASSIVE_KEYS.length === 12, D.PASSIVE_KEYS.length);
 ok('モノは 60 種で、どれも重さ 1〜5 に収まる', Object.keys(D.OBJECT_WEIGHT_ADJ).length === 60 && D.LINEAGE_KEYS.every((l) => ally(l, { weightAdj: 1 }).weight <= 5 && ally(l, { weightAdj: -1 }).weight >= 1));
 ok('2 体・純血ボーナスの説明が 12 系統ぶんある', D.LINEAGE_KEYS.every((l) => D.PAIR_TEXT[l] && D.PURE_TEXT[l]));
-ok('全部の持ち物とパッシブに説明がある', D.ITEM_KEYS.every((k) => D.ITEMS[k].text && D.ITEMS[k].ja) && D.PASSIVE_KEYS.every((k) => D.PASSIVES[k].text));
+ok('全部の持ち物とパッシブに説明がある(持ち物は「きっかけ → 結果」)', D.ITEM_KEYS.every((k) => D.ITEMS[k].text && D.ITEMS[k].ja && D.ITEMS[k].on) && D.PASSIVE_KEYS.every((k) => D.PASSIVES[k].text));
 
 // ---- 作るときに効くもの ------------------------------------------------------
 ok('研いだ刃: 攻撃力 +20%', ally('kitchen', { item: 'blade' }).atk === Math.round(19 * 1.2));
@@ -39,7 +39,10 @@ ok('頑丈・力持ち・がんばり', ally('kitchen', { passives: ['sturdy'] }
   s = mini([Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 450, touch: null, atk: 1 }), Object.assign(ally('kitchen'), { name: 'B', x: 180, y: 360 })], [dummy(180, 250)]); fire(s, 0, -1, 2);
   ok('乾電池: タッチ技の効果 +30%', withBat > 100 - U(s, 'まと').hp, [withBat, 100 - U(s, 'まと').hp]);
   ok('双眼鏡: 予測線の長さの倍率を持つ', ally('kitchen', { item: 'binoculars' }).mods.guide === 2);
-  s = mini([A('kitchen', { item: 'whistle' })], [dummy(180, 250)]); ok('びっくり笛: 開始時に近い敵のカウント +1', U(s, 'まと').count === 10, U(s, 'まと').count);
+  { const gaps = { top: [[100, 260]], bottom: [], left: [], right: [] };
+    const t = E.createBattle({ gaps, allies: [Object.assign(ally('machine', { item: 'whistle' }), { name: 'A', x: 180, y: 300, touch: null, atk: 1 })], enemies: [dummy(180, 60, { weight: 1, name: 'おちる' }), dummy(300, 400)] });
+    U(t, 'おちる').hp = 50; fire(t, 0, -1, 3);
+    ok('びっくり笛: 敵を場外に落とすと、残りの敵全員のカウント +1', !U(t, 'おちる').alive && U(t, 'まと').count === 10, U(t, 'まと').count); }
   s = mini([A('kitchen', { item: 'magnifier' })], [dummy(180, 250)]); U(s, 'まと').hp = 50; fire(s, 0, -1, 1); ok('虫めがね: はがれかけの敵へ +30%', 50 - U(s, 'まと').hp === Math.round(19 * 1.3), 50 - U(s, 'まと').hp);
   s = mini([A('kitchen', { item: 'potLid' })], [dummy(40, 40)]); ok('鍋のフタ: 開始時に盾 25%', U(s, 'A').shield === 20, U(s, 'A').shield);
   const hit = (o, atk) => { const t = mini([Object.assign(ally('furniture', o), { name: 'A', x: 180, y: 400, touch: null })], [dummy(180, 300, { action: 'blast', count: 1, actR: 200, atk: atk || 20, hp: 400 })]); fire(t, 1, 0, 1); return t; };
@@ -47,7 +50,11 @@ ok('頑丈・力持ち・がんばり', ally('kitchen', { passives: ['sturdy'] }
   ok('堅い: 受けるダメージ -5%', 199 - U(hit({ passives: ['hard'] }), 'A').hp === 19);
   s = hit({ item: 'firstAid' }, 120); ok('救急箱: はがれかけたら 1 回だけ回復', U(s, 'A').hp === 199 - 120 + Math.round(199 * 0.3) && U(s, 'A').used.firstAid === true, U(s, 'A').hp);
   s = hit({ item: 'charm' }, 999); ok('お守り: 1 回だけ体力 1 で耐える', U(s, 'A').alive && U(s, 'A').hp === 1, U(s, 'A').hp);
-  s = hit({ item: 'mirror' }); ok('手鏡: 受けたダメージの 30% を返す', U(s, 'まと').hp === 400 - Math.round(20 * 0.3), U(s, 'まと').hp);
+  { const go = (o) => { const t = mini([Object.assign(ally('kitchen', o), { name: 'A', x: 180, y: 300, touch: null })], [dummy(40, 40)]); let d = 0, px = 180, py = 300; const u = U(t, 'A');
+      E.shoot(t, { dx: 0, dy: -1, power: 2 }, { preview: true }); while (t.phase === 'resolving') { E.step(t); d += Math.sqrt((u.x - px) ** 2 + (u.y - py) ** 2); px = u.x; py = u.y; } return d; };
+    const plain = go({}), mir = go({ item: 'mirror' }), evo = go({ item: 'mirror', passives: ['nimble'] });
+    ok('手鏡: 柵で跳ね返っても勢いが落ちない(遠くまで進む)', mir > plain + 40, [Math.round(plain), Math.round(mir)]);
+    ok('合わせ鏡(手鏡+身軽): さらに勢いが増す', evo > mir + 20, [Math.round(mir), Math.round(evo)]); }
   s = mini([Object.assign(ally('kitchen', { item: 'gum' }), { name: 'A', x: 180, y: 400, touch: null })], [Object.assign(dummy(180, 300, { action: 'blast', count: 1, actR: 200, hp: 400 }), { lineage: 'plant' })]); fire(s, 1, 0, 1);
   ok('解毒ガム: 毒が効かない', U(s, 'A').poison === 0, U(s, 'A').poison);
   const gust = (o) => { const t = mini([Object.assign(ally('kitchen'), { name: 'Z', x: 40, y: 490, touch: null }), Object.assign(ally('plant', o), { name: 'B', x: 180, y: 330, touch: null })], [dummy(180, 250, { action: 'gust', count: 1, hp: 400 })]); fire(t, 1, 0, 1); return U(t, 'B').y - 330; };
@@ -64,6 +71,7 @@ ok('頑丈・力持ち・がんばり', ally('kitchen', { passives: ['sturdy'] }
   // 貫通の駒で 2 体を続けて抜く。2 体目へのダメージに、れんさ 1 つぶんの上乗せがかかる
   const chainDmg = (o) => { const t = mini([Object.assign(ally('stationery', o), { name: 'A', x: 180, y: 400, touch: null })], [dummy(180, 300, { hp: 999, name: 'てまえ' }), dummy(180, 200, { hp: 999 })]); fire(t, 0, -1, 3); return 999 - U(t, 'まと').hp; };
   ok('応援うちわ: れんさの上乗せが増える', chainDmg({ item: 'fan' }) > chainDmg({}), [chainDmg({}), chainDmg({ item: 'fan' })]);
+  ok('応援うちわ: れんさの上限 +50%', ally('kitchen', { item: 'fan' }).mods.chainCapAdd === 0.5);
 }
 // ---- パッシブ(戦闘中) -------------------------------------------------------
 {
@@ -118,6 +126,48 @@ ok('頑丈・力持ち・がんばり', ally('kitchen', { passives: ['sturdy'] }
   const strong = D.mobBattle('kitchen', [ally('kitchen', { pct: 300 }), ally('food', { pct: 300 }), ally('machine', { pct: 300 }), ally('book', { pct: 300 })], ['creature', 'creature']);
   ok('格下の判定: 大きく上回るときだけ「オート戦闘」を出す', isTrivial(strong) === true && isTrivial(cfg) === false && isTrivial(D.bossBattle('fan', [ally('kitchen', { pct: 900 })])) === false, [powerRatio(strong), powerRatio(cfg)]);
 }
+// ---- 進化・報酬の 3 択・名前のついた技(2026-11-16) ----------------------------
+{
+  ok('進化の組は 5 つ。どれも持ち物とパッシブの表にある', D.EVOLUTIONS.length === 5 && D.EVOLUTIONS.every((e) => D.ITEMS[e.item] && D.PASSIVES[e.passive] && e.ja && e.on && e.text));
+  ok('進化: 持ち物とパッシブの組がそろうと化ける(片方だけでは化けない)', ally('kitchen', { item: 'blade', passives: ['strong'] }).evo === 'twinBlade' && ally('kitchen', { item: 'blade' }).evo === null && ally('kitchen', { passives: ['strong'] }).evo === null);
+  // 二枚刃: 柵で跳ね返ると小さな刃が 2 つ出て、敵に当たる。動きが終わると消える
+  const mk = (o) => mini([Object.assign(ally('kitchen', o), { name: 'A', x: 180, y: 300, touch: null })], [dummy(120, 180, { hp: 999, name: 'ひだり' }), dummy(240, 180, { hp: 999, name: 'みぎ' })]);
+  let s = mk({ item: 'blade', passives: ['strong'] }); fire(s, 0, 1, 3);
+  const minis = s.units.filter((u) => u.kind === 'mini');
+  ok('二枚刃: 柵で跳ね返ると子駒が 2 つ出る', s.stats.splits === 1 && minis.length === 2, s.stats.splits);
+  ok('二枚刃: 子駒は動きが終わると消え、味方の数に入らない', minis.every((u) => !u.alive) && s.stats.allyKo === 0 && s.phase === 'aim', minis.map((u) => u.alive));
+  s = mk({ item: 'blade' }); fire(s, 0, 1, 3);
+  ok('研いだ刃だけでは子駒は出ない', s.stats.splits === 0 && !s.units.some((u) => u.kind === 'mini'));
+  // 重戦車: ぶつけダメージ 2 倍
+  const crashOf = (o) => { const t = mini([Object.assign(ally('kitchen', o), { name: 'A', x: 180, y: 450, touch: null })], [dummy(180, 300, { weight: 1, hp: 999, name: 'てまえ' }), dummy(180, 200, { hp: 999 })]); fire(t, 0, -1, 3); return t.stats.dmgCrash; };
+  ok('重戦車(鉄アレイ+頑丈): ぶつけダメージが増える', crashOf({ item: 'dumbbell', passives: ['sturdy'] }) > crashOf({ item: 'dumbbell' }) * 1.5, [crashOf({ item: 'dumbbell' }), crashOf({ item: 'dumbbell', passives: ['sturdy'] })]);
+  // 毒霧: 当てた敵のまわりにも毒
+  s = mini([Object.assign(ally('kitchen', { item: 'poisonVial', passives: ['poisonRes'] }), { name: 'A', x: 180, y: 400, touch: null })], [dummy(180, 250, { hp: 999 }), dummy(240, 240, { hp: 999, name: 'となり' })]);
+  E.shoot(s, { dx: 0, dy: -1, power: 1 }); while (s.phase === 'resolving' && s.motion) E.step(s);
+  ok('毒霧(毒の小瓶+毒に強い): まわりの敵にも毒', U(s, 'となり').poison >= 1, U(s, 'となり').poison);
+  // 大応援: れんさの上限が上がり、5 れんさ目から 1.5 倍
+  const late = (o) => { const foes = []; for (let i = 0; i < 7; i++) foes.push(dummy(180, 360 - i * 48, { hp: 9999, name: 'まと' + i, r: 16 })); const t = mini([Object.assign(ally('stationery', o), { name: 'A', x: 180, y: 470, touch: null })], foes); fire(t, 0, -1, 3); return t.stats.dmgHit; };
+  ok('大応援(応援うちわ+盛り上げ役): 長いれんさのダメージが大きく伸びる', late({ item: 'fan', passives: ['cheer'] }) > late({ item: 'fan' }) * 1.1, [late({}), late({ item: 'fan' }), late({ item: 'fan', passives: ['cheer'] })]);
+}
+{
+  // 報酬の 3 択: 噛み合う候補を必ず 1 つ入れる
+  const team = [{ lineage: 'kitchen', item: null, passives: ['strong'] }, { lineage: 'food', item: 'bento', passives: [] }, { lineage: 'plant', item: null, passives: [] }];
+  let allOk = true, distinct = true;
+  for (let seed = 1; seed <= 50; seed++) {
+    const r = D.rewardChoices(team, seed);
+    if (r.choices.length !== 3 || r.choices.indexOf(r.fit) < 0 || r.why !== 'evolution' || r.fit !== 'blade') allOk = false;
+    if (new Set(r.choices).size !== 3 || r.choices.indexOf('bento') >= 0) distinct = false;
+  }
+  ok('報酬の 3 択: 進化の組を完成させる持ち物が必ず入る', allOk);
+  ok('報酬の 3 択: 3 つとも違い、もう持っている持ち物は出ない', distinct);
+  const r2 = D.rewardChoices([{ lineage: 'plant', item: null, passives: [] }], 9);
+  ok('報酬の 3 択: 進化の組がなければ、系統の向きに合う持ち物を入れる', r2.why === 'lineage' && D.LINEAGE_FIT.plant.indexOf(r2.fit) >= 0, r2);
+  ok('報酬の 3 択: 同じ種なら同じ候補', JSON.stringify(D.rewardChoices(team, 7)) === JSON.stringify(D.rewardChoices(team, 7)));
+  const cfg = D.mobBattle('kitchen', [ally('kitchen'), ally('food')], ['kitchen', 'plant']);
+  const kinds = new Set(); for (let i = 0; i < 12; i++) kinds.add(D.pickGoal(i, cfg).kind);
+  ok('おまけ目標に、名前のついた技(ぶつけ落とし・柵返し)が出る', kinds.has('crashRing') && kinds.has('bankDouble'), [...kinds]);
+}
+
 console.log(`${pass} 件合格 / ${fail} 件不合格`);
 for (const f of failures) console.log('  不合格: ' + f);
 if (fail) process.exitCode = 1;

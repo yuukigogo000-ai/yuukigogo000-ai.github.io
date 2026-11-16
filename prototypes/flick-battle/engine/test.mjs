@@ -1,6 +1,6 @@
 // おはじきバトル エンジンの検査(node test.mjs)。--mutate で検査器自身が壊れたルールを見つけられるか確かめる。
 import * as E from './engine.js';
-import { ally, foe, mobBattle, bossBattle, LINEAGE_KEYS, LINEAGES } from './data.js';
+import { ally, foe, mobBattle, bossBattle, LINEAGE_KEYS, LINEAGES, ITEM_KEYS, PASSIVE_KEYS, EVOLUTIONS } from './data.js';
 import { DIRS, POWERS, bestShot } from './ai.js';
 
 const FUZZ = 150; // でたらめな手で回す戦闘の数
@@ -303,7 +303,10 @@ const ev = (s, f) => s.events.filter(f);
 function randomBattle(seed) {
   const rnd = E.mulberry32(seed);
   const pick = () => LINEAGE_KEYS[Math.floor(rnd() * LINEAGE_KEYS.length)];
-  const team = [ally(pick()), ally(pick()), ally(pick()), ally(pick())];
+  // 持ち物とパッシブもでたらめに持たせる。3 戦に 1 戦は進化の組を 1 つ入れる(子駒・合わせ鏡なども通す)
+  const gear = () => ({ item: ITEM_KEYS[Math.floor(rnd() * ITEM_KEYS.length)], passives: [PASSIVE_KEYS[Math.floor(rnd() * PASSIVE_KEYS.length)]] });
+  const team = [ally(pick(), gear()), ally(pick(), gear()), ally(pick(), gear()), ally(pick(), gear())];
+  if (seed % 3 === 0) { const e = EVOLUTIONS[seed % EVOLUTIONS.length]; team[0] = ally(pick(), { item: e.item, passives: [e.passive] }); }
   const kind = seed % 5;
   const cfg = kind === 0 ? bossBattle('vacuum', team) : kind === 1 ? bossBattle('washer', team) : kind === 2 ? bossBattle('fan', team)
     : mobBattle(['kitchen', 'living', 'attic'][seed % 3], team, [pick(), pick(), pick(), pick()], { traits: [null, 'hard', 'split', 'back'] });
@@ -333,7 +336,7 @@ function randomBattle(seed) {
   }
   ok('再現性: 同じ手順を 2 回流すと ' + FUZZ + ' 戦すべて一致', mismatch === 0, mismatch);
   ok('停止性: 12 秒の打ち切りが 1 回も起きない', caps === 0, caps);
-  ok('すり抜けない: 重なりは最小半径(16)未満', maxPen < 16, +maxPen.toFixed(2));
+  ok('すり抜けない: 重なりは 10 未満(いちばん小さいお皿と子駒の半径)', maxPen < 10, +maxPen.toFixed(2));
   ok('異常値なし(盤外に残る・数値が壊れる・体力 0 で生存)', bad === 0, bad);
   ok('狙う番なのに手が受け付けられない、が起きない', rejected === 0, rejected);
   console.log('  合成ハッシュ', chain.toString(16).padStart(8, '0'), '/ 最長の動き', (longest * E.DT).toFixed(2), '秒 / 最大の重なり', maxPen.toFixed(2));
