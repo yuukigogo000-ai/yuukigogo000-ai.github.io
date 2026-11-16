@@ -50,6 +50,8 @@
   .pick input:checked + span { background: var(--accent); color: var(--accent-fg); border-color: transparent; }
   .pick input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
   .stack { display: flex; flex-direction: column; gap: 14px; }
+  .ones { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+  .ones button { padding: 8px 10px; font-size: 14px; text-align: left; }
   .pairs { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
   .pair { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 6px; align-items: center; border-top: 1px solid var(--line); padding-top: 6px; }
   .pair span { font-size: 14px; }
@@ -74,26 +76,23 @@
 <main>
   <header>
     <h1>はじきバトル 音の聴き比べ</h1>
-    <p class="lead">第 3 版です。掛け声を自然な英語の声に替え、「溜めて、放つ」音と、れんさが伸びるほど厚くなる当たりで爽快感を足しました。第 2 版とも聴き比べられます。</p>
-    <p class="note">iPhone はマナーモードだと鳴りません。音量を上げてください。スマホのスピーカーでも聞こえるように作っていますが、イヤホンだと響きまで分かります。効果音は端末の中で作っています。掛け声だけは、事前に作った短い音声をページの中に入れてあります(外からは何も読み込みません)。</p>
-    <details class="applied"><summary>前回の選択で決めたこと(反映済み)</summary><ul id="applied"></ul></details>
+    <p class="lead">最終版です。声は外しました。下のボタンで、場面ごとの流れと、ひとつずつの音を聴けます。直したい音があれば、名前と「もっとこう」を教えてください。</p>
+    <p class="note">iPhone はマナーモードだと鳴りません。音量を上げてください。スマホのスピーカーでも聞こえるように作っていますが、イヤホンだと響きまで分かります。音はすべて端末の中で作っていて、音源ファイルは使っていません。</p>
+    <details class="applied"><summary>決めたこと</summary><ul id="applied">
+      <li>れんさの音: 半音ずつ上がる(10 で頭打ち)</li>
+      <li>引っぱりの段: ドミソ</li>
+      <li>立ち上がり 8 ミリ秒、高さのゆらし ±0.5 半音</li>
+      <li>音を層で作る(立ち上がりの粒・芯・きらめき・響き)</li>
+      <li>溜めて放つ(10 れんさ・決着の直前)、当たりは「ポン」、れんさが伸びるほど厚く</li>
+      <li>勝ちの音は最後を伸ばす、決着は派手に</li>
+      <li>当たりの音色はガラス(おはじき)</li>
+      <li>声は使わない</li>
+    </ul></details>
   </header>
-  <section class="card" aria-labelledby="h-voice">
-    <h2 id="h-voice">掛け声の声<span class="tag">英語 ・ 1 手に 1 つ</span></h2>
-    <p class="why">オープンな音声合成モデル(Kokoro-82M、Apache-2.0)で、手元で作った英語の声です。外部のサービスは使っていません。声を 1 つ選び、言葉を押すとその声で鳴ります。場面に候補が 2 つ以上あるときは、押したほうが選ばれます。</p>
-    <fieldset id="voices"><legend>声を選ぶ</legend></fieldset>
-    <div class="words" id="words"></div>
-  </section>
   <div id="cards" class="stack"></div>
   <section class="card">
-    <h2>そのほかの音<span class="tag">新と前回</span></h2>
-    <p class="why">作り直したほかの音です。選ぶ必要はありません。気になる音があれば、その名前と「もっとこう」を教えてください。</p>
-    <div class="pairs" id="others"></div>
-  </section>
-  <section class="card summary">
-    <h2>選んだ結果</h2>
-    <pre id="sum"></pre>
-    <div class="row"><button id="copy" type="button">結果をコピー</button><span class="status" id="copied" role="status"></span></div>
+    <h2>ひとつずつ<span class="tag">最終版</span></h2>
+    <div class="ones" id="others"></div>
   </section>
 </main>
 <script>

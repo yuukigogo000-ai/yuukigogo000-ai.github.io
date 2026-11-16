@@ -47,7 +47,7 @@
   const MANUAL = Q.get('clock') === 'manual' || !!ST;
   let manualNow = 1000;
   // 測るもの: 1 手で演出が足した待ち・敵の番の待ち・スローで伸びた時間・決着の余韻・離してから動くまで・同時に出た演出の数・文字
-  const fxm = { shotWait: 0, enemyWait: 0, slowMs: 0, finaleMs: 0, finaleT: null, fireT: null, moveT: null, firePos: null, maxFx: 0, texts: new Map(), logText: false, events: [] };
+  const fxm = { shotWait: 0, enemyWait: 0, slowMs: 0, finaleMs: 0, finaleT: null, fireT: null, moveT: null, firePos: null, maxFx: 0, texts: new Map(), logText: false, events: [], sounds: [] };
 
   // ---- 設定(この端末だけに覚える。読めなくても動く) --------------------------
   const store = { get(k, d) { try { const v = localStorage.getItem('flick.' + k); return v === null ? d : v; } catch (e) { return d; } },
@@ -59,37 +59,38 @@
   $('fx').addEventListener('change', () => store.set('fx', $('fx').value));
   $('snd').addEventListener('change', () => store.set('snd', $('snd').value));
 
-  // ---- 音(端末の中で作る。音源ファイルは使わない) ----------------------------
-  let audio = null;
-  function tone(freq, dur, type, vol, delay) {
-    if ($('snd').value !== 'on') return;
-    try {
-      if (!audio) { const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return; audio = new AC(); }
-      if (audio.state === 'suspended') audio.resume();
-      const t0 = audio.currentTime + (delay || 0), o = audio.createOscillator(), g = audio.createGain();
-      o.type = type || 'triangle'; o.frequency.setValueAtTime(freq, t0);
-      g.gain.setValueAtTime(vol || 0.12, t0); g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
-      o.connect(g); g.connect(audio.destination); o.start(t0); o.stop(t0 + dur + 0.02);
-    } catch (e) { /* 音が出なくても続ける */ }
-  }
-  const semi = (base, n) => base * Math.pow(2, n / 12); // 画面の音だけ。勝ち負けの計算には使わない
-  const sfx = {
-    tap: () => tone(660, 0.04, 'sine', 0.06),
-    step: (p) => tone(semi(392, p * 4), 0.05, 'square', 0.05),
-    cancel: () => tone(220, 0.08, 'sine', 0.06),
-    shoot: (p) => tone(semi(220, p * 3), 0.09, 'triangle', 0.1),
-    hit: (n) => tone(semi(330, Math.min(12, n)), 0.07, 'triangle', 0.12),
-    strong: () => { tone(110, 0.16, 'sawtooth', 0.12); tone(220, 0.1, 'triangle', 0.1); },
-    milestone: (n) => { const b = semi(392, Math.min(12, n)); tone(b, 0.18, 'triangle', 0.1); tone(b * 1.25, 0.18, 'triangle', 0.08, 0.04); tone(b * 1.5, 0.22, 'triangle', 0.08, 0.08); },
-    ring: () => tone(523, 0.12, 'sine', 0.11),
-    crash: () => tone(150, 0.08, 'square', 0.08),
-    bumper: () => tone(880, 0.05, 'square', 0.05),
-    pickup: () => { tone(784, 0.07, 'sine', 0.08); tone(1047, 0.09, 'sine', 0.08, 0.06); },
-    bonus: () => { tone(523, 0.08, 'triangle', 0.1); tone(784, 0.14, 'triangle', 0.1, 0.08); },
-    near: () => tone(196, 0.3, 'sine', 0.08),
-    win: () => [523, 659, 784, 1047].forEach((f, i) => tone(f, 0.22, 'triangle', 0.11, i * 0.09)),
-    lose: () => [392, 311, 233].forEach((f, i) => tone(f, 0.25, 'triangle', 0.1, i * 0.12)),
+  // ---- 音(最終版の部品 fx/audio.js。すべて端末の中で作る。音源ファイルは使わない) ----------------
+  const AUD = createAudio({});
+  // 同じ刻みに同じ音が重なったら 2 つまで(ぶつけの両方・花火の連鎖などで音が積み上がって割れないように)
+  let sameKey = '', sameN = 0;
+  const play = (id, q) => {
+    const key = shotStep + ':' + id; if (key === sameKey) { if (++sameN >= 2) return; } else { sameKey = key; sameN = 0; }
+    if (fxm.sounds.length < 2000) fxm.sounds.push([shotStep, id, q && (q.n || q.k2 || q.special || (q.ms && Math.round(q.ms)))]);
+    if ($('snd').value === 'on') AUD.play(id, q);
   };
+  window.addEventListener('pointerdown', () => AUD.unlock(), { passive: true }); // iPhone は最初のタップの中で音を準備する(2 回目からは何もしない)
+  const sfx = {
+    tap: () => play('ui'), step: (p) => play('step', { p }), cancel: () => play('cancel'), shoot: (p) => play('shoot', { p }),
+    hit: (n) => play('hit', { n }), strong: () => play('strong'), harm: () => play('harm'),
+    milestone: (n) => play('chord', { notes: n >= 10 ? 4 : n >= 5 ? 3 : 2, n, low: n >= 5 }), // 3・5・10 れんさの節目
+    ring: () => play('ring'), brk: () => play('break'), crash: () => play('crash'), bumper: () => play('bumper'), pickup: () => play('pickup'),
+    bonus: () => play('bonus'), blast: (k) => play('blast', { k2: k }), relay: () => play('relay'), ult: () => play('ultFire'), gauge: () => play('gauge'),
+    finale: (special) => play('finale', { special }), riser: (ms, top) => play('riser', { ms, top }),
+    win: () => play('win'), lose: () => play('lose'),
+  };
+  // 溜め: 離した瞬間に台本(fx/script.js)で 1 手を先に計算し、10 れんさ・決着になる当たりの直前に「キュイーン」を鳴らす(必ず起きるときだけ)
+  let shotStep = 0, risers = [], shotKos = 0, shotBlasts = 0;
+  function armShot(st, input) {
+    shotStep = 0; risers = []; shotKos = 0; shotBlasts = 0;
+    let sc = null; try { sc = scriptShot(st, input); } catch (e) { sc = null; }
+    if (!sc) return;
+    const lead = Math.round(FXT.sound.riser.leadMs / 1000 / DT), ms = (n) => n * DT * 1000;
+    const fin = sc.summary.finale;
+    if (fin && fin.phase === 'shot') risers.push({ at: Math.max(0, fin.hitI - lead), to: fin.hitI, top: 2093 });
+    const c10 = sc.events.find((r) => r.e.t === 'chain' && r.e.n === 10 && r.phase === 'shot');
+    if (c10 && !(fin && Math.abs(fin.hitI - c10.i) < lead * 2)) risers.push({ at: Math.max(0, c10.i - lead), to: c10.i, top: 1760 });
+    for (const r of risers) r.ms = ms(r.to - r.at);
+  }
   // 振動はおまけ(iPhone のブラウザでは使えない。音と見た目だけで手応えが分かるように作ってある)
   const buzz = (ms) => { if (fx() > 0 && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) { /* なし */ } } };
 
@@ -203,6 +204,7 @@
   function doShot(sh) {
     lastShot = { st: cloneState(state), input: sh };
     const me = state.units[state.active]; fxm.fireT = MANUAL ? manualNow : performance.now(); fxm.moveT = null; fxm.firePos = me ? [me.id, me.x, me.y] : null;
+    armShot(state, sh);
     if (shoot(state, sh)) { armed = false; shotOpen = true; shotDmg = 0; sfx.shoot(sh.power); refresh(); }
   }
   cv.addEventListener('pointerup', () => { const sh = shotFromAim(); const was = !!aim; aim = null; if (sh && state.phase === 'aim') doShot(sh); else { if (was) sfx.cancel(); refresh(); } });
@@ -223,7 +225,7 @@
     state = cloneState(lastShot.st); state.label = lastShot.st.label;
     replaying = true; busy = true; popups = []; rings = []; acc = 0;
     $('overlay').hidden = true;
-    shoot(state, lastShot.input); shotOpen = true; shotDmg = 0;
+    armShot(state, lastShot.input); shoot(state, lastShot.input); shotOpen = true; shotDmg = 0;
     refresh();
   });
 
@@ -308,7 +310,7 @@
     if (shotDmg > 0) center('合計 ' + shotDmg, 'fg', now);
     // 惜しい: あと少しで倒せた敵がいる(大きく見せて、もう 1 回を誘う)
     const near = state.units.find((u) => u.alive && u.side === 1 && u.kind !== 'boss' && u.hp > 0 && u.hp <= u.maxHp * 0.08);
-    if (near && state.phase !== 'won') { pop(near, 'あと少し!', 'ult', -near.r - 26, now, true); sfx.near(); }
+    if (near && state.phase !== 'won') pop(near, 'あと少し!', 'ult', -near.r - 26, now, true); // 音は鳴らさない(惜しく見せる演出は借りない。文字の直しは演出の順 1 で)
   }
   function consumeEvents(now) {
     for (const e of state.events) {
@@ -320,16 +322,18 @@
           pop(to, '-' + e.dmg, e.kind === 'dot' ? 'poison' : 'danger', -to.r, now);
           if (shotOpen && to.side === 1 && e.kind !== 'dot' && e.kind !== 'foe') shotDmg += e.dmg;
           if (shotOpen && to.side === 1 && (e.kind === 'hit' || e.kind === 'ult')) { sfx.hit(state.chain); freeze(now, state.chain <= 1 ? 30 : 0); } // 普通の当たりは止めないか、ごく短く
+          if (to.side === 0 && to.kind === 'ally' && e.kind !== 'dot') sfx.harm();
           break;
         case 'strong': pop(to, '強打!', 'ult', -to.r - 16, now); freeze(now, 90); shake(now, 3, 150); sfx.strong(); buzz(20); break;
         case 'heal': pop(to, '+' + e.amt, 'heal', -to.r, now); break;
         case 'shield': pop(to, '盾+' + e.amt, 'accent', -to.r - 14, now); break;
         case 'block': pop(to, '盾で防いだ', 'accent', -to.r - 14, now); break;
         case 'touch': pop(by, TOUCH_JA[e.kind], 'accent', by.r + 16, now); rings.push({ x: by.x, y: by.y, r: by.r + 8, c: 'accent', t: now }); break;
-        case 'ult': pop(by, ULT_JA[e.kind] + '!', 'ult', -by.r - 18, now); rings.push({ x: by.x, y: by.y, r: by.r + 16, c: 'ult', t: now }); pauseUntil = now + 320; break;
+        case 'ult': pop(by, ULT_JA[e.kind] + '!', 'ult', -by.r - 18, now); rings.push({ x: by.x, y: by.y, r: by.r + 16, c: 'ult', t: now }); pauseUntil = now + 320; sfx.ult(); break;
         case 'ultAfter': rings.push({ x: by.x, y: by.y, r: 220, c: 'ult', t: now }); break;
         case 'chain': // れんさの三層: 1 つごとに音が上がる / 5・10 れんさで色と音が変わる / 手の最後に合計
           if (e.n >= 2) { popups = popups.filter((p) => !p.chain); center(e.n + ' れんさ!', e.n >= 10 ? 'danger' : e.n >= 5 ? 'ult' : 'accent', now, Math.min(30, 16 + e.n * 1.5)); popups[popups.length - 1].chain = true; }
+          if (e.n === 3) sfx.milestone(3);
           if (e.n === 5 || e.n === 10) { sfx.milestone(e.n); rings.push({ x: W / 2, y: H / 2, r: 260, c: e.n >= 10 ? 'danger' : 'ult', t: now }); }
           break;
         case 'stun': pop(to, 'カウント+', 'accent', -to.r - 14, now); break;
@@ -342,14 +346,15 @@
           const u = state.units[e.id];
           if (u.kind === 'mini') break;
           pop(u, e.how === 'ring' ? '場外!' : 'たおれた', 'danger', 0, now);
+          if (u.side === 1) shotKos++;
           if (u.side === 1 && enemiesLeft() === 0) { // 決着の 1 発だけ、長めのスローと大きな揺れ
-            fxm.finaleT = now;
+            fxm.finaleT = now; sfx.finale(shotKos >= 3);
             slowUntil = now + 600 * fx(); slowRate = 0.35; shake(now, 7, 250); freeze(now, 140); buzz(60);
-          } else if (u.side === 1) { freeze(now, 120); if (e.how === 'ring') sfx.ring(); buzz(25); }
+          } else if (u.side === 1) { freeze(now, 120); if (e.how === 'ring') sfx.ring(); else sfx.brk(); buzz(25); }
           break;
         }
         case 'fall': pop(state.units[e.id], '落ちた(戻る)', 'danger', -20, now); break;
-        case 'gaugeBreak': pop(state.units[e.id], 'ゲージを割った!', 'ult', -60, now); pauseUntil = now + 500; shake(now, 5, 220); break;
+        case 'gaugeBreak': pop(state.units[e.id], 'ゲージを割った!', 'ult', -60, now); pauseUntil = now + 500; shake(now, 5, 220); sfx.gauge(); break;
         case 'act': { rings.push({ x: by.x, y: by.y, r: by.action === 'blast' || by.action === 'bomb' ? by.actR : by.r + 14, c: 'danger', t: now, fill: by.action === 'blast' });
                       pop(by, ACTION_JA[e.kind] || e.kind, 'danger', by.r + 16, now); pauseUntil = now + 330; break; }
         case 'explode': rings.push({ x: by.x, y: by.y, r: e.r, c: 'danger', t: now, fill: true }); break;
@@ -363,8 +368,8 @@
         case 'pinOpen': center('お皿を全部倒した: 柵が開いた!', 'ult', now, 16); break;
         case 'pickup': pop(to, 'おやつ', 'heal', -to.r - 16, now); sfx.pickup(); break;
         case 'split': pop(by, '二枚刃!', 'ult', -by.r - 16, now); break;
-        case 'relay': pop(to, '玉突き!', 'accent', -to.r - 16, now); rings.push({ x: to.x, y: to.y, r: to.r + 10, c: 'accent', t: now }); break;
-        case 'blast': rings.push({ x: e.x, y: e.y, r: e.r, c: 'ult', t: now, fill: true }); freeze(now, 60); shake(now, 3, 140); sfx.strong(); break;
+        case 'relay': pop(to, '玉突き!', 'accent', -to.r - 16, now); rings.push({ x: to.x, y: to.y, r: to.r + 10, c: 'accent', t: now }); sfx.relay(); break;
+        case 'blast': rings.push({ x: e.x, y: e.y, r: e.r, c: 'ult', t: now, fill: true }); freeze(now, 60); shake(now, 3, 140); sfx.blast(++shotBlasts); break;
         case 'mirror': rings.push({ x: by.x, y: by.y, r: by.r + 6, c: 'accent', t: now }); break;
         case 'bonusShot': center('場外: もう 1 手!', 'ult', now); sfx.bonus(); break;
         case 'trick': pop(to || { x: W / 2, y: 140 }, TRICK_JA[e.kind] || '', 'ult', -40, now, true); break;
@@ -596,7 +601,8 @@
       acc += Math.min(dtMs, 50) / 1000 * (now < slowUntil ? slowRate : 1);
       let n = 0;
       while (acc >= DT && state.phase === 'resolving' && n < 16) {
-        step(state); acc -= DT; n++;
+        for (const r of risers) if (!r.done && shotStep >= r.at) { r.done = true; sfx.riser(Math.max(120, r.ms - (shotStep - r.at) * DT * 1000), r.top); }
+        step(state); acc -= DT; n++; shotStep++;
         if (state.events.length) { consumeEvents(now); if (now < pauseUntil || now < freezeUntil) break; }
         if (shotOpen && !state.motion) flushShot(now);
       }
@@ -630,7 +636,7 @@
     hold(ms) { const now = MANUAL ? manualNow : performance.now(); pauseUntil = Math.max(pauseUntil, now + ms); }, // 検査器の自己検査用(わざと待たせる)
     info: () => ({ phase: state.phase, motion: !!state.motion, overlay: !$('overlay').hidden, shotOpen, chain: state.chain, shots: state.shots }),
     metrics: () => ({ shotWait: Math.round(fxm.shotWait), enemyWait: Math.round(fxm.enemyWait), slowMs: Math.round(fxm.slowMs), finaleMs: Math.round(fxm.finaleMs),
-                      releaseToMove: fxm.moveT === null ? null : Math.round(fxm.moveT), maxFx: fxm.maxFx, events: fxm.events.slice() }),
+                      releaseToMove: fxm.moveT === null ? null : Math.round(fxm.moveT), maxFx: fxm.maxFx, events: fxm.events.slice(), sounds: fxm.sounds.slice() }),
     textLog(on) { fxm.logText = on; if (on) fxm.texts.clear(); return Array.from(fxm.texts.entries()).map(([k, n]) => { const [px, fill, t] = k.split('|'); return { px: +px, fill, t, n }; }); },
     lum() { // 卓の平均の明るさ(0〜1)。明滅を数えるため
       const c = document.createElement('canvas'); c.width = 24; c.height = 35; const g = c.getContext('2d'); g.drawImage(cv, 0, 0, 24, 35);

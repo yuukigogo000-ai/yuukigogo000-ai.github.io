@@ -91,11 +91,11 @@ export const FXT = {
     2: { text: 4, color: 'plain', label: 'num' },                           // 小さな数字だけ
     3: { text: 3, color: 'good', chord: 2, stopMs: 75, ringGrow: true, dots: 6, label: 'charge' }, // 「3 れんさ 必殺+1」
     4: { text: 3, color: 'good', label: 'mult' },                           // 「4 れんさ ×1.8」
-    5: { text: 2, color: 'great', chord: 3, low: true, stopMs: 120, dim: { pct: 20, ms: 300 }, dots: 12, callout: 1, label: 'mult' },
+    5: { text: 2, color: 'great', chord: 3, low: true, stopMs: 120, dim: { pct: 20, ms: 300 }, dots: 12, label: 'mult' },
     6: { text: 2, color: 'great', label: 'mult' },                          // 6〜9 は見た目は 5 のまま、音だけ上がる
     10: { text: 1, color: 'great', plate: true, chord: 4, low: true, preSilenceMs: 60, stopMs: 400, repeatMul: 0.5,
-          dim: { pct: 25, ms: 400 }, dots: 24, callout: 3, label: 'plate' }, // 必殺色の地に白い文字の札。呼びかけを重ねる
-    over: { addChordNote: true, chordMax: 4, calloutMax: 3, noRedim: true }, // 11 以上: 言葉は増やさない
+          dim: { pct: 25, ms: 400 }, dots: 24, label: 'plate' }, // 必殺色の地に白い文字の札(声は使わない: 発注者の決定)
+    over: { addChordNote: true, chordMax: 4, noRedim: true }, // 11 以上: 言葉は増やさない
     multFrom: 4, // 倍率を添え始める数(掛け算が効き始める次)
   },
 
@@ -139,45 +139,33 @@ export const FXT = {
   // 加算の光はライトの卓(明るい木の色)では白く飛んで見えない。ライトは通常の重ね方+暗い縁に切り替える [R2]
   glowMode: { light: 'normal', dark: 'lighter' },
 
-  // ---- 音(端末の中で作る。音源ファイルは使わない) [R1 音・R2 声・耳 = 聴き比べ台] ---------------------
-  // 2026-11-16 発注者の選択: れんさ=半音 / 段=ドミソ / 立ち上がり=8ms / ゆらし=±0.5 / ダッキング=あり / 勝ち=最後を伸ばす /
-  //   強打=どちらでも / 呼びかけ=「もっと声らしく」/ 決着=「もっと派手に」/ 全体に「音色がショボい。もっと爽快感を」→ 第 2 版(層で作る)
+  // ---- 音 最終版(すべて端末の中で作る。音源ファイルは使わない) [R1 音・R2・耳 = 聴き比べ台] ------------------
+  // 2026-11-16 発注者の選択: れんさ=半音 / 段=ドミソ / 立ち上がり=8ms / ゆらし=±0.5 / 勝ち=最後を伸ばす / 強打=どちらでも /
+  //   決着=「もっと派手に」/「音色がショボい。もっと爽快感」→ 第 2 版(層で作る)「よいね」→ 第 3 版(溜めて放つ・ポン・層が増える)
+  //   声(合成の呼びかけ・英語の掛け声)は「声いらん」で外した。当たりの音色と溜めは選ばれなかったので既定(ガラス・溜めあり)
   sound: {
     attackMs: 8,          // 立ち上がり(いきなり最大にすると「プチッ」と鳴る) [R1・耳 A]
-    voicesMax: 6,         // 同時に鳴る音の上限(1 回の play を 1 つと数える) [R1]
+    voicesMax: 6,         // 同時に鳴る音の上限(1 回の play を 1 つと数える。決着・節目 > 当たり の順に残す) [R1]
     jitterSemi: 0.5,      // 毎回の高さのゆらし [耳 A]
     master: 0.9,
     limiter: { thresholdDb: -4 }, // 割れ止め(大きな音が重なったときだけ効く)
     glue: { airHz: 6000, airDb: 2.5 }, // 第 3 版: 高音を少し持ち上げる(スマホで明るく)。圧縮は音が小さくなり遅れるので使わない
     reverb: { seconds: 1.3, preDelayMs: 15, level: 0.9 },   // 部屋の響き(音ごとの送り量は reverbSend)
-    reverbSend: { hit: 0.22, strong: 0.25, ring: 0.3, break: 0.35, blast: 0.3, chord: 0.4, ult: 0.45, gauge: 0.45, finale: 0.55, win: 0.45, voice: 0.25 },
+    reverbSend: { hit: 0.22, strong: 0.25, ring: 0.3, break: 0.35, blast: 0.3, chord: 0.4, ult: 0.45, gauge: 0.45, finale: 0.55, win: 0.45 },
     // 音ごとの大きさ(1 = 標準)。実機で聴いて直す
     level: { ui: 1.1, step: 1.3, shoot: 1.9, tap: 1, rail: 1.1, hit: 2.3, strong: 2.2, harm: 1.15, relay: 1.3, crash: 1.6, bumper: 1, pickup: 1.5, bonus: 1.5,
-             ring: 1, break: 1, blast: 1, chord: 1, ult: 1, gauge: 1, finale: 1, win: 1, lose: 1, voice: 1, riser: 1 },
+             ring: 1, break: 1, blast: 1, chord: 1, ult: 1, gauge: 1, finale: 1, win: 1, lose: 1, riser: 1 },
     // れんさの音階。発注者が聴き比べて半音を選んだ(Candy Crush の型)。5 音階も残す
     scales: { pentatonic: [0, 2, 4, 7, 9], semitone: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
     scale: 'semitone',
     chainBaseHz: 523,     // れんさ 1 の高さ(ド。第 1 版の 330Hz はスマホで細く聞こえた)
     chainCap: 10,         // 10 で頭打ち
-    timbre: 'glass',      // 当たりの音色: glass(おはじきのガラス)/ marimba(木琴)/ bell(鈴)。発注者が選ぶ
+    timbre: 'glass',      // 当たりの音色: glass(おはじきのガラス・最終版)/ marimba(木琴)/ bell(鈴)
     // 引っぱりの段の音: ドミソ [耳 A]。旧は長 3 度ずつで増三和音
     step: { baseHz: 523, semis: [0, 0, 4, 7], legacySemis: [0, 0, 4, 8] },
     chord: [0, 4, 7, 12], // 節目の和音(3 は 2 音、5 は 3 音、10 は 4 音)
-    duck: { db: -6, ms: 250 }, // 呼びかけが鳴る間は効果音を下げる [耳 A]
-    // 掛け声(第 3 版): 自然な英語の声。Kokoro-82M(Apache-2.0)で事前に作った MP3 を fx/voice-clips.js に埋め込む
-    //   voice = clip(事前に作った声)/ tts(端末の読み上げ)/ off。voiceName = 声の名前(発注者が選ぶ)
-    //   第 2 版の合成の声(「ナイス!」「すごい!」)は発注者「発音がおかしい」で取りやめ
-    voice: 'clip',
-    voiceName: 'af_bella',
-    voiceGain: 1.0,
-    // 場面 → 言葉(発注者が選ぶ。候補は fx/voice/make_voice.py の LINES)。1 手に 1 つだけ、下の順で一番上のものを言う
-    voiceLines: { special: 'sweep', finale: 'finish', gauge: 'break', chainOver: 'amazing', chain10: 'awesome', bonus: 'onemore', chain5: 'nice' },
-    voicePriority: ['special', 'finale', 'gauge', 'chainOver', 'chain10', 'bonus', 'chain5'],
-    voiceText: { nice: 'Nice!', great: 'Great!', awesome: 'Awesome!', amazing: 'Amazing!', incredible: 'Incredible!', unstoppable: 'Unstoppable!',
-                 onemore: 'One more!', break: 'Break!', finish: 'Finish!', sweep: 'Clean sweep!' },
-    // 溜め(第 3 版): 決着・10 れんさの直前に上がる音。台本で先に分かるときだけ鳴らす(期待させて外す演出にはしない)
+    // 溜め: 決着・10 れんさの直前に上がる音。台本で先に分かるときだけ鳴らす(期待させて外す演出にはしない)
     riser: { leadMs: 300 },
-    callout: { maxMs: 900 }, // 掛け声がダッキングする長さの上限
     // 勝ち: 上がって最後の音を伸ばす [耳 A] / 負け: 下がる 3 音(静かに)
     win: { semis: [0, 4, 7, 12], noteMs: 90, lastMs: 420 },
     lose: { hz: [392, 311, 233], noteMs: 120 },

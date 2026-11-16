@@ -11,7 +11,7 @@ const wrap = (js) => {
   return 'const { ' + names.join(', ') + ' } = (function () {\n' + strip(js) + '\nreturn { ' + names.join(', ') + ' };\n})();';
 };
 const FLAT = ['../engine/engine.js', '../engine/data.js', '../engine/ai.js'];
-const FXMODS = ['../fx/tokens.js', '../fx/script.js', '../fx/director.js', '../fx/scenes.js', '../fx/scenes-inputs.js'];
+const FXMODS = ['../fx/tokens.js', '../fx/script.js', '../fx/director.js', '../fx/audio.js', '../fx/scenes.js', '../fx/scenes-inputs.js'];
 // 名前の重複を先に調べる(1 つのスコープに並べるため)
 const seen = new Map();
 for (const f of FLAT) for (const m of rd(f).matchAll(/^(?:export )?(?:const|let|function) (\w+)/gm)) { if (seen.has(m[1])) throw new Error('名前が重複: ' + m[1] + ' (' + seen.get(m[1]) + ' と ' + f + ')'); seen.set(m[1], f); }

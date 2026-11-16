@@ -1,7 +1,7 @@
 // はじきバトル 演出の土台の検査(node fx/test.mjs)。--mutate で検査器自身が違反を見つけられるか確かめる。
 //  1. 台本(先読み)が本物の進行と 1 刻み単位で一致する
 //  2. 台本の計算が十分に速い
-//  3. 指示表が演出の決まり(格表・色の意味・予算・呼びかけ 1 回)を守る
+//  3. 指示表が演出の決まり(格表・色の意味・予算・声は使わない)を守る
 import * as E from '../engine/engine.js';
 import { ally, mobBattle, bossBattle, LINEAGE_KEYS, ITEM_KEYS, PASSIVE_KEYS, EVOLUTIONS } from '../engine/data.js';
 import { DIRS, POWERS } from '../engine/ai.js';
@@ -101,12 +101,11 @@ const A = (o) => Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 400, tou
   ok('ザコ 1 体・余裕のある決着では寄らない', !plan.cues.some((c) => c.k === 'zoom'));
   const rz = plan.cues.find((c) => c.k === 'sound' && c.id === 'riser' && c.why === 'riseFinale');
   ok('決着: 減速が始まる刻みから溜めを鳴らす', rz && rz.i === plan.finale.i0 && rz.ms >= 120, rz);
-  const cv = plan.cues.filter((c) => c.k === 'callout');
-  ok('決着の掛け声は「finish」1 つだけ', cv.length === 1 && cv[0].line === FXT.sound.voiceLines.finale && cv[0].i === plan.finale.koI, cv);
+  ok('決着でも声の指示は出さない(発注者「声いらん」)', !plan.cues.some((c) => c.k === 'callout'));
   ok('決着の瞬間に、ほかの止めを重ねない', plan.cues.filter((c) => c.k === 'stop').length === 1);
 }
 
-// ---- 作った台本で、れんさ 10 段・呼びかけ・予算・敵の番を確かめる ------------------------
+// ---- 作った台本で、れんさ 10 段・溜め・予算・敵の番を確かめる ------------------------
 function fakeScript(n, extra) {
   const events = [{ i: -1, e: { t: 'ult0' }, at: {}, phase: 'shot' }];
   for (let k = 1; k <= n; k++) {
@@ -127,17 +126,14 @@ function fakeScript(n, extra) {
   ok('れんさ 5 は段 2・必殺色', chainText(5) && chainText(5).size === 2 && chainText(5).color === 'great');
   ok('れんさ 10 は段 1 の札(必殺色)', chainText(10) && chainText(10).size === 1 && chainText(10).plate === true);
   ok('れんさ 11 以上は言葉を増やさない(段 1 の札のまま)', chainText(12) && chainText(12).str === '12 れんさ' && chainText(12).size === 1);
-  const co = plan.cues.filter((c) => c.k === 'callout');
-  ok('掛け声は 1 手に 1 回、最高の節目で(12 れんさなら 11 で「amazing」)', co.length === 1 && co[0].line === FXT.sound.voiceLines.chainOver && co[0].i === 330, co);
+  ok('れんさが何回でも声の指示は出さない', !plan.cues.some((c) => c.k === 'callout'));
   ok('10 れんさの直前に溜め(riser)を入れ、ちょうど 10 れんさの瞬間に上がりきる', plan.cues.some((c) => c.k === 'sound' && c.id === 'riser' && c.why === 'rise10' && Math.abs(c.i + c.ms / (1000 / 240) - 300) < 1));
   ok('暗くするのは 5 と 10 だけ', plan.cues.filter((c) => c.k === 'dim').length === 2);
   ok('10 れんさの前に一瞬の静けさを置く', plan.cues.some((c) => c.k === 'pause' && c.why === 'preSilence' && c.i === 300 && c.pre));
   ok('1 手の待ちは予算以内', plan.stats.shotWaitMs <= FXT.budget.addedWaitPerShotMs, plan.stats.shotWaitMs);
   ok('危険色は 1 つも使わない(全部こちらの手柄)', !plan.cues.some((c) => c.color === 'harm'));
   const p7 = planShot(fakeScript(7), {});
-  const c7 = p7.cues.filter((c) => c.k === 'callout');
-  ok('最高が 5〜9 の手は、5 で 1 回だけ掛け声', c7.length === 1 && c7[0].i === 150 && c7[0].line === FXT.sound.voiceLines.chain5, c7);
-  ok('最高が 4 以下の手は呼びかけない', planShot(fakeScript(4), {}).cues.every((c) => c.k !== 'callout'));
+  ok('5〜9 れんさの手も声なし(節目は和音と文字で伝える)', p7.cues.every((c) => c.k !== 'callout') && p7.cues.some((c) => c.k === 'sound' && c.id === 'chord' && c.notes === 3));
   const s10a = planShot(fakeScript(10), {}).cues.find((c) => c.why === 'chain10');
   const s10b = planShot(fakeScript(10), { memory: { chain10: 1 } }).cues.find((c) => c.why === 'chain10');
   ok('10 れんさの止めは 0.3〜0.5 秒(予算に収めるため下の格から先に削る)', s10a && s10a.ms >= 300 && s10a.ms <= 500, s10a && s10a.ms);
@@ -173,7 +169,7 @@ function fakeScript(n, extra) {
     const v = auditPlan(plan);
     if (v.length) bad.push(sc.id + ': ' + v[0]);
     rows.push(sc.id.padEnd(11) + ' 格' + (sc.tier === null || sc.tier === undefined ? '-' : sc.tier) + ' 待ち ' + String(Math.round(plan.stats.shotWaitMs)).padStart(3) + 'ms 敵 ' + String(Math.round(plan.stats.enemyTurnMs)).padStart(4) +
-              'ms 決着 ' + String(Math.round(plan.stats.finaleMs)).padStart(4) + 'ms 呼びかけ ' + plan.stats.callouts + ' 最大れんさ ' + plan.stats.maxChain);
+              'ms 決着 ' + String(Math.round(plan.stats.finaleMs)).padStart(4) + 'ms 最大れんさ ' + plan.stats.maxChain);
   }
   ok('場面カタログ: すべての場面が記録した手で再現する', broken.length === 0, broken);
   ok('場面カタログ: すべての場面で指示表が決まりを守る', bad.length === 0, bad);
@@ -185,7 +181,7 @@ if (process.argv.includes('--mutate')) {
   const base = () => { const p = planShot(fakeScript(7), {}); return JSON.parse(JSON.stringify(p)); };
   const muts = [
     ['敵に与えた数字を危険色にする', (p) => { p.cues.push({ i: 30, k: 'text', str: '-20', size: 4, color: 'harm', who: 'enemy' }); }],
-    ['呼びかけを 2 回にする', (p) => { p.stats.callouts = 2; }],
+    ['声の指示を残す(声は使わない決定に反する)', (p) => { p.stats.callouts = 1; }],
     ['1 手の待ちを 900ms にする', (p) => { p.stats.shotWaitMs = 900; }],
     ['離した瞬間に 320ms 止める(今の仮の画面の必殺)', (p) => { p.cues.push({ i: -1, k: 'pause', ms: 320, why: 'ult' }); }],
     ['文字の段を 6 種類にする', (p) => { for (let z = 1; z <= 5; z++) p.cues.push({ i: 1, k: 'text', str: 'x', size: z, color: 'plain', who: 'enemy' }); p.cues.push({ i: 1, k: 'text', str: 'y', size: 6, color: 'plain', who: 'enemy' }); }],

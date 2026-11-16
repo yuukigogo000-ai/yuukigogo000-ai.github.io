@@ -109,6 +109,7 @@ PC の Claude Code(`AI_WORKSPACE/photo-roguelike` のソースが見えるセッ
 - 道具: 22 場面の場面カタログ(`fx/scenes.js`)、仮の画面の `?scene=` / `?state=` / `?clock=manual` フック、演出の検査器(`fx/fx-check.mjs`)、音の部品と検査(`fx/audio.js` / `fx/audio-check.mjs`)、聴き比べ台(https://claude.ai/artifact/TnNwhpMaJAp72SKxqfcfEr)
 - 今の仮の画面の before: `fx/baseline/`(文字の大きさ 16 種類・危険色の誤用がほぼ全場面・必殺とゲージ割りで 1 手の待ちが予算超え)
 - **画面の見た目はまだ変えていない。** 作る順番は `FX_SPEC.md` §8(1. 画面を指示表につなぐ → 2. 音 → 3. 粒と光 → … → 13)。仮の画面で作って確かめてから、本体へ移す
+- **音は最終版で確定**(2026-11-16。発注者が聴き比べ台で選び、「声いらん。声なしで最終版」)。`fx/audio.js` + `fx/tokens.js` の `sound`。仮の画面の音も差し替え済みで、10 れんさと決着の直前の溜めは台本(先読み)で鳴らしている。声は使わない
 - 本体へ移すとき: `fx/` の 5 つ(tokens・script・director・audio・scenes)をそのまま置き、`engine` の `s.fx = true` を本番の盤面だけに立てる(予測線・おまかせの複製には立てない)。`?state=` も同じ名前で入れる(WO §2)
 - PC でしかできないこと: 見本集め(`fx/REFERENCES.md` の優先 A 18 件)、枠の UI(M3・Stitch・uicheck)、写真シールの割れ方(本体の絵が要る)、実機での台本の計算時間
 

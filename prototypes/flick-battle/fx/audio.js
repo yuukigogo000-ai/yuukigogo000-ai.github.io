@@ -1,28 +1,24 @@
-// はじきバトル 音の部品 第 3 版(端末の中で作る。掛け声だけは事前に作った短い MP3 を埋め込む)。調整できる数値は fx/tokens.js の FXT.sound。
-// 第 1 版: 三角波 1 つで細く小さかった → 第 2 版: 1 つの音を層で作る(立ち上がりの粒・芯・きらめき・部屋の響き)
-// 第 3 版(発注者「合成の声は発音がおかしい。英語で自然な声」「もっと爽快感」2026-11-16):
-//   - 掛け声は Kokoro-82M(Apache-2.0)で手元で作った英語の声(fx/voice/make_voice.py → fx/voice-clips.js)
+// はじきバトル 音の部品 最終版(すべて端末の中で作る。音源ファイルは使わない)。調整できる数値は fx/tokens.js の FXT.sound。
+// 歩み: 第 1 版 三角波 1 つで細く小さかった → 第 2 版 1 つの音を層で作る(立ち上がりの粒・芯・きらめき・部屋の響き)「よいね」
+//   → 第 3 版 爽快感を足す(溜めて放つ・ポン・れんさで層が増える・パシッ)+英語の掛け声 → 最終版 掛け声を外す(発注者「声いらん」2026-11-16)
 //   - 溜めて放つ: 決着・10 れんさの直前に「キュイーン」と上がる溜め(riser)を入れ、当たった瞬間に解放する(台本で先に分かるので外れない)
 //   - 当たりは「ポン」という弾ける粒+澄んだ音(和音に合う倍音)。れんさが伸びるほど層が増え、左右に広がる
 //   - 一撃に「パシッ」という手拍子の層、全体に高音の持ち上げ(スマホで明るく聞こえる)
 // スマホのスピーカーは 200Hz より下がほとんど出ない。低い「ドン」は、ひずませて倍音を足し、中音域で聞こえるようにする。
 //  - 立ち上がりを数ミリ秒かける(いきなり最大にすると「プチッ」と鳴る)
-//  - 同時に鳴る音は上限まで(呼びかけ > 節目・決着 > 当たり の順に残す)
-//  - 声が鳴る間は、効果音と響きを少し下げる(ダッキング)
-//  - iPhone は最初のタップの中で準備しないと鳴らない → unlock() を「はじめる」などのタップで呼ぶ(掛け声の準備もここで始まる)
+//  - 同時に鳴る音は上限まで(決着・節目 > 当たり の順に残す)
+//  - iPhone は最初のタップの中で準備しないと鳴らない → unlock() を「はじめる」などのタップで呼ぶ
 // ctx に OfflineAudioContext を渡せば、鳴らさずに波形を作れる(fx/audio-check.mjs で数字を測る)
 import { FXT } from './tokens.js';
 
 export function createAudio(opts) {
   const S = FXT.sound, o = opts || {};
-  let ac = o.ctx || null, master = null, sfxBus = null, voiceBus = null, revIn = null, sfxRev = null, voiceRev = null, noiseBuf = null, driveCurve = null;
+  let ac = o.ctx || null, master = null, sfxBus = null, revIn = null, sfxRev = null, noiseBuf = null, driveCurve = null;
   const maxVoices = o.voicesMax || S.voicesMax;
   const groups = []; // 鳴っている音(1 回の play を 1 つと数える)
   let cur = null;
   const st = { scale: o.scale || S.scale, step: o.step || 'new', attackMs: o.attackMs === undefined ? S.attackMs : o.attackMs,
-               jitter: o.jitter === undefined ? S.jitterSemi : o.jitter, duck: o.duck !== false, timbre: o.timbre || S.timbre,
-               voice: o.voice || S.voice, voiceName: o.voiceName || S.voiceName, glue: o.glue !== false, enabled: true };
-  const clipsB64 = o.clips || null, clipBuf = {}; // 掛け声(MP3 の base64)と、それを読み込んだ音
+               jitter: o.jitter === undefined ? S.jitterSemi : o.jitter, timbre: o.timbre || S.timbre, glue: o.glue !== false, enabled: true };
   let seed = 12345; const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; }; // 音のゆらし用(勝ち負けには関係しない)
 
   function setup() {
@@ -38,9 +34,6 @@ export function createAudio(opts) {
     lim.threshold.value = S.limiter.thresholdDb; lim.knee.value = 2; lim.ratio.value = 12; lim.attack.value = 0.002; lim.release.value = 0.12;
     head.connect(lim); lim.connect(ac.destination);
     sfxBus = ac.createGain(); sfxBus.connect(master);
-    voiceBus = ac.createGain();
-    const pres = ac.createBiquadFilter(); pres.type = 'peaking'; pres.frequency.value = 3000; pres.Q.value = 0.8; pres.gain.value = 3; // 声の通り
-    voiceBus.connect(pres); pres.connect(master);
     // 響き: 減衰するノイズで作った部屋の残響(起動時に 1 回だけ作る)
     const R = S.reverb, len = Math.round(ac.sampleRate * R.seconds), ch = Math.min(2, ac.destination.channelCount || 2);
     const ir = ac.createBuffer(ch, len, ac.sampleRate);
@@ -56,8 +49,7 @@ export function createAudio(opts) {
     const conv = ac.createConvolver(); conv.buffer = ir;
     revIn = ac.createGain(); const revOut = ac.createGain(); revOut.gain.value = R.level;
     revIn.connect(conv); conv.connect(revOut); revOut.connect(master);
-    sfxRev = ac.createGain(); sfxRev.connect(revIn);     // 効果音の響き(ダッキングで一緒に下げる)
-    voiceRev = ac.createGain(); voiceRev.connect(revIn); // 声の響き
+    sfxRev = ac.createGain(); sfxRev.connect(revIn);     // 効果音の響き
     noiseBuf = ac.createBuffer(1, ac.sampleRate, ac.sampleRate);
     const nd = noiseBuf.getChannelData(0); let z = 7;
     for (let k = 0; k < nd.length; k++) { z = (z * 16807) % 2147483647; nd[k] = z / 1073741823.5 - 1; }
@@ -65,41 +57,15 @@ export function createAudio(opts) {
     for (let k = 0; k < 1024; k++) { const v = k / 511.5 - 1; driveCurve[k] = Math.tanh(3 * v) / Math.tanh(3); }
     return true;
   }
-  /** 掛け声の MP3 を読み込む(非同期)。読み終わるまでは掛け声は鳴らない(文字は画面に出るので困らない) */
-  function loadClips(filter) {
-    if (!clipsB64 || !setup()) return Promise.resolve(0);
-    const jobs = [];
-    for (const key of Object.keys(clipsB64)) {
-      if (clipBuf[key] || (filter && !filter(key))) continue;
-      const bin = atob(clipsB64[key]), u8 = new Uint8Array(bin.length);
-      for (let k = 0; k < bin.length; k++) u8[k] = bin.charCodeAt(k);
-      jobs.push(new Promise((ok) => {
-        let settled = false;
-        const done = (buf) => { if (settled) return; settled = true; if (buf) clipBuf[key] = trimLead(buf); ok(); };
-        const fail = () => { if (!settled) { settled = true; ok(); } };
-        try { const p = ac.decodeAudioData(u8.buffer, done, fail); if (p && p.then) p.then(done, fail); } catch (e) { fail(); }
-      }));
-    }
-    return Promise.all(jobs).then(() => Object.keys(clipBuf).length);
-  }
-  // MP3 は頭に数十ミリ秒の無音が付くので、最初の音までを詰めておく(声が遅れて聞こえないように)
-  function trimLead(buf) {
-    const d = buf.getChannelData(0); let k = 0; while (k < d.length && Math.abs(d[k]) < 0.004) k++;
-    k = Math.max(0, k - Math.round(buf.sampleRate * 0.004));
-    if (k === 0 || k >= buf.length) return buf;
-    const out = ac.createBuffer(buf.numberOfChannels, buf.length - k, buf.sampleRate);
-    for (let c = 0; c < buf.numberOfChannels; c++) out.getChannelData(c).set(buf.getChannelData(c).subarray(k));
-    return out;
-  }
-  function unlock() { if (!setup()) return false; if (ac.state === 'suspended' && ac.resume) ac.resume(); loadClips((k) => k.endsWith('.' + st.voiceName)); return true; }
+  function unlock() { if (!setup()) return false; if (ac.state === 'suspended' && ac.resume) ac.resume(); return true; }
 
   // ---- 1 回の音のまとまり(出口・左右・響きへの送り) -----------------------------------
-  function begin(prio, rev, pan, bus) {
+  function begin(prio, rev, pan) {
     const out = ac.createGain(), node = { nodes: [], end: 0, prio, out };
     let head = out;
     if (pan && ac.createStereoPanner) { const p = ac.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan)); out.connect(p); head = p; }
-    head.connect(bus || sfxBus);
-    if (rev > 0) { const s = ac.createGain(); s.gain.value = rev; head.connect(s); s.connect(bus === voiceBus ? voiceRev : sfxRev); }
+    head.connect(sfxBus);
+    if (rev > 0) { const s = ac.createGain(); s.gain.value = rev; head.connect(s); s.connect(sfxRev); }
     cur = node;
   }
   function finish() {
@@ -202,32 +168,6 @@ export function createAudio(opts) {
   }
   const jit = () => (st.jitter ? (rnd() * 2 - 1) * st.jitter : 0);
   const chainHz = (n) => semi(S.chainBaseHz, chainSemi(n) + jit());
-
-  // ---- 掛け声(事前に作った英語の声) ---------------------------------------------------
-  function playClip(line, vol) {
-    const buf = clipBuf[line + '.' + st.voiceName];
-    if (!buf) return 0;
-    begin(2, S.reverbSend.voice, 0, voiceBus);
-    const t = T(), src = ac.createBufferSource(), g = ac.createGain();
-    src.buffer = buf; g.gain.value = vol; src.connect(g); g.connect(cur.out);
-    src.start(t); cur.nodes.push(src); cur.end = t + buf.duration;
-    duck(Math.min(S.callout.maxMs, buf.duration * 1000));
-    return buf.duration;
-  }
-  function tts(text) { // 端末の読み上げ(聴き比べ用。機種で声が変わる)
-    try {
-      const u = new SpeechSynthesisUtterance(text); u.lang = 'en-US'; u.rate = 1.1; u.pitch = 1.2; u.volume = 1;
-      speechSynthesis.cancel(); speechSynthesis.speak(u); return true;
-    } catch (e) { return false; }
-  }
-  function duck(ms) {
-    if (!st.duck) return;
-    const s = ac.currentTime, k = Math.pow(10, S.duck.db / 20);
-    for (const g of [sfxBus.gain, sfxRev.gain]) {
-      g.cancelScheduledValues(s); g.setValueAtTime(g.value, s);
-      g.linearRampToValueAtTime(k, s + 0.02); g.setValueAtTime(k, s + ms / 1000); g.linearRampToValueAtTime(1, s + ms / 1000 + 0.08);
-    }
-  }
 
   const L = S.level; // 音ごとの大きさ(tokens)
   const HIT = { // 当たりの音色 3 種(発注者が選ぶ)。どれも「ポン」+澄んだ芯。れんさが伸びるほど層が増える(grow 0〜1)
@@ -363,18 +303,11 @@ export function createAudio(opts) {
       sparkle(2093, 6, 40, 0.06 * L.win, last + 0.05);
     },
     lose: () => { begin(2, 0.1); S.lose.hz.forEach((hz, k) => tone('triangle', hz, 0.3, 0.14 * L.lose, { at: k * S.lose.noteMs / 1000, lp: 1600 })); },
-    // 掛け声: line = 言葉の名前(nice・awesome・onemore・break・finish・sweep …)。layers は旧い呼び方(1 = 5 れんさ、2 = 10、3 = 11 以上)
-    callout: (q) => {
-      const V = S.voiceLines, line = q.line || (q.layers >= 3 ? V.chainOver : q.layers === 2 ? V.chain10 : V.chain5);
-      if (st.voice === 'tts') { tts(S.voiceText[line] || 'Nice!'); return; }
-      if (st.voice === 'off') return;
-      playClip(line, S.voiceGain * L.voice);
-    },
   };
   R.explode = (q) => R.blast(Object.assign({ k2: 2 }, q || {}));
 
   return {
-    unlock, loadClips,
+    unlock,
     get ready() { return !!(ac && master && ac.state !== 'suspended'); },
     get context() { return ac; },
     /** 指示表の sound / callout を鳴らす。名前のない音は鳴らさない */
@@ -385,9 +318,8 @@ export function createAudio(opts) {
       return true;
     },
     names: () => Object.keys(R),
-    set(k, v) { if (k in st) st[k] = v; if (k === 'voiceName' && master) loadClips((key) => key.endsWith('.' + v)); },
+    set(k, v) { if (k in st) st[k] = v; },
     get: (k) => st[k],
-    hasClip: (line) => !!clipBuf[line + '.' + st.voiceName],
     chainSemi,
     liveCount: () => groups.filter((g) => g.end >= (ac ? ac.currentTime : 0)).length,
   };

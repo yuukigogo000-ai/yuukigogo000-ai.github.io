@@ -12,7 +12,6 @@
 //  part   { id, x, y, nx, ny, mul } エフェクトの部品(fx/tokens.js の parts)
 //  body   { id, anim, ... }       駒の変形(つぶれ・揺れ・場外の回転・割れる・溜め・ひるみ)
 //  dim    { pct, ms }             背景を少し暗くする
-//  callout{ layers }              呼びかけ(声っぽい合成音)。1 手に 1 回
 //  buzz   { ms }                  振動(Android だけ。格に比例した短い 1 回)
 //  slow   { i0, i1, rate }        決着のスロー(刻み i0〜i1)
 //  zoom   { i0, i1, x, y, scale } 決着の寄り
@@ -57,9 +56,6 @@ export function planShot(script, ctx) {
   };
   const contactFor = (r) => contactAt(r.i, r.e.by, r.e.to);
   let firstHitDone = false, blastN = 0, peak = 0;
-  // 掛け声の候補(場面 → 刻み)。1 手に 1 つだけ、FXT.sound.voicePriority の順で一番上のものを言う
-  const voice = {};
-  const ten = { chain5: 5, chain10: 10, chainOver: 11 };
   const chainOf = (n) => T.chain[n] || (n >= 10 ? T.chain[10] : n >= 6 ? T.chain[6] : T.chain[1]);
   const fin = sum.finale;
 
@@ -136,7 +132,6 @@ export function planShot(script, ctx) {
         }
         if (n > 10) add({ i, k: 'sound', id: 'chord', notes: Math.min(T.chain.over.chordMax, 4), n });
         if (L.dots && r.at && lv.particles > 0) add({ i, k: 'part', id: 'milestone', n, mul: lv.particles, dots: L.dots });
-        for (const [key, at] of Object.entries(ten)) if (n === at && voice[key] === undefined) voice[key] = i;
         if (n === 10) chain10At = i;
         break;
       }
@@ -163,7 +158,7 @@ export function planShot(script, ctx) {
         break;
       }
       case 'fall': if (r.at[e.id]) { add({ i, k: 'text', str: '落ちた(戻る)', size: 3, color: 'harm', who: 'ally', ...posOf(r, e.id, -20) }); add({ i, k: 'body', id: e.id, anim: 'allyFall' }); add({ i, k: 'sound', id: 'harm' }); } break;
-      case 'bonusShot': tier(2); add({ i, k: 'text', str: '場外: もう 1 手!', size: 2, color: 'great', who: 'enemy', center: true }); add({ i, k: 'sound', id: 'bonus' }); if (voice.bonus === undefined) voice.bonus = i; break;
+      case 'bonusShot': tier(2); add({ i, k: 'text', str: '場外: もう 1 手!', size: 2, color: 'great', who: 'enemy', center: true }); add({ i, k: 'sound', id: 'bonus' }); break;
       case 'blast': {
         tier(2);
         const first = blastN++ === 0; // 海物語の型: 同じ演出を大きさで格づける。2 発目からは輪だけ
@@ -175,7 +170,6 @@ export function planShot(script, ctx) {
       case 'ult': if (r.at[e.by]) { tier(3); memory.ult++; add({ i, k: 'text', str: (ULT_JA[e.kind] || e.kind) + '!', size: 2, color: 'great', who: 'enemy', ...posOf(r, e.by, -r.at[e.by].r - 18) }); add({ i, k: 'part', id: 'ultFire', ...posOf(r, e.by, 0), mul: lv.particles }); add({ i, k: 'sound', id: 'ultFire' }); } break;
       case 'ultAfter': if (r.at[e.by]) add({ i, k: 'part', id: 'ultAfter', ...posOf(r, e.by, 0), mul: lv.particles }); break;
       case 'gaugeBreak': {
-        if (!enemyPhase && voice.gauge === undefined) voice.gauge = i;
         tier(3);
         const seen = memory.gauge++;
         add({ i, k: 'text', str: 'ゲージを割った!', size: 2, color: 'great', who: 'enemy', ...posOf(r, e.id, -60) });
@@ -257,14 +251,7 @@ export function planShot(script, ctx) {
     const lead = Math.round(T.sound.riser.leadMs / STEP_MS), i0 = Math.max(0, chain10At - lead);
     if (chain10At - i0 >= Math.round(120 / STEP_MS)) add({ i: i0, k: 'sound', id: 'riser', ms: (chain10At - i0) * STEP_MS * stopMul, top: 1760, why: 'rise10' });
   }
-  // ---- 掛け声: 1 手に 1 つ(決着の特別版 > 決着 > ゲージ割り > 11 れんさ > 10 れんさ > もう 1 手 > 5 れんさ) --------------
-  if (fin) { if (fin.special) voice.special = fin.koI; else voice.finale = fin.koI; }
-  for (const key of T.sound.voicePriority) {
-    if (voice[key] === undefined) continue;
-    const layers = key === 'chainOver' ? 3 : key === 'chain10' ? 2 : 1;
-    add({ i: voice[key], k: 'callout', line: T.sound.voiceLines[key], key, layers });
-    break;
-  }
+  // 声(呼びかけ・掛け声)は使わない(発注者の決定 2026-11-16「声いらん」)。節目は和音・溜め・文字で伝える
   // ---- 重なりの決まり: 同じ瞬間の止め・揺れ・目立つ音は、一番上のものを 1 回だけ -----------
   mergeMoments(cues);
   // ---- 予算: 1 手で足す待ちの合計を上限に収める(決着は別枠)。下の格から削る -----------------
@@ -350,7 +337,7 @@ function planStats(cues, script, finale) {
   for (const c of cues) {
     if ((c.k === 'stop' || (c.k === 'pause' && c.why === 'preSilence')) && c.why !== 'finale') shotWaitMs += c.ms;
     if (c.k === 'pause' && (c.why === 'act' || c.why === 'windup' || c.why === 'rule')) enemyTurnMs += c.ms;
-    if (c.k === 'callout') callouts++;
+    if (c.k === 'callout') callouts++; // 声は使わないので常に 0(残っていたら検査で落とす)
     if (c.k === 'stop' && c.tier > peakTier) peakTier = c.tier;
   }
   return { shotWaitMs, enemyTurnMs, finaleMs: finale ? finale.ms : 0, callouts, peakTier, maxChain: script.summary.maxChain };
@@ -373,7 +360,7 @@ export function auditPlan(plan) {
     if ((c.k === 'stop' || c.k === 'pause') && c.i < 0) v.push('離した瞬間に止めている(入力への反応が遅れる): ' + c.why);
   }
   if (sizes.size > B.textTiersMax) v.push('文字の段が ' + sizes.size + ' 種類');
-  if (plan.stats.callouts > 1) v.push('呼びかけが 1 手に ' + plan.stats.callouts + ' 回');
+  if (plan.stats.callouts > 0) v.push('声の指示が残っている(声は使わない決定): ' + plan.stats.callouts + ' 回');
   if (plan.stats.shotWaitMs > B.addedWaitPerShotMs + 0.5) v.push('1 手の待ちが ' + Math.round(plan.stats.shotWaitMs) + 'ms');
   if (plan.stats.enemyTurnMs > B.enemyTurnMaxMs + 0.5) v.push('敵の番の間が ' + Math.round(plan.stats.enemyTurnMs) + 'ms');
   if (plan.stats.finaleMs > B.finaleMaxMs + 0.5) v.push('決着の余韻が ' + Math.round(plan.stats.finaleMs) + 'ms');
