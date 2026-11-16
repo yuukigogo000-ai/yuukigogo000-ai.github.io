@@ -13,7 +13,10 @@
     pierce: ['stationery', 'electronic', 'kitchen', 'clothing'],
   };
   // 進化の組を持たせた編成(見本用)
-  const EVO_TEAM = [['kitchen', 'blade', 'strong'], ['stationery', 'mirror', 'nimble'], ['creature', 'fan', 'cheer'], ['machine', 'dumbbell', 'sturdy']];
+  const EVO_TEAMS = {
+    evo: [['kitchen', 'blade', 'strong'], ['stationery', 'mirror', 'nimble'], ['creature', 'fan', 'cheer'], ['machine', 'dumbbell', 'sturdy']],
+    evo2: [['kitchen', 'match', 'grit'], ['electronic', 'battery', 'early'], ['toy', 'whistle', 'stunRes'], ['stationery', 'magnifier', 'strong']],
+  };
   const MOBS = [['kitchen', 'plant', 'creature'], ['machine', 'food', 'stationery', 'toy'], ['book', 'electronic', 'furniture', 'clothing']];
   const TRAITS = [[null, null, null], [null, null, 'back', null], ['hard', null, null, 'spike']];
   const SHORT = { kitchen: '台所', food: '食べ', stationery: '文具', book: '本', plant: '植物', creature: '生物', machine: '機械',
@@ -85,7 +88,7 @@
 
   function makeTeam() {
     const k = $('team').value;
-    if (k === 'evo') return EVO_TEAM.map((e) => ally(e[0], { item: e[1], passives: [e[2]] }));
+    if (EVO_TEAMS[k]) return EVO_TEAMS[k].map((e) => ally(e[0], { item: e[1], passives: [e[2]] }));
     return TEAMS[k].map((l) => ally(l));
   }
   function newGame() {
@@ -149,7 +152,7 @@
     if (!replaying) (won ? sfx.win : sfx.lose)();
     $('ovTitle').textContent = won ? '勝ち!' : '負け…';
     const g = goal ? (goalMet(goal, state) ? 'おまけ目標 達成!' : 'おまけ目標 ならず') : '';
-    $('ovSub').textContent = state.shots + ' 手 ・ 最大 ' + state.bestChain + ' れんさ ・ 必殺 ' + state.stats.ultsUsed + ' 回' + (replaying ? '(再生)' : '');
+    $('ovSub').textContent = state.shots + ' 手 ・ 最大 ' + state.bestChain + ' れんさ ・ 1 手の最高 ' + state.stats.bestShotDmg + ' ダメージ' + (replaying ? '(再生)' : '');
     $('ovGoal').textContent = g;
     $('replay').hidden = !lastShot;
     $('overlay').hidden = false;
@@ -338,6 +341,8 @@
         case 'pinOpen': center('お皿を全部倒した: 柵が開いた!', 'ult', now, 16); break;
         case 'pickup': pop(to, 'おやつ', 'heal', -to.r - 16, now); sfx.pickup(); break;
         case 'split': pop(by, '二枚刃!', 'ult', -by.r - 16, now); break;
+        case 'relay': pop(to, '玉突き!', 'accent', -to.r - 16, now); rings.push({ x: to.x, y: to.y, r: to.r + 10, c: 'accent', t: now }); break;
+        case 'blast': rings.push({ x: e.x, y: e.y, r: e.r, c: 'ult', t: now, fill: true }); freeze(now, 60); shake(now, 3, 140); sfx.strong(); break;
         case 'mirror': rings.push({ x: by.x, y: by.y, r: by.r + 6, c: 'accent', t: now }); break;
         case 'bonusShot': center('場外: もう 1 手!', 'ult', now); sfx.bonus(); break;
         case 'trick': pop(to || { x: W / 2, y: 140 }, TRICK_JA[e.kind] || '', 'ult', -40, now, true); break;

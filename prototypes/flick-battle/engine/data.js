@@ -42,7 +42,7 @@ export const ITEMS = {
   battery:      { ja: '乾電池',     on: '味方に当てられたとき',            text: 'タッチ技の効果 +30%',                mods: { touchMul: 1.3 } },
   binoculars:   { ja: '双眼鏡',     on: '狙うとき',                        text: '予測線が 2 つ目の衝突まで伸びる',    mods: { guide: 2 } },
   dumbbell:     { ja: '鉄アレイ',   on: 'いつも',                          text: 'おもさ +1',                          stat: { weight: 1 } },
-  fan:          { ja: '応援うちわ', on: 'れんさしたとき',                  text: '1 れんさの上乗せ +5%、上限 +50%',    mods: { chainStepAdd: 0.05, chainCapAdd: 0.5 } },
+  fan:          { ja: '応援うちわ', on: 'れんさしたとき',                  text: '1 れんさの上乗せ +5%。上限を超えたあとの伸び ×1.1 → ×1.15', mods: { chainStepAdd: 0.05, overflowAdd: 0.05 } },
   match:        { ja: 'マッチ',     on: '敵を倒したとき',                  text: '近くの敵に毒 3',                     mods: { onKillPoison: 3 } },
   whistle:      { ja: 'びっくり笛', on: '敵を場外に落としたとき',          text: '残りの敵全員のカウント +1',          mods: { onRingStun: 1 } },
   magnifier:    { ja: '虫めがね',   on: 'はがれかけの敵に当てたとき',      text: 'ダメージ +30%',                      mods: { peelDmgMul: 1.3 } },
@@ -81,9 +81,14 @@ export const PASSIVE_KEYS = Object.keys(PASSIVES);
 export const EVOLUTIONS = [
   { key: 'twinBlade', item: 'blade',      passive: 'strong',    ja: '二枚刃',   on: '柵で跳ね返ったとき(1 手 1 回)',   text: '小さな刃が 2 つ飛び出す(攻撃力の 40%)', mods: { splitOnRail: true } },
   { key: 'mirrors',   item: 'mirror',     passive: 'nimble',    ja: '合わせ鏡', on: '柵で跳ね返ったとき(1 手 3 回まで)', text: '勢いが増す',                            mods: { railBoost: 1.15 / 0.75, railBoostN: 3 } },
-  { key: 'bigCheer',  item: 'fan',        passive: 'cheer',     ja: '大応援',   on: 'れんさしたとき',                   text: 'れんさの上限 +200%、5 れんさ目からダメージ 1.5 倍', mods: { chainCapAdd: 2, chainLateFrom: 5, chainLateMul: 1.5 } },
+  { key: 'bigCheer',  item: 'fan',        passive: 'cheer',     ja: '大応援',   on: 'れんさしたとき',                   text: '5 れんさ目からダメージ 1.5 倍。上限を超えたあとの伸び ×1.25', mods: { chainLateFrom: 5, chainLateMul: 1.5, overflowAdd: 0.15 } },
   { key: 'tank',      item: 'dumbbell',   passive: 'sturdy',    ja: '重戦車',   on: '敵を何かにぶつけたとき',           text: 'ぶつけダメージ 2 倍',                   mods: { crashMul: 2 } },
   { key: 'miasma',    item: 'poisonVial', passive: 'poisonRes', ja: '毒霧',     on: '敵に当てたとき',                   text: 'まわりの敵にも毒 1',                    mods: { onHitPoisonAoe: 1 } },
+  // 2026-11-16 追加: つながるほど化ける組(壊れてもよい、と発注者)
+  { key: 'hanabi',    item: 'match',      passive: 'grit',      ja: '花火',     on: '敵を倒したとき',                   text: 'その敵が爆発する(攻撃力の 80% × れんさ)。爆発で倒れた敵も爆発する', mods: { killBlast: 1 } },
+  { key: 'series',    item: 'battery',    passive: 'early',     ja: '直列つなぎ', on: 'この駒が弾いた手で、タッチ技が出るたび', text: '次のタッチ技の効果 +30%(1 手の中で重なる)', mods: { seriesTouch: 0.3 } },
+  { key: 'bigCall',   item: 'whistle',    passive: 'stunRes',   ja: '大号令',   on: '敵を場外に落としたとき',           text: 'もう 1 手が 1 ターン何回でも出る',       mods: { bonusUnlimited: true } },
+  { key: 'finisher',  item: 'magnifier',  passive: 'strong',    ja: 'とどめの一撃', on: 'はがれかけの敵に当てたとき',     text: 'ボス以外は即退場(倒した扱い)',          mods: { peelExecute: true } },
 ];
 export function findEvolution(item, passives) {
   if (!item) return null;

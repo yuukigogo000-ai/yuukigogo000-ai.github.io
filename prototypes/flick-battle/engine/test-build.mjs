@@ -71,7 +71,7 @@ ok('頑丈・力持ち・がんばり', ally('kitchen', { passives: ['sturdy'] }
   // 貫通の駒で 2 体を続けて抜く。2 体目へのダメージに、れんさ 1 つぶんの上乗せがかかる
   const chainDmg = (o) => { const t = mini([Object.assign(ally('stationery', o), { name: 'A', x: 180, y: 400, touch: null })], [dummy(180, 300, { hp: 999, name: 'てまえ' }), dummy(180, 200, { hp: 999 })]); fire(t, 0, -1, 3); return 999 - U(t, 'まと').hp; };
   ok('応援うちわ: れんさの上乗せが増える', chainDmg({ item: 'fan' }) > chainDmg({}), [chainDmg({}), chainDmg({ item: 'fan' })]);
-  ok('応援うちわ: れんさの上限 +50%', ally('kitchen', { item: 'fan' }).mods.chainCapAdd === 0.5);
+  ok('応援うちわ: 上限を超えたあとの伸びが大きくなる', ally('kitchen', { item: 'fan' }).mods.overflowAdd === 0.05);
 }
 // ---- パッシブ(戦闘中) -------------------------------------------------------
 {
@@ -128,7 +128,7 @@ ok('頑丈・力持ち・がんばり', ally('kitchen', { passives: ['sturdy'] }
 }
 // ---- 進化・報酬の 3 択・名前のついた技(2026-11-16) ----------------------------
 {
-  ok('進化の組は 5 つ。どれも持ち物とパッシブの表にある', D.EVOLUTIONS.length === 5 && D.EVOLUTIONS.every((e) => D.ITEMS[e.item] && D.PASSIVES[e.passive] && e.ja && e.on && e.text));
+  ok('進化の組は 9 つ。どれも持ち物とパッシブの表にある', D.EVOLUTIONS.length === 9 && D.EVOLUTIONS.every((e) => D.ITEMS[e.item] && D.PASSIVES[e.passive] && e.ja && e.on && e.text));
   ok('進化: 持ち物とパッシブの組がそろうと化ける(片方だけでは化けない)', ally('kitchen', { item: 'blade', passives: ['strong'] }).evo === 'twinBlade' && ally('kitchen', { item: 'blade' }).evo === null && ally('kitchen', { passives: ['strong'] }).evo === null);
   // 二枚刃: 柵で跳ね返ると小さな刃が 2 つ出て、敵に当たる。動きが終わると消える
   const mk = (o) => mini([Object.assign(ally('kitchen', o), { name: 'A', x: 180, y: 300, touch: null })], [dummy(120, 180, { hp: 999, name: 'ひだり' }), dummy(240, 180, { hp: 999, name: 'みぎ' })]);
@@ -155,7 +155,7 @@ ok('頑丈・力持ち・がんばり', ally('kitchen', { passives: ['sturdy'] }
   let allOk = true, distinct = true;
   for (let seed = 1; seed <= 50; seed++) {
     const r = D.rewardChoices(team, seed);
-    if (r.choices.length !== 3 || r.choices.indexOf(r.fit) < 0 || r.why !== 'evolution' || r.fit !== 'blade') allOk = false;
+    if (r.choices.length !== 3 || r.choices.indexOf(r.fit) < 0 || r.why !== 'evolution' || (r.fit !== 'blade' && r.fit !== 'magnifier')) allOk = false; // 力持ちと組む持ち物は刃と虫めがね
     if (new Set(r.choices).size !== 3 || r.choices.indexOf('bento') >= 0) distinct = false;
   }
   ok('報酬の 3 択: 進化の組を完成させる持ち物が必ず入る', allOk);
@@ -166,6 +166,48 @@ ok('頑丈・力持ち・がんばり', ally('kitchen', { passives: ['sturdy'] }
   const cfg = D.mobBattle('kitchen', [ally('kitchen'), ally('food')], ['kitchen', 'plant']);
   const kinds = new Set(); for (let i = 0; i < 12; i++) kinds.add(D.pickGoal(i, cfg).kind);
   ok('おまけ目標に、名前のついた技(ぶつけ落とし・柵返し)が出る', kinds.has('crashRing') && kinds.has('bankDouble'), [...kinds]);
+}
+
+// ---- シナジーの爽快感(2026-11-16): 玉突き・あふれれんさ・つながる進化 ----------
+{
+  const ev = (s, f) => s.events.filter(f);
+  // 玉突き: A が B に当たり、押された B が C に当たると、C のタッチ技も出る
+  const chainCase = () => mini([Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 470, touch: null, atk: 1 }),
+                                Object.assign(ally('furniture'), { name: 'B', x: 180, y: 410, touch: 'read' }),
+                                Object.assign(ally('kitchen'), { name: 'C', x: 180, y: 340 })],
+                               [dummy(180, 200, { hp: 999 })]);
+  let s = chainCase(); fire(s, 0, -1, 3);
+  ok('玉突き: 押された味方が別の味方に当たると、その味方のタッチ技も出る', s.stats.relays >= 1 && ev(s, (e) => e.t === 'touch' && e.by === U(s, 'C').id).length === 1, { relays: s.stats.relays, touches: ev(s, (e) => e.t === 'touch').map((e) => e.by) });
+  ok('玉突き: 1 つごとにれんさが増える', s.bestChain >= 2, s.bestChain);
+  s = mini([Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 470, touch: null, atk: 1 }), Object.assign(ally('machine'), { name: 'B', x: 180, y: 400, touch: 'read' })], [dummy(180, 300, { hp: 999 })]); fire(s, 0, -1, 3);
+  ok('玉突き: 押された味方が敵に当たってもダメージ', s.stats.dmgRelay > 0, s.stats.dmgRelay);
+  // あふれれんさ
+  const cm = (n, o) => E.chainMult(Object.assign({ chain: n }, o || {}));
+  ok('あふれれんさ: 7 れんさで上乗せが上限(2 倍)に届き、そこから 1 つごとに ×1.1', Math.abs(cm(7) - 2) < 1e-9 && Math.abs(cm(8) - 2.2) < 1e-9 && Math.abs(cm(10) - 2 * 1.1 * 1.1 * 1.1) < 1e-9, [cm(6), cm(7), cm(8), cm(10)]);
+  ok('あふれれんさ: 応援うちわ・大応援で伸びが大きくなる', cm(12, { overflowAdd: 0.15 }) > cm(12, { overflowAdd: 0.05 }) && cm(12, { overflowAdd: 0.05 }) > cm(12), [cm(12), cm(12, { overflowAdd: 0.05 }), cm(12, { overflowAdd: 0.15 })]);
+  // 花火: 倒した敵が爆発し、爆発で倒れた敵も爆発する(連爆)
+  s = mini([Object.assign(ally('kitchen', { item: 'match', passives: ['grit'], pct: 400 }), { name: 'A', x: 180, y: 420, touch: null })],
+           [dummy(180, 300, { hp: 20 }), dummy(240, 300, { hp: 30, name: 'となり' }), dummy(300, 300, { hp: 30, name: 'そのとなり' }), dummy(40, 40, { hp: 999, name: 'のこり' })]);
+  fire(s, 0, -1, 1);
+  ok('花火(マッチ+根性): 倒した敵が爆発し、爆発で倒れた敵も爆発する', !U(s, 'となり').alive && !U(s, 'そのとなり').alive && s.stats.blasts >= 3, { blasts: s.stats.blasts, a: U(s, 'となり').alive, b: U(s, 'そのとなり').alive });
+  // 直列つなぎ: 1 手の中でタッチ技が出るたび、次のタッチ技が強くなる
+  const series = (o) => { const t = mini([Object.assign(ally('kitchen', o), { name: 'A', x: 180, y: 470, touch: null, atk: 1 }),
+                                          Object.assign(ally('furniture'), { name: 'B', x: 180, y: 410, touch: 'read' }), Object.assign(ally('kitchen'), { name: 'C', x: 180, y: 340 })],
+                                         [dummy(180, 220, { hp: 999 })]); fire(t, 0, -1, 3); return t.stats.dmgTouch; };
+  ok('直列つなぎ(乾電池+早起き): 2 つ目のタッチ技が強くなる', series({ item: 'battery', passives: ['early'] }) > series({ item: 'battery' }), [series({ item: 'battery' }), series({ item: 'battery', passives: ['early'] })]);
+  // 大号令: もう 1 手が 1 ターン何回でも
+  const gaps = { top: [[60, 300]], bottom: [], left: [], right: [] };
+  const two = (o) => { const t = E.createBattle({ gaps, allies: [Object.assign(ally('machine', o), { name: 'A', x: 180, y: 300, touch: null, atk: 1 }), Object.assign(ally('machine', o), { name: 'B', x: 180, y: 420, touch: null, atk: 1 })],
+      enemies: [dummy(180, 60, { weight: 1, name: 'まと1' }), dummy(40, 200, { weight: 1, name: 'まと2' }), dummy(300, 470, { name: 'のこり', hp: 999 })] });
+    U(t, 'まと1').hp = 50; U(t, 'まと2').hp = 50; fire(t, 0, -1, 3); U(t, 'まと2').x = 180; U(t, 'まと2').y = 60; fire(t, 0, -1, 3); return t; };
+  const plain = two({ item: 'whistle' }), call = two({ item: 'whistle', passives: ['stunRes'] });
+  ok('大号令(びっくり笛+踏んばり): もう 1 手が 1 ターンに何回でも出る', call.stats.bonusShots === 2 && call.turnNo === 1 && plain.stats.bonusShots === 1, { call: [call.stats.bonusShots, call.turnNo], plain: [plain.stats.bonusShots, plain.turnNo] });
+  // とどめの一撃
+  s = mini([Object.assign(ally('kitchen', { item: 'magnifier', passives: ['strong'] }), { name: 'A', x: 180, y: 400, touch: null })], [dummy(180, 250, { hp: 999 }), dummy(40, 40, { name: 'のこり' })]);
+  U(s, 'まと').hp = 400; fire(s, 0, -1, 1);
+  ok('とどめの一撃(虫めがね+力持ち): はがれかけの敵に当てると即退場', !U(s, 'まと').alive, U(s, 'まと').hp);
+  // 1 手の最高ダメージを記録する(爽快感の目安)
+  ok('1 手で与えたダメージの最高記録が残る', s.stats.bestShotDmg > 0, s.stats.bestShotDmg);
 }
 
 console.log(`${pass} 件合格 / ${fail} 件不合格`);
