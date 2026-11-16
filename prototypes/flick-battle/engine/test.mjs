@@ -300,7 +300,7 @@ const ev = (s, f) => s.events.filter(f);
 }
 
 // ---- 再現性・停止性・異常値(でたらめな手で最後まで) ------------------------
-function randomBattle(seed) {
+function randomBattle(seed, fx, log) {
   const rnd = E.mulberry32(seed);
   const pick = () => LINEAGE_KEYS[Math.floor(rnd() * LINEAGE_KEYS.length)];
   // 持ち物とパッシブもでたらめに持たせる。3 戦に 1 戦は進化の組を 1 つ入れる(子駒・合わせ鏡なども通す)
@@ -311,11 +311,12 @@ function randomBattle(seed) {
   const cfg = kind === 0 ? bossBattle('vacuum', team) : kind === 1 ? bossBattle('washer', team) : kind === 2 ? bossBattle('fan', team)
     : mobBattle(['kitchen', 'living', 'attic'][seed % 3], team, [pick(), pick(), pick(), pick()], { traits: [null, 'hard', 'split', 'back'] });
   const s = E.createBattle(cfg);
+  if (fx) s.fx = true;
   let h = 0x811c9dc5;
   while (s.phase === 'aim' && s.shots < 60) {
     const d = DIRS[Math.floor(rnd() * DIRS.length)], p = POWERS[Math.floor(rnd() * 3)];
     if (!E.shoot(s, { dx: d[0], dy: d[1], power: p, ult: rnd() < 0.5 })) { s.rejected = true; break; }
-    E.resolve(s);
+    while (s.phase === 'resolving') { E.step(s); if (log) for (const e of s.events) log.push(e); s.events = []; }
     h = E.hashState(s, h);
   }
   return { s, h };
@@ -340,6 +341,46 @@ function randomBattle(seed) {
   ok('異常値なし(盤外に残る・数値が壊れる・体力 0 で生存)', bad === 0, bad);
   ok('狙う番なのに手が受け付けられない、が起きない', rejected === 0, rejected);
   console.log('  合成ハッシュ', chain.toString(16).padStart(8, '0'), '/ 最長の動き', (longest * E.DT).toFixed(2), '秒 / 最大の重なり', maxPen.toFixed(2));
+}
+// ---- 演出用の出来事(contact / rail): 出しても勝ち負けは 1 つも変わらない --------
+{
+  let sameHash = 0, sameEvents = 0, contacts = 0, rails = 0, badGeo = 0, offLeak = 0;
+  const N = 40;
+  for (let seed = 1; seed <= N; seed++) {
+    const offLog = [], onLog = [];
+    const off = randomBattle(seed, false, offLog), on = randomBattle(seed, true, onLog);
+    if (off.h === on.h) sameHash++;
+    const core = onLog.filter((e) => e.t !== 'contact' && e.t !== 'rail');
+    if (JSON.stringify(core) === JSON.stringify(offLog)) sameEvents++;
+    for (const e of offLog) if (e.t === 'contact' || e.t === 'rail') offLeak++;
+    for (const e of onLog) {
+      if (e.t !== 'contact' && e.t !== 'rail') continue;
+      if (e.t === 'contact') contacts++; else rails++;
+      const n = Math.sqrt(e.nx * e.nx + e.ny * e.ny);
+      if (![e.x, e.y, e.nx, e.ny, e.v].every(Number.isFinite) || Math.abs(n - 1) > 1e-6 || !(e.v > 0)) badGeo++;
+    }
+  }
+  ok('演出用の出来事を出しても、' + N + ' 戦すべてで盤面のハッシュが同じ', sameHash === N, sameHash);
+  ok('演出用の出来事を除くと、出来事の並びが 1 つも変わらない', sameEvents === N, sameEvents);
+  ok('s.fx が偽のときは contact / rail を 1 つも出さない', offLeak === 0, offLeak);
+  ok('contact と rail が実際に出ている', contacts > 100 && rails > 50, [contacts, rails]);
+  ok('接点・向き(長さ 1)・速さ(正)がすべて正しい数', badGeo === 0, badGeo);
+  // 形: 真上に弾いて真上の敵に当てる → 接点は 2 つの中心の間、向きは上、当たり(hit)より先に出る
+  const s = mini([Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 400, touch: null })], [dummy(180, 250)]);
+  s.fx = true; E.shoot(s, { dx: 0, dy: -1, power: 2 }); const log = [];
+  while (s.phase === 'resolving') { E.step(s); for (const e of s.events) log.push(e); s.events = []; }
+  const ci = log.findIndex((e) => e.t === 'contact'), hi = log.findIndex((e) => e.t === 'hit');
+  const c = log[ci] || {};
+  ok('当たりの前に contact が出る', ci >= 0 && hi > ci, [ci, hi]);
+  ok('接点は 2 つの駒の間で、向きは弾いた向き(上)', Math.abs(c.x - 180) < 1 && c.y < 400 && c.y > 250 && Math.abs(Math.abs(c.ny) - 1) < 1e-6, c);
+  // 柵: 右へ弾くと右の柵で跳ね返る → 内向き(左)
+  const r = mini([Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 400, touch: null })], [dummy(60, 100)]);
+  r.fx = true; E.shoot(r, { dx: 1, dy: 0, power: 2 }); const rl = [];
+  while (r.phase === 'resolving') { E.step(r); for (const e of r.events) rl.push(e); r.events = []; }
+  const re = rl.find((e) => e.t === 'rail') || {};
+  ok('右の柵では内向き(左)の rail が出る', re.nx === -1 && re.ny === 0 && Math.abs(re.x - E.W) < 1e-6, re);
+  const cl = E.cloneState(r);
+  ok('複製には演出用の出来事の印を持ち越さない(予測線・おまかせを軽く保つ)', cl.fx === false);
 }
 // ---- おまかせで勝てる(遊びとして成立しているかの最低線) --------------------
 {

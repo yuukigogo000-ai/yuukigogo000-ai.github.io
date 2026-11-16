@@ -182,7 +182,7 @@ export function cloneState(s) {
                                        hits: Object.assign({}, m.hits), pairs: m.pairs.slice(), kicks: Object.assign({}, m.kicks),
                                        crashed: m.crashed.slice(), lastBy: Object.assign({}, m.lastBy), bankHits: m.bankHits.slice(), relay: m.relay.slice() }) : null,
     pendingAfter: s.pendingAfter, events: [], team: Object.assign({}, s.team),
-    stats: Object.assign({}, s.stats),
+    stats: Object.assign({}, s.stats), fx: false, // 演出用の出来事は複製に持ち越さない(予測線・おまかせを軽く保つ)
   });
 }
 
@@ -775,28 +775,39 @@ function rails(s, u) {
   const shooter = !!m && !m.foeShot && u.id === m.shooter;
   // 手鏡: 跳ね返っても勢いが落ちない(合わせ鏡は増す)。1 手に決まった回数まで
   const boost = shooter && m.railBoostLeft > 0 ? md(u, 'railBoost', 1) : 1;
-  let hitV = 0; // 柵に当たった速さ(柵に垂直な成分)
+  let hitV = 0, rnx = 0, rny = 0; // 柵に当たった速さ(柵に垂直な成分)と、卓の内向き(演出用)
   if (u.x < u.r) {
     if (open && gapOpen(s, 'left', u.y)) { if (u.x < 0) return fallOff(s, u); }
-    else { u.x = u.r; if (u.vx < 0) { hitV = Math.max(hitV, -u.vx); u.vx = -u.vx * E_RAIL * boost; } }
+    else { u.x = u.r; if (u.vx < 0) { hitV = Math.max(hitV, -u.vx); rnx = 1; u.vx = -u.vx * E_RAIL * boost; } }
   } else if (u.x > s.w - u.r) {
     if (open && gapOpen(s, 'right', u.y)) { if (u.x > s.w) return fallOff(s, u); }
-    else { u.x = s.w - u.r; if (u.vx > 0) { hitV = Math.max(hitV, u.vx); u.vx = -u.vx * E_RAIL * boost; } }
+    else { u.x = s.w - u.r; if (u.vx > 0) { hitV = Math.max(hitV, u.vx); rnx = -1; u.vx = -u.vx * E_RAIL * boost; } }
   }
   if (u.y < u.r) {
     if (open && gapOpen(s, 'top', u.x)) { if (u.y < 0) return fallOff(s, u); }
-    else { u.y = u.r; if (u.vy < 0) { hitV = Math.max(hitV, -u.vy); u.vy = -u.vy * E_RAIL * boost; } }
+    else { u.y = u.r; if (u.vy < 0) { if (-u.vy > hitV) { rnx = 0; rny = 1; } hitV = Math.max(hitV, -u.vy); u.vy = -u.vy * E_RAIL * boost; } }
   } else if (u.y > s.h - u.r) {
     if (open && gapOpen(s, 'bottom', u.x)) { if (u.y > s.h) return fallOff(s, u); }
-    else { u.y = s.h - u.r; if (u.vy > 0) { hitV = Math.max(hitV, u.vy); u.vy = -u.vy * E_RAIL * boost; } }
+    else { u.y = s.h - u.r; if (u.vy > 0) { if (u.vy > hitV) { rnx = 0; rny = -1; } hitV = Math.max(hitV, u.vy); u.vy = -u.vy * E_RAIL * boost; } }
   }
   if (hitV === 0 || !m) return;
+  if (s.fx) s.events.push({ t: 'rail', id: u.id, x: u.x - rnx * u.r, y: u.y - rny * u.r, nx: rnx, ny: rny, v: hitV });
   if (u.side === 1) crash(s, u, hitV, 12288 + u.id, 'rail'); // 敵を柵にぶつけた
   if (u.id === m.shooter) {
     m.bounces++;
     if (boost !== 1) { m.railBoostLeft--; s.events.push({ t: 'mirror', by: u.id }); }
     if (shooter && !m.splitDone && md(u, 'splitOnRail', false)) spawnSplit(s, u);
   }
+}
+
+// 演出用の出来事(s.fx が真のときだけ。勝ち負けの計算には一切使わない)
+//  contact: 2 つの駒・物がぶつかった。x,y = 接点、nx,ny = a から b への向き(長さ 1)、v = 近づく速さ
+//  rail:    駒が柵で跳ね返った。x,y = 柵の上の点、nx,ny = 卓の内向き、v = 柵に垂直な速さ
+function fxContact(s, a, b, dx, dy, d, v, pierce) {
+  let nx = 1, ny = 0;
+  if (d > 0) { nx = dx / d; ny = dy / d; }
+  const k = a.r - (a.r + b.r - d) / 2; // 重なりの真ん中
+  s.events.push({ t: 'contact', a: a.id, b: b.id, x: a.x + nx * k, y: a.y + ny * k, nx, ny, v, pierce });
 }
 
 function collide(s, a, b) {
@@ -813,7 +824,11 @@ function collide(s, a, b) {
   if (sh >= 0 && !m.foeShot && (a.id === sh || b.id === sh)) {
     const me = a.id === sh ? a : b, other = me === a ? b : a;
     if ((me.move === 'pierce' || m.pierce) && isFoe(other)) {
-      if (entered) onContact(s, a, b, Math.sqrt(me.vx * me.vx + me.vy * me.vy));
+      if (entered) {
+        const sp = Math.sqrt(me.vx * me.vx + me.vy * me.vy);
+        if (s.fx) fxContact(s, a, b, dx, dy, Math.sqrt(d2), sp, true);
+        onContact(s, a, b, sp);
+      }
       m.inside = true;
       return;
     }
@@ -832,6 +847,7 @@ function collide(s, a, b) {
     const j = -(1 + E_DISC) * vn / isum;
     a.vx -= j * ia * nx; a.vy -= j * ia * ny;
     b.vx += j * ib * nx; b.vy += j * ib * ny;
+    if (s.fx) fxContact(s, a, b, dx, dy, d, -vn, false);
     onContact(s, a, b, -vn);
     // 輪ゴムの柱: 当たった駒を、柱から外向きに決まった速さ以上で弾き返す(同じ柱は 1 回の動きで BUMPER_MAX 回まで)
     const bump = a.obj === 'bumper' && a.alive ? a : b.obj === 'bumper' && b.alive ? b : null;
