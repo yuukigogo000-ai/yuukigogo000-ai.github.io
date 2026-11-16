@@ -65,7 +65,7 @@
 | 記号 | 作業 | 状態 | 読むもの |
 |---|---|---|---|
 | A | ハウス・グランプリの戦闘を「おはじきバトル」に差し替える | 未着手(部品は完成)。未決だった 4 点は 2026-11-16 に決定済み(手順書の §5)。**2026-11-16 に第2版(進化案を全部採用)をエンジンと仮の画面に入れた**(手順書の §5b、設計書の §0) | `prototypes/flick-battle/HANDOFF.md` |
-| B | おはじきバトルの戦闘画面の UI(いつもの工程) | 発注書の下書きまで | `prototypes/flick-battle/WO_UI_hgp_battle.md` |
+| B | おはじきバトルの戦闘画面の UI(いつもの工程) | 発注書の下書きまで(2026-11-16 に演出の調査 2 本を反映)。**演出の土台と道具はクラウドで作成済み**(設計図 `FX_SPEC.md`、数値の正本 `fx/tokens.js`、場面カタログ・演出の検査器・音の聴き比べ台)。見本集めは `fx/REFERENCES.md` | `prototypes/flick-battle/WO_UI_hgp_battle.md` / `prototypes/flick-battle/FX_SPEC.md` |
 | C | けもの天下の物語を、物語工房で作り直す | 未完了(仮の文が入っている) | `kemono-tenka/HANDOFF.md`、`kemono-tenka/STORY_SLOTS.md` |
 | **D** | **7 本のホラーシナリオに、ゲーム案を 3 本ずつ出す(その前に調査)** | **未着手。いちばん新しい依頼** | この文書の §3 |
 

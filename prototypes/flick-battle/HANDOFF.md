@@ -13,7 +13,9 @@ PC の Claude Code(`AI_WORKSPACE/photo-roguelike` のソースが見えるセッ
 | `prototypes/flick-battle/engine/README.md` | エンジンの使い方、置き換えた持ち物の一覧、未確認の点 |
 | `prototypes/flick-battle/engine/` | `engine.js`(ルールと物理)/ `data.js`(12 系統・持ち物・敵・ボス)/ `ai.js`(おまかせ)/ 検査 2 本 |
 | `prototypes/flick-battle/play/` | 仮の戦闘画面(灰色の箱)。入力・描画・出来事の見せ方の実例 |
-| `prototypes/flick-battle/WO_UI_hgp_battle.md` | 戦闘画面の UI 発注書(下書き)。見た目はこちらの工程で |
+| `prototypes/flick-battle/WO_UI_hgp_battle.md` | 戦闘画面の UI 発注書(下書き。2026-11-16 に演出の調査 2 本を反映)。見た目はこちらの工程で |
+| `prototypes/flick-battle/FX_SPEC.md` | **演出の設計図**(格表・出来事 → 演出の対応・作る順番と完了の条件・発注者に決めてもらうこと)。数値の正本は `fx/tokens.js` |
+| `prototypes/flick-battle/fx/` | 演出の土台(1 手の先読み・格づけ・音の部品)と道具(場面カタログ・演出の検査器・音の検査・聴き比べ台)。どの画面の仕組みにも依存しないので本体へそのまま持っていける |
 | `research_notes/戦闘システム一次資料の深掘り/current_game_battle_rules.md` | いまの戦闘の決まり(公開ビルドから読み取ったもの) |
 
 触れる版(非公開): https://claude.ai/artifact/U1xzx5LL6rvHMfQVAaZ3Z1
@@ -31,7 +33,7 @@ PC の Claude Code(`AI_WORKSPACE/photo-roguelike` のソースが見えるセッ
 | # | 作業 | 完了の条件 |
 |---|---|---|
 | 0 | 現状を読む: いまの戦闘関数、再生の画面、ランの進行、テストの場所を特定する | 4 つの場所を `WORKLOG` に書いた |
-| 1 | エンジン 3 ファイルをソースに置き、検査を本体のテストに加える | `test.mjs --mutate`(110 件・自己検査 6/6)と `test-build.mjs`(81 件)がソース側で通る |
+| 1 | エンジン 3 ファイルをソースに置き、検査を本体のテストに加える | `test.mjs --mutate`(119 件・自己検査 6/6)と `test-build.mjs`(81 件)がソース側で通る |
 | 2 | 味方の変換: 本体のキャラ → `ally(lineage, { pct, objectId, item, passives })` | 素質・進化・強化が体力と攻撃力に反映され、おもさは変わらないことをテストで確認 |
 | 3 | 敵の変換: いまの編成表(系統の並び・強さ%・持ち物の数)→ `mobBattle` | 通常・エリート・ライバルの 3 種が作れて、強さ% が反映される |
 | 4 | 戦闘画面: `play/ui.js` を土台に本体の画面として組む(見た目は仮でよい) | 弾く・必殺・予測線・予告・勝敗が動き、結果がランに返る |
@@ -99,6 +101,16 @@ PC の Claude Code(`AI_WORKSPACE/photo-roguelike` のソースが見えるセッ
 - ボスの `anchored` を外した(重く動く)。卓の表(`TABLES`)とボス戦に物を置いた
 - シナジーを足した(玉突き・あふれれんさ・進化 9 組。発注者「壊れはあってもよい」)うえで、**敵の強さを調整した**(体力 2.1 倍・攻撃 2.8 倍、ボスごとの調整)。数字は `engine/README.md` の「第2版のバランス」。つまみは `data.js` の `TUNE`、速い集計は `engine/tune.mjs`。人が触って最終的に決める
 - おまかせはさらに重くなった(遅い端末の模擬で 1 手 0.4〜0.9 秒、最大 1.3 秒)。作業 10(別スレッド化)の優先度を上げる
+
+## 5c. 演出の準備(2026-11-16。発注者「調べたものを最大限生かすために準備作業して」)
+
+- 調査 2 本(`reports/はじきバトルの演出と動き.md`・`reports/はじきバトル演出の見本帳.md`)を、作れる形にした: `FX_SPEC.md`(設計図)と `fx/tokens.js`(数値の正本・M3 公式の動きのトークンつき)
+- 仕組み: 離した瞬間に複製で 1 手を最後まで計算する台本(`fx/script.js`)→ 格表どおりの指示表(`fx/director.js`)→ 画面は同じ刻みの指示を実行するだけ。本物と 954 手すべてで 1 刻み単位まで一致
+- 道具: 22 場面の場面カタログ(`fx/scenes.js`)、仮の画面の `?scene=` / `?state=` / `?clock=manual` フック、演出の検査器(`fx/fx-check.mjs`)、音の部品と検査(`fx/audio.js` / `fx/audio-check.mjs`)、聴き比べ台(https://claude.ai/artifact/TnNwhpMaJAp72SKxqfcfEr)
+- 今の仮の画面の before: `fx/baseline/`(文字の大きさ 16 種類・危険色の誤用がほぼ全場面・必殺とゲージ割りで 1 手の待ちが予算超え)
+- **画面の見た目はまだ変えていない。** 作る順番は `FX_SPEC.md` §8(1. 画面を指示表につなぐ → 2. 音 → 3. 粒と光 → … → 13)。仮の画面で作って確かめてから、本体へ移す
+- 本体へ移すとき: `fx/` の 5 つ(tokens・script・director・audio・scenes)をそのまま置き、`engine` の `s.fx = true` を本番の盤面だけに立てる(予測線・おまかせの複製には立てない)。`?state=` も同じ名前で入れる(WO §2)
+- PC でしかできないこと: 見本集め(`fx/REFERENCES.md` の優先 A 18 件)、枠の UI(M3・Stitch・uicheck)、写真シールの割れ方(本体の絵が要る)、実機での台本の計算時間
 
 ## 6. 気をつけること
 

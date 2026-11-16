@@ -32,6 +32,8 @@
 | 15 | おはじきバトルの進化の調査(`reports/はじきバトルの進化案.md`) | 完了 | 報告書を発注者に渡す |
 | 16 | おはじきバトル第2版: 進化案を全部採用してエンジン・データ・仮の画面に入れる(発注者の決定 2026-11-16)。卓の障害物も追加 | 完了 | `test.mjs --mutate` 110 件・`test-build.mjs` 81 件・仮の画面のブラウザ検査が全部通る |
 | 17 | おはじきバトル: シナジーの爽快感(玉突き・あふれれんさ・進化 9 組)とゲームバランスの調整(発注者 2026-11-16「壊れはあってもよい。その上で調整」) | 完了 | 検査が全部通る。`tune.mjs` で調整前後を記録(`engine/README.md`) |
+| 18 | おはじきバトルの演出・UI の調査 2 本(`reports/はじきバトルの演出と動き.md`・`reports/はじきバトル演出の見本帳.md`) | 完了 | 報告書を発注者に渡す |
+| 19 | おはじきバトル: 調べた演出を最大限生かすための準備(発注者 2026-11-16「準備作業して。準備できたらいって」) | 完了(見た目はまだ変えていない) | `FX_SPEC.md`・`fx/`。`engine/test.mjs --mutate` 119 件、`fx/test.mjs --mutate` 38 件・7/7、`fx-check.mjs --mutate` 4/4、`audio-check.mjs --mutate` 4/4、仮の画面のブラウザ検査が通る |
 
 ## 置き場所と確認コマンド
 
@@ -41,6 +43,7 @@
   - 強さの速い集計: `node tune.mjs '{}' 5`(30 秒ほど。つまみは `data.js` の `TUNE`)
   - バランス: `node balance.mjs 6`(数分かかる)
   - 画面の組み立て: `cd prototypes/flick-battle/play && node build.mjs`
+  - 演出(設計図 `FX_SPEC.md`): `node fx/test.mjs --mutate` / `NODE_PATH=$(npm root -g) node fx/fx-check.mjs --label after --perf` / `NODE_PATH=$(npm root -g) node fx/audio-check.mjs --mutate` / 場面の手の作り直し `node fx/find-scenes.mjs` / 聴き比べ台 `node fx/lab/build.mjs`(いずれも `prototypes/flick-battle` で)
 - ペンギンずもう: `penguin-sumo/`(説明は `penguin-sumo/README.md`)
   - `cd penguin-sumo && node test.mjs --mutate && node balance.mjs 40 && node build.mjs`
   - `NODE_PATH=$(npm root -g) node browser-check.mjs`
@@ -50,7 +53,7 @@
   - `cd ushimitsu && node test.mjs --mutate && node balance.mjs 150 && node build.mjs`
   - `NODE_PATH=$(npm root -g) node browser-check.mjs`
 - 調査レポート: `reports/`、調査メモ: `research_notes/`
-- 触れる版(非公開ページ): おはじきバトル https://claude.ai/artifact/U1xzx5LL6rvHMfQVAaZ3Z1 / ペンギンずもう https://claude.ai/artifact/3efC1UnJ2oedFHGgHLDydT
+- 触れる版(非公開ページ): おはじきバトル https://claude.ai/artifact/U1xzx5LL6rvHMfQVAaZ3Z1 / 音の聴き比べ台 https://claude.ai/artifact/TnNwhpMaJAp72SKxqfcfEr / ペンギンずもう https://claude.ai/artifact/3efC1UnJ2oedFHGgHLDydT
 - 作業ブランチ: `claude/friendly-gauss-nbzz6s`(main には入れていない = 公開していない)
 
 ## 決めたこと

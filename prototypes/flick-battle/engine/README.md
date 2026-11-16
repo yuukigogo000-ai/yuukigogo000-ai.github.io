@@ -46,6 +46,10 @@ while (s.phase === 'resolving') step(s);
 `crash`(ぶつけダメージ)/ `friendly`(敵の攻撃が敵に当たった)/ `bumper` / `lid` / `pin` / `pinOpen` / `pickup` / `split`(子駒)/ `mirror` /
 `bonusShot`(落としたのでもう 1 手)/ `bonusTurn` / `chainCharge`(3 れんさで必殺が進んだ)/ `trick`(名前のついた技: `crashRing` / `bankDouble`)
 
+演出用の出来事(2026-11-16。`s.fx = true` のときだけ出る。勝ち負けの計算には使わず、盤面のハッシュも変わらない。複製 `cloneState` には持ち越さない):
+`contact`(`a` `b` = ぶつかった 2 つ、`x` `y` = 接点、`nx` `ny` = a から b への向き、`v` = 近づく速さ、`pierce` = 貫通の入り)/
+`rail`(`id`、`x` `y` = 柵の上の点、`nx` `ny` = 卓の内向き、`v` = 柵に垂直な速さ)。使い方は `../FX_SPEC.md` と `../fx/script.js`
+
 ## 守っている決まり
 
 - 演算は四則と平方根だけ(三角関数なし)、時間は 1/240 秒の固定刻み、入力は整数、処理は常に id 順。
