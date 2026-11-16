@@ -1,4 +1,4 @@
-// おまかせ(候補の手を全部シミュレータに通して一番良いものを選ぶ)。「いっきに勝つ」とバランス確認にも使う。
+// おまかせ(候補の手を全部シミュレータに通して一番良いものを選ぶ)。「オート戦闘」とバランス確認にも使う。
 import { cloneState, shoot, resolve, canUlt, createBattle } from './engine.js';
 
 // 三角関数を使わずに向きの候補を作る(正方形の周上の整数点)
@@ -70,7 +70,7 @@ export function humanShot(s, rnd, err, robust) {
 }
 
 /**
- * 「いっきに勝つ」: おまかせで最後まで回して結果だけ返す。
+ * 「オート戦闘」: おまかせで最後まで回して結果だけ返す。
  * 返り値: { won, shots, state }。同じ盤面なら必ず同じ結果になる。
  */
 export function autoResolve(cfg, maxShots) {
@@ -84,5 +84,5 @@ export function powerRatio(cfg) {
   const sum = (list) => list.reduce((t, u) => t + (u.gauges ? u.gauges.reduce((a, b) => a + b, 0) : u.hp) * u.atk, 0);
   return sum(cfg.allies) / Math.max(1, sum(cfg.enemies));
 }
-/** 格下かどうか(「いっきに勝つ」を出してよいか)。ボス戦では出さない */
+/** 格下かどうか(「オート戦闘」を出してよいか)。ボス戦では出さない */
 export function isTrivial(cfg) { return !cfg.enemies.some((e) => e.boss) && powerRatio(cfg) >= 2.5; }

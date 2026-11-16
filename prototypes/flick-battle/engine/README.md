@@ -9,7 +9,7 @@
 |---|---|
 | `engine.js` | 戦闘のルールと物理。依存なし。乱数なし |
 | `data.js` | 12 系統の表、敵の作り方、卓 3 種、ボス 3 種(数値は仮置き) |
-| `ai.js` | おまかせ(全候補を試して最善を選ぶ)。「いっきに勝つ」とバランス確認にも使う |
+| `ai.js` | おまかせ(全候補を試して最善を選ぶ)。「オート戦闘」とバランス確認にも使う |
 | `test.mjs` | 検査。`node test.mjs`(`--mutate` で検査器自身を確認) |
 | `balance.mjs` | バランス確認。`node balance.mjs [戦闘数] [boss\|mob]` |
 | `../play/` | 仮の戦闘画面(`node build.mjs` で 1 ファイルに組み立て) |
@@ -65,7 +65,7 @@ while (s.phase === 'resolving') step(s);
 - 2 体ボーナス(同じ系統 2 体以上)と純血(4 体全員が同じ系統): 編成から自動で判定する。説明文は `PAIR_TEXT` / `PURE_TEXT`
 - モノごとのおもさ(60 種、`OBJECT_WEIGHT_ADJ`): 系統の基準から -1 / 0 / +1
 - おまけ目標: `pickGoal(seed, cfg)` で 1 つ決め、`goalMet(goal, state)` で判定する
-- いっきに勝つ: `isTrivial(cfg)` が真のときに出し、`autoResolve(cfg)` で結果だけ得る(`ai.js`)
+- オート戦闘: `isTrivial(cfg)` が真のときに出し、`autoResolve(cfg)` で結果だけ得る(`ai.js`)
 - 検査: `node test-build.mjs`(56 件)
 
 置き換えで意味が変わったもの(今の戦闘にしかない概念だったため):

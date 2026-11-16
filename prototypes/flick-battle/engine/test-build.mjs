@@ -111,12 +111,12 @@ ok('頑丈・力持ち・がんばり', ally('kitchen', { passives: ['sturdy'] }
   const boss = D.bossBattle('vacuum', [ally('kitchen')]);
   ok('おまけ目標: ボス戦では「全員場外」を出さない', [0, 1, 2, 3, 4, 5, 6, 7].every((i) => D.pickGoal(i, boss).kind !== 'allRing'));
   const r = autoResolve(cfg);
-  ok('いっきに勝つ: おまかせで最後まで回して結果を返す', r.won === true && r.shots > 0 && r.state.phase === 'won', { won: r.won, shots: r.shots });
-  ok('いっきに勝つ: 同じ盤面なら同じ結果', autoResolve(cfg).shots === r.shots);
+  ok('オート戦闘: おまかせで最後まで回して結果を返す', r.won === true && r.shots > 0 && r.state.phase === 'won', { won: r.won, shots: r.shots });
+  ok('オート戦闘: 同じ盤面なら同じ結果', autoResolve(cfg).shots === r.shots);
   ok('おまけ目標の判定: 手数', D.goalMet({ kind: 'quick', n: r.shots }, r.state) === true && D.goalMet({ kind: 'quick', n: r.shots - 1 }, r.state) === false);
   ok('おまけ目標の判定: 負けたら達成にならない', D.goalMet({ kind: 'noFall', n: 0 }, Object.assign({}, r.state, { phase: 'lost' })) === false);
   const strong = D.mobBattle('kitchen', [ally('kitchen', { pct: 300 }), ally('food', { pct: 300 }), ally('machine', { pct: 300 }), ally('book', { pct: 300 })], ['creature', 'creature']);
-  ok('格下の判定: 大きく上回るときだけ「いっきに勝つ」を出す', isTrivial(strong) === true && isTrivial(cfg) === false && isTrivial(D.bossBattle('fan', [ally('kitchen', { pct: 900 })])) === false, [powerRatio(strong), powerRatio(cfg)]);
+  ok('格下の判定: 大きく上回るときだけ「オート戦闘」を出す', isTrivial(strong) === true && isTrivial(cfg) === false && isTrivial(D.bossBattle('fan', [ally('kitchen', { pct: 900 })])) === false, [powerRatio(strong), powerRatio(cfg)]);
 }
 console.log(`${pass} 件合格 / ${fail} 件不合格`);
 for (const f of failures) console.log('  不合格: ' + f);
