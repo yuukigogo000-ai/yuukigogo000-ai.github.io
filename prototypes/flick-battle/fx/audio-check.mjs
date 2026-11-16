@@ -2,14 +2,16 @@
 //   NODE_PATH=$(npm root -g) node fx/audio-check.mjs [--mutate]
 // 測るもの: 割れない(いちばん重なる場面の最大振幅)/ 立ち上がりで「プチッ」と鳴らない / れんさの音が tokens の音階どおり /
 //           引っぱりの段がドミソ / 音の長さが上限以内 / 同時に鳴る数の上限 / 呼びかけが当たりの音に押し出されない /
-//           呼びかけの間に効果音が下がる。あわせて、第 1 版(fx/lab/audio-v1.js)との音量・明るさ・長さの比較を出す
+//           呼びかけの間に効果音が下がる / 掛け声(英語の声)がすべて読めて、頭の無音が詰めてあり、長さが上限以内 /
+//           溜め(riser)が当たる瞬間に一番大きくなる。あわせて、第 2 版(fx/lab/audio-v2.js)との音量・明るさ・長さの比較を出す
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 const { chromium } = createRequire(import.meta.url)('playwright');
 const rd = (f) => readFileSync(new URL(f, import.meta.url), 'utf8');
 const strip = (js) => js.replace(/^import .*$/gm, '').replace(/^export (const|function|let)/gm, '$1');
 const wrap = (js) => { const names = [...js.matchAll(/^export (?:const|function|let) (\w+)/gm)].map((m) => m[1]); return 'const { ' + names.join(', ') + ' } = (function () {\n' + strip(js) + '\nreturn { ' + names.join(', ') + ' };\n})();'; };
-const code = wrap(rd('./tokens.js')) + '\n' + wrap(rd('./audio.js')) + '\n' + wrap(rd('./lab/audio-v1.js')) + '\nglobalThis.FXT = FXT; globalThis.createAudio = createAudio; globalThis.createAudioV1 = createAudioV1;';
+const code = wrap(rd('./tokens.js')) + '\n' + wrap(rd('./audio.js')) + '\n' + wrap(rd('./lab/audio-v2.js')) + '\n' + wrap(rd('./voice-clips.js')) +
+  '\nglobalThis.FXT = FXT; globalThis.createAudio = createAudio; globalThis.createAudioV2 = createAudioV2; globalThis.VOICE_CLIPS = VOICE_CLIPS; globalThis.VOICE_META = VOICE_META;';
 const MUT = process.argv.includes('--mutate');
 
 const browser = await chromium.launch();
@@ -22,7 +24,8 @@ async function run(over) {
     const SR = 48000;
     const render = async (sec, fn, opt, mk) => {
       const ctx = new OfflineAudioContext(2, Math.round(SR * sec), SR);
-      const a = (mk || createAudio)(Object.assign({ ctx, jitter: 0 }, opt || {}, over.opt || {}));
+      const a = (mk || createAudio)(Object.assign({ ctx, jitter: 0, clips: VOICE_CLIPS }, opt || {}, over.opt || {}));
+      if (a.loadClips) await a.loadClips((k) => k.endsWith('.' + ((opt && opt.voiceName) || FXT.sound.voiceName)));
       fn(a);
       const buf = await ctx.startRendering();
       return { d: buf.getChannelData(0), a };
@@ -43,12 +46,12 @@ async function run(over) {
     const Q = { n: 5, notes: 3, layers: 2, v: 800, k2: 1, special: true, p: 3, low: true };
     const out = { ids: {}, cmp: {}, hits: [], steps: [], cap: 0, duck: null };
     // 1・2・5: 全部の音の最大振幅・立ち上がり・長さ(+第 1 版との比較)
-    const v1names = createAudioV1({ ctx: new OfflineAudioContext(1, 10, SR) }).names();
+    const v1names = createAudioV2({ ctx: new OfflineAudioContext(1, 10, SR) }).names();
     for (const id of createAudio({ ctx: new OfflineAudioContext(1, 10, SR) }).names()) {
       const { d } = await render(3, (a) => a.play(id, Q));
       const p = peak(d), o = onset(d);
       out.ids[id] = { peak: +p.toFixed(3), click: p ? +(peak(d, o, o + Math.round(SR * 0.00025)) / p).toFixed(2) : 0, len: +lastAudible(d).toFixed(2) };
-      if (v1names.includes(id)) out.cmp[id] = { v1: stat((await render(3, (a) => a.play(id, Q), { scale: 'semitone' }, createAudioV1)).d), v2: stat(d) };
+      if (v1names.includes(id) && id !== 'callout') out.cmp[id] = { v1: stat((await render(3, (a) => a.play(id, Q), { scale: 'semitone' }, createAudioV2)).d), v2: stat(d) };
     }
     // 3: れんさ 1〜10 の高さ(鳴り始めの粒が消えた 90ms 以降の芯の高さ)
     for (let n = 1; n <= 10; n++) {
@@ -62,6 +65,25 @@ async function run(over) {
     { const { d } = await render(2, (a) => { for (let k = 0; k < 20; k++) a.play('hit', { n: k % 10 + 1 }); a.play('chord', { notes: 4, n: 10, low: true }); a.play('finale', { special: true }); a.play('callout', { layers: 3 }); a.play('blast', { k2: 1 }); a.play('strong'); }); out.stressPeak = +peak(d).toFixed(3); }
     // 呼びかけは当たりの音に押し出されない(優先度)
     { const { d } = await render(1, (a) => { a.play('callout', { layers: 1 }); for (let k = 0; k < 20; k++) a.play('hit', { n: 3 }); }); out.calloutKept = +peak(d, Math.round(SR * 0.2), Math.round(SR * 0.35)).toFixed(3); }
+    // 掛け声: すべての声・言葉が読めて、頭の無音が詰めてあり、長さが上限以内
+    {
+      const names = [...new Set(Object.keys(VOICE_CLIPS).map((k) => k.split('.')[1]))];
+      out.clips = { total: Object.keys(VOICE_CLIPS).length, ok: 0, maxLead: 0, maxLen: 0, peak: 0, names };
+      for (const v of names) {
+        for (const line of Object.keys(FXT.sound.voiceText)) {
+          const { d } = await render(1.2, (b) => b.play('callout', { line }), { voiceName: v });
+          if (peak(d) > 0.05) out.clips.ok++;
+          // 頭の無音: 小さな音(息・f の摩擦)も声の始まりとみなすため、低い閾値で測る
+          const pk = peak(d); let k0 = 0; while (k0 < d.length && Math.abs(d[k0]) < Math.max(0.003, pk * 0.005)) k0++;
+          out.clips.maxLead = Math.max(out.clips.maxLead, k0 / SR);
+          out.clips.maxLen = Math.max(out.clips.maxLen, lastAudible(d));
+          out.clips.peak = Math.max(out.clips.peak, peak(d));
+        }
+      }
+      out.clips.maxLead = +(out.clips.maxLead * 1000).toFixed(1); out.clips.maxLen = +out.clips.maxLen.toFixed(2); out.clips.peak = +out.clips.peak.toFixed(2);
+    }
+    // 溜め: ms かけて上がり、最後の 2 割で一番大きくなる
+    { const ms = 400, { d } = await render(0.7, (a) => a.play('riser', { ms })); let pk = 0, at = 0; for (let k = 0; k < d.length; k++) if (Math.abs(d[k]) > pk) { pk = Math.abs(d[k]); at = k; } out.riserPeakAt = +((at / SR) / (ms / 1000)).toFixed(2); }
     // 6: 同時に 20 個鳴らしても上限まで
     { const ctx = new OfflineAudioContext(2, SR, SR); const a = createAudio(Object.assign({ ctx }, over.opt || {})); for (let k = 0; k < 20; k++) a.play('hit', { n: k % 10 + 1 }); out.cap = a.liveCount(); }
     // 7: 呼びかけの間の効果音: ダッキングあり・なしの差から、当たりの音がどれだけ下がったかを出す
@@ -73,6 +95,7 @@ async function run(over) {
       const kk = 1 - Math.sqrt(ed / (eh + 1e-12));
       out.duck = +(20 * Math.log10(Math.max(1e-3, kk))).toFixed(1);
     }
+    out.lines = Object.keys(FXT.sound.voiceText).length;
     return out;
   }, over || {});
 }
@@ -91,6 +114,10 @@ function judge(r) {
   if (!(r.calloutKept > 0.01)) bad.push('呼びかけが当たりの音に押し出される');
   if (r.stressPeak > 1.0) bad.push('いちばん重なる場面で割れる(' + r.stressPeak + ')');
   if (r.duck > -3) bad.push('呼びかけの間に効果音が下がらない(' + r.duck + 'dB)');
+  if (r.clips.ok !== r.clips.names.length * r.lines) bad.push('鳴らない掛け声がある(' + r.clips.ok + ' / ' + r.clips.names.length * r.lines + ')');
+  if (r.clips.maxLead > 30) bad.push('掛け声の頭の無音が長い(' + r.clips.maxLead + 'ms)'); // 30ms = 2 コマ以内(割れ止めの先読み 6ms を含む)
+  if (r.clips.maxLen > 1.3) bad.push('掛け声が長い(' + r.clips.maxLen + '秒)');
+  if (!(r.riserPeakAt > 0.8 && r.riserPeakAt < 1.15)) bad.push('溜めの一番大きいところが当たる瞬間からずれる(' + r.riserPeakAt + ')');
   return bad;
 }
 
@@ -98,13 +125,15 @@ const base = await run();
 const bad = judge(base);
 console.log('れんさ 1〜10 の高さ:', base.hits.map((h) => Math.round(h.hz)).join(' '), 'Hz(' + (base.hits[0].want ? '半音ずつ・10 で頭打ち' : '') + ')');
 console.log('引っぱりの段 1・2・3:', base.steps.map((h) => Math.round(h)).join(' '), 'Hz / 同時に鳴る数:', base.cap, '/ いちばん重なる場面の最大振幅:', base.stressPeak, '/ 呼びかけの間の効果音:', base.duck, 'dB');
-console.log('第 1 版 → 第 2 版(音量 dB・明るさ Hz・長さ 秒):');
+console.log('掛け声:', base.clips.ok + ' / ' + base.clips.names.length * base.lines, '本が鳴る(声 ' + base.clips.names.join('・') + ')/ 頭の無音 最大', base.clips.maxLead, 'ms / 最長', base.clips.maxLen, '秒 / 溜めの山の位置', base.riserPeakAt);
+console.log('第 2 版 → 第 3 版(音量 dB・明るさ Hz・長さ 秒):');
 for (const [id, c] of Object.entries(base.cmp)) console.log('  ' + id.padEnd(8) + ' 音量 ' + String(c.v1.db).padStart(6) + ' → ' + String(c.v2.db).padStart(6) + '  明るさ ' + String(c.v1.bright).padStart(5) + ' → ' + String(c.v2.bright).padStart(5) + '  長さ ' + c.v1.len + ' → ' + c.v2.len);
 console.log(bad.length ? '× ' + bad.join(' / ') : '○ すべて合格');
 let code2 = bad.length ? 1 : 0;
 if (MUT) {
   const muts = [['れんさを 5 音階に戻す(tokens と食い違う)', { opt: { scale: 'pentatonic' } }], ['ダッキングを外す', { opt: { duck: false } }],
-                ['引っぱりの段を旧(増三和音)にする', { opt: { step: 'legacy' } }], ['同時の上限を外す', { opt: { voicesMax: 40 } }]];
+                ['引っぱりの段を旧(増三和音)にする', { opt: { step: 'legacy' } }], ['同時の上限を外す', { opt: { voicesMax: 40 } }],
+                ['掛け声を読み込まない', { opt: { clips: {} } }]];
   let caught = 0;
   for (const [name, over] of muts) { const r = await run(over); const b = judge(r); if (b.length) caught++; else console.log('  見逃し: ' + name); }
   console.log(`自己検査: 入れた故障 ${muts.length} 件中 ${caught} 件を検出`);

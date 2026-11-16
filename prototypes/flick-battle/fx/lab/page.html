@@ -55,6 +55,12 @@
   .pair span { font-size: 14px; }
   .pair button { padding: 6px 12px; min-height: 40px; font-size: 14px; }
   .pair button.planned-mini { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 700; }
+  .words { display: flex; flex-direction: column; gap: 6px; }
+  .wordrow { display: grid; grid-template-columns: 7.5em minmax(0, 1fr); gap: 8px; align-items: center; border-top: 1px solid var(--line); padding-top: 6px; }
+  .wordrow .moment { font-size: 13px; color: var(--muted); }
+  .wordopts { display: flex; flex-wrap: wrap; gap: 6px; }
+  button.word { padding: 6px 12px; min-height: 40px; font-size: 14px; }
+  button.word.on { background: var(--accent); color: var(--accent-fg); border-color: transparent; font-weight: 700; }
   .applied { font-size: 13px; color: var(--muted); }
   .applied summary { cursor: pointer; min-height: 32px; display: flex; align-items: center; }
   .applied ul { margin: 4px 0 0; padding-left: 1.2em; }
@@ -68,10 +74,16 @@
 <main>
   <header>
     <h1>はじきバトル 音の聴き比べ</h1>
-    <p class="lead">第 2 版です。前回選んでもらった結果を反映し、「音色がショボい」を受けて、すべての音を作り直しました。前回の音とも聴き比べられます。</p>
-    <p class="note">iPhone はマナーモードだと鳴りません。音量を上げてください。スマホのスピーカーでも聞こえるように作っていますが、イヤホンだと響きまで分かります。音はすべて端末の中で作っていて、音源ファイルは使っていません。</p>
+    <p class="lead">第 3 版です。掛け声を自然な英語の声に替え、「溜めて、放つ」音と、れんさが伸びるほど厚くなる当たりで爽快感を足しました。第 2 版とも聴き比べられます。</p>
+    <p class="note">iPhone はマナーモードだと鳴りません。音量を上げてください。スマホのスピーカーでも聞こえるように作っていますが、イヤホンだと響きまで分かります。効果音は端末の中で作っています。掛け声だけは、事前に作った短い音声をページの中に入れてあります(外からは何も読み込みません)。</p>
     <details class="applied"><summary>前回の選択で決めたこと(反映済み)</summary><ul id="applied"></ul></details>
   </header>
+  <section class="card" aria-labelledby="h-voice">
+    <h2 id="h-voice">掛け声の声<span class="tag">英語 ・ 1 手に 1 つ</span></h2>
+    <p class="why">オープンな音声合成モデル(Kokoro-82M、Apache-2.0)で、手元で作った英語の声です。外部のサービスは使っていません。声を 1 つ選び、言葉を押すとその声で鳴ります。場面に候補が 2 つ以上あるときは、押したほうが選ばれます。</p>
+    <fieldset id="voices"><legend>声を選ぶ</legend></fieldset>
+    <div class="words" id="words"></div>
+  </section>
   <div id="cards" class="stack"></div>
   <section class="card">
     <h2>そのほかの音<span class="tag">新と前回</span></h2>

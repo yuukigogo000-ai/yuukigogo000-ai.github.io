@@ -99,6 +99,10 @@ const A = (o) => Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 400, tou
   ok('決着: 当たる前から減速する', slow && slow.i0 < plan.finale.koI && slow.rate === FXT.tiers[4].slowRate, slow);
   ok('決着の余韻は上限以内', plan.finale.ms <= FXT.budget.finaleMaxMs, plan.finale.ms);
   ok('ザコ 1 体・余裕のある決着では寄らない', !plan.cues.some((c) => c.k === 'zoom'));
+  const rz = plan.cues.find((c) => c.k === 'sound' && c.id === 'riser' && c.why === 'riseFinale');
+  ok('決着: 減速が始まる刻みから溜めを鳴らす', rz && rz.i === plan.finale.i0 && rz.ms >= 120, rz);
+  const cv = plan.cues.filter((c) => c.k === 'callout');
+  ok('決着の掛け声は「finish」1 つだけ', cv.length === 1 && cv[0].line === FXT.sound.voiceLines.finale && cv[0].i === plan.finale.koI, cv);
   ok('決着の瞬間に、ほかの止めを重ねない', plan.cues.filter((c) => c.k === 'stop').length === 1);
 }
 
@@ -124,14 +128,15 @@ function fakeScript(n, extra) {
   ok('れんさ 10 は段 1 の札(必殺色)', chainText(10) && chainText(10).size === 1 && chainText(10).plate === true);
   ok('れんさ 11 以上は言葉を増やさない(段 1 の札のまま)', chainText(12) && chainText(12).str === '12 れんさ' && chainText(12).size === 1);
   const co = plan.cues.filter((c) => c.k === 'callout');
-  ok('呼びかけは 1 手に 1 回、最高の節目(10)で、11 以上なら重ねは 3', co.length === 1 && co[0].layers === 3 && co[0].i === 300, co);
+  ok('掛け声は 1 手に 1 回、最高の節目で(12 れんさなら 11 で「amazing」)', co.length === 1 && co[0].line === FXT.sound.voiceLines.chainOver && co[0].i === 330, co);
+  ok('10 れんさの直前に溜め(riser)を入れ、ちょうど 10 れんさの瞬間に上がりきる', plan.cues.some((c) => c.k === 'sound' && c.id === 'riser' && c.why === 'rise10' && Math.abs(c.i + c.ms / (1000 / 240) - 300) < 1));
   ok('暗くするのは 5 と 10 だけ', plan.cues.filter((c) => c.k === 'dim').length === 2);
   ok('10 れんさの前に一瞬の静けさを置く', plan.cues.some((c) => c.k === 'pause' && c.why === 'preSilence' && c.i === 300 && c.pre));
   ok('1 手の待ちは予算以内', plan.stats.shotWaitMs <= FXT.budget.addedWaitPerShotMs, plan.stats.shotWaitMs);
   ok('危険色は 1 つも使わない(全部こちらの手柄)', !plan.cues.some((c) => c.color === 'harm'));
   const p7 = planShot(fakeScript(7), {});
   const c7 = p7.cues.filter((c) => c.k === 'callout');
-  ok('最高が 5〜9 の手は、5 で 1 回だけ呼びかける', c7.length === 1 && c7[0].i === 150 && c7[0].layers === 1, c7);
+  ok('最高が 5〜9 の手は、5 で 1 回だけ掛け声', c7.length === 1 && c7[0].i === 150 && c7[0].line === FXT.sound.voiceLines.chain5, c7);
   ok('最高が 4 以下の手は呼びかけない', planShot(fakeScript(4), {}).cues.every((c) => c.k !== 'callout'));
   const s10a = planShot(fakeScript(10), {}).cues.find((c) => c.why === 'chain10');
   const s10b = planShot(fakeScript(10), { memory: { chain10: 1 } }).cues.find((c) => c.why === 'chain10');

@@ -148,11 +148,12 @@ export const FXT = {
     jitterSemi: 0.5,      // 毎回の高さのゆらし [耳 A]
     master: 0.9,
     limiter: { thresholdDb: -4 }, // 割れ止め(大きな音が重なったときだけ効く)
+    glue: { airHz: 6000, airDb: 2.5 }, // 第 3 版: 高音を少し持ち上げる(スマホで明るく)。圧縮は音が小さくなり遅れるので使わない
     reverb: { seconds: 1.3, preDelayMs: 15, level: 0.9 },   // 部屋の響き(音ごとの送り量は reverbSend)
     reverbSend: { hit: 0.22, strong: 0.25, ring: 0.3, break: 0.35, blast: 0.3, chord: 0.4, ult: 0.45, gauge: 0.45, finale: 0.55, win: 0.45, voice: 0.25 },
     // 音ごとの大きさ(1 = 標準)。実機で聴いて直す
-    level: { ui: 1, step: 1.3, shoot: 1.6, tap: 1, rail: 1, hit: 1.7, strong: 1.8, harm: 1, relay: 1.3, crash: 1.3, bumper: 1, pickup: 1.5, bonus: 1.5,
-             ring: 1, break: 1, blast: 1, chord: 1, ult: 1, gauge: 1, finale: 1, win: 1, lose: 1, voice: 1.8 },
+    level: { ui: 1.1, step: 1.3, shoot: 1.9, tap: 1, rail: 1.1, hit: 2.3, strong: 2.2, harm: 1.15, relay: 1.3, crash: 1.6, bumper: 1, pickup: 1.5, bonus: 1.5,
+             ring: 1, break: 1, blast: 1, chord: 1, ult: 1, gauge: 1, finale: 1, win: 1, lose: 1, voice: 1, riser: 1 },
     // れんさの音階。発注者が聴き比べて半音を選んだ(Candy Crush の型)。5 音階も残す
     scales: { pentatonic: [0, 2, 4, 7, 9], semitone: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
     scale: 'semitone',
@@ -163,16 +164,20 @@ export const FXT = {
     step: { baseHz: 523, semis: [0, 0, 4, 7], legacySemis: [0, 0, 4, 8] },
     chord: [0, 4, 7, 12], // 節目の和音(3 は 2 音、5 は 3 音、10 は 4 音)
     duck: { db: -6, ms: 250 }, // 呼びかけが鳴る間は効果音を下げる [耳 A]
-    // 呼びかけ: voice = words(合成の声で短い言葉)/ vowel(母音だけ)/ tts(端末の読み上げ)。発注者が選ぶ
-    voice: 'words',
-    voiceSynth: {
-      f0: 300,               // 声の高さ(子どもっぽい明るい声)
-      formantScale: 1.15,    // 声道を短く(高めの声に合う母音の響き) [弱・耳]
-      // 日本語の母音の帯域の山 F1・F2・F3(成人男性の一般的な目安)[弱・耳]
-      formants: { a: [750, 1200, 2600], i: [300, 2300, 3000], u: [350, 1300, 2400], e: [500, 1900, 2600], o: [500, 850, 2500] },
-      q: [8, 11, 14], amp: [1, 0.65, 0.3], vibratoHz: 5.5, vibratoDepth: 0.015, breath: 0.12,
-    },
-    callout: { layerSemi: 4, layersMax: 3, maxMs: 800, text1: 'ナイス!', text2: 'すごい!' },
+    // 掛け声(第 3 版): 自然な英語の声。Kokoro-82M(Apache-2.0)で事前に作った MP3 を fx/voice-clips.js に埋め込む
+    //   voice = clip(事前に作った声)/ tts(端末の読み上げ)/ off。voiceName = 声の名前(発注者が選ぶ)
+    //   第 2 版の合成の声(「ナイス!」「すごい!」)は発注者「発音がおかしい」で取りやめ
+    voice: 'clip',
+    voiceName: 'af_bella',
+    voiceGain: 1.0,
+    // 場面 → 言葉(発注者が選ぶ。候補は fx/voice/make_voice.py の LINES)。1 手に 1 つだけ、下の順で一番上のものを言う
+    voiceLines: { special: 'sweep', finale: 'finish', gauge: 'break', chainOver: 'amazing', chain10: 'awesome', bonus: 'onemore', chain5: 'nice' },
+    voicePriority: ['special', 'finale', 'gauge', 'chainOver', 'chain10', 'bonus', 'chain5'],
+    voiceText: { nice: 'Nice!', great: 'Great!', awesome: 'Awesome!', amazing: 'Amazing!', incredible: 'Incredible!', unstoppable: 'Unstoppable!',
+                 onemore: 'One more!', break: 'Break!', finish: 'Finish!', sweep: 'Clean sweep!' },
+    // 溜め(第 3 版): 決着・10 れんさの直前に上がる音。台本で先に分かるときだけ鳴らす(期待させて外す演出にはしない)
+    riser: { leadMs: 300 },
+    callout: { maxMs: 900 }, // 掛け声がダッキングする長さの上限
     // 勝ち: 上がって最後の音を伸ばす [耳 A] / 負け: 下がる 3 音(静かに)
     win: { semis: [0, 4, 7, 12], noteMs: 90, lastMs: 420 },
     lose: { hz: [392, 311, 233], noteMs: 120 },

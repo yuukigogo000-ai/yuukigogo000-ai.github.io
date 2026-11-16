@@ -43,6 +43,7 @@ export function planShot(script, ctx) {
   const cues = [];
   const add = (c) => { cues.push(c); return c; };
   const posOf = (r, id, dy) => { const a = r.at[id]; return a ? { x: clampX(a.x), y: Math.max(16, a.y + (dy || 0)) } : { x: 180, y: 140 }; };
+  let chain10At = -1;
   const byStep = new Map(); // 刻み → その刻みの出来事
   for (const r of script.events) { if (!byStep.has(r.i)) byStep.set(r.i, []); byStep.get(r.i).push(r); }
   const contactAt = (i, p, q) => { // 同じ刻みの、2 駒の接触(火花の場所と向き)。向きは p から q へ
@@ -55,8 +56,10 @@ export function planShot(script, ctx) {
     return null;
   };
   const contactFor = (r) => contactAt(r.i, r.e.by, r.e.to);
-  let firstHitDone = false, blastN = 0, peak = 0, calloutDone = false;
-  const calloutAt = sum.maxChain >= 10 ? 10 : sum.maxChain >= 5 ? 5 : 0;
+  let firstHitDone = false, blastN = 0, peak = 0;
+  // 掛け声の候補(場面 → 刻み)。1 手に 1 つだけ、FXT.sound.voicePriority の順で一番上のものを言う
+  const voice = {};
+  const ten = { chain5: 5, chain10: 10, chainOver: 11 };
   const chainOf = (n) => T.chain[n] || (n >= 10 ? T.chain[10] : n >= 6 ? T.chain[6] : T.chain[1]);
   const fin = sum.finale;
 
@@ -133,11 +136,8 @@ export function planShot(script, ctx) {
         }
         if (n > 10) add({ i, k: 'sound', id: 'chord', notes: Math.min(T.chain.over.chordMax, 4), n });
         if (L.dots && r.at && lv.particles > 0) add({ i, k: 'part', id: 'milestone', n, mul: lv.particles, dots: L.dots });
-        if (!calloutDone && calloutAt && n === calloutAt) {
-          calloutDone = true;
-          const layers = calloutAt >= 10 ? Math.min(T.chain.over.calloutMax, sum.maxChain > 10 ? 3 : 2) : 1;
-          add({ i, k: 'callout', layers });
-        }
+        for (const [key, at] of Object.entries(ten)) if (n === at && voice[key] === undefined) voice[key] = i;
+        if (n === 10) chain10At = i;
         break;
       }
       case 'touch': if (r.at[e.by]) { add({ i, k: 'text', str: TOUCH_JA[e.kind] || e.kind, size: 4, color: 'good', who: 'enemy', ...posOf(r, e.by, r.at[e.by].r + 16) }); add({ i, k: 'part', id: 'touch', ...posOf(r, e.by, 0), mul: lv.particles }); } break;
@@ -163,7 +163,7 @@ export function planShot(script, ctx) {
         break;
       }
       case 'fall': if (r.at[e.id]) { add({ i, k: 'text', str: '落ちた(戻る)', size: 3, color: 'harm', who: 'ally', ...posOf(r, e.id, -20) }); add({ i, k: 'body', id: e.id, anim: 'allyFall' }); add({ i, k: 'sound', id: 'harm' }); } break;
-      case 'bonusShot': tier(2); add({ i, k: 'text', str: '場外: もう 1 手!', size: 2, color: 'great', who: 'enemy', center: true }); add({ i, k: 'sound', id: 'bonus' }); break;
+      case 'bonusShot': tier(2); add({ i, k: 'text', str: '場外: もう 1 手!', size: 2, color: 'great', who: 'enemy', center: true }); add({ i, k: 'sound', id: 'bonus' }); if (voice.bonus === undefined) voice.bonus = i; break;
       case 'blast': {
         tier(2);
         const first = blastN++ === 0; // 海物語の型: 同じ演出を大きさで格づける。2 発目からは輪だけ
@@ -175,6 +175,7 @@ export function planShot(script, ctx) {
       case 'ult': if (r.at[e.by]) { tier(3); memory.ult++; add({ i, k: 'text', str: (ULT_JA[e.kind] || e.kind) + '!', size: 2, color: 'great', who: 'enemy', ...posOf(r, e.by, -r.at[e.by].r - 18) }); add({ i, k: 'part', id: 'ultFire', ...posOf(r, e.by, 0), mul: lv.particles }); add({ i, k: 'sound', id: 'ultFire' }); } break;
       case 'ultAfter': if (r.at[e.by]) add({ i, k: 'part', id: 'ultAfter', ...posOf(r, e.by, 0), mul: lv.particles }); break;
       case 'gaugeBreak': {
+        if (!enemyPhase && voice.gauge === undefined) voice.gauge = i;
         tier(3);
         const seen = memory.gauge++;
         add({ i, k: 'text', str: 'ゲージを割った!', size: 2, color: 'great', who: 'enemy', ...posOf(r, e.id, -60) });
@@ -240,6 +241,9 @@ export function planShot(script, ctx) {
       while (realMs() > F.totalMaxMs && i0 < fin.hitI) i0++;
       while (realMs() > F.totalMaxMs && i1 > fin.hitI + 1) i1--;
       add({ i: i0, k: 'slow', i0, i1, rate: F.slowRate });
+      // 溜め: 減速が始まってから当たるまでの実時間で、上がりきる(決着は台本で確定しているので外れない)
+      const riseMs = Math.max(120, (fin.hitI - i0) * STEP_MS / F.slowRate * stopMul);
+      add({ i: i0, k: 'sound', id: 'riser', ms: riseMs, top: 2093, why: 'riseFinale' });
       const close = sum.allyHpRatio < 0.35;
       if ((fin.boss || close || fin.special) && !ctx.reduceMotion && lv.shake > 0) add({ i: i0, k: 'zoom', i0, i1, x: fin.x, y: fin.y, scale: F.zoom });
       finale = { i0, i1, koI: fin.koI, ms: realMs(), special: fin.special, boss: fin.boss };
@@ -248,6 +252,19 @@ export function planShot(script, ctx) {
 
   // ---- ダメージの数字: 同じ瞬間に 4 つ以上なら、合計 1 つにまとめる [R1] ----------------------
   mergeDamage(cues);
+  // ---- 10 れんさの溜め(決着の溜めと重なるときは決着を優先) ----------------------------------
+  if (chain10At >= 0 && !(finale && Math.abs(finale.i0 - chain10At) < Math.round(600 / STEP_MS))) {
+    const lead = Math.round(T.sound.riser.leadMs / STEP_MS), i0 = Math.max(0, chain10At - lead);
+    if (chain10At - i0 >= Math.round(120 / STEP_MS)) add({ i: i0, k: 'sound', id: 'riser', ms: (chain10At - i0) * STEP_MS * stopMul, top: 1760, why: 'rise10' });
+  }
+  // ---- 掛け声: 1 手に 1 つ(決着の特別版 > 決着 > ゲージ割り > 11 れんさ > 10 れんさ > もう 1 手 > 5 れんさ) --------------
+  if (fin) { if (fin.special) voice.special = fin.koI; else voice.finale = fin.koI; }
+  for (const key of T.sound.voicePriority) {
+    if (voice[key] === undefined) continue;
+    const layers = key === 'chainOver' ? 3 : key === 'chain10' ? 2 : 1;
+    add({ i: voice[key], k: 'callout', line: T.sound.voiceLines[key], key, layers });
+    break;
+  }
   // ---- 重なりの決まり: 同じ瞬間の止め・揺れ・目立つ音は、一番上のものを 1 回だけ -----------
   mergeMoments(cues);
   // ---- 予算: 1 手で足す待ちの合計を上限に収める(決着は別枠)。下の格から削る -----------------
