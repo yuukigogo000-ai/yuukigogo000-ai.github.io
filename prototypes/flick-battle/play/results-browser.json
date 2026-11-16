@@ -3,76 +3,111 @@
     "noHScroll": true,
     "noVScroll": true,
     "canvas": [
-      328,
-      473
+      317,
+      459
     ],
     "dragWorked": true,
+    "cancelled": true,
+    "cancelHint": "引っぱって強さを決める(戻して離すと取り消し)",
+    "infoShown": true,
+    "dexItems": 10,
+    "replayOk": true,
     "stages": {
       "mob:kitchen:0": {
         "phase": "won",
         "shots": 4,
         "ults": 0,
         "chain": 5,
-        "frames": 551,
-        "slow": 26,
-        "simMs": 1.7,
-        "aiMsMedian": 617,
-        "aiMsMax": 633
+        "frames": 535,
+        "slow": 10,
+        "simMs": 4,
+        "crash": 49,
+        "friendly": 12,
+        "bonus": 1,
+        "pickups": 0,
+        "team": "mixed",
+        "aiMsMedian": 709,
+        "aiMsMax": 1112
       },
       "mob:living:1": {
         "phase": "won",
         "shots": 5,
         "ults": 0,
-        "chain": 6,
-        "frames": 444,
-        "slow": 39,
-        "simMs": 2.7,
-        "aiMsMedian": 455,
-        "aiMsMax": 600
+        "chain": 5,
+        "frames": 651,
+        "slow": 12,
+        "simMs": 4.4,
+        "crash": 94,
+        "friendly": 22,
+        "bonus": 1,
+        "pickups": 0,
+        "team": "evo",
+        "aiMsMedian": 877,
+        "aiMsMax": 1251
       },
       "mob:attic:2": {
         "phase": "won",
-        "shots": 9,
+        "shots": 5,
         "ults": 0,
-        "chain": 5,
-        "frames": 933,
-        "slow": 74,
-        "simMs": 3.3,
-        "aiMsMedian": 393,
-        "aiMsMax": 640
+        "chain": 6,
+        "frames": 407,
+        "slow": 15,
+        "simMs": 4.6,
+        "crash": 235,
+        "friendly": 0,
+        "bonus": 1,
+        "pickups": 0,
+        "team": "heavy",
+        "aiMsMedian": 552,
+        "aiMsMax": 662
       },
       "boss:vacuum": {
         "phase": "won",
-        "shots": 28,
-        "ults": 5,
-        "chain": 6,
-        "frames": 4614,
-        "slow": 159,
-        "simMs": 6.6,
-        "aiMsMedian": 505,
-        "aiMsMax": 1480
+        "shots": 7,
+        "ults": 0,
+        "chain": 4,
+        "frames": 1036,
+        "slow": 10,
+        "simMs": 4,
+        "crash": 0,
+        "friendly": 0,
+        "bonus": 1,
+        "pickups": 1,
+        "team": "chain",
+        "aiMsMedian": 474,
+        "aiMsMax": 1074
       },
       "boss:washer": {
         "phase": "won",
-        "shots": 10,
-        "ults": 2,
+        "shots": 11,
+        "ults": 4,
         "chain": 5,
-        "frames": 1335,
-        "slow": 80,
-        "simMs": 2.3,
-        "aiMsMedian": 345,
-        "aiMsMax": 758
+        "frames": 1658,
+        "slow": 18,
+        "simMs": 2.9,
+        "crash": 116,
+        "friendly": 48,
+        "bonus": 0,
+        "pickups": 0,
+        "team": "poison",
+        "aiMsMedian": 579,
+        "aiMsMax": 1145
       },
       "boss:fan": {
         "phase": "won",
-        "shots": 11,
+        "shots": 9,
         "ults": 2,
-        "chain": 4,
-        "frames": 1402,
-        "slow": 64,
-        "simMs": 2.1,
-        "aiMsMedian": 365,
-        "aiMsMax": 497
+        "chain": 5,
+        "frames": 1247,
+        "slow": 13,
+        "simMs": 3.8,
+        "crash": 69,
+        "friendly": 0,
+        "bonus": 1,
+        "pickups": 1,
+        "team": "pierce",
+        "aiMsMedian": 404,
+        "aiMsMax": 646
       }
     },
     "errors": []
@@ -81,21 +116,31 @@
     "noHScroll": true,
     "noVScroll": true,
     "canvas": [
-      328,
-      473
+      317,
+      459
     ],
     "dragWorked": true,
+    "cancelled": true,
+    "cancelHint": "引っぱって強さを決める(戻して離すと取り消し)",
+    "infoShown": true,
+    "dexItems": 10,
+    "replayOk": true,
     "stages": {
       "boss:washer": {
         "phase": "won",
-        "shots": 10,
-        "ults": 2,
-        "chain": 5,
-        "frames": 1360,
-        "slow": 52,
-        "simMs": 2.2,
-        "aiMsMedian": 427,
-        "aiMsMax": 592
+        "shots": 13,
+        "ults": 4,
+        "chain": 4,
+        "frames": 1379,
+        "slow": 20,
+        "simMs": 4.4,
+        "crash": 136,
+        "friendly": 24,
+        "bonus": 0,
+        "pickups": 0,
+        "team": "mixed",
+        "aiMsMedian": 482,
+        "aiMsMax": 889
       }
     },
     "errors": []
@@ -104,21 +149,31 @@
     "noHScroll": true,
     "noVScroll": true,
     "canvas": [
-      358,
-      517
+      348,
+      503
     ],
     "dragWorked": true,
+    "cancelled": true,
+    "cancelHint": "引っぱって強さを決める(戻して離すと取り消し)",
+    "infoShown": true,
+    "dexItems": 10,
+    "replayOk": true,
     "stages": {
       "boss:fan": {
         "phase": "won",
-        "shots": 11,
+        "shots": 10,
         "ults": 2,
-        "chain": 4,
-        "frames": 1393,
-        "slow": 68,
-        "simMs": 5.1,
-        "aiMsMedian": 342,
-        "aiMsMax": 609
+        "chain": 6,
+        "frames": 1075,
+        "slow": 17,
+        "simMs": 4.5,
+        "crash": 90,
+        "friendly": 0,
+        "bonus": 1,
+        "pickups": 0,
+        "team": "mixed",
+        "aiMsMedian": 559,
+        "aiMsMax": 741
       }
     },
     "errors": []
@@ -127,21 +182,31 @@
     "noHScroll": true,
     "noVScroll": true,
     "canvas": [
-      358,
-      517
+      348,
+      503
     ],
     "dragWorked": true,
+    "cancelled": true,
+    "cancelHint": "引っぱって強さを決める(戻して離すと取り消し)",
+    "infoShown": true,
+    "dexItems": 10,
+    "replayOk": true,
     "stages": {
       "boss:washer": {
         "phase": "won",
-        "shots": 10,
-        "ults": 2,
-        "chain": 5,
-        "frames": 1324,
-        "slow": 98,
-        "simMs": 3.5,
-        "aiMsMedian": 451,
-        "aiMsMax": 793
+        "shots": 13,
+        "ults": 4,
+        "chain": 4,
+        "frames": 1375,
+        "slow": 21,
+        "simMs": 4.1,
+        "crash": 136,
+        "friendly": 24,
+        "bonus": 0,
+        "pickups": 0,
+        "team": "mixed",
+        "aiMsMedian": 430,
+        "aiMsMax": 621
       }
     },
     "errors": []
