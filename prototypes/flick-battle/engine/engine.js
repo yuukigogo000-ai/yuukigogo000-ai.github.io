@@ -22,6 +22,25 @@ const CHAIN_STEP = 0.15, CHAIN_CAP = 1.0;
 const FALL_COST = 0.3;      // 味方が落ちたときに失う体力(最大体力比)
 const SHIELD_CAP = 0.5;
 const POISON_CAP = 5;
+// 2026-11-16 の追加(reports/はじきバトルの進化案.md)
+const CRASH_MIN = 350;      // ぶつけダメージ: 敵が柵・障害物・ほかの敵にこの速さ以上でぶつかるとダメージ
+const CRASH_MIN_BOSS = 150; // ボスは重くて速く動かないので、ゆっくりぶつけてもダメージ(柵や物で削る遊びのため)
+const CRASH_K = 0.5;        // ぶつけダメージ = 手番の味方の攻撃力 × これ ×(強打なら 1.5)× れんさ
+const FRIENDLY = 1.0;       // 敵の攻撃が敵に当たったときの倍率(攻撃した敵の攻撃力 × これ)
+const BUMPER_KICK = 650;    // 輪ゴムの柱: 当たった駒をこの速さ以上で弾き返す
+const BUMPER_MAX = 4;       // 1 回の動きで、同じ柱が弾き返す回数の上限(必ず止まるようにする)
+const PICKUP_HEAL = 0.25;   // 回復のおやつ: 最大体力のこれだけ回復
+const CHAIN_CHARGE_AT = 3;  // この数以上のれんさを出した手は、弾いた駒の必殺が 1 つ進む
+export const PIN_OPEN_TURNS = 2; // お皿を全部倒すと、決まった柵がこのターン数だけ開く
+
+/** 卓の上の物(障害物)。movable は押すと動く物 */
+export const OBJ = {
+  cup:    { ja: 'コップ',       r: 18 },                                      // 動かない。跳ね返りに使える
+  bumper: { ja: '輪ゴムの柱',   r: 14 },                                      // 動かない。当たった駒を強く弾き返す
+  bottle: { ja: 'しょうゆ差し', r: 15, movable: true, mass: 2.4, fric: 1000 }, // 押すと動く。敵にぶつけるとダメージ
+  lid:    { ja: '鍋のふた',     r: 20 },                                      // 味方が当てると開いて、回復のおやつが出る
+  pin:    { ja: 'お皿',         r: 10 },                                      // 何かが当たると倒れる。全部倒すと柵が開く
+};
 
 export const POWER_SPEED = [0, 700, 1050, 1400]; // 強さ 1〜3
 /** おもさ 1〜5 → 質量・摩擦・半径 */
@@ -56,6 +75,8 @@ function baseUnit(id, side, kind, spec, x, y) {
     boss: spec.boss || null, gauges: spec.gauges ? spec.gauges.slice() : null, gaugeIdx: 0,
     // 持ち物・パッシブの効果(data.js の buildMods が作る)と、1 回きりの効果を使ったかどうか
     mods: spec.mods || null, used: {},
+    // 卓の上の物
+    obj: null, group: 0,
   };
 }
 
@@ -75,10 +96,14 @@ export function createBattle(cfg) {
     wind: cfg.wind ? { ax: cfg.wind.ax, ay: cfg.wind.ay } : null,
     windCycle: cfg.windCycle || null, windIdx: 0,
     slickTurns: 0,
+    pickups: (cfg.pickups || []).map((p) => ({ x: p.x, y: p.y, r: p.r || 12, amt: p.amt || PICKUP_HEAL })),
+    pinOpen: cfg.pinOpen || null, bonusGaps: [],
     units: [], phase: 'aim', active: 0, queue: [], motion: null, pendingAfter: null,
     turnNo: 1, shots: 0, extraShots: 0, chain: 0, bestChain: 0, events: [],
+    bonusShot: false, bonusUsed: false,
     stats: { capHits: 0, steps: 0, maxMotionSteps: 0, maxPenetration: 0, allyFalls: 0, allyKo: 0, enemyRing: 0, enemyKo: 0,
-             dmgHit: 0, dmgTouch: 0, dmgUlt: 0, dmgTaken: 0, ultsUsed: 0 },
+             dmgHit: 0, dmgTouch: 0, dmgUlt: 0, dmgTaken: 0, dmgCrash: 0, dmgFriendly: 0, ultsUsed: 0,
+             bonusShots: 0, chainCharges: 0, crashRing: 0, bankDouble: 0, pickups: 0, lids: 0, pinsDown: 0, splits: 0 },
   };
   let id = 0;
   (cfg.allies || []).forEach((a, i) => {
@@ -92,10 +117,21 @@ export function createBattle(cfg) {
     s.units.push(u);
   }
   for (const o of cfg.obstacles || []) {
-    const u = baseUnit(id++, 2, 'obstacle', { name: o.name || 'コップ', r: o.r || 18, hp: 1, anchored: true }, o.x, o.y);
+    const obj = OBJ[o.obj] ? o.obj : 'cup', D = OBJ[obj];
+    const u = baseUnit(id++, 2, 'obstacle', { name: o.name || D.ja, r: o.r || D.r, hp: 1, anchored: !D.movable,
+                                              mass: D.mass || 1, fric: D.fric }, o.x, o.y);
+    u.obj = obj; u.group = o.group || 0;
     s.units.push(u);
   }
   setupTeam(s);
+  // 子駒(二枚刃)の枠を先に 2 つ作っておく。使わないときは盤外で眠らせる(番号を増やさないため)
+  if (s.units.some((u) => u.side === 0 && md(u, 'splitOnRail', false))) {
+    for (let k = 0; k < 2; k++) {
+      const m = baseUnit(id++, 0, 'mini', { name: '小さな刃', weight: 1, r: 10, hp: 1, atk: 1 }, -999, -999);
+      m.alive = false;
+      s.units.push(m);
+    }
+  }
   s.active = firstAlive(s, 0);
   beginAllyTurn(s);
   s.events = [];
@@ -134,11 +170,14 @@ export function cloneState(s) {
   const m = s.motion;
   return Object.assign({}, s, {
     patches: s.patches.map((p) => Object.assign({}, p)),
+    pickups: s.pickups.map((p) => Object.assign({}, p)),
+    bonusGaps: s.bonusGaps.map((g) => Object.assign({}, g, { range: g.range.slice() })),
     wind: s.wind ? { ax: s.wind.ax, ay: s.wind.ay } : null,
     units: s.units.map((u) => Object.assign({}, u, { gauges: u.gauges, used: Object.assign({}, u.used) })),
     queue: s.queue.map((q) => Object.assign({}, q)),
     motion: m ? Object.assign({}, m, { hitAllies: m.hitAllies.slice(), touching: m.touching.slice(), subs: m.subs.slice(),
-                                       hits: Object.assign({}, m.hits), pairs: m.pairs.slice() }) : null,
+                                       hits: Object.assign({}, m.hits), pairs: m.pairs.slice(), kicks: Object.assign({}, m.kicks),
+                                       crashed: m.crashed.slice(), lastBy: Object.assign({}, m.lastBy), bankHits: m.bankHits.slice() }) : null,
     pendingAfter: s.pendingAfter, events: [], team: Object.assign({}, s.team),
     stats: Object.assign({}, s.stats),
   });
@@ -163,7 +202,10 @@ function nearest(s, from, side, exceptId) {
 }
 function dist(a, b) { const dx = b.x - a.x, dy = b.y - a.y; return Math.sqrt(dx * dx + dy * dy); }
 
-function chainMult(s) { return 1 + Math.min(CHAIN_CAP, s.chain * (s.chainStep || CHAIN_STEP)); }
+function chainMult(s) {
+  const base = 1 + Math.min(CHAIN_CAP + (s.chainCapAdd || 0), s.chain * (s.chainStep || CHAIN_STEP));
+  return s.chainLateFrom && s.chain >= s.chainLateFrom ? base * s.chainLateMul : base; // 大応援: ○れんさ目からさらに掛け算
+}
 function addChain(s, why) {
   s.chain++;
   if (s.chain > s.bestChain) s.bestChain = s.chain;
@@ -179,6 +221,7 @@ function addCount(u, n) {
 }
 
 function addShield(s, u, ratio) {
+  if (u.kind === 'mini') return;
   const cap = Math.round(u.maxHp * SHIELD_CAP);
   const before = u.shield;
   u.shield = Math.min(cap, u.shield + Math.round(u.maxHp * ratio * md(u, 'shieldGainMul', 1)));
@@ -186,6 +229,7 @@ function addShield(s, u, ratio) {
 }
 
 function heal(s, u, amt) {
+  if (u.kind === 'mini') return;
   const before = u.hp;
   let v = amt * md(u, 'healGainMul', 1);
   if (u.side === 1 && s.team.pure === 'plant' && u.poison > 0) v *= 0.5; // 植物の純血: 毒を受けた敵は回復が半分
@@ -204,7 +248,17 @@ function addPoison(s, u, stacks, perStack) {
 // ---- 退場・ダメージ ----------------------------------------------------------
 
 function onEnemyDown(s, u, how) {
-  if (how === 'ring') { s.stats.enemyRing++; addChain(s, 'ring'); return; }
+  if (how === 'ring') {
+    s.stats.enemyRing++; addChain(s, 'ring');
+    const m = s.motion;
+    if (m && !m.foeShot) { // プレイヤーの手の中で落とした
+      if (m.lastBy[u.id] === 'thing') { s.stats.crashRing++; s.events.push({ t: 'trick', kind: 'crashRing', to: u.id }); } // ぶつけ落とし
+      if (!s.bonusUsed && !s.bonusShot) { s.bonusShot = true; s.events.push({ t: 'bonusShot' }); }                       // もう 1 手
+      const src = s.units[s.active];
+      if (src && md(src, 'onRingStun', 0)) for (const e of s.units) if (e.alive && e.side === 1 && addCount(e, md(src, 'onRingStun', 0))) s.events.push({ t: 'stun', to: e.id }); // びっくり笛
+    }
+    return;
+  }
   s.stats.enemyKo++;
   if (u.action === 'bomb') explode(s, u);
   if (u.trait === 'split' && !u.minion) spawnMinis(s, u);
@@ -212,6 +266,7 @@ function onEnemyDown(s, u, how) {
 
 function knockOut(s, u, how) {
   if (!u.alive) return;
+  if (u.kind === 'mini') { u.alive = false; u.vx = 0; u.vy = 0; u.x = -999; u.y = -999; return; } // 子駒は消えるだけ
   u.alive = false; u.vx = 0; u.vy = 0;
   if (how !== 'ring') u.hp = 0;
   s.events.push({ t: 'ko', id: u.id, how });
@@ -223,6 +278,7 @@ function knockOut(s, u, how) {
 
 /** 柵の切れ目から出た */
 function fallOff(s, u) {
+  if (u.kind === 'mini') return knockOut(s, u, 'ring');
   if (u.side === 0) {
     s.stats.allyFalls++;
     u.hp -= Math.round(u.maxHp * FALL_COST * md(u, 'fallCostMul', 1));
@@ -238,7 +294,7 @@ function fallOff(s, u) {
 
 /** kind: 'hit' | 'touch' | 'ult' | 'foe' | 'dot' */
 function damage(s, src, tgt, raw, kind) {
-  if (!tgt.alive || tgt.kind === 'obstacle') return 0;
+  if (!tgt.alive || tgt.kind === 'obstacle' || tgt.kind === 'mini') return 0;
   const T = s.team;
   let v = raw;
   if (src && src.side === 0 && tgt.side === 1) {
@@ -271,6 +327,7 @@ function damage(s, src, tgt, raw, kind) {
   tgt.hp -= dmg;
   if (tgt.side === 1) {
     if (kind === 'hit') s.stats.dmgHit += dmg; else if (kind === 'touch') s.stats.dmgTouch += dmg; else if (kind === 'ult') s.stats.dmgUlt += dmg;
+    else if (kind === 'crash') s.stats.dmgCrash += dmg; else if (kind === 'foe') s.stats.dmgFriendly += dmg;
   } else if (tgt.side === 0) s.stats.dmgTaken += dmg;
   s.events.push({ t: 'hit', by: src ? src.id : -1, to: tgt.id, dmg, kind });
   if (tgt.side === 0 && tgt.hp <= 0 && md(tgt, 'charm', false) && !tgt.used.charm) { // お守り: 1 回だけ体力 1 で耐える
@@ -299,6 +356,65 @@ function damage(s, src, tgt, raw, kind) {
   return dmg;
 }
 
+/** ぶつけダメージ: プレイヤーの手の中で、敵が柵・物・ほかの敵に強くぶつかった。手番の味方の攻撃力で決まる */
+function crash(s, en, impact, key, thing) {
+  const m = s.motion;
+  if (!m || m.foeShot || !en.alive || en.side !== 1 || impact < (en.kind === 'boss' ? CRASH_MIN_BOSS : CRASH_MIN)) return;
+  if (m.crashed.indexOf(key) >= 0) return;
+  m.crashed.push(key);
+  const src = s.units[s.active];
+  if (!src || !src.alive || src.kind !== 'ally') return;
+  const dmg = src.atk * CRASH_K * (impact >= STRONG_IMPACT ? 1.5 : 1) * chainMult(s) * md(src, 'crashMul', 1);
+  s.events.push({ t: 'crash', to: en.id, thing });
+  damage(s, src, en, dmg, 'crash');
+}
+
+/** 敵の攻撃が別の敵に当たった */
+function friendlyHit(s, u, o, mul) {
+  s.events.push({ t: 'friendly', by: u.id, to: o.id });
+  damage(s, u, o, u.atk * FRIENDLY * (mul || 1), 'foe');
+}
+
+/** 卓の上の物 o に駒 u がぶつかった(輪ゴムの柱のはね返しは collide で扱う) */
+function thingContact(s, o, u, impact) {
+  const m = s.motion;
+  if (!o.alive || !m) return;
+  if (u.side === 1) { m.lastBy[u.id] = 'thing'; crash(s, u, impact, 8192 + u.id * 64 + o.id, o.obj); }
+  if (m.foeShot || impact <= MIN_IMPACT) return;
+  if (o.obj === 'lid' && u.side === 0) { // 鍋のふた: 開いて回復のおやつが出る
+    o.alive = false; s.stats.lids++;
+    s.pickups.push({ x: o.x, y: o.y, r: 12, amt: PICKUP_HEAL });
+    s.events.push({ t: 'lid', id: o.id, x: o.x, y: o.y });
+  } else if (o.obj === 'pin') { // お皿: 倒れる。同じ組を全部倒すと柵が開く
+    o.alive = false; s.stats.pinsDown++;
+    s.events.push({ t: 'pin', id: o.id });
+    if (s.pinOpen && !s.units.some((x) => x.alive && x.obj === 'pin' && x.group === o.group)) {
+      s.bonusGaps.push({ side: s.pinOpen.side, range: s.pinOpen.range.slice(), turns: PIN_OPEN_TURNS });
+      s.events.push({ t: 'pinOpen', side: s.pinOpen.side });
+    }
+  }
+}
+
+/** 二枚刃: 柵で跳ね返った瞬間に、小さな刃が 2 つ飛び出す */
+function spawnSplit(s, sh) {
+  const slots = s.units.filter((u) => u.kind === 'mini' && !u.alive);
+  const sp = Math.sqrt(sh.vx * sh.vx + sh.vy * sh.vy);
+  if (slots.length < 2 || sp === 0) return;
+  const ux = sh.vx / sp, uy = sh.vy / sp, px = -uy, py = ux;
+  for (let i = 0; i < 2; i++) {
+    const k = i === 0 ? 1 : -1, mi = slots[i];
+    let dx = ux + px * 0.6 * k, dy = uy + py * 0.6 * k;
+    const l = Math.sqrt(dx * dx + dy * dy); dx /= l; dy /= l;
+    mi.alive = true; mi.hp = mi.maxHp = 1; mi.atk = Math.max(1, Math.round(sh.atk * 0.4));
+    mi.x = Math.max(mi.r, Math.min(s.w - mi.r, sh.x + px * (sh.r + mi.r + 1) * k));
+    mi.y = Math.max(mi.r, Math.min(s.h - mi.r, sh.y + py * (sh.r + mi.r + 1) * k));
+    mi.vx = dx * sp * 0.85; mi.vy = dy * sp * 0.85;
+    s.motion.subs.push(mi.id);
+  }
+  s.motion.splitDone = true; s.stats.splits++;
+  s.events.push({ t: 'split', by: sh.id });
+}
+
 /** 味方 src が敵 tgt を倒した */
 function onKill(s, src, tgt) {
   if (md(src, 'onKillPoison', 0)) { const n = nearest(s, tgt, 1, tgt.id); if (n) addPoison(s, n, md(src, 'onKillPoison', 0), Math.max(1, Math.round(src.atk * 0.2))); } // マッチ
@@ -312,7 +428,7 @@ function explode(s, u) {
     if (!o.alive || o.id === u.id || o.kind === 'obstacle') continue;
     const reach = R + o.r, dx = o.x - u.x, dy = o.y - u.y;
     if (dx * dx + dy * dy > reach * reach) continue;
-    damage(s, u, o, o.side === 0 ? u.atk : u.atk * 0.75, 'foe');
+    if (o.side === 0) damage(s, u, o, u.atk, 'foe'); else if (o.side === 1) friendlyHit(s, u, o);
   }
 }
 
@@ -376,7 +492,7 @@ function fireTouch(s, by) {
     }
     case 'feed': { // 給食: 一番弱った味方を回復し、毒を消す
       let t = null;
-      for (const u of s.units) { if (!u.alive || u.side !== 0) continue; if (t === null || u.hp * t.maxHp < t.hp * u.maxHp) t = u; }
+      for (const u of s.units) { if (!u.alive || u.kind !== 'ally') continue; if (t === null || u.hp * t.maxHp < t.hp * u.maxHp) t = u; }
       if (t) { heal(s, t, t.maxHp * 0.25 * tm * (P.food ? 1.3 : 1)); t.poison = 0; }
       break;
     }
@@ -504,6 +620,11 @@ function shooterHitsFoe(s, sh, en, impact) {
   const n = m.hits[en.id] || 0;
   if (n >= HIT_FALLOFF.length || impact <= MIN_IMPACT) return;
   m.hits[en.id] = n + 1;
+  m.lastBy[en.id] = 'ally';
+  if (m.bounces > 0 && m.bankHits.indexOf(en.id) < 0) {
+    m.bankHits.push(en.id);
+    if (m.bankHits.length === 2) { s.stats.bankDouble++; s.events.push({ t: 'trick', kind: 'bankDouble', to: en.id }); } // 柵返しから 2 体
+  }
   const mult = chainMult(s);
   if (n === 0) addChain(s, 'hit');
   if (!m.bankUsed && m.bounces > 0) { m.bankUsed = true; addChain(s, 'bank'); }
@@ -515,6 +636,9 @@ function shooterHitsFoe(s, sh, en, impact) {
   damage(s, sh, en, dmg, m.ult ? 'ult' : 'hit');
   if (en.trait === 'spike' && !fromBehind && en.alive) damage(s, en, sh, en.atk * 0.5, 'foe');
   if (en.alive && md(sh, 'onHitPoison', 0)) addPoison(s, en, md(sh, 'onHitPoison', 0), Math.max(1, Math.round(sh.atk * 0.2))); // 毒の小瓶
+  if (n === 0 && md(sh, 'onHitPoisonAoe', 0)) { // 毒霧(進化): 当てた敵のまわりにも毒
+    for (const o of s.units) if (o.alive && o.side === 1 && o.id !== en.id && dist(en, o) < 90 + o.r) addPoison(s, o, md(sh, 'onHitPoisonAoe', 0), Math.max(1, Math.round(sh.atk * 0.2)));
+  }
   if (!en.alive) return;
   if (m.execute && en.kind !== 'boss' && peeled(en)) { s.events.push({ t: 'execute', to: en.id }); knockOut(s, en, 'hp'); return; }
   if (m.peelHit && n === 0) {
@@ -527,17 +651,28 @@ function shooterHitsFoe(s, sh, en, impact) {
 function onContact(s, a, b, impact) {
   const m = s.motion;
   if (!m) return;
-  // 敵同士がぶつかった(プレイヤーの手の最中だけ、組ごとに 1 回)
-  if (!m.foeShot && isFoe(a) && isFoe(b) && impact > 200) {
+  // 卓の上の物
+  if (a.kind === 'obstacle' || b.kind === 'obstacle') {
+    if (a.kind !== 'obstacle' || b.kind !== 'obstacle') thingContact(s, a.kind === 'obstacle' ? a : b, a.kind === 'obstacle' ? b : a, impact);
+    return;
+  }
+  // 敵同士がぶつかった(プレイヤーの手の最中だけ、組ごとに 1 回)。強くぶつかれば両方にぶつけダメージ
+  if (!m.foeShot && isFoe(a) && isFoe(b)) {
+    m.lastBy[a.id] = 'thing'; m.lastBy[b.id] = 'thing';
     const key = a.id * 64 + b.id;
-    if (m.pairs.indexOf(key) < 0) { m.pairs.push(key); addChain(s, 'crash'); }
+    if (impact > 200 && m.pairs.indexOf(key) < 0) { m.pairs.push(key); addChain(s, 'crash'); }
+    crash(s, a, impact, 16384 + a.id * 64 + b.id, 'foe');
+    crash(s, b, impact, 16384 + b.id * 64 + a.id, 'foe');
     return;
   }
   const sh = m.shooter;
   if (sh >= 0 && (a.id === sh || b.id === sh)) {
     const me = a.id === sh ? a : b, other = me === a ? b : a;
-    if (m.foeShot) { // 敵のたいあたり
-      if (other.side === 0 && impact > MIN_IMPACT && m.hitAllies.indexOf(other.id) < 0) { m.hitAllies.push(other.id); damage(s, me, other, me.atk, 'foe'); }
+    if (m.foeShot) { // 敵のたいあたり。進む先にいる別の敵にも当たる
+      if (impact > MIN_IMPACT && m.hitAllies.indexOf(other.id) < 0) {
+        if (other.side === 0) { m.hitAllies.push(other.id); damage(s, me, other, me.atk, 'foe'); }
+        else if (other.side === 1) { m.hitAllies.push(other.id); friendlyHit(s, me, other); }
+      }
       return;
     }
     if (isFoe(other)) shooterHitsFoe(s, me, other, impact);
@@ -557,7 +692,9 @@ function onContact(s, a, b, impact) {
     const key = 4096 + me.id * 64 + other.id;
     if (m.pairs.indexOf(key) >= 0) return;
     m.pairs.push(key);
+    m.lastBy[other.id] = 'ally';
     const mult = chainMult(s);
+    if (me.kind === 'mini') { addChain(s, 'split'); damage(s, me, other, me.atk * mult, 'hit'); return; } // 二枚刃の子駒
     addChain(s, 'chase');
     damage(s, me, other, me.atk * mult * (s.team.pair.creature ? 1.3 : 1), 'touch');
   }
@@ -573,32 +710,47 @@ function invM(s, u) {
 }
 
 function inGap(list, c) { for (const g of list) if (c >= g[0] && c <= g[1]) return true; return false; }
+/** その辺のその位置が開いているか(卓の切れ目 + お皿で一時的に開いた柵) */
+function gapOpen(s, side, c) {
+  if (inGap(s.gaps[side], c)) return true;
+  for (const g of s.bonusGaps) if (g.side === side && c >= g.range[0] && c <= g.range[1]) return true;
+  return false;
+}
 
 function canFall(s, u) {
-  if (u.kind === 'boss' || u.anchored) return false;
+  if (u.kind === 'boss' || u.kind === 'obstacle' || u.anchored) return false;
   if (!peeled(u)) return false; // 体力が半分より多い駒は貼りついていて落ちない
   if (u.side === 0 && u.noFallTurn === s.turnNo) return false;
   return true;
 }
 
 function rails(s, u) {
-  const g = s.gaps, m = s.motion, open = canFall(s, u);
-  let bounced = false;
+  const m = s.motion, open = canFall(s, u);
+  const shooter = !!m && !m.foeShot && u.id === m.shooter;
+  // 手鏡: 跳ね返っても勢いが落ちない(合わせ鏡は増す)。1 手に決まった回数まで
+  const boost = shooter && m.railBoostLeft > 0 ? md(u, 'railBoost', 1) : 1;
+  let hitV = 0; // 柵に当たった速さ(柵に垂直な成分)
   if (u.x < u.r) {
-    if (open && inGap(g.left, u.y)) { if (u.x < 0) return fallOff(s, u); }
-    else { u.x = u.r; if (u.vx < 0) { u.vx = -u.vx * E_RAIL; bounced = true; } }
+    if (open && gapOpen(s, 'left', u.y)) { if (u.x < 0) return fallOff(s, u); }
+    else { u.x = u.r; if (u.vx < 0) { hitV = Math.max(hitV, -u.vx); u.vx = -u.vx * E_RAIL * boost; } }
   } else if (u.x > s.w - u.r) {
-    if (open && inGap(g.right, u.y)) { if (u.x > s.w) return fallOff(s, u); }
-    else { u.x = s.w - u.r; if (u.vx > 0) { u.vx = -u.vx * E_RAIL; bounced = true; } }
+    if (open && gapOpen(s, 'right', u.y)) { if (u.x > s.w) return fallOff(s, u); }
+    else { u.x = s.w - u.r; if (u.vx > 0) { hitV = Math.max(hitV, u.vx); u.vx = -u.vx * E_RAIL * boost; } }
   }
   if (u.y < u.r) {
-    if (open && inGap(g.top, u.x)) { if (u.y < 0) return fallOff(s, u); }
-    else { u.y = u.r; if (u.vy < 0) { u.vy = -u.vy * E_RAIL; bounced = true; } }
+    if (open && gapOpen(s, 'top', u.x)) { if (u.y < 0) return fallOff(s, u); }
+    else { u.y = u.r; if (u.vy < 0) { hitV = Math.max(hitV, -u.vy); u.vy = -u.vy * E_RAIL * boost; } }
   } else if (u.y > s.h - u.r) {
-    if (open && inGap(g.bottom, u.x)) { if (u.y > s.h) return fallOff(s, u); }
-    else { u.y = s.h - u.r; if (u.vy > 0) { u.vy = -u.vy * E_RAIL; bounced = true; } }
+    if (open && gapOpen(s, 'bottom', u.x)) { if (u.y > s.h) return fallOff(s, u); }
+    else { u.y = s.h - u.r; if (u.vy > 0) { hitV = Math.max(hitV, u.vy); u.vy = -u.vy * E_RAIL * boost; } }
   }
-  if (bounced && m && u.id === m.shooter) m.bounces++;
+  if (hitV === 0 || !m) return;
+  if (u.side === 1) crash(s, u, hitV, 12288 + u.id, 'rail'); // 敵を柵にぶつけた
+  if (u.id === m.shooter) {
+    m.bounces++;
+    if (boost !== 1) { m.railBoostLeft--; s.events.push({ t: 'mirror', by: u.id }); }
+    if (shooter && !m.splitDone && md(u, 'splitOnRail', false)) spawnSplit(s, u);
+  }
 }
 
 function collide(s, a, b) {
@@ -634,6 +786,18 @@ function collide(s, a, b) {
     a.vx -= j * ia * nx; a.vy -= j * ia * ny;
     b.vx += j * ib * nx; b.vy += j * ib * ny;
     onContact(s, a, b, -vn);
+    // 輪ゴムの柱: 当たった駒を、柱から外向きに決まった速さ以上で弾き返す(同じ柱は 1 回の動きで BUMPER_MAX 回まで)
+    const bump = a.obj === 'bumper' && a.alive ? a : b.obj === 'bumper' && b.alive ? b : null;
+    if (bump && (m.kicks[bump.id] || 0) < BUMPER_MAX) {
+      const o = bump === a ? b : a, sx = bump === a ? 1 : -1; // 外向き = 柱から相手へ
+      if (invM(s, o) > 0) {
+        const away = (o.vx * nx + o.vy * ny) * sx;
+        if (away < BUMPER_KICK) { const add = (BUMPER_KICK - away) * sx; o.vx += nx * add; o.vy += ny * add; }
+        m.kicks[bump.id] = (m.kicks[bump.id] || 0) + 1;
+        if (o.id === m.shooter) m.bounces++;
+        s.events.push({ t: 'bumper', id: bump.id });
+      }
+    }
   }
   // 重なりをほどく。接触の処理で「動かない壁」になった駒は動かさないので、ここで取り直す
   const pa = invM(s, a), pb = invM(s, b), psum = pa + pb;
@@ -662,7 +826,8 @@ function physStep(s) {
     if (sp2 === 0) continue;
     let sp = Math.sqrt(sp2);
     if (sp > SPEED_CAP) { const c = SPEED_CAP / sp; u.vx *= c; u.vy *= c; sp = SPEED_CAP; }
-    const free = u.id === shooter && (inside || (m.freeBounces > 0 && m.bounces < m.freeBounces));
+    // 減速しない: 貫通中、または定規ショットで跳ね返り回数が残っている間。ただし遅くなったら止める(ゆっくり漂い続けないように)
+    const free = u.id === shooter && (inside || (m.freeBounces > 0 && m.bounces < m.freeBounces && sp > 250));
     if (!free) {
       let fr = u.fric;
       const p = patchAt(s, u);
@@ -690,6 +855,20 @@ function physStep(s) {
       collide(s, a, b);
     }
   }
+  // 回復のおやつ: 味方が触れたら拾う(番号順・おやつの並び順で決まる)
+  for (let i = s.pickups.length - 1; i >= 0; i--) {
+    const p = s.pickups[i];
+    for (let k = 0; k < n; k++) {
+      const u = us[k];
+      if (!u.alive || u.kind !== 'ally') continue;
+      const dx = u.x - p.x, dy = u.y - p.y, rr = u.r + p.r;
+      if (dx * dx + dy * dy > rr * rr) continue;
+      s.pickups.splice(i, 1); s.stats.pickups++;
+      s.events.push({ t: 'pickup', to: u.id, x: p.x, y: p.y });
+      heal(s, u, u.maxHp * p.amt);
+      break;
+    }
+  }
   m.steps++;
   s.stats.steps++;
 }
@@ -697,9 +876,13 @@ function physStep(s) {
 function anyMoving(s) { for (const u of s.units) if (u.alive && (u.vx !== 0 || u.vy !== 0)) return true; return false; }
 
 function startMotion(s, shooterId, opts) {
+  const sh = shooterId >= 0 ? s.units[shooterId] : null;
   s.motion = Object.assign({ shooter: shooterId, steps: 0, hitAllies: [], touching: [], subs: [], hits: {}, pairs: [],
                              inside: false, bounces: 0, bankUsed: false, foeShot: false, ult: null,
-                             pierce: false, dmgMul: 0, massMul: 0, freeBounces: 0, execute: false, peelHit: false, lightning: false }, opts);
+                             pierce: false, dmgMul: 0, massMul: 0, freeBounces: 0, execute: false, peelHit: false, lightning: false,
+                             // 2026-11-16 の追加
+                             kicks: {}, crashed: [], lastBy: {}, bankHits: [], splitDone: false,
+                             railBoostLeft: sh && sh.side === 0 ? md(sh, 'railBoostN', 3) : 0 }, opts);
 }
 
 function launchAt(u, dx, dy, speed) {
@@ -711,7 +894,7 @@ function launchAt(u, dx, dy, speed) {
 // ---- 敵の番 ------------------------------------------------------------------
 
 function nextAllyId(s) {
-  const al = s.units.filter((u) => u.side === 0);
+  const al = s.units.filter((u) => u.kind === 'ally');
   const start = al.findIndex((u) => u.id === s.active);
   for (let k = 1; k <= al.length; k++) { const u = al[(start + k) % al.length]; if (u.alive) return u.id; }
   return s.active;
@@ -786,20 +969,23 @@ function foeAct(s, u) {
       startMotion(s, u.id, { foeShot: true });
       return;
     }
-    case 'blast': { // はんい攻撃
+    case 'blast': { // はんい攻撃。円の中にいる別の敵にも当たる
       for (const o of s.units) {
-        if (!o.alive || o.side !== 0) continue;
+        if (!o.alive || o.id === u.id || (o.side !== 0 && o.side !== 1)) continue;
         const reach = u.actR + o.r, dx = o.x - u.x, dy = o.y - u.y;
-        if (dx * dx + dy * dy <= reach * reach) { damage(s, u, o, u.atk, 'foe'); if (u.lineage === 'plant') addPoison(s, o, 1, Math.max(1, Math.round(u.atk * 0.15))); }
+        if (dx * dx + dy * dy > reach * reach) continue;
+        if (o.side === 1) { friendlyHit(s, u, o); continue; }
+        damage(s, u, o, u.atk, 'foe'); if (u.lineage === 'plant') addPoison(s, o, 1, Math.max(1, Math.round(u.atk * 0.15)));
       }
       return;
     }
-    case 'beamH': case 'beamV': { // ビーム(横 / 縦の帯)
+    case 'beamH': case 'beamV': { // ビーム(横 / 縦の帯)。帯の中にいる別の敵にも当たる
       const half = u.r + 12;
       for (const o of s.units) {
-        if (!o.alive || o.side !== 0) continue;
+        if (!o.alive || o.id === u.id || (o.side !== 0 && o.side !== 1)) continue;
         const off = u.action === 'beamH' ? o.y - u.y : o.x - u.x;
-        if (off <= half + o.r && off >= -(half + o.r)) damage(s, u, o, u.atk, 'foe');
+        if (off > half + o.r || off < -(half + o.r)) continue;
+        if (o.side === 1) friendlyHit(s, u, o); else damage(s, u, o, u.atk, 'foe');
       }
       return;
     }
@@ -844,9 +1030,22 @@ function foeAct(s, u) {
 function runAction(s, a) {
   if (a.t === 'afterShot') {
     if (s.pendingAfter) { const p = s.pendingAfter; s.pendingAfter = null; s.queue.unshift({ t: 'afterShot' }); runAfter(s, p); return; }
+    // 3 れんさ以上つなげた手は、弾いた駒の必殺が 1 つ進む
+    const sh = s.units[s.active];
+    if (s.chain >= CHAIN_CHARGE_AT && sh && sh.alive && sh.ult && sh.ultCharge < sh.ultNeed) {
+      sh.ultCharge++; s.stats.chainCharges++; s.events.push({ t: 'chainCharge', to: sh.id });
+    }
     // 続けて弾ける(大暴れ)。ただし本人が退場していたら打ち切って敵の番へ
     if (s.extraShots > 0 && s.units[s.active].alive) { s.extraShots--; s.chain = 0; s.phase = 'aim'; return; }
     s.extraShots = 0;
+    // 敵を場外に落としたら、敵の番の前に次の駒でもう 1 手(1 ターン 1 回まで)
+    if (s.bonusShot) {
+      s.bonusShot = false; s.bonusUsed = true; s.stats.bonusShots++;
+      s.active = nextAllyId(s); s.chain = 0; s.phase = 'aim';
+      beginAllyTurn(s);
+      s.events.push({ t: 'bonusTurn', to: s.active });
+      return;
+    }
     enqueueEnemyPhase(s);
     return;
   }
@@ -873,6 +1072,9 @@ function runAction(s, a) {
   if (a.t === 'endEnemy') {
     for (const p of s.patches) if (p.turns > 0) p.turns--;
     s.patches = s.patches.filter((p) => p.turns !== 0);
+    for (const g of s.bonusGaps) g.turns--;
+    s.bonusGaps = s.bonusGaps.filter((g) => g.turns > 0);
+    s.bonusShot = false; s.bonusUsed = false;
     if (s.slickTurns > 0) s.slickTurns--;
     s.active = nextAllyId(s);
     s.turnNo++;
@@ -899,6 +1101,7 @@ export function step(s) {
     if (capped || !anyMoving(s)) {
       if (capped) { s.stats.capHits++; for (const u of s.units) { u.vx = 0; u.vy = 0; } }
       if (s.motion.steps > s.stats.maxMotionSteps) s.stats.maxMotionSteps = s.motion.steps;
+      for (const u of s.units) if (u.kind === 'mini' && u.alive) knockOut(s, u, 'end');
       s.motion = null;
       checkEnd(s);
     }
@@ -932,6 +1135,8 @@ export function shoot(s, input, opts) {
   if (!u || !u.alive) return false;
   startMotion(s, u.id, {});
   s.chainStep = CHAIN_STEP + md(u, 'chainStepAdd', 0);
+  s.chainCapAdd = md(u, 'chainCapAdd', 0);
+  s.chainLateFrom = md(u, 'chainLateFrom', 0); s.chainLateMul = md(u, 'chainLateMul', 1);
   if (input.ult && canUlt(s)) { u.ultCharge = 0; applyUlt(s, u, s.motion); }
   launchAt(u, dx, dy, POWER_SPEED[power]);
   s.shots++;
@@ -946,14 +1151,36 @@ export function telegraphs(s) {
   const out = [];
   for (const u of s.units) {
     if (!u.alive || u.side !== 1 || u.count !== 1 || u.stagger > 0) continue;
-    if (u.action === 'blast' || u.action === 'bomb') out.push({ id: u.id, shape: 'circle', x: u.x, y: u.y, r: u.actR });
-    else if (u.action === 'beamH') out.push({ id: u.id, shape: 'band', x: 0, y: u.y - u.r - 12, w: s.w, h: (u.r + 12) * 2 });
-    else if (u.action === 'beamV') out.push({ id: u.id, shape: 'band', x: u.x - u.r - 12, y: 0, w: (u.r + 12) * 2, h: s.h });
-    else if (u.action === 'charge') { const t = nearest(s, u, 0); if (t) out.push({ id: u.id, shape: 'line', x: u.x, y: u.y, x2: t.x, y2: t.y }); }
-    else if (u.action === 'gust' || u.action === 'pull') out.push({ id: u.id, shape: u.action, x: u.x, y: u.y, r: u.actR + 120 });
-    else out.push({ id: u.id, shape: 'mark', x: u.x, y: u.y, kind: u.action });
+    let t = null;
+    if (u.action === 'blast' || u.action === 'bomb') t = { id: u.id, shape: 'circle', x: u.x, y: u.y, r: u.actR };
+    else if (u.action === 'beamH') t = { id: u.id, shape: 'band', x: 0, y: u.y - u.r - 12, w: s.w, h: (u.r + 12) * 2 };
+    else if (u.action === 'beamV') t = { id: u.id, shape: 'band', x: u.x - u.r - 12, y: 0, w: (u.r + 12) * 2, h: s.h };
+    else if (u.action === 'charge') { const tg = nearest(s, u, 0); if (tg) t = { id: u.id, shape: 'line', x: u.x, y: u.y, x2: tg.x, y2: tg.y }; }
+    else if (u.action === 'gust' || u.action === 'pull') t = { id: u.id, shape: u.action, x: u.x, y: u.y, r: u.actR + 120 };
+    else t = { id: u.id, shape: 'mark', x: u.x, y: u.y, kind: u.action };
+    if (!t) continue;
+    t.foes = caughtFoes(s, u, t); // いまのままなら巻き込まれる別の敵(敵の攻撃は敵にも当たる)
+    out.push(t);
   }
   return out;
+}
+
+function caughtFoes(s, u, t) {
+  const ids = [];
+  for (const o of s.units) {
+    if (!o.alive || o.side !== 1 || o.id === u.id) continue;
+    let hit = false;
+    if (t.shape === 'circle') { const dx = o.x - u.x, dy = o.y - u.y, rr = u.actR + o.r; hit = dx * dx + dy * dy <= rr * rr; }
+    else if (t.shape === 'band') { const half = u.r + 12, off = u.action === 'beamH' ? o.y - u.y : o.x - u.x; hit = off <= half + o.r && off >= -(half + o.r); }
+    else if (t.shape === 'line') { // たいあたりの線の近く(線分との距離)
+      const lx = t.x2 - t.x, ly = t.y2 - t.y, l2 = lx * lx + ly * ly;
+      let k = l2 > 0 ? ((o.x - t.x) * lx + (o.y - t.y) * ly) / l2 : 0; k = Math.max(0, Math.min(1, k));
+      const px = t.x + lx * k - o.x, py = t.y + ly * k - o.y, rr = u.r + o.r;
+      hit = px * px + py * py <= rr * rr;
+    }
+    if (hit) ids.push(o.id);
+  }
+  return ids;
 }
 
 // ---- 再現性の確認用ハッシュ(FNV-1a) -----------------------------------------
@@ -967,6 +1194,7 @@ export function hashState(s, seedHash) {
     put(u.shield); put(u.poison); put(u.ultCharge); put(u.anchored ? 1 : 0); put(u.gaugeIdx);
   }
   put(s.turnNo); put(s.active); put(s.units.length); put(s.patches.length); put(s.slickTurns);
+  put(s.pickups.length); put(s.bonusGaps.length); put(s.bonusUsed ? 1 : 0);
   return h >>> 0;
 }
 

@@ -94,9 +94,11 @@ function touchCase(lin) {
     ok('必殺: ' + lin + ' は ' + LINEAGES[lin].ultNeed + ' 回目の番で使える', turns === LINEAGES[lin].ultNeed, turns);
   }
   const ready = (lin, enemies, extra) => { const s = mini([Object.assign(ally(lin), { name: 'A', x: 180, y: 420 })].concat(extra || []), enemies); s.units[0].ultCharge = s.units[0].ultNeed; return s; };
-  let s = fire(ready('kitchen', [dummy(180, 300), dummy(180, 180, { name: 'うしろ' })]), 0, -1, 3, true);
+  let s = ready('kitchen', [dummy(180, 300), dummy(180, 180, { name: 'うしろ' })]);
+  E.shoot(s, { dx: 0, dy: -1, power: 3, ult: true });
+  ok('必殺を使うと溜め直しになる', s.units[0].ultCharge === 0, s.units[0].ultCharge);
+  E.resolve(s);
   ok('大なぎ払い: 貫通して 2 体とも 2 倍で当たる', U(s, 'まと').hp <= 100 - 19 * 2 && U(s, 'うしろ').hp <= 100 - 19 * 2, [U(s, 'まと').hp, U(s, 'うしろ').hp]);
-  ok('必殺を使うと溜め直しになる', s.units[0].ultCharge <= 1, s.units[0].ultCharge);
   s = ready('food', [dummy(40, 40)], [Object.assign(ally('kitchen'), { name: 'C', x: 60, y: 470, touch: null })]); U(s, 'C').hp = 20; fire(s, 1, 0, 1, true);
   ok('おかわり: 味方全員を回復', U(s, 'C').hp > 20, U(s, 'C').hp);
   s = ready('stationery', [dummy(180, 250)]); U(s, 'まと').hp = 50; fire(s, 0, -1, 3, true);
@@ -168,7 +170,7 @@ function touchCase(lin) {
   ok('掃除機: 敵の番に味方が吸い寄せられる', s.units.filter((u) => u.side === 0).some((u) => u.y < u.homeY - 1), s.units.filter((u) => u.side === 0).map((u) => Math.round(u.y - u.homeY)));
   b.hp = 1; s.units[s.active].atk = 50; const tgt = s.units[s.active]; fire(s, b.x - tgt.x, b.y - tgt.y, 3);
   ok('ボス: 体力ゲージを割ると次の段階へ進み、ひるむ', b.alive && b.gaugeIdx === 1 && b.hp > 1, { idx: b.gaugeIdx, hp: b.hp, alive: b.alive });
-  ok('ボスは落ちない・動かない', b.x === 180 && b.y === 120);
+  ok('ボスは落ちない(卓の上に残る)', b.alive && b.x >= b.r && b.x <= 360 - b.r && b.y >= b.r && b.y <= 520 - b.r, [b.x, b.y]);
   s = E.createBattle(bossBattle('washer', team())); const g0 = JSON.stringify(s.gaps); fire(s, 1, 0, 1);
   ok('洗濯機: 敵の番に切れ目の位置が変わる', JSON.stringify(s.gaps) !== g0);
   s = E.createBattle(bossBattle('fan', team())); const w0 = JSON.stringify(s.wind); fire(s, 1, 0, 1);
@@ -190,6 +192,113 @@ function touchCase(lin) {
   const st = mk([{ x: 180, y: 450, r: 60, kind: 'stove', dmg: 10 }]); fire(st, 1, 0, 1);
   ok('コンロ: 上で止まるとダメージ', U(st, 'A').hp === 70 || U(st, 'A').hp === 80, U(st, 'A').hp);
 }
+// ---- 2026-11-16 の追加: 位置の決まり(reports/はじきバトルの進化案.md) ----------
+const ev = (s, f) => s.events.filter(f);
+{
+  // A 敵の攻撃が敵にも当たる
+  const far = () => Object.assign(ally('furniture'), { name: 'A', x: 40, y: 490, touch: null });
+  let s = mini([far()], [dummy(180, 250, { action: 'blast', count: 1, actR: 120, atk: 20, hp: 400, name: 'ばくだん役' }), dummy(240, 250)]);
+  const tg = E.telegraphs(s);
+  ok('予告: はんい攻撃に巻き込まれる敵が分かる', tg.length === 1 && tg[0].foes.length === 1 && tg[0].foes[0] === U(s, 'まと').id, tg);
+  fire(s, 1, 0, 1);
+  ok('はんい攻撃は円の中の別の敵にも当たる', U(s, 'まと').hp === 100 - 20 && s.stats.dmgFriendly === 20, [U(s, 'まと').hp, s.stats.dmgFriendly]);
+  ok('自分の攻撃は自分に当たらない', U(s, 'ばくだん役').hp === 400, U(s, 'ばくだん役').hp);
+  s = mini([far()], [dummy(180, 250, { action: 'beamH', count: 1, atk: 20, hp: 400, name: 'ビーム役' }), dummy(320, 255)]); fire(s, 0, -1, 1);
+  ok('ビームは帯の中の別の敵にも当たる', U(s, 'まと').hp === 80, U(s, 'まと').hp);
+  s = mini([far(), Object.assign(ally('furniture'), { name: 'T', x: 180, y: 470, touch: null })], [dummy(180, 120, { action: 'charge', count: 1, atk: 20, hp: 400, name: 'とつげき' }), dummy(184, 300)]);
+  ok('予告: たいあたりの線の上にいる敵が分かる', E.telegraphs(s)[0].foes.length === 1);
+  fire(s, -1, 0, 1);
+  ok('たいあたりは進む先の別の敵にも当たる', U(s, 'まと').hp < 100 && ev(s, (e) => e.t === 'friendly').length >= 1, U(s, 'まと').hp);
+  s = mini([far(), Object.assign(ally('kitchen'), { name: 'Z', x: 320, y: 490, touch: null })], [dummy(180, 250, { action: 'bomb', count: 1, actR: 120, atk: 30 }), dummy(240, 250, { name: 'となり' })]); fire(s, 1, 0, 1);
+  ok('自爆の爆風は別の敵にも同じ強さで当たる', U(s, 'となり').hp === 100 - 30, U(s, 'となり').hp);
+}
+{
+  // B ぶつけダメージ(敵どうし・柵・物)
+  const A = (o) => Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 450, touch: null }, o);
+  let s = mini([A()], [dummy(180, 300, { weight: 1, name: 'てまえ' }), dummy(180, 200, { name: 'おく' })]); fire(s, 0, -1, 3);
+  ok('敵どうしが強くぶつかると、両方にぶつけダメージ', ev(s, (e) => e.t === 'crash' && e.thing === 'foe' && e.to === U(s, 'おく').id).length === 1 && ev(s, (e) => e.t === 'crash' && e.thing === 'foe' && e.to === U(s, 'てまえ').id).length === 1 && s.stats.dmgCrash > 0, ev(s, (e) => e.t === 'crash'));
+  ok('ぶつけダメージは手番の味方の攻撃力で決まる(19 × 0.5 × れんさ)', ev(s, (e) => e.t === 'hit' && e.kind === 'crash' && e.to === U(s, 'おく').id)[0].dmg >= Math.round(19 * 0.5), ev(s, (e) => e.kind === 'crash'));
+  s = mini([A()], [dummy(180, 60, { weight: 1 })]); fire(s, 0, -1, 3);
+  ok('敵を柵にぶつけるとダメージ', ev(s, (e) => e.t === 'crash' && e.thing === 'rail').length === 1, ev(s, (e) => e.t === 'crash'));
+  s = mini([A()], [dummy(180, 60, { weight: 1 })]); fire(s, 0, -1, 1);
+  ok('弱くぶつかっただけではダメージなし', ev(s, (e) => e.t === 'crash').length === 0);
+  s = mini([A()], [dummy(180, 220)], { obstacles: [{ obj: 'bottle', x: 180, y: 330 }] }); fire(s, 0, -1, 3);
+  ok('しょうゆ差しは押すと動き、敵にぶつけるとダメージ', ev(s, (e) => e.t === 'crash' && e.thing === 'bottle').length === 1 && s.units.find((u) => u.obj === 'bottle').y < 330, ev(s, (e) => e.t === 'crash'));
+}
+{
+  // C ボスは落ちないが重く動く。柵にぶつけると削れる
+  const boss = (x, y) => ({ name: 'ボス', boss: 'vacuum', r: 46, mass: 9, fric: 1500, hp: 1, gauges: [500], atk: 10, action: 'blast', count: 9, actR: 10, x, y });
+  let s = mini([Object.assign(ally('machine'), { name: 'A', x: 180, y: 300, touch: null })], [boss(180, 60)]); fire(s, 0, -1, 3);
+  const b = s.units.find((u) => u.kind === 'boss');
+  ok('ボスは押すと動き、柵にぶつけるとぶつけダメージ', ev(s, (e) => e.t === 'crash' && e.to === b.id && e.thing === 'rail').length === 1 && b.alive, ev(s, (e) => e.t === 'crash'));
+  s = mini([Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 400, touch: null })], [boss(180, 200)]); fire(s, 0, -1, 3);
+  ok('ボスは重いので、少ししか動かない', s.units[1].y < 200 && s.units[1].y > 140, s.units[1].y);
+}
+{
+  // D 卓の仕掛けは敵の番にしか動かない(弾いている最中は止まっている)
+  const team = () => [ally('kitchen'), ally('food'), ally('machine'), ally('stationery')];
+  let bad = 0;
+  for (const kind of ['washer', 'fan']) {
+    const s = E.createBattle(bossBattle(kind, team()));
+    for (let k = 0; k < 4 && s.phase === 'aim'; k++) {
+      E.shoot(s, { dx: k % 2 ? 1 : -1, dy: -2, power: 3 });
+      const g = JSON.stringify(s.gaps), w = JSON.stringify(s.wind);
+      while (s.phase === 'resolving' && s.motion && s.motion.shooter >= 0) { E.step(s); if (JSON.stringify(s.gaps) !== g || JSON.stringify(s.wind) !== w) bad++; }
+      E.resolve(s);
+    }
+  }
+  ok('洗濯機・扇風機: 弾いている最中に切れ目や風は変わらない', bad === 0, bad);
+  const s = mini([Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 450, touch: null })], [dummy(40, 40)], { obstacles: [{ obj: 'bumper', x: 180, y: 300 }, { obj: 'cup', x: 100, y: 200 }, { obj: 'pin', x: 260, y: 200 }] });
+  const before = s.units.filter((u) => u.kind === 'obstacle').map((u) => [u.x, u.y]);
+  fire(s, 0, -1, 3);
+  ok('輪ゴムの柱・コップ・お皿は押されても動かない', JSON.stringify(s.units.filter((u) => u.kind === 'obstacle').map((u) => [u.x, u.y])) === JSON.stringify(before));
+}
+{
+  // E 当てると変わる仕掛け・F 回復のおやつ・輪ゴムの柱
+  const A = (o) => Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 450, touch: null }, o);
+  let s = mini([A(), A({ name: 'B', x: 60, y: 450 })], [dummy(40, 40)], { obstacles: [{ obj: 'lid', x: 180, y: 300 }] }); fire(s, 0, -1, 1);
+  ok('鍋のふた: 味方が当てると開いて、回復のおやつが出る', !s.units.find((u) => u.obj === 'lid').alive && s.pickups.length === 1 && s.stats.lids === 1, s.pickups);
+  U(s, 'B').hp = 30; s.active = U(s, 'B').id; E.shoot(s, { dx: 120, dy: -150, power: 2 }); E.resolve(s);
+  ok('回復のおやつ: 味方が触れると拾って回復する', s.pickups.length === 0 && s.stats.pickups === 1 && U(s, 'B').hp === 30 + 20, { pk: s.pickups.length, hp: U(s, 'B').hp });
+  const gaps = { top: [], bottom: [], left: [], right: [] };
+  s = E.createBattle({ gaps, allies: [A()], enemies: [dummy(40, 40)], obstacles: [{ obj: 'pin', x: 180, y: 300, group: 1 }, { obj: 'pin', x: 300, y: 60, group: 1 }], pinOpen: { side: 'right', range: [190, 320] } });
+  s.units.find((u) => u.obj === 'pin' && u.x === 300).alive = false; fire(s, 0, -1, 2);
+  ok('お皿: 同じ組を全部倒すと、決まった柵が 2 ターン開く', s.bonusGaps.length === 1 && s.bonusGaps[0].side === 'right' && ev(s, (e) => e.t === 'pinOpen').length === 1, s.bonusGaps);
+  fire(s, 1, 0, 1); fire(s, -1, 0, 1);
+  ok('お皿で開いた柵は、2 ターンたつと閉じる', s.bonusGaps.length === 0, s.bonusGaps);
+  const run = (obj) => travel(mini([A()], [dummy(40, 40)], { obstacles: [{ obj, x: 180, y: 330 }] }), 'A', { dx: 0, dy: -1, power: 1 });
+  ok('輪ゴムの柱: コップより強く弾き返される(進む道のりが長い)', run('bumper') > run('cup') + 60, [Math.round(run('cup')), Math.round(run('bumper'))]);
+}
+{
+  // G 敵を場外に落としたら、敵の番の前にもう 1 手(1 ターン 1 回まで)
+  const gaps = { top: [[100, 260]], bottom: [], left: [], right: [] };
+  const mk = () => E.createBattle({ gaps, allies: [Object.assign(ally('machine'), { name: 'A', x: 180, y: 300, touch: null, atk: 1 }), Object.assign(ally('kitchen'), { name: 'B', x: 60, y: 480, touch: null })],
+    enemies: [dummy(180, 60, { weight: 1, hp: 100, name: 'まと1' }), dummy(300, 400, { name: 'のこり', hp: 999 })] });
+  const s = mk(); U(s, 'まと1').hp = 50; fire(s, 0, -1, 3);
+  ok('場外に落とすと、敵の番の前に次の駒でもう 1 手', !U(s, 'まと1').alive && s.phase === 'aim' && s.turnNo === 1 && s.units[s.active].name === 'B' && s.stats.bonusShots === 1, { turn: s.turnNo, active: s.units[s.active].name, phase: s.phase });
+  ok('もう 1 手の番が来た駒も、必殺が 1 つ進む', U(s, 'B').ultCharge === 1, U(s, 'B').ultCharge);
+  const s2 = E.createBattle({ gaps, allies: [Object.assign(ally('machine'), { name: 'A', x: 180, y: 300, touch: null, atk: 1 }), Object.assign(ally('machine'), { name: 'B', x: 180, y: 420, touch: null, atk: 1 })],
+    enemies: [dummy(180, 60, { weight: 1, name: 'まと1' }), dummy(180, 180, { weight: 1, name: 'まと2' }), dummy(300, 400, { name: 'のこり', hp: 999 })] });
+  U(s2, 'まと1').hp = 50; U(s2, 'まと2').hp = 50; U(s2, 'まと2').x = 40; fire(s2, 0, -1, 3);
+  U(s2, 'まと2').x = 180; U(s2, 'まと2').y = 60; fire(s2, 0, -1, 3);
+  ok('もう 1 手は 1 ターンに 1 回まで(2 体目を落としても敵の番が来る)', s2.stats.enemyRing === 2 && s2.stats.bonusShots === 1 && s2.turnNo === 2, { ring: s2.stats.enemyRing, bonus: s2.stats.bonusShots, turn: s2.turnNo });
+}
+{
+  // I 3 れんさ以上つなげた手は、弾いた駒の必殺が 1 つ進む
+  const run = (n, p) => { const foes = []; for (let i = 0; i < n; i++) foes.push(dummy(180, 330 - i * 70, { hp: 999, name: 'まと' + i })); const s = mini([Object.assign(ally('stationery'), { name: 'A', x: 180, y: 440, touch: null })], foes); fire(s, 0, -1, p); return s; };
+  const s3 = run(3, 3), s1 = run(1, 1);
+  ok('3 れんさ以上で必殺が 1 つ進む(少ないと進まない)', s3.bestChain >= 3 && s1.bestChain < 3 && s3.stats.chainCharges === 1 && s1.stats.chainCharges === 0 && s3.units[0].ultCharge === s1.units[0].ultCharge + 1, [s3.bestChain, s1.bestChain, s3.units[0].ultCharge, s1.units[0].ultCharge]);
+}
+{
+  // L 名前のついた技: ぶつけ落とし・柵返しから 2 体
+  const gaps = { top: [[100, 260]], bottom: [], left: [], right: [] };
+  let s = E.createBattle({ gaps, allies: [Object.assign(ally('machine'), { name: 'A', x: 180, y: 400, touch: null, atk: 1 })], enemies: [dummy(180, 140, { hp: 999 }), dummy(180, 40, { weight: 1, name: 'おく' }), dummy(320, 480, { name: 'のこり', hp: 999 })] });
+  U(s, 'おく').hp = 50; fire(s, 0, -1, 3);
+  ok('ぶつけ落とし: 敵にぶつけて別の敵を落とす', !U(s, 'おく').alive && s.stats.crashRing === 1 && ev(s, (e) => e.t === 'trick' && e.kind === 'crashRing').length === 1, s.stats);
+  s = mini([Object.assign(ally('stationery'), { name: 'A', x: 180, y: 440, touch: null })], [dummy(180, 300, { hp: 999 }), dummy(180, 200, { hp: 999, name: 'おく' })]); fire(s, 0, 1, 3);
+  ok('柵返しから 2 体: 柵で跳ね返ってから 2 体に当てる', s.stats.bankDouble === 1, s.stats.bankDouble);
+}
+
 // ---- 再現性・停止性・異常値(でたらめな手で最後まで) ------------------------
 function randomBattle(seed) {
   const rnd = E.mulberry32(seed);
@@ -246,6 +355,10 @@ if (process.argv.includes('--mutate')) {
       U(s, 'まと').maxHp = 1000; /* 体力 100 / 最大 1000 = はがれかけ扱いになる改変 */ fire(s, 0, -1, 3); return U(s, 'まと').alive; }],
     ['強打を無効にする', () => { const s = fire(mini([Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 400, touch: null })], [dummy(180, 250)]), 0, -1, 1); return 100 - U(s, 'まと').hp >= Math.round(19 * 1.5); }],
     ['再現性を壊す(Math.random を混ぜる)', () => { const a = randomBattle(7).h; const b = E.hashState(randomBattle(7).s, (Math.random() * 1e9) | 0); return a === b; }],
+    ['敵の攻撃が敵に当たらない', () => { const s = mini([Object.assign(ally('furniture'), { name: 'A', x: 40, y: 490, touch: null })], [dummy(180, 250, { action: 'blast', count: 1, actR: 40, atk: 20, hp: 400 }), dummy(240, 250)]); fire(s, 1, 0, 1); return U(s, 'まと').hp < 100; }],
+    ['落としても、もう 1 手が出ない', () => { const gaps = { top: [[100, 260]], bottom: [], left: [], right: [] };
+      const s = E.createBattle({ gaps, allies: [Object.assign(ally('machine'), { name: 'A', x: 180, y: 300, touch: null, atk: 1 }), Object.assign(ally('kitchen'), { name: 'B', x: 60, y: 480, touch: null })], enemies: [dummy(180, 60, { weight: 1 }), dummy(300, 400, { name: 'のこり', hp: 999 })] });
+      fire(s, 0, -1, 3); /* 満タンなので落ちない → もう 1 手は出ない。これを「出た」と言うなら見逃し */ return s.stats.bonusShots === 1; }],
     ['タッチ技が出ない', () => { const s = mini([Object.assign(ally('kitchen'), { name: 'A', x: 180, y: 450, touch: null, atk: 1 }), Object.assign(ally('kitchen'), { name: 'B', x: 180, y: 360, touch: null })], [dummy(180, 250)]); fire(s, 0, -1, 2); return 100 - U(s, 'まと').hp >= Math.round(19 * 1.5); }],
   ];
   let caught = 0;

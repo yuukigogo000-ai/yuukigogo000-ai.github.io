@@ -143,13 +143,21 @@ export function foe(lineage, x, y, opts) {
 }
 
 // ---- 卓 ----------------------------------------------------------------------
+// 物(obstacles)の種類は engine.js の OBJ: コップ / 輪ゴムの柱 / しょうゆ差し / 鍋のふた / お皿。
+// どれも「使わなくても勝てる」ごほうびにとどめる(必須の対策にしない)。物は敵の番にしか動かない(しょうゆ差しは押されたときだけ動く)
 export const TABLES = {
   kitchen: { ja: '台所のテーブル', gaps: { top: [[120, 240]], bottom: [], left: [[190, 300]], right: [[190, 300]] },
-             patches: [{ x: 90, y: 300, r: 46, kind: 'wet' }] },
+             patches: [{ x: 90, y: 300, r: 46, kind: 'wet' }],
+             obstacles: [{ obj: 'bottle', x: 250, y: 320 }, { obj: 'lid', x: 300, y: 372 }] },
   living:  { ja: 'リビングのローテーブル', gaps: { top: [[40, 130], [230, 320]], bottom: [[140, 220]], left: [], right: [] },
-             patches: [{ x: 270, y: 250, r: 44, kind: 'mat' }], obstacles: [{ x: 180, y: 290, r: 18 }] },
+             patches: [{ x: 270, y: 250, r: 44, kind: 'mat' }],
+             obstacles: [{ obj: 'cup', x: 180, y: 290 }, { obj: 'bumper', x: 60, y: 330 }, { obj: 'bumper', x: 310, y: 180 }],
+             pickups: [{ x: 300, y: 335 }] },
   attic:   { ja: '屋根裏の作業台', gaps: { top: [[130, 230]], bottom: [], left: [[90, 170], [330, 410]], right: [[90, 170], [330, 410]] },
-             patches: [{ x: 180, y: 250, r: 40, kind: 'stove', dmg: 10 }] },
+             patches: [{ x: 180, y: 250, r: 40, kind: 'stove', dmg: 10 }],
+             obstacles: [{ obj: 'pin', x: 300, y: 40, group: 1 }, { obj: 'pin', x: 326, y: 62, group: 1 }, { obj: 'pin', x: 334, y: 32, group: 1 },
+                         { obj: 'lid', x: 44, y: 372 }],
+             pinOpen: { side: 'right', range: [190, 320] } },
 };
 
 // 敵の置き場所(手前が味方の陣地なので、敵は奥の 2/3 に置く)
@@ -159,7 +167,7 @@ const FOE_SPOTS = [[100, 140], [260, 140], [180, 80], [180, 210], [70, 240], [29
 export function mobBattle(tableKey, allies, foeLineages, opts) {
   const T = TABLES[tableKey], o = opts || {};
   return {
-    gaps: T.gaps, patches: T.patches, obstacles: T.obstacles,
+    gaps: T.gaps, patches: T.patches, obstacles: T.obstacles, pickups: T.pickups, pinOpen: T.pinOpen,
     allies,
     enemies: foeLineages.map((l, i) => foe(l, FOE_SPOTS[i][0], FOE_SPOTS[i][1], { pct: o.pct || 0, trait: o.traits ? o.traits[i] : null })),
   };
@@ -167,11 +175,14 @@ export function mobBattle(tableKey, allies, foeLineages, opts) {
 
 // ---- ボス --------------------------------------------------------------------
 // 4 つの決まり: ルールを変える / 体力ゲージを分ける / 弱点は広く(奥側から当てると 2 倍)/ 章の最初に種類を見せる
+// ボス本体は落ちないが、重く動く(固定しない)。押して柵や物にぶつけると、ぶつけダメージが入る
 export const BOSSES = {
   vacuum: { ja: '掃除機', rule: '敵の番ごとに全員を吸い寄せる。2 本目からは逆に吹き出す' },
   washer: { ja: '洗濯機', rule: '敵の番ごとに卓が回り、切れ目の位置が変わる。2 本目からは全員が外へ振られる' },
   fan:    { ja: '扇風機', rule: '風で駒が流される。風向きは毎ターン変わる。2 本目からは風が強くなる' },
 };
+
+const BOSS_FRIC = 1500; // ボスはすぐ止まる(押しても少ししか動かない)
 
 export function bossBattle(kind, allies, opts) {
   const o = opts || {}, k = (100 + (o.pct || 0)) / 100;
@@ -179,7 +190,8 @@ export function bossBattle(kind, allies, opts) {
   const minion = (l, x, y) => foe(l, x, y, { pct: o.pct || 0 });
   if (kind === 'vacuum') {
     return { gaps: { top: [], bottom: [[130, 230]], left: [[240, 340]], right: [[240, 340]] }, allies,
-      enemies: [{ name: '掃除機', boss: 'vacuum', anchored: true, r: 46, mass: 9, hp: 1, gauges: g([220, 250]), atk: Math.round(24 * k), action: 'blast', count: 3, actR: 120, x: 180, y: 120 },
+      pickups: [{ x: 180, y: 330 }],
+      enemies: [{ name: '掃除機', boss: 'vacuum', r: 46, mass: 9, fric: BOSS_FRIC, hp: 1, gauges: g([220, 250]), atk: Math.round(24 * k), action: 'blast', count: 3, actR: 120, x: 180, y: 120 },
                 minion('creature', 80, 240), minion('creature', 280, 240)] };
   }
   if (kind === 'washer') {
@@ -189,14 +201,15 @@ export function bossBattle(kind, allies, opts) {
       { top: [], bottom: [[120, 240]], left: [], right: [] },
       { top: [], bottom: [], left: [[190, 310]], right: [] },
     ];
-    return { gaps: cycle[0], gapCycle: cycle, allies,
-      enemies: [{ name: '洗濯機', boss: 'washer', anchored: true, r: 46, mass: 9, hp: 1, gauges: g([240, 280]), atk: Math.round(24 * k), action: 'beamH', count: 3, actR: 120, x: 180, y: 130 },
+    return { gaps: cycle[0], gapCycle: cycle, allies, obstacles: [{ obj: 'bottle', x: 180, y: 320 }],
+      enemies: [{ name: '洗濯機', boss: 'washer', r: 46, mass: 9, fric: BOSS_FRIC, hp: 1, gauges: g([240, 280]), atk: Math.round(24 * k), action: 'beamH', count: 3, actR: 120, x: 180, y: 130 },
                 minion('bath', 90, 250), minion('clothing', 270, 250)] };
   }
   // 扇風機
   const wc = [[0, 200], [-200, 0], [0, -200], [200, 0]];
   return { gaps: { top: [[130, 230]], bottom: [[130, 230]], left: [[210, 310]], right: [[210, 310]] }, wind: { ax: wc[0][0], ay: wc[0][1] }, windCycle: wc, allies,
-    enemies: [{ name: '扇風機', boss: 'fan', anchored: true, r: 44, mass: 9, hp: 1, gauges: g([210, 240, 210]), atk: Math.round(22 * k), action: 'gust', count: 2, actR: 90, x: 180, y: 110 },
+    obstacles: [{ obj: 'lid', x: 60, y: 380 }],
+    enemies: [{ name: '扇風機', boss: 'fan', r: 44, mass: 9, fric: BOSS_FRIC, hp: 1, gauges: g([210, 240, 210]), atk: Math.round(22 * k), action: 'gust', count: 2, actR: 90, x: 180, y: 110 },
               minion('stationery', 90, 230), minion('toy', 270, 230)] };
 }
 
