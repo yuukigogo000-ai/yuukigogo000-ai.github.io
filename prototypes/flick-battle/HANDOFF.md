@@ -14,6 +14,7 @@ PC の Claude Code(`AI_WORKSPACE/photo-roguelike` のソースが見えるセッ
 | `prototypes/flick-battle/engine/` | `engine.js`(ルールと物理)/ `data.js`(12 系統・持ち物・敵・ボス)/ `ai.js`(おまかせ)/ 検査 2 本 |
 | `prototypes/flick-battle/play/` | 仮の戦闘画面(灰色の箱)。入力・描画・出来事の見せ方の実例 |
 | `prototypes/flick-battle/WO_UI_hgp_battle.md` | 戦闘画面の UI 発注書(下書き。2026-11-16 に演出の調査 2 本を反映)。見た目はこちらの工程で |
+| `prototypes/flick-battle/UI_ANIM_PROCEDURE.md` | **戦闘画面の UI とアニメーションの手順書**(2026-11-17。差し替え → G0〜G8 → 公開前、の 11 フェーズ。発注者「工程つかおう。手順書かいて」) |
 | `prototypes/flick-battle/FX_SPEC.md` | **演出の設計図**(格表・出来事 → 演出の対応・作る順番と完了の条件・発注者に決めてもらうこと)。数値の正本は `fx/tokens.js` |
 | `prototypes/flick-battle/fx/` | 演出の土台(1 手の先読み・格づけ・音の部品)と道具(場面カタログ・演出の検査器・音の検査・聴き比べ台)。どの画面の仕組みにも依存しないので本体へそのまま持っていける |
 | `research_notes/戦闘システム一次資料の深掘り/current_game_battle_rules.md` | いまの戦闘の決まり(公開ビルドから読み取ったもの) |
