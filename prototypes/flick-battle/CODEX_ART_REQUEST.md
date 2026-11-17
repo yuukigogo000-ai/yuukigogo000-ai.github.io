@@ -172,3 +172,25 @@ AI_WORKSPACE/photo-roguelike/art_candidates/battle/
 4. `licenses.html` の「画面の絵」の説明に、戦闘の絵の作り方(Codex の画像生成で作り、作者が選んだ)を足す
 5. 選ばれなかった絵は `art_candidates/` に残したまま(公開しない)
 6. 手順書のフェーズ 4(見本)で、選んだ絵を Stitch の生成指示に入れる
+
+---
+
+## §8 PC の Claude が Codex に頼む手順(発注者「あなたがコーデックスに指示して」2026-11-17)
+
+クラウドの Claude からは PC の Codex に届かなかったため、PC の Claude がこの手順で Codex を動かす。発注者は PC の Claude に「`prototypes/flick-battle/CODEX_ART_REQUEST.md` の §8 をやって」と言うだけでよい。
+
+1. **料金の確認(必ず最初に)**: `codex login status` を実行する。
+   - 「ChatGPT でログイン」なら月額プランの範囲なので先へ進む
+   - **API キーでログインしているなら止まる**(従量課金になる)。発注者に確認してから進む
+   - 認証ファイル(`~/.codex/auth.json` など)は開かない
+2. **画像が作れるかの試し(1 枚だけ)**: Codex に「§4 の D(コップ)を 1 枚だけ作って `art_candidates/battle/_trial/D_trial.png` に保存して」と頼む。
+   - 作れない(画像生成の機能がない・断られる)なら**そこで止めて発注者に報告**する。ほかの有料の画像サービスで代わりに作らない
+   - 試しの 1 枚を見て、§2 の画風から大きく外れていたら、§2 の共通プロンプトに足すことを 1 行決めてから本番へ
+3. **本番(64 枚)**: 本体のソースの場所で、書き込みを許して実行する。プロンプトは REVIEW_LOG と同じくファイルで渡す:
+   ```
+   codex exec -s workspace-write -C C:/Users/gogyo/AI_WORKSPACE/photo-roguelike "<この md のパス> を読んで、§1 から §5 のとおりに 8 種類 × 8 枚の見本画像を作り、§5 の置き場所に納品して。参照画像は public/art/ の下にある(§1 の photo-roguelike/art/ と同じ絵)。§6 の表で自分の出力を確かめ、足りないものは作り直して。"
+   ```
+   - 1 回で 64 枚が終わらないときは、種類ごと(A〜H)に分けて 8 回実行してよい
+   - `art_candidates/` は本体の公開物(`dist/`・このリポジトリ)に入れない。git に入れるなら `.gitignore` に足す
+4. **受け取りの確認**: §6 の表を PC の Claude が画像を開いて確かめる(Codex の自己申告で済ませない)。合わない絵は番号を控えて Codex に作り直しを頼む
+5. **発注者に見せる**: `ALL_sheet.png` と種類ごとの `sheet.png` を見せ、「種類ごとに 1 枚(または どれも違う)」を選んでもらう → §7 へ
