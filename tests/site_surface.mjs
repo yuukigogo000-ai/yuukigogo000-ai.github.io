@@ -41,6 +41,8 @@ const MUST_BE_OPEN = [
   ['/utsushimi-tower/licenses.html', '身代わりの塔 部品と書体'],
   ['/utsushimi-tower/sw.js', '身代わりの塔 オフライン用ServiceWorker'],
   ['/utsushimi-tower/manifest.webmanifest', '身代わりの塔 マニフェスト'],
+  ['/toaster-daily/', 'toaster-daily(YouTube 自動アップロードの OAuth アプリのホーム・URLを知っている人だけ・noindex)'],
+  ['/toaster-daily/privacy.html', 'toaster-daily プライバシーポリシー(Google の OAuth 同意画面に登録)'],
   ['/line-auto-reply/', 'LINE自動返信ボット 手順'],
   ['/surf/', '波チェック 公開停止の告知'],
   ['/reply-ai/', 'Replier 公開停止の告知'],

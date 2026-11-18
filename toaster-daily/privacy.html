@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; base-uri 'none'; object-src 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>toaster-daily privacy policy and terms</title>
+<style>
+:root { --bg: #f6f1e7; --ink: #2b231b; --line: #c9bba1; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg: #14162a; --ink: #efe6d6; --line: #3a3d5c; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, sans-serif; line-height: 1.75; }
+main { max-width: 720px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 1.4rem; } h2 { font-size: 1.1rem; margin-top: 2rem; border-bottom: 1px solid var(--line); }
+a { color: inherit; }
+</style>
+</head>
+<body>
+<main>
+<h1>toaster-daily privacy policy and terms</h1>
+<p>toaster-daily is a small personal tool. It uploads short videos made by the owner of the YouTube channel
+<a href="https://www.youtube.com/@daydreamtoaster">the daydreaming toaster (@daydreamtoaster)</a> to that same channel.</p>
+
+<h2>Terms of use</h2>
+<p>toaster-daily uses YouTube API Services. By using toaster-daily, you agree to be bound by the
+<a href="https://www.youtube.com/t/terms">YouTube Terms of Service</a>.
+The <a href="https://policies.google.com/privacy">Google Privacy Policy</a> also applies.</p>
+
+<h2>Who uses it</h2>
+<p>Only the channel owner. It does not offer sign-in to anyone else, and it has no users other than the owner.</p>
+
+<h2>What it accesses</h2>
+<p>It asks Google only for permission to upload videos to the owner's own YouTube channel (YouTube Data API, upload scope).
+It does not read viewers' data, comments, subscribers, or any other channel.</p>
+
+<h2>What it stores, and where</h2>
+<ul>
+<li>The OAuth client ID, client secret and refresh token are stored in a local file on the owner's own computer.
+The refresh token is sent only to Google's OAuth token endpoint, to get a short-lived access token.
+The access token is sent only to Google, with each YouTube API request.</li>
+<li>toaster-daily does not keep the video ID, URL or any other data that YouTube returns. It reads the response only to check that the upload succeeded and is public.
+To avoid uploading the same video twice, it keeps only its own local note: the date and its own name for the video.</li>
+<li>None of this is sent to any other server or shared with anyone.</li>
+<li>The videos, titles and descriptions it uploads are published on YouTube by the owner's choice.</li>
+</ul>
+
+<h2>Retention and deletion</h2>
+<ul>
+<li>The tokens are kept until the owner removes them. No other data from YouTube is kept.</li>
+<li>To stop the tool and delete its access: revoke the permission at <a href="https://myaccount.google.com/permissions">Google Account permissions</a>,
+then delete the YouTube entry from the local file (the owner does this within 30 days of revoking; in practice right away).
+Revoking the permission makes the stored refresh token useless.</li>
+<li>Deleting the local data does not delete videos already on YouTube. Videos are deleted in YouTube Studio.</li>
+</ul>
+
+<h2>Ads and analytics</h2>
+<p>This tool and this page use no ads and no analytics.</p>
+
+<h2>Contact</h2>
+<p>For questions about this policy, open an issue at
+<a href="https://github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues">github.com/yuukigogo000-ai/yuukigogo000-ai.github.io/issues</a>.</p>
+
+<p><a href="./index.html">About toaster-daily</a></p>
+</main>
+</body>
+</html>
