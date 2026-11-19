@@ -19,7 +19,8 @@ a { color: inherit; }
 <main>
 <h1>toaster-daily privacy policy and terms</h1>
 <p>toaster-daily is a small personal tool. It uploads short videos made by the owner of the YouTube channel
-<a href="https://www.youtube.com/@daydreamtoaster">the daydreaming toaster (@daydreamtoaster)</a> to that same channel.</p>
+<a href="https://www.youtube.com/@daydreamtoaster">the daydreaming toaster (@daydreamtoaster)</a> to that same channel,
+and once a week tells the owner how many views those videos got.</p>
 
 <h2>Terms of use</h2>
 <p>toaster-daily uses YouTube API Services. By using toaster-daily, you agree to be bound by the
@@ -30,25 +31,33 @@ The <a href="https://policies.google.com/privacy">Google Privacy Policy</a> also
 <p>Only the channel owner. It does not offer sign-in to anyone else, and it has no users other than the owner.</p>
 
 <h2>What it accesses</h2>
-<p>It asks Google only for permission to upload videos to the owner's own YouTube channel (YouTube Data API, upload scope).
-It does not read viewers' data, comments, subscribers, or any other channel.</p>
+<p>It asks Google for two permissions on the owner's own YouTube channel (YouTube Data API):</p>
+<ul>
+<li>upload scope: to upload the owner's videos to the owner's channel;</li>
+<li>read-only scope: to read the public view, like and comment counts of the owner's own recent uploads, 24 and 72 hours after each upload.</li>
+</ul>
+<p>It does not read viewers' data, the text of comments, subscribers, or any other channel.</p>
 
 <h2>What it stores, and where</h2>
 <ul>
 <li>The OAuth client ID, client secret and refresh token are stored in a local file on the owner's own computer.
 The refresh token is sent only to Google's OAuth token endpoint, to get a short-lived access token.
 The access token is sent only to Google, with each YouTube API request.</li>
-<li>toaster-daily does not keep the video ID, URL or any other data that YouTube returns. It reads the response only to check that the upload succeeded and is public.
-To avoid uploading the same video twice, it keeps only its own local note: the date and its own name for the video.</li>
-<li>None of this is sent to any other server or shared with anyone.</li>
+<li>toaster-daily does not keep the video ID or URL. After an upload it reads the response only to check that the upload succeeded and is public.
+To avoid uploading the same video twice, it keeps its own local note: the date and its own name for the video.</li>
+<li>To read the counts, it looks at the owner's own recent uploads, picks the one uploaded at the time of its own post, and reads that video's
+view, like and comment counts. It keeps only those counts, with its own name for the video and the time it read them, in a local file on the owner's computer.</li>
+<li>Once a week it sends a short summary of these counts (together with counts from the owner's other social media accounts) to the owner's own
+Telegram chat, through the owner's own Telegram bot. That message is then also subject to Telegram's privacy policy. Nothing from YouTube is sent anywhere else or shared with anyone.</li>
 <li>The videos, titles and descriptions it uploads are published on YouTube by the owner's choice.</li>
 </ul>
 
 <h2>Retention and deletion</h2>
 <ul>
-<li>The tokens are kept until the owner removes them. No other data from YouTube is kept.</li>
+<li>The tokens are kept until the owner removes them.</li>
+<li>Counts read from YouTube are deleted from the local file 30 days after they were read. No other data from YouTube is kept.</li>
 <li>To stop the tool and delete its access: revoke the permission at <a href="https://myaccount.google.com/permissions">Google Account permissions</a>,
-then delete the YouTube entry from the local file (the owner does this within 30 days of revoking; in practice right away).
+then delete the YouTube entry and the stored YouTube counts from the local files (the owner does this within 30 days of revoking; in practice right away).
 Revoking the permission makes the stored refresh token useless.</li>
 <li>Deleting the local data does not delete videos already on YouTube. Videos are deleted in YouTube Studio.</li>
 </ul>
